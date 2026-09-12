@@ -2,9 +2,9 @@
   "theme": {
     "mode": "dark",
     "accentColor": "#0ea5e9",
-    "wallpaper": "assets/wallpaper.jpg",
-    "fontSizeScale": 1.0,
-    "transparencyLevel": 85,
+    "wallpaper": "/home/waleed/Wallpapers/_ (1)_upscayl_4x_upscayl-standard-4x.png",
+    "fontSizeScale": 1.25,
+    "transparencyLevel": 3,
     "elementRadius": 8,
     "performanceTier": 1
   },
@@ -13,16 +13,16 @@
     "showIcons": true,
     "widgetPositions": {
       "clock": {
-        "x": 60,
-        "y": 70
+        "x": 987,
+        "y": 722
       },
       "weather": {
-        "x": 2196,
-        "y": 48
+        "x": 2122,
+        "y": 169
       },
       "system_monitor": {
-        "x": 997,
-        "y": 377
+        "x": 1285,
+        "y": 688
       },
       "notes": {
         "x": 380,
@@ -36,12 +36,14 @@
     ]
   },
   "dock": {
-    "position": "bottom",
+    "position": "right",
     "autoHide": false,
-    "iconSize": 38,
-    "showUnderline": false,
+    "iconSize": 56,
+    "showUnderline": true,
     "pinnedApps": [
-      "spotify"
+      "antigravity",
+      "ai.opencode",
+      "antigravity-ide"
     ]
   },
   "topBar": {
@@ -53,9 +55,9 @@
   "windows": {
     "activeBorder": "#0084ff",
     "inactiveBorder": "#2a3142",
-    "gapsIn": 5,
+    "gapsIn": 6,
     "gapsOut": 10,
-    "rounding": 10
+    "rounding": 8
   },
   "notifications": {
     "dnd": false,
@@ -63,14 +65,21 @@
     "sound": false
   },
   "power": {
-    "profile": "balanced",
-    "sleepTimeout": 0
+    "profile": "performance",
+    "sleepTimeout": 30
   },
   "defaultApps": {
     "browser": "brave",
     "terminal": "kitty",
     "fileManager": "thunar",
     "editor": "org.gnome.TextEditor"
+  },
+  "system": {
+    "uiLanguage": "ar",
+    "keyboardLayouts": [
+      "us",
+      "ara"
+    ]
   },
   "setupCompleted": true
 }
