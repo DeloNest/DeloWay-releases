@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# DeloOS / Deloway Desktop Session Wrapper
+# Launches Hyprland compositor configured with Deloway Fluent Shell
+# ==============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -d "$SCRIPT_DIR/../shell" ]; then
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+elif [ -d "/usr/share/deloway/shell" ]; then
+    PROJECT_ROOT="/usr/share/deloway"
+else
+    PROJECT_ROOT="${DELOWAY_DIR:-$HOME/Projects/Deloway}"
+fi
+
+# ------------------------------------------------------------------------------
+# 1. Wayland & Desktop Environment Variables
+# ------------------------------------------------------------------------------
+export XDG_CURRENT_DESKTOP="Hyprland:DeloWay"
+export XDG_SESSION_DESKTOP="DeloWay"
+export XDG_SESSION_TYPE="wayland"
+
+# Toolkit backend preferences
+export QT_QPA_PLATFORM="wayland;xcb"
+export QT_WAYLAND_DISABLE_WINDOWDECORATION="1"
+export QT_AUTO_SCREEN_SCALE_FACTOR="1"
+export QT_QUICK_CONTROLS_STYLE="Basic"
+
+export GDK_BACKEND="wayland,x11,*"
+export MOZ_ENABLE_WAYLAND="1"
+export SDL_VIDEODRIVER="wayland"
+export CLUTTER_BACKEND="wayland"
+export ELECTRON_OZONE_PLATFORM_HINT="auto"
+
+# Deloway Paths
+export DELOWAY_HOME="${DELOWAY_HOME:-$PROJECT_ROOT}"
+export DELOWAY_CONFIG="${DELOWAY_CONFIG:-$HOME/.config/deloway/deloway.json}"
+
+# Ensure user directories exist
+mkdir -p "$HOME/.config/deloway" "$HOME/.local/share/applications" "$HOME/Desktop"
+
+# ------------------------------------------------------------------------------
+# 2. Compositor Configuration Resolution (Completely isolated from ~/.config/hypr)
+# ------------------------------------------------------------------------------
+HYPR_CONF="$HOME/.config/deloway/hyprland.conf"
+if [ ! -f "$HYPR_CONF" ]; then
+    HYPR_CONF="$DELOWAY_HOME/config/hyprland.conf"
+fi
+
+# ------------------------------------------------------------------------------
+# 3. Launch Hyprland Compositor
+# ------------------------------------------------------------------------------
+echo "==> Starting Deloway Session using configuration: $HYPR_CONF"
+exec Hyprland -c "$HYPR_CONF"

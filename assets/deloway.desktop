@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Deloway
+Comment=Modern Cohesive Hyprland Desktop Environment
+Exec=deloway-session
+Type=Application
+DesktopNames=Deloway;Hyprland
+Keywords=tiling;wayland;compositor;desktop;deloway;

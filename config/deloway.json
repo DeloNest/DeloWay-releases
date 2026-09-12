@@ -1,0 +1,76 @@
+{
+  "theme": {
+    "mode": "dark",
+    "accentColor": "#0ea5e9",
+    "wallpaper": "assets/wallpaper.jpg",
+    "fontSizeScale": 1.0,
+    "transparencyLevel": 85,
+    "elementRadius": 8,
+    "performanceTier": 1
+  },
+  "desktop": {
+    "mode": "traditional",
+    "showIcons": true,
+    "widgetPositions": {
+      "clock": {
+        "x": 60,
+        "y": 70
+      },
+      "weather": {
+        "x": 2196,
+        "y": 48
+      },
+      "system_monitor": {
+        "x": 997,
+        "y": 377
+      },
+      "notes": {
+        "x": 380,
+        "y": 280
+      }
+    },
+    "enabledWidgets": [
+      "clock",
+      "weather",
+      "system_monitor"
+    ]
+  },
+  "dock": {
+    "position": "bottom",
+    "autoHide": false,
+    "iconSize": 38,
+    "showUnderline": false,
+    "pinnedApps": [
+      "spotify"
+    ]
+  },
+  "topBar": {
+    "showBrand": true,
+    "showWorkspaces": true,
+    "clockFormat": "12h",
+    "workspacesCount": 5
+  },
+  "windows": {
+    "activeBorder": "#0084ff",
+    "inactiveBorder": "#2a3142",
+    "gapsIn": 5,
+    "gapsOut": 10,
+    "rounding": 10
+  },
+  "notifications": {
+    "dnd": false,
+    "timeout": 5000,
+    "sound": false
+  },
+  "power": {
+    "profile": "balanced",
+    "sleepTimeout": 0
+  },
+  "defaultApps": {
+    "browser": "brave",
+    "terminal": "kitty",
+    "fileManager": "thunar",
+    "editor": "org.gnome.TextEditor"
+  },
+  "setupCompleted": true
+}

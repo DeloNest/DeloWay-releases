@@ -1,0 +1,30 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*~
+.DS_Store
+
+# Editor and IDE metadata
+.vscode/
+.idea/
+
+# Secrets and credentials
+.env
+.env.*
+*.key
+*.pem
+
+# Backups and crash reports
+backups/
+*.bak

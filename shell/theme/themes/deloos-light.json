@@ -1,0 +1,61 @@
+{
+  "theme": "deloos-light",
+  "mode": "light",
+  "colors": {
+    "background": "#f4f6f9",
+    "backgroundAlt": "#e9edf3",
+    "surface": "#ffffff",
+    "surfaceLayer1": "#ffffff",
+    "surfaceLayer2": "#f8fafc",
+    "surfaceCard": "#ffffff",
+    "surfaceHover": "#f1f3f7",
+    "surfaceActive": "#e2e6ed",
+    "surfaceVariant": "#f8fafc",
+    "surfaceElevated": "#ffffff",
+    "border": "#d5dbe6",
+    "borderSubtle": "#e5e9f0",
+    "borderHighlight": "#b8c3d6",
+    "primary": "#0084ff",
+    "primaryHover": "#1a92ff",
+    "primaryActive": "#0073e0",
+    "accent": "#0084ff",
+    "accentSecondary": "#60cdff",
+    "text": "#111827",
+    "textPrimary": "#111827",
+    "textSecondary": "#4b5563",
+    "textTertiary": "#9ca3af",
+    "textMuted": "#9ca3af",
+    "activeIndicator": "#0084ff",
+    "urgent": "#ef4444",
+    "danger": "#ef4444",
+    "warning": "#d97706",
+    "success": "#10b981",
+    "folderBase": "#f5aa1e",
+    "folderAccent": "#f08705",
+    "folderHighlight": "#ffc841",
+    "folderEmblem": "#ffffff"
+  },
+  "radius": {
+    "small": 4,
+    "medium": 8,
+    "large": 12,
+    "xlarge": 16,
+    "pill": 9999
+  },
+  "spacing": {
+    "xsmall": 4,
+    "small": 8,
+    "medium": 12,
+    "large": 16,
+    "xlarge": 24
+  },
+  "typography": {
+    "fontFamily": "SF Pro Display",
+    "terminalFont": "JetBrainsMono Nerd Font",
+    "fontSizeSmall": 11,
+    "fontSizeRegular": 13,
+    "fontSizeMedium": 15,
+    "fontSizeLarge": 18,
+    "fontSizeTitle": 22
+  }
+}

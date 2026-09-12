@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="lidGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
+      <stop offset="100%" stop-color="#475569"/>
+    </linearGradient>
+    <linearGradient id="highlightGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <!-- Handle -->
+  <path d="M 21 8 C 21 6.9 21.9 6 23 6 L 25 6 C 26.1 6 27 6.9 27 8 L 27 9 L 21 9 Z" fill="url(#lidGrad)"/>
+  <!-- Lid -->
+  <rect x="10" y="9" width="28" height="4.5" rx="2.25" fill="url(#lidGrad)"/>
+  <!-- Bin Body -->
+  <path d="M 12.5 14 L 15 39 C 15.3 41.2 17.2 43 19.4 43 L 28.6 43 C 30.8 43 32.7 41.2 33 39 L 35.5 14 Z" fill="url(#bodyGrad)"/>
+  <!-- Shading overlay -->
+  <path d="M 12.5 14 L 15 39 C 15.3 41.2 17.2 43 19.4 43 L 28.6 43 C 30.8 43 32.7 41.2 33 39 L 35.5 14 Z" fill="url(#highlightGrad)"/>
+  <!-- Ribs -->
+  <path d="M 19 18 L 20 38" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 24 18 L 24 38" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 29 18 L 28 38" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+  <!-- Inner rib highlights -->
+  <path d="M 19.8 18 L 20.8 38" stroke="#ffffff" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/>
+  <path d="M 24.8 18 L 24.8 38" stroke="#ffffff" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/>
+  <path d="M 29.8 18 L 28.8 38" stroke="#ffffff" stroke-width="0.8" stroke-linecap="round" opacity="0.4"/>
+</svg>
