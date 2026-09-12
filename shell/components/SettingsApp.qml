@@ -1380,10 +1380,9 @@ PanelWindow {
                                 sectionDesc: I18n.tr("dock_position_desc")
 
                                 ShadcnSegmented {
+                                    // TODO: re-enable left/right once Dock.qml supports dynamic anchoring
                                     model: [
-                                        { val: "bottom", label: I18n.tr("bottom") },
-                                        { val: "left",   label: I18n.tr("left") },
-                                        { val: "right",  label: I18n.tr("right") }
+                                        { val: "bottom", label: I18n.tr("bottom") }
                                     ]
                                     selectedVal: ConfigManager.dockPosition
                                     onSelect: v => ConfigManager.setDockPosition(v)
