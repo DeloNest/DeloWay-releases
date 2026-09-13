@@ -478,6 +478,7 @@ PanelWindow {
                         radius: root.radiusPill
                         customBackground: root.colorSurface
                         customBorderColor: root.colorBorder
+                        customFocusBorderColor: Theme.notchBorderHighlight
                         showSearchIcon: true
                         placeholderText: I18n.tr("search_apps")
 

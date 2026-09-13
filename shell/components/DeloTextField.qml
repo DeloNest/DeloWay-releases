@@ -16,6 +16,7 @@ Rectangle {
     property alias textInput: input
     property var customBackground: null
     property var customBorderColor: null
+    property var customFocusBorderColor: null
 
     signal accepted()
     signal textEdited()
@@ -36,8 +37,8 @@ Rectangle {
            ? (input.activeFocus ? Qt.rgba(1, 1, 1, 0.12) : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : customBackground))
            : (input.activeFocus ? Theme.colors.surface : Theme.colors.surfaceElevated)
     border.color: customBorderColor !== null
-           ? (input.activeFocus ? Theme.colors.accent : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.25) : customBorderColor))
-           : (input.activeFocus ? Theme.colors.accent : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
+           ? (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.25) : customBorderColor))
+           : (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
     border.width: input.activeFocus ? 1.5 : 1
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -61,7 +62,9 @@ Rectangle {
             visible: root.showSearchIcon
             source: "edit-find-symbolic"
             iconSize: 14
-            iconColor: input.activeFocus ? Theme.colors.accent : Theme.colors.textTertiary
+            iconColor: input.activeFocus
+                       ? (customFocusBorderColor !== null ? Qt.rgba(1, 1, 1, 0.90) : Theme.colors.accent)
+                       : Theme.colors.textTertiary
             Layout.alignment: Qt.AlignVCenter
             Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
         }
