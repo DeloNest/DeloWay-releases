@@ -29,7 +29,7 @@ PanelWindow {
     }
     readonly property real compactHeight: 44
     readonly property real expandedWidth: 600
-    readonly property real expandedHeight: 148
+    readonly property real expandedHeight: 176
     readonly property real earRadius: 18
 
     property real currentWidth: isExpanded ? expandedWidth : compactWidth
@@ -277,6 +277,45 @@ PanelWindow {
                             }
                         }
 
+                        // Tab 3: Notify
+                        Rectangle {
+                            implicitWidth: tabNotifyRow.implicitWidth + 18
+                            implicitHeight: 24
+                            radius: 12
+                            color: swipeView.currentIndex === 2
+                                   ? Qt.rgba(1, 1, 1, 0.18)
+                                   : (tabNotifyMa.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent")
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                            RowLayout {
+                                id: tabNotifyRow
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                SymbolicIcon {
+                                    source: "preferences-system-notifications-symbolic"
+                                    iconSize: 13
+                                    iconColor: swipeView.currentIndex === 2 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                }
+
+                                Text {
+                                    text: "Notify"
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: 12
+                                    font.weight: swipeView.currentIndex === 2 ? Font.DemiBold : Font.Normal
+                                    color: swipeView.currentIndex === 2 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                }
+                            }
+
+                            MouseArea {
+                                id: tabNotifyMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ShellState.setSmartNotchTab(2)
+                            }
+                        }
+
                         Item { Layout.fillWidth: true }
 
                         // Settings Icon (⚙) — Solitary on right, matching reference
@@ -329,6 +368,11 @@ PanelWindow {
                             NotchLocalSend {
                                 id: notchLocalSendItem
                                 expanded: true
+                            }
+
+                            // Page 2: Notify Tab (Notification history)
+                            NotchNotifications {
+                                id: notchNotificationsItem
                             }
                         }
                     }
