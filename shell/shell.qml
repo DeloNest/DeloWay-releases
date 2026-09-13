@@ -235,6 +235,7 @@ ShellRoot {
             TopBar       { targetScreen: screenScope.modelData }
             Dock         { targetScreen: screenScope.modelData }
             Notch        { targetScreen: screenScope.modelData }
+            QuickSettingsCapsule { targetScreen: screenScope.modelData }
 
             // ── On-demand overlays ──────────────────────────────────────────
             AppDrawer        { targetScreen: screenScope.modelData }

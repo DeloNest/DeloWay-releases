@@ -19,6 +19,9 @@ Item {
         // Status Icons
         "network-wireless": "status/network-wireless.svg",
         "network-wireless-symbolic": "status/network-wireless.svg",
+        "network-wired": "status/network-wired.svg",
+        "network-wired-symbolic": "status/network-wired.svg",
+        "ethernet": "status/network-wired.svg",
         "wifi": "status/wifi.svg",
         "bluetooth": "status/bluetooth.svg",
         "bluetooth-active": "status/bluetooth.svg",
