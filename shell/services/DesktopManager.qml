@@ -142,6 +142,8 @@ Item {
         if (!item) return;
         if (item.isTrash) {
             Hyprland.dispatch("exec thunar trash://");
+        } else if (item.isDesktopEntry && item.path) {
+            Hyprland.dispatch("exec gio launch '" + item.path + "'");
         } else if (item.path) {
             Hyprland.dispatch("exec xdg-open '" + item.path + "'");
         }
@@ -231,36 +233,124 @@ Item {
         }
     }
 
+    function getFileIcon(filename) {
+        if (!filename) return "text-x-generic";
+        const dot = filename.lastIndexOf(".");
+        if (dot === -1) return "text-x-generic";
+        const ext = filename.substring(dot + 1).toLowerCase();
+
+        // 1. Images
+        if (["png", "jpg", "jpeg", "svg", "webp", "gif", "bmp", "ico"].includes(ext)) {
+            const imgCandidates = ["image-x-generic", "image", "folder-image", "folder-pictures"];
+            for (let i = 0; i < imgCandidates.length; i++) {
+                if (Quickshell.hasThemeIcon(imgCandidates[i])) return imgCandidates[i];
+            }
+            return "image-x-generic";
+        }
+
+        // 2. Videos
+        if (["mp4", "mkv", "avi", "mov", "webm", "flv"].includes(ext)) {
+            const vidCandidates = ["video-x-generic", "folder-videos", "media-video", "video"];
+            for (let i = 0; i < vidCandidates.length; i++) {
+                if (Quickshell.hasThemeIcon(vidCandidates[i])) return vidCandidates[i];
+            }
+            return "video-x-generic";
+        }
+
+        // 3. Audio
+        if (["mp3", "wav", "flac", "ogg", "m4a", "aac"].includes(ext)) {
+            const audCandidates = ["audio-x-generic", "folder-music", "audio"];
+            for (let i = 0; i < audCandidates.length; i++) {
+                if (Quickshell.hasThemeIcon(audCandidates[i])) return audCandidates[i];
+            }
+            return "audio-x-generic";
+        }
+
+        // 4. Archives
+        if (["zip", "tar", "gz", "xz", "7z", "bz2", "rar"].includes(ext)) {
+            const archCandidates = ["package-x-generic", "application-zip", "application-x-tar", "package"];
+            for (let i = 0; i < archCandidates.length; i++) {
+                if (Quickshell.hasThemeIcon(archCandidates[i])) return archCandidates[i];
+            }
+            return "package-x-generic";
+        }
+
+        // 5. Code & Scripts
+        if (["sh", "bash", "py", "js", "ts", "qml", "json", "c", "cpp", "h", "rs", "go", "html", "css", "xml", "yaml", "yml"].includes(ext)) {
+            const codeCandidates = ["text-x-script", "application-x-shellscript", "text-x-generic", "folder-documents"];
+            for (let i = 0; i < codeCandidates.length; i++) {
+                if (Quickshell.hasThemeIcon(codeCandidates[i])) return codeCandidates[i];
+            }
+            return "text-x-generic";
+        }
+
+        // 6. Documents & Text
+        const docCandidates = ["text-x-generic", "folder-documents", "document", "text-plain"];
+        for (let i = 0; i < docCandidates.length; i++) {
+            if (Quickshell.hasThemeIcon(docCandidates[i])) return docCandidates[i];
+        }
+        return "text-x-generic";
+    }
+
+    property var _pendingUserItems: []
+
     Process {
         id: listDesktopProcess
         stdout: SplitParser {
             onRead: function(line) {
                 const trimmed = line.trim();
                 if (trimmed.length > 0) {
-                    const fullP = root.desktopDir + "/" + trimmed;
-                    const isDir = !trimmed.includes(".");
+                    const parts = trimmed.split("\t");
+                    const type = parts[0];
+                    let icon = "folder";
+                    let displayName = "";
+                    let fileName = "";
+                    let isDir = false;
+
+                    if (type === "DIR") {
+                        fileName = parts[2] || parts[1];
+                        displayName = fileName;
+                        isDir = true;
+                        icon = "folder";
+                    } else if (type === "DESKTOP") {
+                        icon = parts[1] || "application-x-executable";
+                        displayName = parts[2] || parts[3];
+                        fileName = parts[3] || displayName;
+                        isDir = false;
+                    } else { // FILE
+                        fileName = parts[2] || parts[1];
+                        displayName = fileName;
+                        isDir = false;
+                        icon = root.getFileIcon(fileName);
+                    }
+
+                    const fullP = root.desktopDir + "/" + fileName;
                     const newItem = {
-                        "id": "user_" + trimmed.replace(/[^a-zA-Z0-9]/g, "_"),
-                        "name": trimmed,
-                        "icon": isDir ? "folder" : "text-plain",
+                        "id": "user_" + fileName.replace(/[^a-zA-Z0-9]/g, "_"),
+                        "name": displayName,
+                        "fileName": fileName,
+                        "icon": icon,
                         "path": fullP,
                         "isSystem": false,
                         "isTrash": false,
-                        "isDir": isDir
+                        "isDir": isDir,
+                        "isDesktopEntry": (type === "DESKTOP")
                     };
-                    var copy = root.userItems.slice();
-                    if (!copy.some(i => i.path === fullP)) {
-                        copy.push(newItem);
-                        root.userItems = copy;
+                    if (!root._pendingUserItems.some(i => i.path === fullP)) {
+                        root._pendingUserItems.push(newItem);
                     }
                 }
             }
         }
+        onExited: {
+            root.userItems = root._pendingUserItems;
+        }
     }
 
     function refreshDesktop() {
-        root.userItems = [];
-        listDesktopProcess.exec(["bash", "-c", "mkdir -p " + root.desktopDir + " && ls -1 " + root.desktopDir]);
+        root._pendingUserItems = [];
+        const scanCmd = "mkdir -p '" + root.desktopDir + "' && for entry in '" + root.desktopDir + "'/*; do [ -e \"$entry\" ] || continue; name=$(basename \"$entry\"); if [ -d \"$entry\" ]; then printf \"DIR\\t\\t%s\\n\" \"$name\"; elif [[ \"$name\" == *.desktop ]]; then d_name=$(grep -m1 '^Name=' \"$entry\" | cut -d= -f2-); d_icon=$(grep -m1 '^Icon=' \"$entry\" | cut -d= -f2-); [ -z \"$d_name\" ] && d_name=\"$name\"; printf \"DESKTOP\\t%s\\t%s\\t%s\\n\" \"$d_icon\" \"$d_name\" \"$name\"; else printf \"FILE\\t\\t%s\\n\" \"$name\"; fi; done";
+        listDesktopProcess.exec(["bash", "-c", scanCmd]);
         checkTrashProcess.exec(["bash", "-c", "[ -d " + root.trashFilesDir + " ] && [ $(ls -A " + root.trashFilesDir + " 2>/dev/null | wc -l) -gt 0 ] && echo 'full' || echo 'empty'"]);
     }
 

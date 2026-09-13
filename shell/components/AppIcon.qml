@@ -76,6 +76,8 @@ Item {
         "media": "desktop/folder-videos.svg",
         "media-video": "desktop/folder-videos.svg",
         "video-x-generic": "desktop/folder-videos.svg",
+        "image-x-generic": "categories/graphics.svg",
+        "package-x-generic": "apps/store.svg",
         "folder-documents": "desktop/folder-documents.svg",
         "text-x-generic": "desktop/folder-documents.svg",
         "text-plain": "desktop/folder-documents.svg",
