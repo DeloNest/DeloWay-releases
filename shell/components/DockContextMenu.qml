@@ -46,6 +46,22 @@ PanelWindow {
         onClicked: root.hide()
     }
 
+    // Ambient Drop Shadow
+    Rectangle {
+        id: menuShadow
+        z: 8
+        anchors.fill: menuCard
+        anchors.topMargin: 4
+        anchors.bottomMargin: -4
+        anchors.leftMargin: -2
+        anchors.rightMargin: -2
+        radius: menuCard.radius + 2
+        color: Theme.notchShadow
+        opacity: menuCard.opacity
+        scale: menuCard.scale
+        transformOrigin: menuCard.transformOrigin
+    }
+
     // Menu Card with scale+fade animation
     Rectangle {
         id: menuCard
@@ -56,8 +72,8 @@ PanelWindow {
         width: 210
         height: menuCol.implicitHeight + 14
         radius: Theme.radiusMedium
-        color: Theme.colors.surface
-        border.color: Theme.hairline
+        color: Theme.notchBackground
+        border.color: Theme.notchBorder
         border.width: 1
 
         LayoutMirroring.enabled: I18n.isRTL
@@ -75,7 +91,7 @@ PanelWindow {
             anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right
             anchors.topMargin: 1; anchors.leftMargin: 1; anchors.rightMargin: 1
             height: 1; radius: parent.radius
-            color: Theme.hairlineSoft
+            color: Theme.notchBorderSubtle
         }
 
         // Block backdrop from stealing clicks inside card
@@ -110,14 +126,14 @@ PanelWindow {
                     Layout.fillWidth: true
                     text: root.targetApp ? (root.targetApp.name || root.targetApp.id || "") : ""
                     font.family: Theme.typography.fontFamily; font.pixelSize: 12; font.weight: Font.DemiBold
-                    color: Theme.colors.text; elide: Text.ElideRight; maximumLineCount: 1
+                    color: Theme.notchText; elide: Text.ElideRight; maximumLineCount: 1
                 }
                 Rectangle {
                     visible: Boolean(root.targetApp &&
                               (root.targetApp.running ||
                                (root.targetApp.windows && root.targetApp.windows.length > 0)))
                     width: 7; height: 7; radius: 3.5
-                    color: Theme.colors.accent
+                    color: Theme.colors.success
                     Layout.alignment: Qt.AlignVCenter
                 }
             }
@@ -126,27 +142,27 @@ PanelWindow {
             Rectangle {
                 Layout.fillWidth: true; Layout.preferredHeight: 1
                 Layout.leftMargin: 2; Layout.rightMargin: 2
-                color: Theme.hairline
+                color: Theme.notchBorderSubtle
             }
 
             // Pin / Unpin
             Rectangle {
                 id: pinBg; Layout.fillWidth: true; Layout.preferredHeight: 36; radius: Theme.radiusSmall
-                color: pinMouse.pressed ? Theme.overlayHoverStrong : (pinMouse.containsMouse ? Theme.overlayHover : "transparent")
-                border.color: pinMouse.containsMouse ? Theme.colors.borderHighlight : "transparent"; border.width: 1
+                color: pinMouse.pressed ? Theme.notchSurfaceActive : (pinMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                border.color: "transparent"; border.width: 1
                 Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                 readonly property bool isPinned: root.targetApp ? ApplicationManager.isPinned(root.targetApp.id) : false
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
                     SymbolicIcon { source: pinBg.isPinned?"list-remove":"list-add"; iconSize: 15
-                        iconColor: pinMouse.containsMouse ? Theme.colors.accent : Theme.colors.textSecondary
+                        iconColor: pinMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         scale: pinMouse.containsMouse ? 1.12 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     }
                     Text { Layout.fillWidth:true; text: pinBg.isPinned ? I18n.tr("unpin_from_dock") : I18n.tr("pin_to_dock")
                         font.family:Theme.typography.fontFamily; font.pixelSize:Theme.typography.scaleBody.size
                         font.weight: pinMouse.containsMouse ? Font.DemiBold : Font.Normal
-                        color:Theme.colors.text; elide:Text.ElideRight }
+                        color:Theme.notchText; elide:Text.ElideRight }
                 }
                 MouseArea { id: pinMouse; anchors.fill:parent; hoverEnabled:true; cursorShape:Qt.PointingHandCursor; z:3
                     onClicked: { var a=root.targetApp; root.hide(); if(a&&a.id) ApplicationManager.togglePin(a.id); }
@@ -156,22 +172,22 @@ PanelWindow {
             // Open / New Window
             Rectangle {
                 id: openBg; Layout.fillWidth: true; Layout.preferredHeight: 36; radius: Theme.radiusSmall
-                color: openMouse.pressed ? Theme.overlayHoverStrong : (openMouse.containsMouse ? Theme.overlayHover : "transparent")
-                border.color: openMouse.containsMouse ? Theme.colors.borderHighlight : "transparent"; border.width: 1
+                color: openMouse.pressed ? Theme.notchSurfaceActive : (openMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                border.color: "transparent"; border.width: 1
                 Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                 readonly property bool isRunning: Boolean(root.targetApp &&
                     (root.targetApp.running || (root.targetApp.windows && root.targetApp.windows.length > 0)))
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
                     SymbolicIcon { source: "document-open-symbolic"; iconSize: 15
-                        iconColor: openMouse.containsMouse ? Theme.colors.accent : Theme.colors.textSecondary
+                        iconColor: openMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         scale: openMouse.containsMouse ? 1.12 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     }
                     Text { Layout.fillWidth:true; text: openBg.isRunning ? "New Window" : I18n.tr("open_app")
                         font.family:Theme.typography.fontFamily; font.pixelSize:Theme.typography.scaleBody.size
                         font.weight: openMouse.containsMouse ? Font.DemiBold : Font.Normal
-                        color:Theme.colors.text; elide:Text.ElideRight }
+                        color:Theme.notchText; elide:Text.ElideRight }
                 }
                 MouseArea { id: openMouse; anchors.fill:parent; hoverEnabled:true; cursorShape:Qt.PointingHandCursor; z:3
                     onClicked: {
@@ -198,7 +214,7 @@ PanelWindow {
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
                     SymbolicIcon { source: "window-close"; iconSize: 15
-                        iconColor: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.textSecondary
+                        iconColor: closeMouse.containsMouse ? Theme.colors.urgent : Theme.notchTextSecondary
                         scale: closeMouse.containsMouse ? 1.12 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     }

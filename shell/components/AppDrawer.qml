@@ -1262,11 +1262,24 @@ ColumnLayout {
                     targetApp = null;
                 }
 
+                // Drop shadow
                 Rectangle {
                     anchors.fill: parent
+                    anchors.topMargin: 4
+                    anchors.bottomMargin: -4
+                    anchors.leftMargin: -2
+                    anchors.rightMargin: -2
+                    radius: root.radiusItem + 2
+                    color: Theme.notchShadow
+                    z: 0
+                }
+
+                Rectangle {
+                    z: 1
+                    anchors.fill: parent
                     radius: root.radiusItem
-                    color: root.colorElevated
-                    border.color: root.colorBorder
+                    color: Theme.notchBackground
+                    border.color: Theme.notchBorder
                     border.width: 1
 
                     MouseArea {
@@ -1332,7 +1345,7 @@ ColumnLayout {
                             width: 7
                             height: 7
                             radius: Theme.radius.pill
-                            color: root.colorAccent
+                            color: Theme.colors.success
                             Layout.alignment: Qt.AlignVCenter
                         }
                     }
@@ -1342,7 +1355,7 @@ ColumnLayout {
                         Layout.preferredHeight: 1
                         Layout.leftMargin: 2
                         Layout.rightMargin: 2
-                        color: root.colorBorderSoft
+                        color: Theme.notchBorderSubtle
                     }
 
                     component MenuRow: Rectangle {
@@ -1350,17 +1363,17 @@ ColumnLayout {
                         property string iconSource: ""
                         property string label: ""
                         property color normalIconColor: root.colorTextSecondary
-                        property color hoverIconColor: root.colorAccent
+                        property color hoverIconColor: root.colorText
                         property color normalTextColor: root.colorText
                         property color hoverTextColor: root.colorText
-                        property color hoverBackground: root.colorHover
+                        property color hoverBackground: Theme.notchSurfaceHover
                         signal activated()
 
                         Layout.fillWidth: true
                         Layout.preferredHeight: 34
                         radius: root.radiusItem
                         color: menuMouse.pressed
-                               ? root.colorHoverStrong
+                               ? Theme.notchSurfaceActive
                                : (menuMouse.containsMouse ? hoverBackground : "transparent")
 
                         Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
