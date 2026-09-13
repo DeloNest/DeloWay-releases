@@ -31,30 +31,29 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     // ─────────────────────────────────────────────────────────────────────
-    // Design tokens (harmonized with Deloway Theme)
+    // Design tokens (harmonized with Notch OLED deep black aesthetic)
     // ─────────────────────────────────────────────────────────────────────
-    readonly property int radiusCard: Theme.radius.xlarge
-    readonly property int radiusPanel: Theme.radius.large
-    readonly property int radiusItem: Theme.radius.medium
-    readonly property int radiusPill: Theme.radius.medium
+    readonly property int radiusCard: Theme.notchRadiusWindow
+    readonly property int radiusPanel: Theme.notchRadiusPanel
+    readonly property int radiusItem: Theme.notchRadiusCard
+    readonly property int radiusPill: Theme.notchRadiusPill
 
-    // Mica/Acrylic surfaces: the drawer shell is the most translucent (acrylic),
-    // inner panels/tooltips stay near-solid so content reads clearly.
-    readonly property color colorBackground: Qt.alpha(Theme.colors.background, Theme.material.acrylic)
-    readonly property color colorSurface: Qt.alpha(Theme.colors.surface, Theme.material.solid)
-    readonly property color colorElevated: Qt.alpha(Theme.colors.surfaceElevated, Theme.material.solid)
+    // Pure deep black OLED background matching Notch
+    readonly property color colorBackground: Theme.notchBackground
+    readonly property color colorSurface: Theme.notchSurface
+    readonly property color colorElevated: Theme.notchSurfaceElevated
 
-    readonly property color colorBorder: Theme.colors.border
-    readonly property color colorBorderSoft: Theme.colors.borderSubtle
-    readonly property color colorBorderStrong: Theme.colors.borderHighlight
+    readonly property color colorBorder: Theme.notchBorder
+    readonly property color colorBorderSoft: Theme.notchBorderSubtle
+    readonly property color colorBorderStrong: Theme.notchBorderHighlight
 
-    readonly property color colorHover: Theme.colors.surfaceHover
-    readonly property color colorHoverStrong: Theme.colors.surfaceActive
-    readonly property color colorSelected: Qt.alpha(Theme.colors.accent, 0.22)
+    readonly property color colorHover: Theme.notchSurfaceHover
+    readonly property color colorHoverStrong: Theme.notchSurfaceActive
+    readonly property color colorSelected: Qt.rgba(Theme.colors.accent.r, Theme.colors.accent.g, Theme.colors.accent.b, 0.28)
 
-    readonly property color colorText: Theme.colors.text
-    readonly property color colorTextSecondary: Theme.colors.textSecondary
-    readonly property color colorTextTertiary: Theme.colors.textTertiary
+    readonly property color colorText: Theme.notchText
+    readonly property color colorTextSecondary: Theme.notchTextSecondary
+    readonly property color colorTextTertiary: Theme.notchTextTertiary
 
     readonly property color colorAccent: Theme.colors.accent
     readonly property color colorUrgent: Theme.colors.urgent
@@ -436,6 +435,18 @@ PanelWindow {
             }
         }
 
+        // Ambient Drop Shadow matching Notch card depth
+        Rectangle {
+            anchors.fill: drawerCard
+            anchors.topMargin: 8
+            anchors.bottomMargin: -8
+            anchors.leftMargin: -2
+            anchors.rightMargin: -2
+            radius: root.radiusCard + 4
+            color: Theme.notchShadow
+            z: 0
+        }
+
         Rectangle {
             id: drawerCard
             anchors.fill: parent
@@ -443,6 +454,7 @@ PanelWindow {
             color: root.colorBackground
             border.color: root.colorBorder
             border.width: 1
+            z: 1
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -464,6 +476,8 @@ PanelWindow {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 44
                         radius: root.radiusPill
+                        customBackground: root.colorSurface
+                        customBorderColor: root.colorBorder
                         showSearchIcon: true
                         placeholderText: I18n.tr("search_apps")
 
@@ -537,11 +551,15 @@ PanelWindow {
                         Rectangle {
                             Layout.preferredWidth: 164
                             Layout.fillHeight: true
-                            color: "transparent"
+                            radius: root.radiusPanel
+                            color: root.colorSurface
+                            border.color: root.colorBorderSoft
+                            border.width: 1
 
                             ListView {
                                 id: categoryList
                                 anchors.fill: parent
+                                anchors.margins: 6
                                 spacing: Theme.spacing.tiny
                                 clip: true
 
@@ -681,12 +699,12 @@ PanelWindow {
                                                    ? root.colorHoverStrong
                                                    : (pinnedMouse.containsMouse
                                                       ? root.colorHover
-                                                      : "transparent")
+                                                      : root.colorSurface)
                                             border.color: pinnedMouse.pressed
                                                           ? root.colorBorderStrong
                                                           : (pinnedMouse.containsMouse
-                                                             ? root.colorBorder
-                                                             : "transparent")
+                                                             ? root.colorBorderHighlight
+                                                             : root.colorBorderSoft)
                                             border.width: 1
 
                                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -774,12 +792,12 @@ PanelWindow {
                                                    ? root.colorHoverStrong
                                                    : (recentMouse.containsMouse
                                                       ? root.colorHover
-                                                      : "transparent")
+                                                      : root.colorSurface)
                                             border.color: recentMouse.pressed
                                                           ? root.colorBorderStrong
                                                           : (recentMouse.containsMouse
-                                                             ? root.colorBorder
-                                                             : "transparent")
+                                                             ? root.colorBorderHighlight
+                                                             : root.colorBorderSoft)
                                             border.width: 1
 
                                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }

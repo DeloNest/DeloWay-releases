@@ -193,6 +193,26 @@ QtObject {
     readonly property color dockDivider: Qt.rgba(1, 1, 1, 0.22)
     readonly property color dockTooltipBg: Qt.alpha(colors.surfaceElevated, 0.90)
     readonly property color dockTooltipBorder: Qt.rgba(1, 1, 1, 0.18)
+
+    // -------------------------------------------------------------------------
+    // Deep Black / Notch Surface Tokens (Unified OLED aesthetic)
+    // -------------------------------------------------------------------------
+    readonly property color notchBackground: "#000000"
+    readonly property color notchSurface: Qt.rgba(1, 1, 1, 0.05)
+    readonly property color notchSurfaceElevated: Qt.rgba(1, 1, 1, 0.08)
+    readonly property color notchSurfaceHover: Qt.rgba(1, 1, 1, 0.12)
+    readonly property color notchSurfaceActive: Qt.rgba(1, 1, 1, 0.18)
+    readonly property color notchBorder: Qt.rgba(1, 1, 1, 0.12)
+    readonly property color notchBorderSubtle: Qt.rgba(1, 1, 1, 0.06)
+    readonly property color notchBorderHighlight: Qt.rgba(1, 1, 1, 0.25)
+    readonly property color notchText: "#ffffff"
+    readonly property color notchTextSecondary: Qt.rgba(1, 1, 1, 0.70)
+    readonly property color notchTextTertiary: Qt.rgba(1, 1, 1, 0.45)
+    readonly property color notchShadow: Qt.rgba(0, 0, 0, 0.50)
+    readonly property int notchRadiusWindow: 26
+    readonly property int notchRadiusPanel: 16
+    readonly property int notchRadiusCard: 12
+    readonly property int notchRadiusPill: 8
     readonly property int radiusDock: 24
 
     function setMode(newMode) {

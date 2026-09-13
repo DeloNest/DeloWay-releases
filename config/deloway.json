@@ -9,20 +9,20 @@
     "performanceTier": 1
   },
   "desktop": {
-    "mode": "traditional",
+    "mode": "widgets",
     "showIcons": true,
     "widgetPositions": {
       "clock": {
-        "x": 987,
-        "y": 722
+        "x": 1129,
+        "y": 48
       },
       "weather": {
-        "x": 2122,
-        "y": 169
+        "x": 1129,
+        "y": 442
       },
       "system_monitor": {
-        "x": 1285,
-        "y": 688
+        "x": 2115,
+        "y": 462
       },
       "notes": {
         "x": 380,

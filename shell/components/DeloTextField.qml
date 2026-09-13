@@ -14,6 +14,8 @@ Rectangle {
     property alias readOnly: input.readOnly
     property alias inputFocus: input.focus
     property alias textInput: input
+    property var customBackground: null
+    property var customBorderColor: null
 
     signal accepted()
     signal textEdited()
@@ -30,8 +32,12 @@ Rectangle {
     implicitHeight: 38
     radius: Theme.radiusSmall
 
-    color: input.activeFocus ? Theme.colors.surface : Theme.colors.surfaceElevated
-    border.color: input.activeFocus ? Theme.colors.accent : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline)
+    color: customBackground !== null
+           ? (input.activeFocus ? Qt.rgba(1, 1, 1, 0.12) : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : customBackground))
+           : (input.activeFocus ? Theme.colors.surface : Theme.colors.surfaceElevated)
+    border.color: customBorderColor !== null
+           ? (input.activeFocus ? Theme.colors.accent : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.25) : customBorderColor))
+           : (input.activeFocus ? Theme.colors.accent : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
     border.width: input.activeFocus ? 1.5 : 1
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
