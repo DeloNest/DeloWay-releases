@@ -1249,8 +1249,25 @@ ColumnLayout {
                 function show(app, x, y) {
                     targetApp = app;
 
-                    var targetX = Math.max(12, Math.min(x, drawerCard.width - width - 12));
-                    var targetY = Math.max(12, Math.min(y - height, drawerCard.height - height - 12));
+                    var offsetX = 8;
+                    var offsetY = 8;
+                    var targetX = I18n.isRTL ? (x - width - offsetX) : (x + offsetX);
+                    if (targetX + width > drawerCard.width - 12) {
+                        targetX = x - width - offsetX;
+                    }
+                    if (targetX < 12) {
+                        targetX = x + offsetX;
+                    }
+                    targetX = Math.max(12, Math.min(targetX, drawerCard.width - width - 12));
+
+                    var targetY = y + offsetY;
+                    if (targetY + height > drawerCard.height - 12) {
+                        targetY = y - height - offsetY;
+                    }
+                    targetY = Math.max(12, Math.min(targetY, drawerCard.height - height - 12));
+
+                    transformOrigin = (targetY < y) ? (I18n.isRTL ? Item.BottomRight : Item.BottomLeft)
+                                                    : (I18n.isRTL ? Item.TopRight : Item.TopLeft);
 
                     drawerContextMenu.x = targetX;
                     drawerContextMenu.y = targetY;

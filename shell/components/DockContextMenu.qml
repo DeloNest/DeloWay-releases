@@ -68,7 +68,7 @@ PanelWindow {
         z: 9
         x: Math.max(12, Math.min(root.width - width - 12, root.globalCenterX - (width / 2)))
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 84
+        anchors.bottomMargin: 96
         width: 210
         height: menuCol.implicitHeight + 14
         radius: Theme.radiusMedium
