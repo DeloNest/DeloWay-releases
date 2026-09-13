@@ -232,7 +232,6 @@ ShellRoot {
 
             // ── Always-on surfaces ──────────────────────────────────────────
             Background   { targetScreen: screenScope.modelData }
-            TopBar       { targetScreen: screenScope.modelData }
             Dock         { targetScreen: screenScope.modelData }
             Notch        { targetScreen: screenScope.modelData }
             QuickSettingsCapsule { targetScreen: screenScope.modelData }
