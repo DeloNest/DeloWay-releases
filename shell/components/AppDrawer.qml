@@ -587,29 +587,14 @@ PanelWindow {
                                     radius: root.radiusItem
                                     color: categoryMouse.pressed
                                            ? root.colorHoverStrong
-                                           : (categoryMouse.containsMouse
+                                           : ((categoryMouse.containsMouse || isSelected)
                                               ? root.colorHover
-                                              : (isSelected ? root.colorSelected : "transparent"))
-                                    border.color: isSelected && !categoryMouse.containsMouse
-                                                  ? Qt.rgba(root.colorAccent.r, root.colorAccent.g, root.colorAccent.b, 0.18)
-                                                  : "transparent"
+                                              : "transparent")
+                                    border.color: "transparent"
                                     border.width: 1
 
                                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                                     Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                                    Rectangle {
-                                        anchors.left: parent.left
-                                        anchors.leftMargin: 4
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: 3
-                                        height: categoryItem.isSelected ? 16 : 0
-                                        radius: Theme.radius.pill
-                                        color: root.colorAccent
-                                        Behavior on height {
-                                            NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
-                                        }
-                                    }
 
                                     RowLayout {
                                         anchors.fill: parent
@@ -620,9 +605,9 @@ PanelWindow {
                                         SymbolicIcon {
                                             iconSize: 15
                                             source: categoryItem.modelData.icon
-                                            iconColor: categoryItem.isSelected
-                                                       ? root.colorAccent
-                                                       : (categoryMouse.containsMouse ? root.colorText : root.colorTextSecondary)
+                                            iconColor: (categoryItem.isSelected || categoryMouse.containsMouse)
+                                                       ? root.colorText
+                                                       : root.colorTextSecondary
                                             Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
                                         }
 
@@ -632,9 +617,9 @@ PanelWindow {
                                             font.family: Theme.typography.fontFamily
                                             font.hintingPreference: Theme.hintingPreference
                                             font.pixelSize: Theme.typography.scaleBody.size
-                                            font.weight: categoryItem.isSelected ? Font.DemiBold : Font.Medium
+                                            font.weight: Font.Medium
                                             renderType: Theme.renderType
-                                            color: categoryItem.isSelected || categoryMouse.containsMouse
+                                            color: (categoryItem.isSelected || categoryMouse.containsMouse)
                                                    ? root.colorText
                                                    : root.colorTextSecondary
                                             elide: Text.ElideRight
