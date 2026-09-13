@@ -24,8 +24,8 @@ PanelWindow {
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
         if (notchHomeItem.notificationActive) return 380;
-        if (notchHomeItem.isMusicPlaying) return 340;
-        return 280;
+        if (notchHomeItem.isMusicPlaying) return 360;
+        return 180;
     }
     readonly property real compactHeight: 34
     readonly property real expandedWidth: 600
@@ -157,6 +157,7 @@ PanelWindow {
                     id: notchHomeItem
                     anchors.fill: parent
                     expanded: false
+                    targetScreen: root.targetScreen
                 }
 
                 MouseArea {
@@ -319,6 +320,7 @@ PanelWindow {
                             // Page 0: Nook Tab (Music player + Calendar 50/50 split)
                             NotchHome {
                                 expanded: true
+                                targetScreen: root.targetScreen
                             }
 
                             // Page 1: Tray Tab (Dashed drop container + LocalSend direct inline)

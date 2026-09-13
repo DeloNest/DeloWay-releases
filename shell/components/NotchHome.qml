@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Services.Mpris
+import Quickshell.Hyprland
 import "../theme"
 import "../services"
 
@@ -10,6 +11,8 @@ Item {
     id: root
 
     property bool expanded: false
+    property ShellScreen targetScreen: null
+    readonly property HyprlandMonitor hyprMonitor: targetScreen ? Hyprland.monitorFor(targetScreen) : (Hyprland.focusedMonitor || null)
 
     LayoutMirroring.enabled: false
     LayoutMirroring.childrenInherit: true
@@ -28,6 +31,9 @@ Item {
         if (!Mpris.players || !Mpris.players.values)
             return null;
         const values = Mpris.players.values;
+        for (let i = 0; i < values.length; i++) {
+            if (values[i] && values[i].isPlaying) return values[i];
+        }
         return values.length > 0 ? values[0] : null;
     }
     readonly property bool isMusicPlaying: activePlayer !== null && activePlayer.isPlaying
@@ -95,25 +101,6 @@ Item {
             });
         }
         return days;
-    }
-
-    // Animated equalizing wave bars
-    component WaveBar: Rectangle {
-        id: bar
-        property int minHeight: 4
-        property int maxHeight: 14
-        property int animDuration: 350
-        width: 2.5
-        radius: 1.25
-        color: Theme.colors.accent
-        implicitHeight: minHeight
-
-        SequentialAnimation on height {
-            running: root.isMusicPlaying
-            loops: Animation.Infinite
-            NumberAnimation { to: bar.maxHeight; duration: bar.animDuration; easing.type: Easing.InOutQuad }
-            NumberAnimation { to: bar.minHeight; duration: bar.animDuration; easing.type: Easing.InOutQuad }
-        }
     }
 
     // =========================================================================
@@ -188,159 +175,180 @@ Item {
             }
         }
 
-        // 1.2 Compact Music Playing
+        // 1.2 Merged Compact Row: Workspaces + Music Player
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 10
             anchors.rightMargin: 10
             spacing: 8
-            visible: root.viewMode === "music"
+            visible: root.viewMode !== "notification"
+            z: 1
 
-            // Mini Art / Music Icon
-            Rectangle {
-                implicitWidth: 20
-                implicitHeight: 20
-                radius: 5
-                clip: true
-                color: Theme.colors.surfaceVariant
-
-                Image {
-                    anchors.fill: parent
-                    source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
-                    fillMode: Image.PreserveAspectCrop
-                    visible: status === Image.Ready
-                }
-
-                SymbolicIcon {
-                    anchors.centerIn: parent
-                    iconSize: 12
-                    source: "applications-multimedia"
-                    iconColor: Theme.colors.accent
-                    visible: !root.activePlayer || !root.activePlayer.trackArtUrl
-                }
-            }
-
-            // Sound Wave Bars
-            Row {
-                spacing: 2
-                Layout.alignment: Qt.AlignVCenter
-                WaveBar { minHeight: 3; maxHeight: 11; animDuration: 280 }
-                WaveBar { minHeight: 4; maxHeight: 14; animDuration: 360 }
-                WaveBar { minHeight: 2; maxHeight: 9;  animDuration: 230 }
-            }
-
-            // Track Title
-            Text {
-                text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
-                font.weight: Font.Medium
-                renderType: Theme.renderType
-                color: Theme.colors.text
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
-
-            // Mini Controls (Directly interactive even in compact mode)
+            // ── SECTION A: Workspaces (Always visible) ────────────────────
             RowLayout {
                 spacing: 4
+                Layout.alignment: Qt.AlignVCenter
 
+                Repeater {
+                    model: ConfigManager.workspacesCount
+
+                    delegate: Rectangle {
+                        id: wsBtn
+                        required property int index
+                        readonly property int wsId: index + 1
+                        readonly property bool isActive:
+                            (root.hyprMonitor && root.hyprMonitor.activeWorkspace
+                             && root.hyprMonitor.activeWorkspace.id === wsId)
+
+                        implicitWidth: 24
+                        implicitHeight: 22
+                        radius: Theme.notchRadiusPill
+
+                        color: isActive
+                               ? Theme.notchSurfaceActive
+                               : (wsMouse.pressed
+                                  ? Theme.notchSurfaceActive
+                                  : (wsMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
+                        border.color: isActive
+                                      ? Theme.notchBorderHighlight
+                                      : (wsMouse.containsMouse ? Theme.notchBorder : "transparent")
+                        border.width: 1
+
+                        Behavior on color        { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: wsBtn.wsId.toString()
+                            color: wsBtn.isActive ? Theme.notchText : Theme.notchTextTertiary
+                            font.family: Theme.typography.fontFamily
+                            font.hintingPreference: Theme.hintingPreference
+                            font.pixelSize: 11
+                            font.weight: wsBtn.isActive ? Font.Bold : Font.Medium
+                            renderType: Theme.renderType
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                        }
+
+                        MouseArea {
+                            id: wsMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Hyprland.dispatch("workspace " + wsBtn.wsId)
+                        }
+                    }
+                }
+            }
+
+            // ── SECTION B: Subtle Divider (Visible when music is playing) ─
+            Rectangle {
+                visible: root.isMusicPlaying
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 14
+                Layout.alignment: Qt.AlignVCenter
+                color: Theme.notchBorder
+            }
+
+            // ── SECTION C: Mini Music Player ──────────────────────────────
+            RowLayout {
+                id: miniMusicPlayer
+                visible: root.isMusicPlaying
+                spacing: 6
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+
+                // Mini Album Art
                 Rectangle {
-                    implicitWidth: 18
-                    implicitHeight: 18
-                    radius: 9
-                    color: playPauseHover.containsMouse ? Theme.colors.surfaceHover : "transparent"
+                    implicitWidth: 20
+                    implicitHeight: 20
+                    radius: 5
+                    clip: true
+                    color: Theme.notchSurfaceElevated
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
-                        font.pixelSize: 9
-                        color: Theme.colors.accent
+                    Image {
+                        anchors.fill: parent
+                        source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
+                        fillMode: Image.PreserveAspectCrop
+                        visible: status === Image.Ready
                     }
 
-                    MouseArea {
-                        id: playPauseHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root.activePlayer) {
-                                if (root.activePlayer.isPlaying) root.activePlayer.pause();
-                                else root.activePlayer.play();
+                    SymbolicIcon {
+                        anchors.centerIn: parent
+                        iconSize: 12
+                        source: "applications-multimedia"
+                        iconColor: Theme.notchTextSecondary
+                        visible: !root.activePlayer || !root.activePlayer.trackArtUrl
+                    }
+                }
+
+                // Track Title
+                Text {
+                    text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                    renderType: Theme.renderType
+                    color: Theme.notchText
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                    Layout.maximumWidth: 120
+                }
+
+                // Mini Controls
+                RowLayout {
+                    spacing: 4
+
+                    Rectangle {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        radius: 9
+                        color: playPauseHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
+                            font.pixelSize: 9
+                            color: Theme.notchText
+                        }
+
+                        MouseArea {
+                            id: playPauseHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (root.activePlayer) {
+                                    if (root.activePlayer.isPlaying) root.activePlayer.pause();
+                                    else root.activePlayer.play();
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        implicitWidth: 18
+                        implicitHeight: 18
+                        radius: 9
+                        color: nextHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "⏭"
+                            font.pixelSize: 8
+                            color: Theme.notchTextSecondary
+                        }
+
+                        MouseArea {
+                            id: nextHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (root.activePlayer) root.activePlayer.next();
                             }
                         }
                     }
                 }
-
-                Rectangle {
-                    implicitWidth: 18
-                    implicitHeight: 18
-                    radius: 9
-                    color: nextHover.containsMouse ? Theme.colors.surfaceHover : "transparent"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "⏭"
-                        font.pixelSize: 8
-                        color: Theme.colors.textSecondary
-                    }
-
-                    MouseArea {
-                        id: nextHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            if (root.activePlayer) root.activePlayer.next();
-                        }
-                    }
-                }
-            }
-        }
-
-        // 1.3 Compact Idle (Clock & Date)
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: 8
-            visible: root.viewMode === "idle"
-
-            SymbolicIcon {
-                iconSize: 14
-                source: "preferences-system-time-symbolic"
-                iconColor: Theme.colors.accent
-            }
-
-            Text {
-                text: Qt.formatTime(root.currentTime, "hh:mm AP")
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
-                font.weight: Font.DemiBold
-                renderType: Theme.renderType
-                color: Theme.colors.text
-            }
-
-            Text {
-                text: "•"
-                font.pixelSize: 10
-                color: Theme.colors.textTertiary
-            }
-
-            Text {
-                text: Qt.formatDate(root.currentTime, I18n.isRTL ? "d MMMM" : "ddd, d MMM")
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: 10
-                renderType: Theme.renderType
-                color: Theme.colors.textSecondary
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
-
-            Text {
-                text: "▼"
-                font.pixelSize: 8
-                color: Theme.colors.textTertiary
             }
         }
 
