@@ -200,8 +200,8 @@ Item {
                             (root.hyprMonitor && root.hyprMonitor.activeWorkspace
                              && root.hyprMonitor.activeWorkspace.id === wsId)
 
-                        implicitWidth: 24
-                        implicitHeight: 22
+                        implicitWidth: isActive ? 30 : 26
+                        implicitHeight: 28
                         radius: Theme.notchRadiusPill
 
                         color: isActive
@@ -223,7 +223,7 @@ Item {
                             color: wsBtn.isActive ? "#000000" : Theme.notchTextTertiary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: 11
+                            font.pixelSize: 13
                             font.weight: wsBtn.isActive ? Font.Bold : Font.Medium
                             renderType: Theme.renderType
                             Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -244,7 +244,7 @@ Item {
             Rectangle {
                 visible: root.isMusicPlaying
                 Layout.preferredWidth: 1
-                Layout.preferredHeight: 14
+                Layout.preferredHeight: 20
                 Layout.alignment: Qt.AlignVCenter
                 color: Theme.notchBorder
             }
@@ -259,9 +259,9 @@ Item {
 
                 // Mini Album Art
                 Rectangle {
-                    implicitWidth: 20
-                    implicitHeight: 20
-                    radius: 5
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    radius: 7
                     clip: true
                     color: Theme.notchSurfaceElevated
 
@@ -274,7 +274,7 @@ Item {
 
                     SymbolicIcon {
                         anchors.centerIn: parent
-                        iconSize: 12
+                        iconSize: 16
                         source: "applications-multimedia"
                         iconColor: Theme.notchTextSecondary
                         visible: !root.activePlayer || !root.activePlayer.trackArtUrl
@@ -285,13 +285,13 @@ Item {
                 Text {
                     text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     font.weight: Font.Medium
                     renderType: Theme.renderType
                     color: Theme.notchText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
-                    Layout.maximumWidth: 120
+                    Layout.maximumWidth: 150
                 }
 
                 // Mini Controls
@@ -299,15 +299,15 @@ Item {
                     spacing: 4
 
                     Rectangle {
-                        implicitWidth: 18
-                        implicitHeight: 18
-                        radius: 9
+                        implicitWidth: 24
+                        implicitHeight: 24
+                        radius: 12
                         color: playPauseHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
-                            font.pixelSize: 9
+                            font.pixelSize: 11
                             color: Theme.notchText
                         }
 
@@ -326,15 +326,15 @@ Item {
                     }
 
                     Rectangle {
-                        implicitWidth: 18
-                        implicitHeight: 18
-                        radius: 9
+                        implicitWidth: 24
+                        implicitHeight: 24
+                        radius: 12
                         color: nextHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: "⏭"
-                            font.pixelSize: 8
+                            font.pixelSize: 10
                             color: Theme.notchTextSecondary
                         }
 

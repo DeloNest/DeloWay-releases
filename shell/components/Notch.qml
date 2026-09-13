@@ -23,11 +23,11 @@ PanelWindow {
 
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
-        if (notchHomeItem.notificationActive) return 380;
-        if (notchHomeItem.isMusicPlaying) return 360;
-        return 180;
+        if (notchHomeItem.notificationActive) return 420;
+        if (notchHomeItem.isMusicPlaying) return 450;
+        return 200;
     }
-    readonly property real compactHeight: 34
+    readonly property real compactHeight: 44
     readonly property real expandedWidth: 600
     readonly property real expandedHeight: 148
     readonly property real earRadius: 18
@@ -138,8 +138,8 @@ PanelWindow {
 
             topLeftRadius: 0
             topRightRadius: 0
-            bottomLeftRadius: root.isExpanded ? 26 : 16
-            bottomRightRadius: root.isExpanded ? 26 : 16
+            bottomLeftRadius: root.isExpanded ? 26 : 22
+            bottomRightRadius: root.isExpanded ? 26 : 22
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
