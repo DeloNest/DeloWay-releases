@@ -5,8 +5,18 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Io
 
-QtObject {
+Item {
     id: root
+
+    // Revision counter to force reactivity across lists when DesktopEntries scans complete or change
+    property int _entriesRevision: 0
+
+    Connections {
+        target: DesktopEntries
+        function onApplicationsChanged() {
+            root._entriesRevision++;
+        }
+    }
 
     // Dynamically registered apps from Delo Store (§4.3)
     property var dynamicApps: []
@@ -35,11 +45,15 @@ QtObject {
     // Check if an application is installed on the system
     function isInstalled(identifier) {
         if (!identifier) return false;
+        const _rev = _entriesRevision;
         const cleanId = identifier.toLowerCase().replace(/\.desktop$/, "");
         if (cleanId === "settings" || cleanId === "deloway-settings") return true;
         if (cleanId === "store" || cleanId === "software-store" || cleanId === "delo-store") return true;
         if (dynamicApps.some(d => d.id === cleanId)) return true;
-        if (allApps && allApps.some(a => a && (a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId || a.id.toLowerCase() === identifier.toLowerCase()))) return true;
+        if (allApps && allApps.some(a => a && (
+            a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId ||
+            a.id.toLowerCase() === identifier.toLowerCase()
+        ))) return true;
         const app = DesktopEntries.byId(identifier) || DesktopEntries.byId(cleanId) || DesktopEntries.heuristicLookup(cleanId);
         return app !== null;
     }
@@ -71,7 +85,11 @@ QtObject {
         const dynamic = dynamicApps.find(d => d.id === cleanId);
         if (dynamic) return dynamic;
         if (allApps) {
-            const found = allApps.find(a => a && (a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId || a.id.toLowerCase() === identifier.toLowerCase()));
+            const found = allApps.find(a => a && (
+                a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId ||
+                a.id.toLowerCase() === identifier.toLowerCase() ||
+                (a.startupClass && a.startupClass.toLowerCase().replace(/\.desktop$/, "") === cleanId)
+            ));
             if (found) return found;
         }
         return DesktopEntries.byId(identifier) || DesktopEntries.byId(cleanId) || DesktopEntries.heuristicLookup(cleanId);
@@ -79,6 +97,7 @@ QtObject {
 
     // Pinned application IDs for the Dock synced with ConfigManager (strictly filtered to installed apps)
     property var pinnedAppIds: {
+        const _rev = _entriesRevision;
         const configured = (ConfigManager.pinnedApps && ConfigManager.pinnedApps.length > 0)
             ? ConfigManager.pinnedApps
             : ["brave-browser", "kitty", "thunar", "spotify", "settings", "store"];
@@ -126,6 +145,7 @@ QtObject {
 
     // All installed applications from DesktopEntries
     readonly property var allApps: {
+        const _rev = _entriesRevision;
         const raw = Array.from(DesktopEntries.applications.values);
         const seen = new Set();
         const list = [];
@@ -251,6 +271,8 @@ QtObject {
 
     // Dynamic list for the Dock: all pinned apps + any currently running apps
     readonly property var dockApps: {
+        const _rev = _entriesRevision;
+        const _all = allApps;
         const list = [];
         const seen = new Set();
 
