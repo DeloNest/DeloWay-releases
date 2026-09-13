@@ -71,6 +71,7 @@ PanelWindow {
     property bool wifiEnabled: false
     property var wifiNetworks: []
     property string connectingSsid: ""
+    property string networkError: ""
     readonly property string wifiSsid: (networkData && networkData.wifi && networkData.wifi.ssid) ? networkData.wifi.ssid : ""
 
     Process {
@@ -82,11 +83,19 @@ PanelWindow {
                 try {
                     const parsed = JSON.parse(data.trim());
                     root.networkData = parsed;
+                    root.networkError = "";
                     if (parsed.wifi) {
                         root.wifiEnabled = parsed.wifi.enabled;
                         root.wifiNetworks = parsed.wifi.networks || [];
                     }
-                } catch(e) {}
+                } catch(e) {
+                    root.networkError = I18n.isRTL ? "تعذر قراءة بيانات الشبكة" : "Failed to parse network data";
+                }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                root.networkError = I18n.isRTL ? "تعذر جلب بيانات الشبكة" : "Failed to fetch network data";
             }
         }
     }
@@ -691,16 +700,31 @@ PanelWindow {
                             }
                         }
 
-                        // Empty State if no networks
-                        Text {
+                        // Empty State if no networks or on error
+                        ColumnLayout {
                             anchors.centerIn: parent
+                            spacing: 6
                             visible: !root.wifiEnabled || root.wifiNetworks.length === 0
-                            text: !root.wifiEnabled
-                                  ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
-                                  : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found")
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: 11
-                            color: Theme.notchTextTertiary
+
+                            SymbolicIcon {
+                                Layout.alignment: Qt.AlignHCenter
+                                visible: root.networkError.length > 0
+                                source: "dialog-warning-symbolic"
+                                iconSize: 18
+                                iconColor: Theme.notchTextTertiary
+                            }
+
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: root.networkError.length > 0
+                                      ? root.networkError
+                                      : (!root.wifiEnabled
+                                         ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
+                                         : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found"))
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: 11
+                                color: Theme.notchTextTertiary
+                            }
                         }
                     }
                 }

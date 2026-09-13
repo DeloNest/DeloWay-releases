@@ -6,6 +6,7 @@ Handles Wi-Fi scanning, connection info, and Ethernet status via NetworkManager 
 import sys
 import json
 import subprocess
+import time
 
 def get_network_info():
     # Check Ethernet
@@ -92,6 +93,7 @@ def main():
     elif cmd == "rescan":
         try:
             subprocess.run(["nmcli", "dev", "wifi", "rescan"], timeout=5)
+            time.sleep(1.2)
             print(json.dumps({"success": True}))
         except Exception as e:
             print(json.dumps({"success": False, "error": str(e)}))
