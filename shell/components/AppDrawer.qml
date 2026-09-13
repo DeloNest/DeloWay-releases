@@ -27,7 +27,7 @@ PanelWindow {
                                  ? WlrKeyboardFocus.OnDemand
                                  : WlrKeyboardFocus.None
 
-    visible: ShellState.appDrawerOpen || drawerHost.opacity > 0.01
+    visible: ShellState.appDrawerOpen || drawerHost.opacity > 0.005
     exclusionMode: ExclusionMode.Ignore
 
     // ─────────────────────────────────────────────────────────────────────
@@ -418,15 +418,22 @@ PanelWindow {
         id: drawerHost
         anchors.fill: parent
 
-        opacity: ShellState.appDrawerOpen ? 1.0 : 0.0
-        scale: ShellState.appDrawerOpen ? 1.0 : 0.975
+        readonly property bool isOpen: ShellState.appDrawerOpen
+        opacity: isOpen ? 1.0 : 0.0
+        scale: isOpen ? 1.0 : 0.97
         transformOrigin: Item.Bottom
 
         Behavior on opacity {
-            NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter }
+            NumberAnimation {
+                duration: drawerHost.isOpen ? 200 : 150
+                easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
+            }
         }
         Behavior on scale {
-            NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter }
+            NumberAnimation {
+                duration: drawerHost.isOpen ? 200 : 150
+                easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
+            }
         }
 
         Rectangle {
