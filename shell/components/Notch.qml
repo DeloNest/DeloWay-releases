@@ -153,20 +153,22 @@ PanelWindow {
                 opacity: root.isExpanded ? 0.0 : 1.0
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    hoverEnabled: true
+                    z: 0
+                    onEntered: root.isHovered = true
+                    onExited: root.isHovered = false
+                    onClicked: ShellState.openSmartNotch()
+                }
+
                 NotchHome {
                     id: notchHomeItem
                     anchors.fill: parent
                     expanded: false
                     targetScreen: root.targetScreen
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    hoverEnabled: true
-                    onEntered: root.isHovered = true
-                    onExited: root.isHovered = false
-                    onClicked: ShellState.openSmartNotch()
+                    z: 1
                 }
             }
 
