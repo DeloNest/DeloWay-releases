@@ -213,33 +213,6 @@ QtObject {
         sessionMenuOpen = false;
     }
 
-    // ── App Context Menu (Dock / AppDrawer right-click) ────
-    property bool appContextMenuVisible: false
-    property real appContextMenuX: 0
-    property real appContextMenuY: 0
-    property var appContextMenuTarget: null
-    // Window the menu anchors to (the Dock or AppDrawer PanelWindow) and its screen.
-    // x/y are in that window's OWN coordinate space, so no screen math is needed.
-    property var appContextMenuAnchorWindow: null
-    property var appContextMenuAnchorScreen: null
-
-    function showAppContextMenu(app, window, x, y) {
-        appContextMenuTarget = app;
-        appContextMenuAnchorWindow = window;
-        appContextMenuAnchorScreen = window ? window.screen : null;
-        appContextMenuX = x;
-        appContextMenuY = y;
-        appContextMenuVisible = true;
-        console.log("[Deloway][AppCtx] show menu for", app ? (app.name || app.id) : "null", "at", x, y, "anchor", window ? window.toString() : "null");
-    }
-
-    function closeAppContextMenu() {
-        appContextMenuVisible = false;
-        appContextMenuTarget = null;
-        appContextMenuAnchorWindow = null;
-        appContextMenuAnchorScreen = null;
-        console.log("[Deloway][AppCtx] menu closed");
-    }
 
     function lock() {
         closeAll();
