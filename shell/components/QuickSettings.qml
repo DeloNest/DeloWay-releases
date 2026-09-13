@@ -448,7 +448,7 @@ PanelWindow {
     Item {
         id: panelHost
         anchors.top: parent.top
-        anchors.topMargin: 52
+        anchors.topMargin: 44
         anchors.right: I18n.isRTL ? undefined : parent.right
         anchors.left: I18n.isRTL ? parent.left : undefined
         anchors.rightMargin: I18n.isRTL ? 0 : 16
