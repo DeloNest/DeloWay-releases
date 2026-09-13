@@ -645,13 +645,15 @@ PanelWindow {
                         }
 
                         ScrollView {
+                            id: appScrollView
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
+                            contentWidth: availableWidth
                             ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
                             ColumnLayout {
-                                width: parent.width - 12
+                                width: appScrollView.availableWidth
                                 spacing: Theme.spacing.tight
 
                                 Text {
