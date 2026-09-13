@@ -205,12 +205,12 @@ Item {
                         radius: Theme.notchRadiusPill
 
                         color: isActive
-                               ? Theme.notchSurfaceActive
+                               ? "#ffffff"
                                : (wsMouse.pressed
                                   ? Theme.notchSurfaceActive
                                   : (wsMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
                         border.color: isActive
-                                      ? Theme.notchBorderHighlight
+                                      ? "transparent"
                                       : (wsMouse.containsMouse ? Theme.notchBorder : "transparent")
                         border.width: 1
 
@@ -220,7 +220,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: wsBtn.wsId.toString()
-                            color: wsBtn.isActive ? Theme.notchText : Theme.notchTextTertiary
+                            color: wsBtn.isActive ? "#000000" : Theme.notchTextTertiary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
                             font.pixelSize: 11
