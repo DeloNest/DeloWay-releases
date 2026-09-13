@@ -36,7 +36,7 @@ PanelWindow {
     // ─────────────────────────────────────────────────────────────────────────
     property bool isExpanded: false
 
-    readonly property real compactHeight: 34
+    readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(44, compactRow.implicitWidth + 24)
     readonly property real expandedWidth: 360
     readonly property real expandedHeight: 240
@@ -116,8 +116,8 @@ PanelWindow {
 
             topLeftRadius: 0
             topRightRadius: 0
-            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusWindow : Theme.notchRadiusPanel
-            bottomRightRadius: root.isExpanded ? Theme.notchRadiusWindow : Theme.notchRadiusPanel
+            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusWindow : 22
+            bottomRightRadius: root.isExpanded ? Theme.notchRadiusWindow : 22
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
