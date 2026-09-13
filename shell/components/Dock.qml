@@ -278,11 +278,8 @@ PanelWindow {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: mouse => {
                                 if (mouse.button === Qt.RightButton) {
-                                    const screenW = root.targetScreen ? root.targetScreen.width : 2560;
-                                    const dockX = (screenW - root.implicitWidth) / 2;
-                                    const posInCard = appItem.mapToItem(dockCard, 0, 0);
-                                    const globalCenterX = dockX + posInCard.x + (appItem.width / 2);
-                                    dockContextMenu.show(modelData, globalCenterX);
+                                    var iconCenterInDock = appItem.mapToItem(root.contentItem, appItem.width / 2, 0).x;
+                                    dockContextMenu.show(modelData, appItem, iconCenterInDock);
                                 } else {
                                     dockContextMenu.hide();
                                     ApplicationManager.activateOrLaunch(modelData);
@@ -389,6 +386,6 @@ PanelWindow {
 
     DockContextMenu {
         id: dockContextMenu
-        targetScreen: root.targetScreen
+        dockWindow: root
     }
 }

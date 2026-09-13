@@ -1,58 +1,72 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import Quickshell
-import Quickshell.Wayland
 import "../theme"
 import "../services"
 
-PanelWindow {
+PopupWindow {
     id: root
 
-    required property ShellScreen targetScreen
-    screen: targetScreen
+    property var dockWindow: null
+    property var targetApp: null
+    property Item anchorItem: null
+    property real iconCenterInDock: 0
+    property bool _cardVisible: false
 
     color: "transparent"
-    visible: _menuVisible
+    visible: false
 
-    WlrLayershell.namespace: "deloway:dock-context-menu"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.exclusiveZone: 0
-    exclusionMode: ExclusionMode.Ignore
-    anchors { left: true; top: true; right: true; bottom: true }
+    anchor {
+        window: root.dockWindow
+        item: root.anchorItem
+        gravity: Edges.Top
+        edges: Edges.Top
+        adjustment: PopupAdjustment.SlideX
+    }
 
-    property var targetApp: null
-    property real globalCenterX: 0
-    property bool _menuVisible: false
-    property bool _open: false
+    implicitWidth: menuCard.width + 16
+    implicitHeight: menuCard.height + 6 + 10
 
-    function show(app, centerX) {
+    function show(app, item, centerInDock) {
         targetApp = app;
-        globalCenterX = centerX;
-        _menuVisible = true;
-        _open = true;
+        anchorItem = item;
+        iconCenterInDock = centerInDock || 0;
+        anchor.updateAnchor();
+        visible = true;
+        _cardVisible = true;
     }
 
     function hide() {
-        _open = false;
-        _menuVisible = false;
+        _cardVisible = false;
+        visible = false;
         targetApp = null;
+        anchorItem = null;
     }
 
-    // Backdrop — clicks outside close menu
-    MouseArea {
-        anchors.fill: parent
-        z: 0
-        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onClicked: root.hide()
+    onVisibleChanged: {
+        if (!visible) {
+            _cardVisible = false;
+            targetApp = null;
+            anchorItem = null;
+        }
+    }
+
+    readonly property real caretX: {
+        if (root.anchor.rect.x !== 0 && root.iconCenterInDock !== 0) {
+            var rel = root.iconCenterInDock - root.anchor.rect.x - ((root.width - menuCard.width) / 2);
+            return Math.max(20, Math.min(menuCard.width - 20, rel));
+        }
+        return menuCard.width / 2;
     }
 
     // Ambient Drop Shadow
     Rectangle {
         id: menuShadow
-        z: 8
+        z: 0
         anchors.fill: menuCard
-        anchors.topMargin: 4
-        anchors.bottomMargin: -4
+        anchors.topMargin: 3
+        anchors.bottomMargin: -3
         anchors.leftMargin: -2
         anchors.rightMargin: -2
         radius: menuCard.radius + 2
@@ -65,10 +79,10 @@ PanelWindow {
     // Menu Card with scale+fade animation
     Rectangle {
         id: menuCard
-        z: 9
-        x: Math.max(12, Math.min(root.width - width - 12, root.globalCenterX - (width / 2)))
+        z: 1
+        anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 96
+        anchors.bottomMargin: 6
         width: 210
         height: menuCol.implicitHeight + 14
         radius: Theme.radiusMedium
@@ -80,11 +94,11 @@ PanelWindow {
         LayoutMirroring.childrenInherit: true
 
         // Entry/exit animation
-        opacity: root._open ? 1.0 : 0.0
-        scale: root._open ? 1.0 : 0.90
+        opacity: root._cardVisible ? 1.0 : 0.0
+        scale: root._cardVisible ? 1.0 : 0.92
         transformOrigin: Item.Bottom
-        Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingExit } }
-        Behavior on scale   { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingExit } }
+        Behavior on opacity { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingExit } }
+        Behavior on scale   { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingExit } }
 
         // Top luminous rim
         Rectangle {
@@ -92,14 +106,6 @@ PanelWindow {
             anchors.topMargin: 1; anchors.leftMargin: 1; anchors.rightMargin: 1
             height: 1; radius: parent.radius
             color: Theme.notchBorderSubtle
-        }
-
-        // Block backdrop from stealing clicks inside card
-        MouseArea {
-            anchors.fill: parent; z: 1
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-            onClicked: mouse => mouse.accepted = true
-            onPressed: mouse => mouse.accepted = true
         }
 
         ColumnLayout {
@@ -239,6 +245,28 @@ PanelWindow {
             }
 
             Item { Layout.preferredHeight: 2 }
+        }
+    }
+
+    // Connecting Caret (macOS Notch/Indicator pointing down to the dock icon)
+    Shape {
+        id: caretShape
+        z: 2
+        anchors.top: menuCard.bottom
+        anchors.topMargin: -1
+        x: menuCard.x + root.caretX - 7
+        width: 14
+        height: 7
+        visible: root._cardVisible
+
+        ShapePath {
+            strokeColor: Theme.notchBorder
+            strokeWidth: 1
+            fillColor: Theme.notchBackground
+            startX: 0
+            startY: 0
+            PathLine { x: 7; y: 6 }
+            PathLine { x: 14; y: 0 }
         }
     }
 }
