@@ -15,14 +15,17 @@ PanelWindow {
 
     anchors {
         top: true
-        right: !I18n.isRTL
-        left: I18n.isRTL
+        right: I18n.isRTL
+        left: !I18n.isRTL
     }
+
+    readonly property real bottomRadius: 22
+    readonly property real shadowMargin: 4
 
     margins {
         top: 0
-        right: !I18n.isRTL ? 12 : 0
-        left: I18n.isRTL ? 12 : 0
+        right: I18n.isRTL ? (12 - shadowMargin) : 0
+        left: !I18n.isRTL ? (12 - shadowMargin) : 0
     }
 
     color: "transparent"
@@ -39,9 +42,9 @@ PanelWindow {
     property string currentView: "main"
 
     readonly property real compactHeight: 44
-    readonly property real compactWidth: Math.max(44, compactRow.implicitWidth + 24)
-    readonly property real expandedWidth: 360
-    readonly property real expandedHeight: 240
+    readonly property real compactWidth: Math.max(2 * bottomRadius + 20, compactRow.implicitWidth + 2 * bottomRadius + 20)
+    readonly property real expandedWidth: 400
+    readonly property real expandedHeight: 250
 
     property real currentWidth: isExpanded ? expandedWidth : compactWidth
     property real currentHeight: isExpanded ? expandedHeight : compactHeight
@@ -49,7 +52,7 @@ PanelWindow {
     Behavior on currentWidth  { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
     Behavior on currentHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 
-    implicitWidth: Math.round(currentWidth)
+    implicitWidth: Math.round(currentWidth + shadowMargin * 2)
     implicitHeight: Math.round(currentHeight + 8) // Shadow margin
 
     Shortcut {
@@ -211,8 +214,8 @@ PanelWindow {
 
             topLeftRadius: 0
             topRightRadius: 0
-            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusWindow : 22
-            bottomRightRadius: root.isExpanded ? Theme.notchRadiusWindow : 22
+            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusWindow : root.bottomRadius
+            bottomRightRadius: root.isExpanded ? Theme.notchRadiusWindow : root.bottomRadius
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -238,7 +241,7 @@ PanelWindow {
                 RowLayout {
                     id: compactRow
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: 10
 
                     SymbolicIcon {
                         iconSize: 14
@@ -257,6 +260,12 @@ PanelWindow {
                         elide: Text.ElideRight
                         Layout.maximumWidth: 120
                         renderType: Theme.renderType
+                    }
+
+                    SymbolicIcon {
+                        iconSize: 14
+                        source: "settings-symbolic"
+                        iconColor: Theme.notchTextSecondary
                     }
                 }
             }
