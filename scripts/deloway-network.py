@@ -4,6 +4,8 @@ Deloway Network Helper
 Handles Wi-Fi scanning, connection info, and Ethernet status via NetworkManager (nmcli).
 """
 import sys
+import os
+import socket
 import json
 import subprocess
 import time
@@ -75,13 +77,134 @@ def get_network_info():
 
     return {
         "ethernet": ethernet,
-        "wifi": wifi
+        "wifi": wifi,
+        "hotspot": get_hotspot_status()
+    }
+
+def get_wifi_device():
+    try:
+        res = subprocess.run(["nmcli", "-t", "-f", "DEVICE,TYPE", "dev"], capture_output=True, text=True, timeout=2).stdout
+        for line in res.strip().splitlines():
+            parts = line.split(":")
+            if len(parts) >= 2 and parts[1].strip() == "wifi":
+                return parts[0].strip()
+    except Exception:
+        pass
+    return None
+
+def hotspot_profile_exists():
+    try:
+        res = subprocess.run(["nmcli", "-t", "-f", "NAME", "con", "show"], capture_output=True, text=True, timeout=2).stdout
+        for line in res.strip().splitlines():
+            if line.strip() == "Deloway-Hotspot":
+                return True
+    except Exception:
+        pass
+    return False
+
+def is_hotspot_active():
+    try:
+        res = subprocess.run(["nmcli", "-t", "-f", "NAME,TYPE", "con", "show", "--active"], capture_output=True, text=True, timeout=2).stdout
+        for line in res.strip().splitlines():
+            parts = line.split(":")
+            if len(parts) >= 2 and parts[0].strip() == "Deloway-Hotspot" and parts[1].strip() in ("802-11-wireless", "wifi"):
+                return True
+    except Exception:
+        pass
+    return False
+
+def get_hotspot_details():
+    ssid = socket.gethostname()
+    password = "01234567"
+    if hotspot_profile_exists():
+        try:
+            res = subprocess.run(["nmcli", "-s", "-t", "-f", "802-11-wireless.ssid,802-11-wireless-security.psk", "con", "show", "Deloway-Hotspot"], capture_output=True, text=True, timeout=2).stdout
+            for line in res.strip().splitlines():
+                if line.startswith("802-11-wireless.ssid:"):
+                    val = line.split(":", 1)[1].strip()
+                    if val:
+                        ssid = val
+                elif line.startswith("802-11-wireless-security.psk:"):
+                    val = line.split(":", 1)[1].strip()
+                    if val:
+                        password = val
+        except Exception:
+            pass
+    return ssid, password
+
+def get_hotspot_status():
+    dev = get_wifi_device()
+    active = is_hotspot_active()
+    exists = hotspot_profile_exists()
+    ssid, password = get_hotspot_details()
+    
+    wifi_connected = False
+    try:
+        res = subprocess.run(["nmcli", "-t", "-f", "TYPE,STATE,CONNECTION", "dev"], capture_output=True, text=True, timeout=2).stdout
+        for line in res.strip().splitlines():
+            parts = line.split(":")
+            if len(parts) >= 2 and parts[0].strip() == "wifi" and parts[1].strip() == "connected":
+                conn = parts[2].strip() if len(parts) > 2 else ""
+                if conn != "Deloway-Hotspot":
+                    wifi_connected = True
+    except Exception:
+        pass
+
+    return {
+        "available": dev is not None,
+        "device": dev or "",
+        "enabled": active,
+        "profile_exists": exists,
+        "ssid": ssid,
+        "password": password,
+        "wifi_connected": wifi_connected,
+        "error": "" if dev else ( "لا توجد واجهة واي فاي" )
+    }
+
+def hotspot_start():
+    dev = get_wifi_device()
+    if not dev:
+        return {"success": False, "enabled": False, "error": "No Wi-Fi device found"}
+    
+    if hotspot_profile_exists():
+        res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+    else:
+        ssid = socket.gethostname()
+        password = "01234567"
+        res = subprocess.run([
+            "nmcli", "dev", "wifi", "hotspot",
+            "ifname", dev,
+            "con-name", "Deloway-Hotspot",
+            "ssid", ssid,
+            "password", password
+        ], capture_output=True, text=True, timeout=15)
+        
+    success = (res.returncode == 0)
+    return {
+        "success": success,
+        "enabled": is_hotspot_active(),
+        "error": "" if success else (res.stderr.strip() or res.stdout.strip())
+    }
+
+def hotspot_stop():
+    res = subprocess.run(["nmcli", "con", "down", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+    success = (res.returncode == 0)
+    return {
+        "success": success,
+        "enabled": is_hotspot_active(),
+        "error": "" if success else (res.stderr.strip() or res.stdout.strip())
     }
 
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
     if cmd == "status":
         print(json.dumps(get_network_info()))
+    elif cmd == "hotspot-status":
+        print(json.dumps(get_hotspot_status()))
+    elif cmd == "hotspot-start":
+        print(json.dumps(hotspot_start()))
+    elif cmd == "hotspot-stop":
+        print(json.dumps(hotspot_stop()))
     elif cmd == "toggle-wifi":
         try:
             cur = subprocess.run(["nmcli", "radio", "wifi"], capture_output=True, text=True).stdout.strip()
