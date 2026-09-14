@@ -490,7 +490,7 @@ PanelWindow {
 
     Component.onCompleted: {
         backlightDetectProcess.running = true;
-        Quickshell.execDetached(["sh", "-c", "pidof hyprsunset >/dev/null || (nohup hyprsunset >/dev/null 2>&1 &)"]);
+        Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset temperature >/dev/null 2>&1 || (nohup hyprsunset >/dev/null 2>&1 &)"]);
         nightLightInitialCheckProcess.running = true;
     }
 
