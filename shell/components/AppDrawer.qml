@@ -691,7 +691,7 @@ PanelWindow {
                                             border.color: pinnedMouse.pressed
                                                           ? root.colorBorderStrong
                                                           : (pinnedMouse.containsMouse
-                                                             ? root.colorBorderHighlight
+                                                             ? root.colorBorderStrong
                                                              : root.colorBorderSoft)
                                             border.width: 1
 
@@ -784,7 +784,7 @@ PanelWindow {
                                             border.color: recentMouse.pressed
                                                           ? root.colorBorderStrong
                                                           : (recentMouse.containsMouse
-                                                             ? root.colorBorderHighlight
+                                                             ? root.colorBorderStrong
                                                              : root.colorBorderSoft)
                                             border.width: 1
 
