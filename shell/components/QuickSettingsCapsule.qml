@@ -244,7 +244,6 @@ PanelWindow {
             networkStatusProcess.running = true;
             root.bluetoothError = "";
             bluetoothStatusProcess.running = true;
-            nightLightStatusProcess.running = true;
             if (root.brightnessBackend === "kernel") {
                 backlightReadProcess.running = true;
             } else if (root.brightnessBackend === "ddc") {
@@ -465,39 +464,34 @@ PanelWindow {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Night Light / Eye Comfort (via hyprsunset)
+    // Night Light / Eye Comfort (via hyprsunset daemon + hyprctl)
     // ─────────────────────────────────────────────────────────────────────────
     property bool nightLightEnabled: false
 
     Process {
-        id: nightLightStatusProcess
-        command: ["sh", "-c", "pgrep -x hyprsunset >/dev/null && echo 1 || echo 0"]
+        id: nightLightInitialCheckProcess
+        command: ["hyprctl", "hyprsunset", "temperature"]
         stdout: SplitParser {
             onRead: data => {
-                root.nightLightEnabled = data.trim() === "1";
+                root.nightLightEnabled = (data.trim() === "4500");
             }
         }
-    }
-
-    Process {
-        id: nightLightToggleProcess
-        onExited: nightLightStatusProcess.running = true
     }
 
     function toggleNightLight() {
         const next = !root.nightLightEnabled;
         root.nightLightEnabled = next;
         if (next) {
-            nightLightToggleProcess.command = ["sh", "-c", "pkill -x hyprsunset 2>/dev/null || true; nohup hyprsunset -t 4500 >/dev/null 2>&1 &"];
+            Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset temperature 4500"]);
         } else {
-            nightLightToggleProcess.command = ["sh", "-c", "pkill -x hyprsunset 2>/dev/null || true"];
+            Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset temperature 6000"]);
         }
-        nightLightToggleProcess.running = true;
     }
 
     Component.onCompleted: {
         backlightDetectProcess.running = true;
-        nightLightStatusProcess.running = true;
+        Quickshell.execDetached(["sh", "-c", "pidof hyprsunset >/dev/null || (nohup hyprsunset >/dev/null 2>&1 &)"]);
+        nightLightInitialCheckProcess.running = true;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
