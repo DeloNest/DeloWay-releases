@@ -145,12 +145,104 @@ PanelWindow {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // Bluetooth Data Logic (deloway-bluetooth.py)
+    // ─────────────────────────────────────────────────────────────────────────
+    property var bluetoothData: null
+    property bool bluetoothEnabled: false
+    property var bluetoothDevices: []
+    property string bluetoothConnectedDevice: ""
+    property string connectingBtAddress: ""
+    property string bluetoothError: ""
+
+    function sortedBluetoothDevices(devs) {
+        if (!devs || !Array.isArray(devs)) return [];
+        return devs.slice().sort((a, b) => {
+            if (a.connected && !b.connected) return -1;
+            if (!a.connected && b.connected) return 1;
+            if (a.paired && !b.paired) return -1;
+            if (!a.paired && b.paired) return 1;
+            return (a.name || "").localeCompare(b.name || "");
+        });
+    }
+
+    Process {
+        id: bluetoothStatusProcess
+        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "list"]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                try {
+                    const parsed = JSON.parse(data.trim());
+                    root.bluetoothData = parsed;
+                    root.bluetoothError = "";
+                    root.bluetoothEnabled = !!parsed.powered;
+                    const devs = parsed.devices || [];
+                    root.bluetoothDevices = root.sortedBluetoothDevices(devs);
+                    const connected = devs.find(d => d.connected);
+                    root.bluetoothConnectedDevice = connected ? (connected.name || connected.address) : "";
+                } catch(e) {
+                    root.bluetoothError = I18n.isRTL ? "تعذر قراءة بيانات البلوتوث" : "Failed to parse bluetooth data";
+                }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                root.bluetoothError = I18n.isRTL ? "تعذر جلب بيانات البلوتوث" : "Failed to fetch bluetooth data";
+            }
+        }
+    }
+
+    Process {
+        id: bluetoothToggleProcess
+        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "toggle"]
+        onExited: bluetoothStatusProcess.running = true
+    }
+
+    Process {
+        id: bluetoothConnectProcess
+        onExited: {
+            root.connectingBtAddress = "";
+            bluetoothStatusProcess.running = true;
+        }
+    }
+
+    Process {
+        id: bluetoothDisconnectProcess
+        onExited: {
+            bluetoothStatusProcess.running = true;
+        }
+    }
+
+    function toggleBluetooth() {
+        const next = !root.bluetoothEnabled;
+        bluetoothToggleProcess.running = true;
+        root.bluetoothEnabled = next;
+    }
+
+    function refreshBluetooth() {
+        bluetoothStatusProcess.running = true;
+    }
+
+    function connectBluetooth(address) {
+        root.connectingBtAddress = address;
+        bluetoothConnectProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "connect", address];
+        bluetoothConnectProcess.running = true;
+    }
+
+    function disconnectBluetooth(address) {
+        bluetoothDisconnectProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "disconnect", address];
+        bluetoothDisconnectProcess.running = true;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Update Strategy (Low Resource Impact)
     // ─────────────────────────────────────────────────────────────────────────
     // 1. Instant fetch upon expanding
     onIsExpandedChanged: {
         if (isExpanded) {
             networkStatusProcess.running = true;
+            root.bluetoothError = "";
+            bluetoothStatusProcess.running = true;
         } else {
             currentView = "main";
         }
@@ -167,6 +259,9 @@ PanelWindow {
             if (SystemMonitor.isWifi) {
                 networkStatusProcess.running = true;
             }
+            if (root.bluetoothError.length === 0) {
+                bluetoothStatusProcess.running = true;
+            }
         }
     }
 
@@ -178,6 +273,17 @@ PanelWindow {
         repeat: true
         onTriggered: {
             networkStatusProcess.running = true;
+        }
+    }
+
+    // 4. Active Bluetooth list timer: 10s only when viewing bluetooth list
+    Timer {
+        id: btViewTimer
+        interval: 10000
+        running: root.isExpanded && root.currentView === "bluetooth"
+        repeat: true
+        onTriggered: {
+            bluetoothStatusProcess.running = true;
         }
     }
 
@@ -429,15 +535,29 @@ PanelWindow {
                             }
                         }
 
-                        // ── Bluetooth Tile (Placeholder) ──
+                        // ── Bluetooth Tile ──
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
                             Layout.fillHeight: true
                             radius: 12
-                            color: Theme.notchSurfaceElevated
-                            border.color: Theme.notchBorder
+                            color: btTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                            border.color: root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchBorder
                             border.width: 1
+
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            MouseArea {
+                                id: btTileMa
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    root.currentView = "bluetooth";
+                                    root.refreshBluetooth();
+                                }
+                            }
 
                             RowLayout {
                                 anchors.fill: parent
@@ -445,20 +565,37 @@ PanelWindow {
                                 anchors.rightMargin: 8
                                 spacing: 8
 
+                                // Clickable Bluetooth Icon Circle (Toggle radio on/off)
                                 Rectangle {
+                                    id: btIconCircle
                                     implicitWidth: 32
                                     implicitHeight: 32
                                     radius: 16
-                                    color: Qt.rgba(1, 1, 1, 0.08)
+                                    color: root.bluetoothConnectedDevice.length > 0
+                                           ? Theme.notchText
+                                           : (root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchSurfaceElevated)
+
+                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent
-                                        source: "bluetooth-active-symbolic"
+                                        source: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
                                         iconSize: 16
-                                        iconColor: Theme.notchTextSecondary
+                                        iconColor: root.bluetoothConnectedDevice.length > 0
+                                                   ? Theme.notchBackground
+                                                   : (root.bluetoothEnabled ? Theme.notchText : Theme.notchTextTertiary)
+                                    }
+
+                                    MouseArea {
+                                        id: btToggleMa
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: root.toggleBluetooth()
                                     }
                                 }
 
+                                // Text details
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 1
@@ -474,13 +611,26 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: I18n.isRTL ? "قريباً" : "Soon"
+                                        text: !root.bluetoothEnabled
+                                              ? (I18n.isRTL ? "معطل" : "Off")
+                                              : (root.bluetoothConnectedDevice.length > 0
+                                                 ? root.bluetoothConnectedDevice
+                                                 : (I18n.isRTL ? "لا يوجد جهاز" : "No device"))
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 10
-                                        color: Theme.notchTextTertiary
+                                        color: root.bluetoothEnabled ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }
+                                }
+
+                                // Chevron
+                                Text {
+                                    text: I18n.isRTL ? "‹" : "›"
+                                    font.pixelSize: 14
+                                    font.weight: Font.Bold
+                                    color: btTileMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
                             }
                         }
@@ -692,7 +842,7 @@ PanelWindow {
                                           : (netItem.isCurrent ? "✓" : "")
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: 10
-                                    color: netItem.isCurrent ? Theme.colors.accent : Theme.notchTextTertiary
+                                    color: netItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
                                 }
                             }
 
@@ -730,6 +880,194 @@ PanelWindow {
                                       : (!root.wifiEnabled
                                          ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
                                          : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found"))
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: 11
+                                color: Theme.notchTextTertiary
+                            }
+                        }
+                    }
+                }
+
+                // ═════════════════════════════════════════════════════════════
+                // VIEW C: BLUETOOTH DEVICE LIST
+                // ═════════════════════════════════════════════════════════════
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: 8
+                    visible: root.currentView === "bluetooth"
+
+                    // Header: Back button + Title + Refresh button
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 28
+                        spacing: 8
+
+                        Rectangle {
+                            implicitWidth: 28
+                            implicitHeight: 28
+                            radius: 14
+                            color: btBackMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: I18n.isRTL ? "›" : "‹"
+                                font.pixelSize: 16
+                                font.weight: Font.Bold
+                                color: Theme.notchText
+                            }
+
+                            MouseArea {
+                                id: btBackMa
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: root.currentView = "main"
+                            }
+                        }
+
+                        Text {
+                            text: I18n.isRTL ? "أجهزة Bluetooth" : "Bluetooth Devices"
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: 12
+                            font.weight: Font.DemiBold
+                            color: Theme.notchText
+                            Layout.fillWidth: true
+                        }
+
+                        Rectangle {
+                            implicitWidth: 28
+                            implicitHeight: 28
+                            radius: 14
+                            color: btRescanMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "⟳"
+                                font.pixelSize: 14
+                                color: btRescanMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            }
+
+                            MouseArea {
+                                id: btRescanMa
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: root.refreshBluetooth()
+                            }
+                        }
+                    }
+
+                    // Available Bluetooth Devices List
+                    ListView {
+                        id: btListView
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        spacing: 4
+                        model: root.bluetoothDevices
+
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        ScrollBar.vertical: ScrollBar {
+                            policy: btListView.contentHeight > btListView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                            width: 4
+                            contentItem: Rectangle {
+                                radius: 2
+                                color: Qt.rgba(1, 1, 1, 0.25)
+                            }
+                        }
+
+                        delegate: Rectangle {
+                            id: btItem
+                            required property var modelData
+                            required property int index
+
+                            readonly property bool isCurrent: btItem.modelData && btItem.modelData.connected
+                            readonly property bool isConnecting: root.connectingBtAddress.length > 0 && btItem.modelData && root.connectingBtAddress === btItem.modelData.address
+                            readonly property bool isPaired: btItem.modelData && btItem.modelData.paired
+
+                            width: btListView.width - (btListView.contentHeight > btListView.height ? 6 : 0)
+                            implicitHeight: 34
+                            radius: Theme.notchRadiusPill
+                            color: isCurrent
+                                   ? Qt.rgba(1, 1, 1, 0.14)
+                                   : (btItemMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 8
+                                anchors.rightMargin: 8
+                                spacing: 8
+
+                                SymbolicIcon {
+                                    source: btItem.modelData && btItem.modelData.icon ? btItem.modelData.icon : "bluetooth-active-symbolic"
+                                    iconSize: 14
+                                    iconColor: btItem.isCurrent ? Theme.notchText : Theme.notchTextSecondary
+                                }
+
+                                Text {
+                                    text: btItem.modelData && btItem.modelData.name ? btItem.modelData.name : ""
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: 11
+                                    font.weight: btItem.isCurrent ? Font.DemiBold : Font.Normal
+                                    color: Theme.notchText
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Text {
+                                    text: btItem.isConnecting
+                                          ? (I18n.isRTL ? "جارٍ الاتصال..." : "Connecting...")
+                                          : (btItem.isCurrent
+                                             ? "✓"
+                                             : (btItem.isPaired
+                                                ? (I18n.isRTL ? "مقترن" : "Paired")
+                                                : (I18n.isRTL ? "يحتاج اقتران من الإعدادات" : "Pair in Settings")))
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: 10
+                                    color: btItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
+                                }
+                            }
+
+                            MouseArea {
+                                id: btItemMa
+                                anchors.fill: parent
+                                cursorShape: btItem.isPaired ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                hoverEnabled: true
+                                onClicked: {
+                                    if (!btItem.modelData) return;
+                                    if (btItem.modelData.connected) {
+                                        root.disconnectBluetooth(btItem.modelData.address);
+                                    } else if (btItem.modelData.paired) {
+                                        root.connectBluetooth(btItem.modelData.address);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Empty State if bluetooth off or no devices
+                        ColumnLayout {
+                            anchors.centerIn: parent
+                            spacing: 6
+                            visible: !root.bluetoothEnabled || root.bluetoothDevices.length === 0
+
+                            SymbolicIcon {
+                                Layout.alignment: Qt.AlignHCenter
+                                visible: root.bluetoothError.length > 0
+                                source: "dialog-warning-symbolic"
+                                iconSize: 18
+                                iconColor: Theme.notchTextTertiary
+                            }
+
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: root.bluetoothError.length > 0
+                                      ? root.bluetoothError
+                                      : (!root.bluetoothEnabled
+                                         ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is disabled")
+                                         : (I18n.isRTL ? "لا توجد أجهزة مقترنة" : "No paired devices"))
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: 11
                                 color: Theme.notchTextTertiary
