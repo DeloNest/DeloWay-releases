@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Services.Pipewire
 import "../theme"
 import "../services"
 
@@ -243,6 +244,15 @@ PanelWindow {
             networkStatusProcess.running = true;
             root.bluetoothError = "";
             bluetoothStatusProcess.running = true;
+            if (root.brightnessBackend === "kernel") {
+                backlightReadProcess.running = true;
+            } else if (root.brightnessBackend === "ddc") {
+                const dispArg = root.ddcDisplayNum.length > 0 ? ("--display " + root.ddcDisplayNum + " ") : "";
+                ddcReadProcess.command = ["sh", "-c", "ddcutil " + dispArg + "getvcp 10 2>/dev/null || true"];
+                ddcReadProcess.running = true;
+            } else {
+                backlightDetectProcess.running = true;
+            }
         } else {
             currentView = "main";
         }
@@ -286,6 +296,174 @@ PanelWindow {
             bluetoothStatusProcess.running = true;
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Audio State & Logic (Pipewire)
+    // ─────────────────────────────────────────────────────────────────────────
+    property var audioSink: Pipewire.defaultAudioSink
+
+    PwObjectTracker {
+        objects: root.audioSink ? [root.audioSink] : []
+    }
+
+    readonly property real currentVolume: {
+        if (!audioSink || !audioSink.audio)
+            return 0;
+        return audioSink.audio.volume;
+    }
+
+    readonly property bool isMuted: {
+        if (!audioSink || !audioSink.audio)
+            return false;
+        return audioSink.audio.muted;
+    }
+
+    readonly property string volumeIconName: {
+        if (root.isMuted || root.currentVolume <= 0.001)
+            return "audio-volume-muted";
+        if (root.currentVolume < 0.33)
+            return "audio-volume-low";
+        if (root.currentVolume < 0.66)
+            return "audio-volume-medium";
+        return "audio-volume-high";
+    }
+
+    function setVolume(value) {
+        if (!root.audioSink || !root.audioSink.audio || !root.audioSink.ready)
+            return;
+
+        const clamped = Math.max(0, Math.min(1, value));
+        root.audioSink.audio.volume = clamped;
+        if (clamped > 0 && root.audioSink.audio.muted) {
+            root.audioSink.audio.muted = false;
+        }
+    }
+
+    function toggleMute() {
+        if (!root.audioSink || !root.audioSink.audio || !root.audioSink.ready)
+            return;
+
+        root.audioSink.audio.muted = !root.audioSink.audio.muted;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Screen Brightness (Hybrid: kernel backlight / DDC/CI via ddcutil)
+    // ─────────────────────────────────────────────────────────────────────────
+    property real screenBrightness: 0.75
+    property string brightnessBackend: "none" // "kernel" | "ddc" | "none"
+    property bool hasBacklight: brightnessBackend !== "none"
+    property string backlightDevice: ""
+    property string ddcDisplayNum: ""
+
+    // 1. Kernel Backlight Detect
+    Process {
+        id: backlightDetectProcess
+        command: ["sh", "-c", "dev=$(ls /sys/class/backlight 2>/dev/null | head -n1); echo \"$dev\""]
+        stdout: SplitParser {
+            onRead: data => {
+                const device = data.trim();
+                if (device.length > 0) {
+                    root.backlightDevice = device;
+                    root.brightnessBackend = "kernel";
+                    backlightReadProcess.running = true;
+                } else {
+                    ddcDetectProcess.running = true;
+                }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (root.brightnessBackend === "none" && !ddcDetectProcess.running && root.backlightDevice.length === 0) {
+                ddcDetectProcess.running = true;
+            }
+        }
+    }
+
+    // 2. DDC/CI Detect (Fallback for external desktop monitors)
+    Process {
+        id: ddcDetectProcess
+        command: ["sh", "-c", "disp=$(command -v ddcutil >/dev/null 2>&1 && ddcutil detect 2>/dev/null | grep -m1 -E '^Display [0-9]+' | awk '{print $2}'); echo \"$disp\""]
+        stdout: SplitParser {
+            onRead: data => {
+                const disp = data.trim();
+                if (disp.length > 0 && !isNaN(parseInt(disp, 10))) {
+                    root.ddcDisplayNum = disp;
+                    root.brightnessBackend = "ddc";
+                    const dispArg = "--display " + disp + " ";
+                    ddcReadProcess.command = ["sh", "-c", "ddcutil " + dispArg + "getvcp 10 2>/dev/null || true"];
+                    ddcReadProcess.running = true;
+                } else {
+                    root.brightnessBackend = "none";
+                }
+            }
+        }
+    }
+
+    // 3. Kernel Backlight Read
+    Process {
+        id: backlightReadProcess
+        command: ["sh", "-c", "brightnessctl -m | cut -d, -f4 | tr -d '%'"]
+        stdout: SplitParser {
+            onRead: data => {
+                const pct = parseInt(data.trim(), 10);
+                if (!isNaN(pct))
+                    root.screenBrightness = Math.max(0, Math.min(1, pct / 100));
+            }
+        }
+    }
+
+    // 4. DDC/CI Backlight Read
+    Process {
+        id: ddcReadProcess
+        stdout: SplitParser {
+            onRead: data => {
+                const match = data.match(/current value\s*=\s*(\d+)/);
+                if (match) {
+                    const pct = parseInt(match[1], 10);
+                    if (!isNaN(pct))
+                        root.screenBrightness = Math.max(0, Math.min(1, pct / 100));
+                }
+            }
+        }
+    }
+
+    // 5. Kernel Backlight Write (Debounced by 80ms)
+    Process {
+        id: backlightWriteProcess
+    }
+
+    Timer {
+        id: backlightWriteDebounce
+        interval: 80
+        onTriggered: {
+            const pct = Math.round(root.screenBrightness * 100);
+            backlightWriteProcess.command = ["sh", "-c", "brightnessctl set " + pct + "%"];
+            backlightWriteProcess.running = true;
+        }
+    }
+
+    // 6. DDC/CI Backlight Write (Single command executed on released)
+    Process {
+        id: ddcWriteProcess
+    }
+
+    function applyDdcBrightness() {
+        if (root.brightnessBackend !== "ddc")
+            return;
+        const pct = Math.max(0, Math.min(100, Math.round(root.screenBrightness * 100)));
+        const dispArg = root.ddcDisplayNum.length > 0 ? ("--display " + root.ddcDisplayNum + " ") : "";
+        ddcWriteProcess.command = ["sh", "-c", "ddcutil " + dispArg + "setvcp 10 " + pct + " >/dev/null 2>&1 || true"];
+        if (ddcWriteProcess.running)
+            ddcWriteProcess.running = false;
+        ddcWriteProcess.running = true;
+    }
+
+    function setBrightness(value) {
+        root.screenBrightness = Math.max(0, Math.min(1, value));
+        if (root.brightnessBackend === "kernel")
+            backlightWriteDebounce.restart();
+    }
+
+    Component.onCompleted: backlightDetectProcess.running = true;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Visual Hierarchy
@@ -636,64 +814,233 @@ PanelWindow {
                         }
                     }
 
-                    // Row 2: Volume Slider (Placeholder)
+                    // ── Row 2: Volume Slider ──
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 38
-                        radius: 10
+                        radius: Theme.notchRadiusCard
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorder
                         border.width: 1
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
                             spacing: 8
 
-                            SymbolicIcon {
-                                source: "audio-volume-high-symbolic"
-                                iconSize: 14
-                                iconColor: Theme.notchTextTertiary
+                            // Mute toggle button
+                            Rectangle {
+                                id: muteBtn
+                                implicitWidth: 28
+                                implicitHeight: 28
+                                radius: Theme.notchRadiusPill
+                                color: muteBtnMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                SymbolicIcon {
+                                    anchors.centerIn: parent
+                                    source: root.volumeIconName + "-symbolic"
+                                    iconSize: 16
+                                    iconColor: root.isMuted ? Theme.notchTextTertiary : Theme.notchText
+
+                                    Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
+                                }
+
+                                MouseArea {
+                                    id: muteBtnMa
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    onClicked: root.toggleMute()
+                                }
                             }
 
+                            // Interactive Volume Slider
+                            Item {
+                                id: volumeSliderContainer
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 28
+
+                                Rectangle {
+                                    id: volumeTrack
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 6
+                                    radius: 3
+                                    color: Qt.rgba(1, 1, 1, 0.12)
+
+                                    Rectangle {
+                                        id: volumeFill
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        anchors.left: parent.left
+                                        width: parent.width * Math.max(0, Math.min(1, root.isMuted ? 0 : root.currentVolume))
+                                        radius: 3
+                                        color: root.isMuted ? Theme.notchTextTertiary : Theme.notchText
+
+                                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                    }
+
+                                    Rectangle {
+                                        id: volumeThumb
+                                        visible: !root.isMuted && root.currentVolume > 0.01
+                                        width: 12
+                                        height: 12
+                                        radius: 6
+                                        color: Theme.notchText
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        x: Math.max(0, Math.min(parent.width - width, I18n.isRTL ? (parent.width - volumeFill.width - width / 2) : (volumeFill.width - width / 2)))
+
+                                        border.color: Qt.rgba(0, 0, 0, 0.25)
+                                        border.width: 1
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: volumeSliderMa
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+
+                                    function updateVolume(mouse) {
+                                        const raw = I18n.isRTL ? ((width - mouse.x) / width) : (mouse.x / width);
+                                        root.setVolume(Math.max(0, Math.min(1, raw)));
+                                    }
+
+                                    onPressed: mouse => updateVolume(mouse)
+                                    onPositionChanged: mouse => {
+                                        if (pressed)
+                                            updateVolume(mouse);
+                                    }
+                                }
+                            }
+
+                            // Percentage / Status Label
                             Text {
-                                text: I18n.isRTL ? "الصوت (قريباً)" : "Volume (Placeholder)"
+                                text: root.isMuted
+                                      ? (I18n.isRTL ? "مكتوم" : "Muted")
+                                      : (Math.round(root.currentVolume * 100) + "%")
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: 11
-                                color: Theme.notchTextTertiary
-                                Layout.fillWidth: true
+                                font.weight: Font.Medium
+                                color: root.isMuted ? Theme.notchTextTertiary : Theme.notchTextSecondary
+                                Layout.preferredWidth: 38
+                                horizontalAlignment: I18n.isRTL ? Text.AlignLeft : Text.AlignRight
                             }
                         }
                     }
 
-                    // Row 3: Brightness Slider (Placeholder)
+                    // ── Row 3: Brightness Slider ──
                     Rectangle {
+                        visible: root.brightnessBackend !== "none"
                         Layout.fillWidth: true
                         Layout.preferredHeight: 38
-                        radius: 10
+                        radius: Theme.notchRadiusCard
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorder
                         border.width: 1
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: 10
-                            anchors.rightMargin: 10
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
                             spacing: 8
 
-                            SymbolicIcon {
-                                source: "display-brightness-symbolic"
-                                iconSize: 14
-                                iconColor: Theme.notchTextTertiary
+                            // Brightness icon container
+                            Rectangle {
+                                id: brightnessIconBox
+                                implicitWidth: 28
+                                implicitHeight: 28
+                                radius: Theme.notchRadiusPill
+                                color: "transparent"
+
+                                SymbolicIcon {
+                                    anchors.centerIn: parent
+                                    source: "display-brightness-symbolic"
+                                    iconSize: 16
+                                    iconColor: Theme.notchText
+                                }
                             }
 
+                            // Interactive Brightness Slider
+                            Item {
+                                id: brightnessSliderContainer
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 28
+
+                                Rectangle {
+                                    id: brightnessTrack
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    height: 6
+                                    radius: 3
+                                    color: Qt.rgba(1, 1, 1, 0.12)
+
+                                    Rectangle {
+                                        id: brightnessFill
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        anchors.left: parent.left
+                                        width: parent.width * Math.max(0, Math.min(1, root.screenBrightness))
+                                        radius: 3
+                                        color: Theme.notchText
+                                    }
+
+                                    Rectangle {
+                                        id: brightnessThumb
+                                        visible: root.screenBrightness > 0.01
+                                        width: 12
+                                        height: 12
+                                        radius: 6
+                                        color: Theme.notchText
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        x: Math.max(0, Math.min(parent.width - width, I18n.isRTL ? (parent.width - brightnessFill.width - width / 2) : (brightnessFill.width - width / 2)))
+
+                                        border.color: Qt.rgba(0, 0, 0, 0.25)
+                                        border.width: 1
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: brightnessSliderMa
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+
+                                    function updateBrightness(mouse) {
+                                        const raw = I18n.isRTL ? ((width - mouse.x) / width) : (mouse.x / width);
+                                        root.setBrightness(Math.max(0, Math.min(1, raw)));
+                                    }
+
+                                    onPressed: mouse => updateBrightness(mouse)
+                                    onPositionChanged: mouse => {
+                                        if (pressed)
+                                            updateBrightness(mouse);
+                                    }
+                                    onReleased: {
+                                        if (root.brightnessBackend === "ddc")
+                                            root.applyDdcBrightness();
+                                    }
+                                    onCanceled: {
+                                        if (root.brightnessBackend === "ddc")
+                                            root.applyDdcBrightness();
+                                    }
+                                }
+                            }
+
+                            // Percentage Label
                             Text {
-                                text: I18n.isRTL ? "السطوع (قريباً)" : "Brightness (Placeholder)"
+                                text: Math.round(root.screenBrightness * 100) + "%"
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: 11
-                                color: Theme.notchTextTertiary
-                                Layout.fillWidth: true
+                                font.weight: Font.Medium
+                                color: Theme.notchTextSecondary
+                                Layout.preferredWidth: 38
+                                horizontalAlignment: I18n.isRTL ? Text.AlignLeft : Text.AlignRight
                             }
                         }
                     }
