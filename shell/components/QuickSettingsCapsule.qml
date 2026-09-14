@@ -208,8 +208,8 @@ PanelWindow {
             width: root.currentWidth
             height: root.currentHeight
             color: Theme.notchBackground
-            border.color: Theme.notchBorder
-            border.width: 1
+            border.color: "transparent"
+            border.width: 0
             z: 1
 
             topLeftRadius: 0
@@ -304,14 +304,14 @@ PanelWindow {
                         Rectangle {
                             implicitWidth: 20
                             implicitHeight: 20
-                            radius: 10
+                            radius: Theme.notchRadiusPill
                             color: closeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "✕"
                                 font.pixelSize: 10
-                                color: closeMa.containsMouse ? "#ffffff" : Theme.notchTextTertiary
+                                color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
                             }
 
                             MouseArea {
@@ -370,8 +370,8 @@ PanelWindow {
                                     implicitHeight: 32
                                     radius: 16
                                     color: root.wifiEnabled
-                                           ? (SystemMonitor.isOnline ? "#ffffff" : Qt.rgba(1, 1, 1, 0.25))
-                                           : Qt.rgba(1, 1, 1, 0.08)
+                                           ? (SystemMonitor.isOnline ? Theme.notchText : Theme.notchBorderHighlight)
+                                           : Theme.notchSurfaceElevated
 
                                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -379,7 +379,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         source: "network-wireless-symbolic"
                                         iconSize: 16
-                                        iconColor: root.wifiEnabled && SystemMonitor.isOnline ? "#000000" : (root.wifiEnabled ? "#ffffff" : Theme.notchTextTertiary)
+                                        iconColor: root.wifiEnabled && SystemMonitor.isOnline ? Theme.notchBackground : (root.wifiEnabled ? Theme.notchText : Theme.notchTextTertiary)
                                     }
 
                                     MouseArea {
@@ -607,7 +607,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: "⟳"
                                 font.pixelSize: 14
-                                color: rescanMa.containsMouse ? "#ffffff" : Theme.notchTextSecondary
+                                color: rescanMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                             }
 
                             MouseArea {
@@ -650,7 +650,7 @@ PanelWindow {
 
                             width: wifiListView.width - (wifiListView.contentHeight > wifiListView.height ? 6 : 0)
                             implicitHeight: 34
-                            radius: 8
+                            radius: Theme.notchRadiusPill
                             color: isCurrent
                                    ? Qt.rgba(1, 1, 1, 0.14)
                                    : (netMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
@@ -666,7 +666,7 @@ PanelWindow {
                                 SymbolicIcon {
                                     source: "network-wireless-symbolic"
                                     iconSize: 14
-                                    iconColor: netItem.isCurrent ? "#ffffff" : Theme.notchTextSecondary
+                                    iconColor: netItem.isCurrent ? Theme.notchText : Theme.notchTextSecondary
                                 }
 
                                 Text {
@@ -674,7 +674,7 @@ PanelWindow {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: 11
                                     font.weight: netItem.isCurrent ? Font.DemiBold : Font.Normal
-                                    color: netItem.isCurrent ? "#ffffff" : Theme.notchText
+                                    color: Theme.notchText
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }

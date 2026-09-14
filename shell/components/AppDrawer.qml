@@ -452,8 +452,8 @@ PanelWindow {
             anchors.fill: parent
             radius: root.radiusCard
             color: root.colorBackground
-            border.color: root.colorBorder
-            border.width: 1
+            border.color: "transparent"
+            border.width: 0
             z: 1
 
             LayoutMirroring.enabled: I18n.isRTL
