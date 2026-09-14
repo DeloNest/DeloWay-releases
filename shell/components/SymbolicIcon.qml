@@ -29,6 +29,10 @@ Item {
         "bluetooth-symbolic": "status/bluetooth.svg",
         "audio-volume-high": "status/audio-volume-high.svg",
         "audio-volume-high-symbolic": "status/audio-volume-high.svg",
+        "audio-volume-medium": "status/audio-volume-medium.svg",
+        "audio-volume-medium-symbolic": "status/audio-volume-medium.svg",
+        "audio-volume-low": "status/audio-volume-low.svg",
+        "audio-volume-low-symbolic": "status/audio-volume-low.svg",
         "audio-volume-muted": "status/audio-volume-muted.svg",
         "audio-volume-muted-symbolic": "status/audio-volume-muted.svg",
         "speaker": "status/speaker.svg",
@@ -164,7 +168,7 @@ Item {
     // Fallback: If image fails to resolve locally, use Quickshell / Kirigami icon
     IconImage {
         anchors.fill: parent
-        source: Quickshell.iconPath(root.source, "image-missing")
+        source: root.resolvedSource ? "" : Quickshell.iconPath(root.source, "image-missing")
         implicitSize: root.iconSize
         visible: rawIcon.status !== Image.Ready
     }
