@@ -49,7 +49,7 @@ Item {
         "weather-sunny-symbolic": "status/weather-sunny.svg",
         "sun": "status/weather-sunny.svg",
         "weather-clear-night-symbolic": "status/weather-moon.svg",
-        "night-light-symbolic": "status/weather-moon.svg",
+        "night-light-symbolic": "status/night-light-symbolic.svg",
         "power-profile-balanced-symbolic": "status/power-profile-balanced.svg",
         "system-shutdown": "status/power-symbolic.svg",
         "system-shutdown-symbolic": "status/power-symbolic.svg",

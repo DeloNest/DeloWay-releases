@@ -244,6 +244,7 @@ PanelWindow {
             networkStatusProcess.running = true;
             root.bluetoothError = "";
             bluetoothStatusProcess.running = true;
+            nightLightStatusProcess.running = true;
             if (root.brightnessBackend === "kernel") {
                 backlightReadProcess.running = true;
             } else if (root.brightnessBackend === "ddc") {
@@ -463,7 +464,41 @@ PanelWindow {
             backlightWriteDebounce.restart();
     }
 
-    Component.onCompleted: backlightDetectProcess.running = true;
+    // ─────────────────────────────────────────────────────────────────────────
+    // Night Light / Eye Comfort (via hyprsunset)
+    // ─────────────────────────────────────────────────────────────────────────
+    property bool nightLightEnabled: false
+
+    Process {
+        id: nightLightStatusProcess
+        command: ["sh", "-c", "pgrep -x hyprsunset >/dev/null && echo 1 || echo 0"]
+        stdout: SplitParser {
+            onRead: data => {
+                root.nightLightEnabled = data.trim() === "1";
+            }
+        }
+    }
+
+    Process {
+        id: nightLightToggleProcess
+        onExited: nightLightStatusProcess.running = true
+    }
+
+    function toggleNightLight() {
+        const next = !root.nightLightEnabled;
+        root.nightLightEnabled = next;
+        if (next) {
+            nightLightToggleProcess.command = ["sh", "-c", "pkill -x hyprsunset 2>/dev/null || true; nohup hyprsunset -t 4500 >/dev/null 2>&1 &"];
+        } else {
+            nightLightToggleProcess.command = ["sh", "-c", "pkill -x hyprsunset 2>/dev/null || true"];
+        }
+        nightLightToggleProcess.running = true;
+    }
+
+    Component.onCompleted: {
+        backlightDetectProcess.running = true;
+        nightLightStatusProcess.running = true;
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Visual Hierarchy
@@ -810,6 +845,43 @@ PanelWindow {
                                     color: btTileMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
                                     Layout.alignment: Qt.AlignVCenter
                                 }
+                            }
+                        }
+
+                        // ── Eye Comfort (Night Light) Tile ──
+                        Rectangle {
+                            id: eyeComfortTile
+                            Layout.preferredWidth: 52
+                            Layout.preferredHeight: 52
+                            radius: 12
+                            color: root.nightLightEnabled
+                                   ? (eyeComfortMa.containsMouse ? Qt.rgba(0.95, 0.65, 0.25, 0.26) : Qt.rgba(0.95, 0.65, 0.25, 0.18))
+                                   : (eyeComfortMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
+                            border.color: root.nightLightEnabled
+                                          ? Qt.rgba(0.95, 0.65, 0.25, 0.45)
+                                          : Theme.notchBorder
+                            border.width: 1
+
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            SymbolicIcon {
+                                anchors.centerIn: parent
+                                source: "night-light-symbolic"
+                                iconSize: 20
+                                iconColor: root.nightLightEnabled
+                                           ? Qt.rgba(1.0, 0.78, 0.40, 1.0)
+                                           : Theme.notchTextSecondary
+
+                                Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
+                            }
+
+                            MouseArea {
+                                id: eyeComfortMa
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: root.toggleNightLight()
                             }
                         }
                     }
