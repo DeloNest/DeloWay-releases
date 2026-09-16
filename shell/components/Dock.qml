@@ -26,8 +26,8 @@ PanelWindow {
     readonly property int itemPad:    8
     readonly property int iconSz:     48
 
-    implicitHeight: dockH + 24
-    implicitWidth: dockCard.implicitWidth + 24
+    implicitHeight: dockH + 46
+    implicitWidth: dockCard.implicitWidth + 120
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:dock"
@@ -54,11 +54,11 @@ PanelWindow {
             anchors.leftMargin: -2
             anchors.rightMargin: -2
             radius: root.cardRadius + 2
-            color: Theme.dockShadow
+            color: Theme.notchShadow
             z: -1
         }
 
-        // ─── Floating Frosted Glass Capsule ─────────────────────────────────
+        // ─── Floating Deep Black Capsule ────────────────────────────────────
         Rectangle {
             id: dockCard
             implicitWidth: dockLayout.implicitWidth + 24
@@ -67,9 +67,9 @@ PanelWindow {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 6
 
-            color: Theme.dockGlass
+            color: Theme.notchBackground
             radius: root.cardRadius
-            border.color: Theme.dockBorder
+            border.color: Theme.notchBorder
             border.width: 1
 
             // Subtle inner light sheen on top rim
@@ -77,7 +77,7 @@ PanelWindow {
                 anchors.fill: parent
                 radius: parent.radius
                 color: "transparent"
-                border.color: Theme.dockGlassSheen
+                border.color: Theme.notchBorderSubtle
                 border.width: 1
                 anchors.margins: 1
             }
@@ -97,6 +97,7 @@ PanelWindow {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
                     Layout.alignment: Qt.AlignVCenter
+                    z: drawerMouse.containsMouse ? 100 : 1
 
                     Item {
                         anchors.centerIn: parent
@@ -104,11 +105,11 @@ PanelWindow {
                         height: root.iconSz
 
                         scale: drawerMouse.pressed ? 0.90
-                             : (drawerMouse.containsMouse ? 1.15 : 1.0)
+                             : (drawerMouse.containsMouse ? 1.08 : 1.0)
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
                         transform: Translate {
-                            y: drawerMouse.containsMouse ? -4 : 0
+                            y: drawerMouse.containsMouse ? -2 : 0
                             Behavior on y { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                         }
 
@@ -154,17 +155,19 @@ PanelWindow {
 
                         Rectangle {
                             id: ttBg1
-                            implicitWidth: tt1.implicitWidth + 16
+                            implicitWidth: Math.min(tt1.implicitWidth + 16, 220)
                             implicitHeight: 24
-                            radius: 6
-                            color: Theme.dockTooltipBg
-                            border.color: Theme.dockTooltipBorder
+                            radius: Theme.notchRadiusPill
+                            color: Theme.notchBackground
+                            border.color: Theme.notchBorder
                             border.width: 1
                             Text {
                                 id: tt1
                                 anchors.centerIn: parent
+                                width: Math.min(implicitWidth, 204)
+                                elide: Text.ElideRight
                                 text: I18n.tr("all_apps")
-                                color: Theme.textOnAccent
+                                color: Theme.notchText
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
@@ -198,17 +201,18 @@ PanelWindow {
                         Layout.preferredWidth: implicitWidth
                         Layout.preferredHeight: implicitHeight
                         Layout.alignment: Qt.AlignVCenter
+                        z: appItem.isHov ? 100 : 1
 
                         Item {
                             anchors.centerIn: parent
                             width: root.iconSz
                             height: root.iconSz
 
-                            scale: itemMouse.pressed ? 0.90 : (appItem.isHov ? 1.15 : 1.0)
+                            scale: itemMouse.pressed ? 0.90 : (appItem.isHov ? 1.08 : 1.0)
                             Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
                             transform: Translate {
-                                y: appItem.isHov ? -4 : 0
+                                y: appItem.isHov ? -2 : 0
                                 Behavior on y { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                             }
 
@@ -237,17 +241,19 @@ PanelWindow {
 
                             Rectangle {
                                 id: ttBgApp
-                                implicitWidth: ttApp.implicitWidth + 16
+                                implicitWidth: Math.min(ttApp.implicitWidth + 16, 220)
                                 implicitHeight: 24
-                                radius: 6
-                                color: Theme.dockTooltipBg
-                                border.color: Theme.dockTooltipBorder
+                                radius: Theme.notchRadiusPill
+                                color: Theme.notchBackground
+                                border.color: Theme.notchBorder
                                 border.width: 1
                                 Text {
                                     id: ttApp
                                     anchors.centerIn: parent
+                                    width: Math.min(implicitWidth, 204)
+                                    elide: Text.ElideRight
                                     text: (modelData && modelData.name) ? modelData.name : ""
-                                    color: Theme.textOnAccent
+                                    color: Theme.notchText
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: 12
                                     font.weight: Font.Medium
@@ -289,14 +295,14 @@ PanelWindow {
                     }
                 }
 
-                // ── macOS Glass Divider ──────────────────────────────────────
+                // ── macOS Divider ────────────────────────────────────────────
                 Rectangle {
                     Layout.alignment: Qt.AlignVCenter
                     Layout.preferredWidth: 1
                     Layout.preferredHeight: 32
                     Layout.leftMargin: 4
                     Layout.rightMargin: 4
-                    color: Theme.dockDivider
+                    color: Theme.notchBorderHighlight
                     radius: 1
                 }
 
@@ -308,6 +314,7 @@ PanelWindow {
                     Layout.preferredWidth: implicitWidth
                     Layout.preferredHeight: implicitHeight
                     Layout.alignment: Qt.AlignVCenter
+                    z: trashMouse.containsMouse ? 100 : 1
 
                     Item {
                         anchors.centerIn: parent
@@ -315,11 +322,11 @@ PanelWindow {
                         height: root.iconSz
 
                         scale: trashMouse.pressed ? 0.90
-                             : (trashMouse.containsMouse ? 1.15 : 1.0)
+                             : (trashMouse.containsMouse ? 1.08 : 1.0)
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
                         transform: Translate {
-                            y: trashMouse.containsMouse ? -4 : 0
+                            y: trashMouse.containsMouse ? -2 : 0
                             Behavior on y { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                         }
 
@@ -353,17 +360,19 @@ PanelWindow {
 
                         Rectangle {
                             id: ttBgTrash
-                            implicitWidth: ttTrash.implicitWidth + 16
+                            implicitWidth: Math.min(ttTrash.implicitWidth + 16, 220)
                             implicitHeight: 24
-                            radius: 6
-                            color: Theme.dockTooltipBg
-                            border.color: Theme.dockTooltipBorder
+                            radius: Theme.notchRadiusPill
+                            color: Theme.notchBackground
+                            border.color: Theme.notchBorder
                             border.width: 1
                             Text {
                                 id: ttTrash
                                 anchors.centerIn: parent
+                                width: Math.min(implicitWidth, 204)
+                                elide: Text.ElideRight
                                 text: I18n.tr("trash_title")
-                                color: Theme.textOnAccent
+                                color: Theme.notchText
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: 12
                                 font.weight: Font.Medium

@@ -145,7 +145,7 @@ Item {
     // 4. Fourth Tier: Clean Fluent Monogram Fallback
     Rectangle {
         anchors.fill: parent
-        radius: Theme.radiusSmall
+        radius: Theme.radius.dockItem
         color: Theme.colors.surfaceElevated
         border.color: Theme.colors.border
         border.width: 1

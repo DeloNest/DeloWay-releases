@@ -182,18 +182,6 @@ QtObject {
     readonly property color hairline: Qt.alpha(colors.text, 0.08)
     readonly property color hairlineSoft: Qt.alpha(colors.text, 0.05)
 
-    // Dock Glassmorphism Tokens (Reference: macOS Frosted Glass)
-    readonly property color dockGlass: mode === "light"
-                                     ? Qt.rgba(1, 1, 1, 0.45)
-                                     : Qt.rgba(0.09, 0.11, 0.16, 0.58)
-    readonly property color dockGlassSheen: Qt.rgba(1, 1, 1, 0.12)
-    readonly property color dockBorder: Qt.rgba(1, 1, 1, 0.26)
-    readonly property color dockShadow: Qt.rgba(0, 0, 0, 0.32)
-    readonly property color dockDot: Qt.rgba(1, 1, 1, 0.95)
-    readonly property color dockDivider: Qt.rgba(1, 1, 1, 0.22)
-    readonly property color dockTooltipBg: Qt.alpha(colors.surfaceElevated, 0.90)
-    readonly property color dockTooltipBorder: Qt.rgba(1, 1, 1, 0.18)
-
     // -------------------------------------------------------------------------
     // Deep Black / Notch Surface Tokens (Unified OLED aesthetic)
     // -------------------------------------------------------------------------
@@ -214,6 +202,16 @@ QtObject {
     readonly property int notchRadiusCard: 12
     readonly property int notchRadiusPill: 8
     readonly property int radiusDock: 24
+
+    // Dock Tokens (Unified with OLED Notch/Capsule aesthetic)
+    readonly property color dockGlass: notchBackground
+    readonly property color dockGlassSheen: notchBorderSubtle
+    readonly property color dockBorder: notchBorder
+    readonly property color dockShadow: notchShadow
+    readonly property color dockDot: Qt.rgba(1, 1, 1, 0.95)
+    readonly property color dockDivider: notchBorderHighlight
+    readonly property color dockTooltipBg: notchBackground
+    readonly property color dockTooltipBorder: notchBorder
 
     function setMode(newMode) {
         if (newMode !== "dark" && newMode !== "light") return;
