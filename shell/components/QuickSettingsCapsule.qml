@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import "../theme"
 import "../services"
@@ -54,33 +55,17 @@ PanelWindow {
 
     property real currentWidth: isExpanded ? expandedWidth : compactWidth
     property real currentHeight: isExpanded ? expandedHeight : compactHeight
-    property bool expandedContentReady: false
-
-    function checkExpansionComplete() {
-        if (root.isExpanded && !widthAnim.running && !heightAnim.running) {
-            root.expandedContentReady = true;
-        }
-    }
-
     Behavior on currentWidth {
         NumberAnimation {
-            id: widthAnim
             duration: Theme.motionBase
             easing.type: Theme.easingEnter
-            onRunningChanged: {
-                if (!running) root.checkExpansionComplete();
-            }
         }
     }
 
     Behavior on currentHeight {
         NumberAnimation {
-            id: heightAnim
             duration: Theme.motionBase
             easing.type: Theme.easingEnter
-            onRunningChanged: {
-                if (!running) root.checkExpansionComplete();
-            }
         }
     }
 
@@ -105,6 +90,59 @@ PanelWindow {
         } else if (root.currentView === "bluetooth") {
             bluetoothStatusProcess.running = true;
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Keyboard Layout Logic (Event-driven via Hyprland socket2 & initial process)
+    // ─────────────────────────────────────────────────────────────────────────
+    property string activeKeyboardCode: "EN"
+
+    function layoutToCode(name) {
+        if (!name) return "EN";
+        const lower = name.toLowerCase();
+        if (lower.indexOf("arab") !== -1 || lower.indexOf("ara") !== -1) return "AR";
+        if (lower.indexOf("engl") !== -1 || lower.indexOf("us") !== -1) return "EN";
+        if (lower.indexOf("fren") !== -1 || lower.indexOf("fr") !== -1) return "FR";
+        if (lower.indexOf("germ") !== -1 || lower.indexOf("de") !== -1) return "DE";
+        if (lower.indexOf("span") !== -1 || lower.indexOf("es") !== -1) return "ES";
+        if (lower.indexOf("turk") !== -1 || lower.indexOf("tr") !== -1) return "TR";
+        if (lower.indexOf("russ") !== -1 || lower.indexOf("ru") !== -1) return "RU";
+        return name.slice(0, 2).toUpperCase();
+    }
+
+    function updateLayoutFromEvent(data) {
+        if (!data) return;
+        const parts = data.split(",");
+        const layoutName = parts.length > 1 ? parts.slice(1).join(",").trim() : parts[0].trim();
+        root.activeKeyboardCode = root.layoutToCode(layoutName);
+    }
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event && event.name === "activelayout") {
+                root.updateLayoutFromEvent(event.data);
+            }
+        }
+    }
+
+    Process {
+        id: keyboardInitProcess
+        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-keyboard.py", "status"]
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: data => {
+                try {
+                    const parsed = JSON.parse(data.trim());
+                    if (parsed.code) {
+                        root.activeKeyboardCode = parsed.code;
+                    } else if (parsed.active) {
+                        root.activeKeyboardCode = root.layoutToCode(parsed.active);
+                    }
+                } catch (e) {}
+            }
+        }
+        Component.onCompleted: running = true
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -363,9 +401,6 @@ PanelWindow {
     // 1. Instant fetch upon expanding
     onIsExpandedChanged: {
         if (isExpanded) {
-            if (!widthAnim.running && !heightAnim.running) {
-                root.expandedContentReady = true;
-            }
             networkStatusProcess.running = true;
             root.bluetoothError = "";
             bluetoothStatusProcess.running = true;
@@ -379,7 +414,6 @@ PanelWindow {
                 backlightDetectProcess.running = true;
             }
         } else {
-            root.expandedContentReady = false;
             ShellState.quickSettingsCapsuleHotspotSettingsOpen = false;
             ShellState.quickSettingsCapsuleView = "main";
         }
@@ -755,6 +789,18 @@ PanelWindow {
                         }
                     }
 
+                    // Keyboard Language Indicator (Read-only status badge)
+                    Text {
+                        id: langLabel
+                        text: root.activeKeyboardCode
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.Bold
+                        color: Theme.notchTextSecondary
+                        renderType: Theme.renderType
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
                     // Settings icon area (Clickable to toggle/expand Main controls)
                     Item {
                         implicitWidth: 16
@@ -793,8 +839,8 @@ PanelWindow {
                 anchors.topMargin: 12
                 anchors.left: parent.left
                 anchors.leftMargin: 12
-                visible: root.isExpanded && root.expandedContentReady
-                opacity: root.expandedContentReady ? 1.0 : 0.0
+                visible: root.isExpanded
+                opacity: root.isExpanded ? 1.0 : 0.0
 
                 Behavior on opacity {
                     NumberAnimation {
