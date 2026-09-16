@@ -14,20 +14,10 @@ Item {
     implicitWidth: 240
     Layout.fillHeight: true
 
-    // Background
+    // Background - transparent to reveal OLED black windowCard
     Rectangle {
         anchors.fill: parent
-        color: Theme.colors.backgroundAlt
-    }
-
-    // Border separating sidebar from content (RTL / LTR aware)
-    Rectangle {
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
-        anchors.left: I18n.isRTL ? parent.left : undefined
-        anchors.right: I18n.isRTL ? undefined : parent.right
-        width: 1
-        color: Theme.borderSubtle
+        color: "transparent"
     }
 
     ScrollView {
@@ -138,10 +128,10 @@ Item {
             anchors.leftMargin: Theme.space16
             anchors.rightMargin: Theme.space16
             font.family: Theme.typography.fontFamily
-            font.pixelSize: 10
+            font.pixelSize: 11
             font.weight: Font.DemiBold
             font.letterSpacing: 0.8
-            color: Theme.colors.textTertiary
+            color: Theme.notchTextTertiary
             horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
         }
     }
@@ -157,31 +147,21 @@ Item {
         Layout.fillWidth: true
         Layout.leftMargin: Theme.space8
         Layout.rightMargin: Theme.space8
-        implicitHeight: 36
+        implicitHeight: 38
 
         Rectangle {
             id: itemBg
             anchors.fill: parent
-            radius: Theme.radiusMedium
-            color: itemRoot.isActive ? Theme.colors.surfaceElevated : (itemMa.containsMouse ? Theme.colors.surfaceHover : "transparent")
-            border.color: itemRoot.isActive ? Theme.borderSubtle : "transparent"
+            radius: 19
+            color: itemRoot.isActive ? Theme.notchSurfaceActive : (itemMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+            border.color: itemRoot.isActive ? Theme.notchBorder : "transparent"
             border.width: 1
 
             Behavior on color {
-                ColorAnimation { duration: Theme.motionFast }
+                ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
             }
-
-            // Active accent indicator bar on the outer edge
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: I18n.isRTL ? undefined : parent.left
-                anchors.right: I18n.isRTL ? parent.right : undefined
-                anchors.margins: 3
-                width: 3
-                height: 18
-                radius: 2
-                color: Theme.colors.accent
-                visible: itemRoot.isActive
+            Behavior on border.color {
+                ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
             }
 
             RowLayout {
@@ -189,25 +169,30 @@ Item {
                 anchors.leftMargin: Theme.space16
                 anchors.rightMargin: Theme.space16
                 spacing: Theme.space8
-                layoutDirection: I18n.isRTL ? Qt.RightToLeft : Qt.LeftToRight
 
                 SymbolicIcon {
                     source: itemRoot.iconSource
                     iconSize: 16
-                    iconColor: itemRoot.isActive ? Theme.colors.accent : (itemMa.containsMouse ? Theme.colors.text : Theme.colors.textSecondary)
+                    iconColor: (itemRoot.isActive || itemMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                     Layout.alignment: Qt.AlignVCenter
+                    Behavior on iconColor {
+                        ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
+                    }
                 }
 
                 Text {
                     text: itemRoot.label
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 13
-                    font.weight: itemRoot.isActive ? Font.DemiBold : Font.Normal
-                    color: itemRoot.isActive ? Theme.colors.text : (itemMa.containsMouse ? Theme.colors.text : Theme.colors.textSecondary)
+                    font.weight: (itemRoot.isActive || itemMa.containsMouse) ? Font.DemiBold : Font.Normal
+                    color: (itemRoot.isActive || itemMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
                     elide: Text.ElideRight
                     horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                    Behavior on color {
+                        ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
+                    }
                 }
             }
         }
