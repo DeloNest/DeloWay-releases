@@ -685,31 +685,22 @@ PanelWindow {
                 opacity: root.isExpanded ? 0.0 : 1.0
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
-                WheelHandler {
-                    enabled: !root.isExpanded
-                    onWheel: (wheel) => {
-                        if (root.isExpanded) return;
-                        if (wheel.angleDelta.y < 0) {
-                            ShellState.openAppDrawer();
-                        } else if (wheel.angleDelta.y > 0) {
-                            ShellState.closeAppDrawer();
-                        }
-                    }
-                }
-
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
-                    onClicked: {
-                        ShellState.openQuickSettingsCapsule("main");
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.LeftButton) {
+                            ShellState.openQuickSettingsCapsule("main");
+                        }
                     }
                     onWheel: (wheel) => {
-                        if (root.isExpanded) return;
+                        wheel.accepted = true;
                         if (wheel.angleDelta.y < 0) {
-                            ShellState.openAppDrawer();
+                            ShellState.openQuickSettingsCapsule("main");
                         } else if (wheel.angleDelta.y > 0) {
-                            ShellState.closeAppDrawer();
+                            ShellState.closeQuickSettingsCapsule();
                         }
                     }
                 }
@@ -755,15 +746,10 @@ PanelWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onClicked: {
-                                ShellState.toggleQuickSettingsCapsule("wifi");
-                            }
-                            onWheel: (wheel) => {
-                                if (root.isExpanded) return;
-                                if (wheel.angleDelta.y < 0) {
-                                    ShellState.openAppDrawer();
-                                } else if (wheel.angleDelta.y > 0) {
-                                    ShellState.closeAppDrawer();
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton) {
+                                    ShellState.toggleQuickSettingsCapsule("wifi");
                                 }
                             }
                         }
@@ -787,15 +773,10 @@ PanelWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
-                            onClicked: {
-                                ShellState.toggleQuickSettingsCapsule("main");
-                            }
-                            onWheel: (wheel) => {
-                                if (root.isExpanded) return;
-                                if (wheel.angleDelta.y < 0) {
-                                    ShellState.openAppDrawer();
-                                } else if (wheel.angleDelta.y > 0) {
-                                    ShellState.closeAppDrawer();
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton) {
+                                    ShellState.toggleQuickSettingsCapsule("main");
                                 }
                             }
                         }
@@ -831,39 +812,53 @@ PanelWindow {
                     visible: root.currentView === "main"
 
                     // Header: Quick Settings title + close button
-                    RowLayout {
+                    Item {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 20
 
-                        Text {
-                            text: I18n.isRTL ? "إعدادات سريعة" : "Quick Settings"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
-                            color: Theme.notchTextSecondary
-                            Layout.fillWidth: true
+                        MouseArea {
+                            anchors.fill: parent
+                            onWheel: (wheel) => {
+                                if (wheel.angleDelta.y > 0) {
+                                    wheel.accepted = true;
+                                    ShellState.closeQuickSettingsCapsule();
+                                }
+                            }
                         }
 
-                        Rectangle {
-                            implicitWidth: 20
-                            implicitHeight: 20
-                            radius: Theme.notchRadiusPill
-                            color: closeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                        RowLayout {
+                            anchors.fill: parent
 
                             Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: 10
-                                color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                                text: I18n.isRTL ? "إعدادات سريعة" : "Quick Settings"
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: 11
+                                font.weight: Font.DemiBold
+                                color: Theme.notchTextSecondary
+                                Layout.fillWidth: true
                             }
 
-                            MouseArea {
-                                id: closeMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    ShellState.closeQuickSettingsCapsule();
+                            Rectangle {
+                                implicitWidth: 20
+                                implicitHeight: 20
+                                radius: Theme.notchRadiusPill
+                                color: closeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "✕"
+                                    font.pixelSize: 10
+                                    color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                                }
+
+                                MouseArea {
+                                    id: closeMa
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        ShellState.closeQuickSettingsCapsule();
+                                    }
                                 }
                             }
                         }

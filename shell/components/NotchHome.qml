@@ -170,14 +170,9 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: root.notificationActive = false
-                    onWheel: (wheel) => {
-                        if (root.expanded) return;
-                        if (wheel.angleDelta.y < 0) {
-                            ShellState.openAppDrawer();
-                        } else if (wheel.angleDelta.y > 0) {
-                            ShellState.closeAppDrawer();
-                        }
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.LeftButton) root.notificationActive = false;
                     }
                 }
             }
@@ -242,14 +237,9 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: Hyprland.dispatch("workspace " + wsBtn.wsId)
-                            onWheel: (wheel) => {
-                                if (root.expanded) return;
-                                if (wheel.angleDelta.y < 0) {
-                                    ShellState.openAppDrawer();
-                                } else if (wheel.angleDelta.y > 0) {
-                                    ShellState.closeAppDrawer();
-                                }
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton) Hyprland.dispatch("workspace " + wsBtn.wsId);
                             }
                         }
                     }
@@ -332,18 +322,11 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.activePlayer) {
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton && root.activePlayer) {
                                     if (root.activePlayer.isPlaying) root.activePlayer.pause();
                                     else root.activePlayer.play();
-                                }
-                            }
-                            onWheel: (wheel) => {
-                                if (root.expanded) return;
-                                if (wheel.angleDelta.y < 0) {
-                                    ShellState.openAppDrawer();
-                                } else if (wheel.angleDelta.y > 0) {
-                                    ShellState.closeAppDrawer();
                                 }
                             }
                         }
@@ -367,15 +350,10 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.activePlayer) root.activePlayer.next();
-                            }
-                            onWheel: (wheel) => {
-                                if (root.expanded) return;
-                                if (wheel.angleDelta.y < 0) {
-                                    ShellState.openAppDrawer();
-                                } else if (wheel.angleDelta.y > 0) {
-                                    ShellState.closeAppDrawer();
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton && root.activePlayer) {
+                                    root.activePlayer.next();
                                 }
                             }
                         }

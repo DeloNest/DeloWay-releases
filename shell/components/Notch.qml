@@ -153,32 +153,25 @@ PanelWindow {
                 opacity: root.isExpanded ? 0.0 : 1.0
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
-                WheelHandler {
-                    enabled: !root.isExpanded
-                    onWheel: (wheel) => {
-                        if (root.isExpanded) return;
-                        if (wheel.angleDelta.y < 0) {
-                            ShellState.openAppDrawer();
-                        } else if (wheel.angleDelta.y > 0) {
-                            ShellState.closeAppDrawer();
-                        }
-                    }
-                }
-
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton
                     z: 0
                     onEntered: root.isHovered = true
                     onExited: root.isHovered = false
-                    onClicked: ShellState.openSmartNotch()
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.LeftButton) {
+                            ShellState.openSmartNotch();
+                        }
+                    }
                     onWheel: (wheel) => {
-                        if (root.isExpanded) return;
+                        wheel.accepted = true;
                         if (wheel.angleDelta.y < 0) {
-                            ShellState.openAppDrawer();
+                            ShellState.openSmartNotch();
                         } else if (wheel.angleDelta.y > 0) {
-                            ShellState.closeAppDrawer();
+                            ShellState.closeSmartNotch();
                         }
                     }
                 }
@@ -212,12 +205,25 @@ PanelWindow {
                     LayoutMirroring.childrenInherit: true
 
                     // ── TIER 1: Header Bar (Nook & Tray Tabs on left, ⚙ on right) ──
-                    RowLayout {
+                    Item {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 28
-                        spacing: 6
-                        LayoutMirroring.enabled: false
-                        LayoutMirroring.childrenInherit: true
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onWheel: (wheel) => {
+                                if (wheel.angleDelta.y > 0) {
+                                    wheel.accepted = true;
+                                    ShellState.closeSmartNotch();
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            anchors.fill: parent
+                            spacing: 6
+                            LayoutMirroring.enabled: false
+                            LayoutMirroring.childrenInherit: true
 
                         // Tab 1: Nook
                         Rectangle {
@@ -365,6 +371,7 @@ PanelWindow {
                             }
                         }
                     }
+                }
 
                     // ── TIER 2: Body Content (SwipeView) ──────────────────────
                     Item {
