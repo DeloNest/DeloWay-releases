@@ -8,6 +8,7 @@ import Quickshell.Hyprland
 
 // ── Local modules ───────────────────────────────────────────────────────────
 import "components"
+import "components/settings"
 import "theme"
 import "services"
 
@@ -125,6 +126,10 @@ ShellRoot {
         function toggleSessionMenu()  { ShellState.toggleSessionMenu(); }
         function toggleQuickSettings(){ ShellState.toggleQuickSettings(); }
         function openQuickSettings(view: string) { ShellState.openQuickSettingsWithView(view || "main"); }
+        function toggleCapsule() { ShellState.toggleQuickSettingsCapsule(); }
+        function openCapsule(view: string) { ShellState.openQuickSettingsCapsule(view || "wifi"); }
+        function closeCapsule() { ShellState.closeQuickSettingsCapsule(); }
+        function openHotspot() { ShellState.openHotspot(); }
 
         // ── Cheat Sheet & Screenshot ────────────────────────────────────────
         function toggleCheatsheet() { ShellState.toggleCheatSheet(); }
@@ -247,7 +252,7 @@ ShellRoot {
             SessionMenu      { targetScreen: screenScope.modelData }
 
             // ── Full-screen apps / tools ────────────────────────────────────
-            SettingsApp    { targetScreen: screenScope.modelData }
+            SettingsAppV2  { targetScreen: screenScope.modelData }
             SetupWizard    { targetScreen: screenScope.modelData }
             AppStore       { targetScreen: screenScope.modelData }
             ScreenshotTool { targetScreen: screenScope.modelData }
