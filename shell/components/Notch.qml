@@ -153,6 +153,18 @@ PanelWindow {
                 opacity: root.isExpanded ? 0.0 : 1.0
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
+                WheelHandler {
+                    enabled: !root.isExpanded
+                    onWheel: (wheel) => {
+                        if (root.isExpanded) return;
+                        if (wheel.angleDelta.y < 0) {
+                            ShellState.openAppDrawer();
+                        } else if (wheel.angleDelta.y > 0) {
+                            ShellState.closeAppDrawer();
+                        }
+                    }
+                }
+
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
@@ -161,6 +173,14 @@ PanelWindow {
                     onEntered: root.isHovered = true
                     onExited: root.isHovered = false
                     onClicked: ShellState.openSmartNotch()
+                    onWheel: (wheel) => {
+                        if (root.isExpanded) return;
+                        if (wheel.angleDelta.y < 0) {
+                            ShellState.openAppDrawer();
+                        } else if (wheel.angleDelta.y > 0) {
+                            ShellState.closeAppDrawer();
+                        }
+                    }
                 }
 
                 NotchHome {

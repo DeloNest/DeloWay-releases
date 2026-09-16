@@ -84,6 +84,20 @@ PanelWindow {
 
             HoverHandler { onHoveredChanged: root.dockHovered = hovered }
 
+            MouseArea {
+                id: dockWheelMa
+                anchors.fill: parent
+                hoverEnabled: false
+                z: 0
+                onWheel: (wheel) => {
+                    if (wheel.angleDelta.y < 0) {
+                        ShellState.openAppDrawer();
+                    } else if (wheel.angleDelta.y > 0) {
+                        ShellState.closeAppDrawer();
+                    }
+                }
+            }
+
             RowLayout {
                 id: dockLayout
                 anchors.centerIn: parent
@@ -195,6 +209,13 @@ PanelWindow {
                                     ApplicationManager.activateOrLaunch(modelData);
                                 }
                             }
+                            onWheel: (wheel) => {
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openAppDrawer();
+                                } else if (wheel.angleDelta.y > 0) {
+                                    ShellState.closeAppDrawer();
+                                }
+                            }
                         }
                     }
                 }
@@ -291,6 +312,13 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: Hyprland.dispatch("exec xdg-open trash://")
+                        onWheel: (wheel) => {
+                            if (wheel.angleDelta.y < 0) {
+                                ShellState.openAppDrawer();
+                            } else if (wheel.angleDelta.y > 0) {
+                                ShellState.closeAppDrawer();
+                            }
+                        }
                     }
                 }
             }

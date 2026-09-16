@@ -32,6 +32,29 @@ QtObject {
         smartNotchTab = parseInt(index) || 0;
     }
 
+    property bool quickSettingsCapsuleExpanded: false
+    property string quickSettingsCapsuleView: "wifi"
+
+    function openQuickSettingsCapsule(viewName) {
+        quickSettingsCapsuleView = viewName || "wifi";
+        quickSettingsCapsuleExpanded = true;
+    }
+
+    function closeQuickSettingsCapsule() {
+        quickSettingsCapsuleExpanded = false;
+    }
+
+    function toggleQuickSettingsCapsule(viewName) {
+        if (!quickSettingsCapsuleExpanded) {
+            quickSettingsCapsuleView = viewName || "wifi";
+        }
+        quickSettingsCapsuleExpanded = !quickSettingsCapsuleExpanded;
+    }
+
+    function openHotspot() {
+        openQuickSettingsCapsule("hotspot");
+    }
+
     function openSetupWizard() {
         setupWizardOpen = true;
     }
