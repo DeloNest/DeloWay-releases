@@ -171,6 +171,14 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: root.notificationActive = false
+                    onWheel: (wheel) => {
+                        if (root.expanded) return;
+                        if (wheel.angleDelta.y < 0) {
+                            ShellState.openAppDrawer();
+                        } else if (wheel.angleDelta.y > 0) {
+                            ShellState.closeAppDrawer();
+                        }
+                    }
                 }
             }
         }
@@ -235,6 +243,14 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: Hyprland.dispatch("workspace " + wsBtn.wsId)
+                            onWheel: (wheel) => {
+                                if (root.expanded) return;
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openAppDrawer();
+                                } else if (wheel.angleDelta.y > 0) {
+                                    ShellState.closeAppDrawer();
+                                }
+                            }
                         }
                     }
                 }
@@ -322,6 +338,14 @@ Item {
                                     else root.activePlayer.play();
                                 }
                             }
+                            onWheel: (wheel) => {
+                                if (root.expanded) return;
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openAppDrawer();
+                                } else if (wheel.angleDelta.y > 0) {
+                                    ShellState.closeAppDrawer();
+                                }
+                            }
                         }
                     }
 
@@ -345,6 +369,14 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (root.activePlayer) root.activePlayer.next();
+                            }
+                            onWheel: (wheel) => {
+                                if (root.expanded) return;
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openAppDrawer();
+                                } else if (wheel.angleDelta.y > 0) {
+                                    ShellState.closeAppDrawer();
+                                }
                             }
                         }
                     }

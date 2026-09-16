@@ -758,6 +758,14 @@ PanelWindow {
                             onClicked: {
                                 ShellState.toggleQuickSettingsCapsule("wifi");
                             }
+                            onWheel: (wheel) => {
+                                if (root.isExpanded) return;
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openAppDrawer();
+                                } else if (wheel.angleDelta.y > 0) {
+                                    ShellState.closeAppDrawer();
+                                }
+                            }
                         }
                     }
 
@@ -781,6 +789,14 @@ PanelWindow {
                             hoverEnabled: true
                             onClicked: {
                                 ShellState.toggleQuickSettingsCapsule("main");
+                            }
+                            onWheel: (wheel) => {
+                                if (root.isExpanded) return;
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openAppDrawer();
+                                } else if (wheel.angleDelta.y > 0) {
+                                    ShellState.closeAppDrawer();
+                                }
                             }
                         }
                     }
