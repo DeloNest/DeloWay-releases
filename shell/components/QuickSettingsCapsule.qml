@@ -44,7 +44,7 @@ PanelWindow {
     readonly property string currentView: ShellState.quickSettingsCapsuleView
 
     readonly property real compactHeight: 44
-    readonly property real compactWidth: Math.max(2 * bottomRadius + 20, compactRow.implicitWidth + 2 * bottomRadius + 20)
+    readonly property real compactWidth: Math.max(88, compactRow.implicitWidth + 44)
     readonly property real expandedWidth: 416
     readonly property real expandedHeight: {
         if (root.currentView === "wifi") return 360;
@@ -53,24 +53,8 @@ PanelWindow {
         return 320;
     }
 
-    property real currentWidth: isExpanded ? expandedWidth : compactWidth
-    property real currentHeight: isExpanded ? expandedHeight : compactHeight
-    Behavior on currentWidth {
-        NumberAnimation {
-            duration: Theme.motionBase
-            easing.type: Theme.easingEnter
-        }
-    }
-
-    Behavior on currentHeight {
-        NumberAnimation {
-            duration: Theme.motionBase
-            easing.type: Theme.easingEnter
-        }
-    }
-
-    implicitWidth: Math.round(currentWidth + shadowMargin * 2)
-    implicitHeight: Math.round(currentHeight + 8) // Shadow margin
+    implicitWidth: Math.round(capsuleCard.width + shadowMargin * 2)
+    implicitHeight: Math.round(capsuleCard.height + shadowMargin * 2 + 4)
 
     Shortcut {
         sequence: "Escape"
@@ -674,36 +658,52 @@ PanelWindow {
 
         // Ambient Drop Shadow (Matches Notch depth)
         Rectangle {
-            anchors.fill: capsuleBody
+            id: capsuleShadow
+            anchors.fill: capsuleCard
             anchors.topMargin: 4
             anchors.bottomMargin: -4
             anchors.leftMargin: -2
             anchors.rightMargin: -2
-            radius: capsuleBody.bottomLeftRadius + 2
+            radius: capsuleCard.radius + 2
             color: Theme.notchShadow
             opacity: root.isExpanded ? 1.0 : 0.0
             visible: opacity > 0.001
-            Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
+            Behavior on opacity { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
             z: 0
         }
 
-        // Main Capsule Body (Pure solid deep black, OLED notch feel)
+        // Single Morphing Capsule Card (Pure solid deep black, OLED notch feel)
         Rectangle {
-            id: capsuleBody
+            id: capsuleCard
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
-            width: root.currentWidth
-            height: root.currentHeight
+            width: root.isExpanded ? 416 : root.compactWidth
+            height: root.isExpanded ? root.expandedHeight : 44
+            radius: root.isExpanded ? Theme.notchRadiusPanel : (height / 2)
             color: Theme.notchBackground
-            border.color: "transparent"
-            border.width: 0
+            border.color: Theme.notchBorderSubtle
+            border.width: Theme.isDark ? 0 : 1
             clip: true
             z: 1
 
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusWindow : root.bottomRadius
-            bottomRightRadius: root.isExpanded ? Theme.notchRadiusWindow : root.bottomRadius
+            Behavior on width {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on height {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on radius {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -715,15 +715,16 @@ PanelWindow {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: parent.width
                 height: root.compactHeight
-                visible: !root.isExpanded
                 opacity: root.isExpanded ? 0.0 : 1.0
-                Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+                visible: opacity > 0.0
+                Behavior on opacity { NumberAnimation { duration: 40 } }
 
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
                     hoverEnabled: true
                     acceptedButtons: Qt.LeftButton
+                    enabled: !root.isExpanded
                     onClicked: (mouse) => {
                         if (mouse.button === Qt.LeftButton) {
                             ShellState.openQuickSettingsCapsule("main");
@@ -767,7 +768,7 @@ PanelWindow {
                                 visible: SystemMonitor.isWifi && text.length > 0
                                 text: root.wifiSsid
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Medium
                                 color: Theme.notchText
                                 elide: Text.ElideRight
@@ -794,7 +795,7 @@ PanelWindow {
                         id: langLabel
                         text: root.activeKeyboardCode
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize(11)
                         font.weight: Font.Bold
                         color: Theme.notchTextSecondary
                         renderType: Theme.renderType
@@ -830,22 +831,18 @@ PanelWindow {
                 }
             }
 
-            // ── Stage 2: Expanded View ───────────────────────────────────────
+            // ── Stage 2: Expanded Content ────────────────────────────────────
             Item {
-                id: expandedView
-                width: root.expandedWidth - 24
-                height: root.expandedHeight - 24
-                anchors.top: parent.top
-                anchors.topMargin: 12
-                anchors.left: parent.left
-                anchors.leftMargin: 12
-                visible: root.isExpanded
+                id: expandedContent
+                anchors.fill: parent
+                anchors.margins: 12
                 opacity: root.isExpanded ? 1.0 : 0.0
+                visible: opacity > 0.0
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: Theme.motionFast
-                        easing.type: Theme.easingEnter
+                        duration: 90
+                        easing.type: Easing.OutQuad
                     }
                 }
 
@@ -878,7 +875,7 @@ PanelWindow {
                             Text {
                                 text: I18n.isRTL ? "إعدادات سريعة" : "Quick Settings"
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.DemiBold
                                 color: Theme.notchTextSecondary
                                 Layout.fillWidth: true
@@ -893,7 +890,7 @@ PanelWindow {
                                 Text {
                                     anchors.centerIn: parent
                                     text: "✕"
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
                                 }
 
@@ -923,7 +920,7 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: wifiTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.wifiEnabled ? Theme.notchBorderHighlight : Theme.notchBorder
+                            border.color: root.wifiEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                             border.width: 1
                             scale: wifiTileMa.pressed ? 0.98 : 1.0
 
@@ -984,7 +981,7 @@ PanelWindow {
                                     Text {
                                         text: "Wi-Fi"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
                                         color: Theme.notchText
                                         horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
@@ -997,7 +994,7 @@ PanelWindow {
                                               ? (I18n.isRTL ? "معطل" : "Off")
                                               : (root.wifiSsid.length > 0 ? root.wifiSsid : (I18n.isRTL ? "غير متصل" : "Disconnected"))
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize(10)
                                         color: (root.wifiEnabled && root.wifiSsid.length > 0) ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                         horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                         elide: Text.ElideRight
@@ -1005,12 +1002,13 @@ PanelWindow {
                                     }
                                 }
 
-                                // Chevron
+                                // Subtle Chevron
                                 Text {
                                     text: I18n.isRTL ? "‹" : "›"
-                                    font.pixelSize: 17
-                                    font.weight: Font.Bold
-                                    color: wifiTileMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(13)
+                                    font.weight: Font.DemiBold
+                                    color: wifiTileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                     Layout.alignment: Qt.AlignVCenter
                                 }
                             }
@@ -1023,7 +1021,7 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: btTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchBorder
+                            border.color: root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                             border.width: 1
                             scale: btTileMa.pressed ? 0.98 : 1.0
 
@@ -1086,7 +1084,7 @@ PanelWindow {
                                     Text {
                                         text: "Bluetooth"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
                                         color: Theme.notchText
                                         horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
@@ -1101,7 +1099,7 @@ PanelWindow {
                                                  ? root.bluetoothConnectedDevice
                                                  : (I18n.isRTL ? "لا يوجد جهاز" : "No device"))
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize(10)
                                         color: (root.bluetoothEnabled && root.bluetoothConnectedDevice.length > 0) ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                         horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                         elide: Text.ElideRight
@@ -1109,19 +1107,20 @@ PanelWindow {
                                     }
                                 }
 
-                                // Chevron
+                                // Subtle Chevron
                                 Text {
                                     text: I18n.isRTL ? "‹" : "›"
-                                    font.pixelSize: 17
-                                    font.weight: Font.Bold
-                                    color: btTileMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(13)
+                                    font.weight: Font.DemiBold
+                                    color: btTileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                     Layout.alignment: Qt.AlignVCenter
                                 }
                             }
                         }
                     }
 
-                    // ── Row 2: Hotspot Card + Circular Quick Toggles ──
+                    // ── Row 2: Hotspot Card + Night Light Card (2-Column Symmetrical Grid) ──
                     RowLayout {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 52
@@ -1134,7 +1133,7 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: hotspotTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.hotspotEnabled ? Theme.notchBorderHighlight : Theme.notchBorder
+                            border.color: root.hotspotEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                             border.width: 1
                             scale: hotspotTileMa.pressed ? 0.98 : 1.0
 
@@ -1197,7 +1196,7 @@ PanelWindow {
                                     Text {
                                         text: I18n.isRTL ? "نقطة اتصال" : "Hotspot"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
                                         color: Theme.notchText
                                         horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
@@ -1214,7 +1213,7 @@ PanelWindow {
                                                     : (I18n.isRTL ? "مفعّلة" : "Active"))
                                                  : (I18n.isRTL ? "معطلة" : "Disabled"))
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize(10)
                                         color: root.hotspotEnabled ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                         horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                         elide: Text.ElideRight
@@ -1222,137 +1221,107 @@ PanelWindow {
                                     }
                                 }
 
-                                // Chevron
+                                // Subtle Chevron
                                 Text {
                                     text: I18n.isRTL ? "‹" : "›"
-                                    font.pixelSize: 17
-                                    font.weight: Font.Bold
-                                    color: hotspotTileMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(13)
+                                    font.weight: Font.DemiBold
+                                    color: hotspotTileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
                                     Layout.alignment: Qt.AlignVCenter
                                 }
                             }
                         }
 
-                        // ── Circular Quick Toggles (Night Light + Quick Mute) ──
-                        RowLayout {
+                        // ── Night Light Card (Matches wide card geometry) ──
+                        Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredWidth: 1
                             Layout.fillHeight: true
-                            spacing: 8
+                            radius: Theme.notchRadiusCard
+                            color: nightLightTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                            border.color: root.nightLightEnabled ? Qt.rgba(0.95, 0.65, 0.25, 0.45) : Theme.notchBorderSubtle
+                            border.width: 1
+                            scale: nightLightTileMa.pressed ? 0.98 : 1.0
 
-                            // Night Light Card / Button
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                radius: Theme.notchRadiusCard
-                                color: eyeComfortMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                                border.color: root.nightLightEnabled ? Qt.rgba(0.95, 0.65, 0.25, 0.45) : Theme.notchBorder
-                                border.width: 1
-                                scale: eyeComfortMa.pressed ? 0.98 : 1.0
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
-                                Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                                Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                                Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-
-                                ColumnLayout {
-                                    anchors.centerIn: parent
-                                    spacing: 3
-
-                                    Rectangle {
-                                        Layout.alignment: Qt.AlignHCenter
-                                        width: 26
-                                        height: 26
-                                        radius: 13
-                                        color: root.nightLightEnabled ? Qt.rgba(0.95, 0.65, 0.25, 0.25) : "transparent"
-
-                                        SymbolicIcon {
-                                            anchors.centerIn: parent
-                                            source: "night-light-symbolic"
-                                            iconSize: 16
-                                            iconColor: root.nightLightEnabled ? Qt.rgba(1.0, 0.78, 0.40, 1.0) : Theme.notchTextSecondary
-                                        }
-                                    }
-
-                                    Text {
-                                        Layout.alignment: Qt.AlignHCenter
-                                        text: I18n.isRTL ? "إضاءة ليلية" : "Night Light"
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 9
-                                        font.weight: Font.Medium
-                                        color: root.nightLightEnabled ? Theme.notchText : Theme.notchTextTertiary
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: eyeComfortMa
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: root.toggleNightLight()
-                                }
+                            MouseArea {
+                                id: nightLightTileMa
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                hoverEnabled: true
+                                onClicked: root.toggleNightLight()
                             }
 
-                            // Quick Mute Card / Button
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                radius: Theme.notchRadiusCard
-                                color: quickMuteMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                                border.color: root.isMuted ? Qt.rgba(0.94, 0.27, 0.27, 0.45) : Theme.notchBorder
-                                border.width: 1
-                                scale: quickMuteMa.pressed ? 0.98 : 1.0
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 10
 
-                                Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                                Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                                Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                // Icon circle
+                                Rectangle {
+                                    width: 32
+                                    height: 32
+                                    radius: 16
+                                    color: root.nightLightEnabled
+                                           ? Qt.rgba(0.95, 0.65, 0.25, 0.25)
+                                           : Theme.notchSurfaceActive
 
-                                ColumnLayout {
-                                    anchors.centerIn: parent
-                                    spacing: 3
+                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
-                                    Rectangle {
-                                        Layout.alignment: Qt.AlignHCenter
-                                        width: 26
-                                        height: 26
-                                        radius: 13
-                                        color: root.isMuted ? Qt.rgba(0.94, 0.27, 0.27, 0.22) : "transparent"
-
-                                        SymbolicIcon {
-                                            anchors.centerIn: parent
-                                            source: root.isMuted ? "audio-volume-muted-symbolic" : "audio-volume-high-symbolic"
-                                            iconSize: 16
-                                            iconColor: root.isMuted ? "#f87171" : Theme.notchTextSecondary
-                                        }
-                                    }
-
-                                    Text {
-                                        Layout.alignment: Qt.AlignHCenter
-                                        text: root.isMuted ? (I18n.isRTL ? "مكتوم" : "Muted") : (I18n.isRTL ? "كتم" : "Mute")
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 9
-                                        font.weight: Font.Medium
-                                        color: root.isMuted ? "#f87171" : Theme.notchTextTertiary
+                                    SymbolicIcon {
+                                        anchors.centerIn: parent
+                                        source: "night-light-symbolic"
+                                        iconSize: 16
+                                        iconColor: root.nightLightEnabled
+                                                   ? Qt.rgba(1.0, 0.78, 0.40, 1.0)
+                                                   : Theme.notchTextTertiary
                                     }
                                 }
 
-                                MouseArea {
-                                    id: quickMuteMa
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: root.toggleMute()
+                                // Text details
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 2
+
+                                    Text {
+                                        text: I18n.isRTL ? "إضاءة ليلية" : "Night Light"
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: Font.DemiBold
+                                        color: Theme.notchText
+                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
+
+                                    Text {
+                                        text: root.nightLightEnabled
+                                              ? (I18n.isRTL ? "مفعّلة" : "Active")
+                                              : (I18n.isRTL ? "معطلة" : "Disabled")
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(10)
+                                        color: root.nightLightEnabled ? Qt.rgba(1.0, 0.78, 0.40, 1.0) : Theme.notchTextTertiary
+                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
                                 }
                             }
                         }
                     }
 
-                    // ── Row 3: Sound Card (Title + Percentage + Details Chevron + Interactive Slider) ──
+                    // ── Row 3: Sound Card (Title + Percentage + Mute Toggle + Interactive Slider) ──
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 56
                         radius: Theme.notchRadiusCard
                         color: Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorder
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
 
                         ColumnLayout {
@@ -1363,21 +1332,38 @@ PanelWindow {
                             anchors.bottomMargin: 8
                             spacing: 6
 
-                            // Top Header Row: Icon + Title + Value + Chevron
+                            // Top Header Row: Clickable Mute Icon + Title + Value (Clean without stray chevrons)
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 6
 
-                                SymbolicIcon {
-                                    source: root.volumeIconName + "-symbolic"
-                                    iconSize: 14
-                                    iconColor: root.isMuted ? Theme.notchTextTertiary : Theme.notchText
+                                Rectangle {
+                                    implicitWidth: 26
+                                    implicitHeight: 26
+                                    radius: 13
+                                    color: muteBtnMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                    SymbolicIcon {
+                                        anchors.centerIn: parent
+                                        source: root.volumeIconName + "-symbolic"
+                                        iconSize: 14
+                                        iconColor: root.isMuted ? "#f87171" : Theme.notchText
+                                    }
+
+                                    MouseArea {
+                                        id: muteBtnMa
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: root.toggleMute()
+                                    }
                                 }
 
                                 Text {
                                     text: I18n.isRTL ? "الصوت" : "Sound"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.DemiBold
                                     color: Theme.notchText
                                 }
@@ -1389,23 +1375,18 @@ PanelWindow {
                                           ? (I18n.isRTL ? "مكتوم" : "Muted")
                                           : (Math.round(root.currentVolume * 100) + "%")
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.Medium
                                     color: root.isMuted ? Theme.notchTextTertiary : Theme.notchTextSecondary
                                 }
-
-                                Text {
-                                    text: I18n.isRTL ? "‹" : "›"
-                                    font.pixelSize: 12
-                                    font.weight: Font.Bold
-                                    color: Theme.notchTextTertiary
-                                }
                             }
 
-                            // Bottom Slider Row: Interactive Volume Slider
+                            // Bottom Slider Row: Interactive Volume Slider (LTR Physical Math)
                             Item {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 18
+                                LayoutMirroring.enabled: false
+                                LayoutMirroring.childrenInherit: true
 
                                 Rectangle {
                                     id: volumeTrack
@@ -1414,7 +1395,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     height: 5
                                     radius: 2.5
-                                    color: Qt.rgba(1, 1, 1, 0.12)
+                                    color: Theme.notchSurfaceActive
 
                                     Rectangle {
                                         id: volumeFill
@@ -1436,7 +1417,7 @@ PanelWindow {
                                         radius: 6
                                         color: Theme.notchText
                                         anchors.verticalCenter: parent.verticalCenter
-                                        x: Math.max(0, Math.min(parent.width - width, I18n.isRTL ? (parent.width - volumeFill.width - width / 2) : (volumeFill.width - width / 2)))
+                                        x: Math.max(0, Math.min(parent.width - width, parent.width * (root.isMuted ? 0 : root.currentVolume) - width / 2))
 
                                         border.color: Qt.rgba(0, 0, 0, 0.25)
                                         border.width: 1
@@ -1450,8 +1431,8 @@ PanelWindow {
                                     hoverEnabled: true
 
                                     function updateVolume(mouse) {
-                                        const raw = I18n.isRTL ? ((width - mouse.x) / width) : (mouse.x / width);
-                                        root.setVolume(Math.max(0, Math.min(1, raw)));
+                                        const raw = Math.max(0, Math.min(1, mouse.x / width));
+                                        root.setVolume(raw);
                                     }
 
                                     onPressed: mouse => updateVolume(mouse)
@@ -1464,14 +1445,14 @@ PanelWindow {
                         }
                     }
 
-                    // ── Row 4: Display Card (Title + Percentage + Details Chevron + Interactive Slider) ──
+                    // ── Row 4: Display Card (Title + Percentage + Interactive Slider) ──
                     Rectangle {
                         visible: root.brightnessBackend !== "none"
                         Layout.fillWidth: true
                         Layout.preferredHeight: 56
                         radius: Theme.notchRadiusCard
                         color: Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorder
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
 
                         ColumnLayout {
@@ -1482,7 +1463,7 @@ PanelWindow {
                             anchors.bottomMargin: 8
                             spacing: 6
 
-                            // Top Header Row: Icon + Title + Value + Chevron
+                            // Top Header Row: Icon + Title + Value (Clean without stray chevrons)
                             RowLayout {
                                 Layout.fillWidth: true
                                 spacing: 6
@@ -1496,7 +1477,7 @@ PanelWindow {
                                 Text {
                                     text: I18n.isRTL ? "السطوع" : "Display"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.DemiBold
                                     color: Theme.notchText
                                 }
@@ -1506,23 +1487,18 @@ PanelWindow {
                                 Text {
                                     text: Math.round(root.screenBrightness * 100) + "%"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.Medium
                                     color: Theme.notchTextSecondary
                                 }
-
-                                Text {
-                                    text: I18n.isRTL ? "‹" : "›"
-                                    font.pixelSize: 12
-                                    font.weight: Font.Bold
-                                    color: Theme.notchTextTertiary
-                                }
                             }
 
-                            // Bottom Slider Row: Interactive Brightness Slider
+                            // Bottom Slider Row: Interactive Brightness Slider (LTR Physical Math)
                             Item {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 18
+                                LayoutMirroring.enabled: false
+                                LayoutMirroring.childrenInherit: true
 
                                 Rectangle {
                                     id: brightnessTrack
@@ -1531,7 +1507,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     height: 5
                                     radius: 2.5
-                                    color: Qt.rgba(1, 1, 1, 0.12)
+                                    color: Theme.notchSurfaceActive
 
                                     Rectangle {
                                         id: brightnessFill
@@ -1551,7 +1527,7 @@ PanelWindow {
                                         radius: 6
                                         color: Theme.notchText
                                         anchors.verticalCenter: parent.verticalCenter
-                                        x: Math.max(0, Math.min(parent.width - width, I18n.isRTL ? (parent.width - brightnessFill.width - width / 2) : (brightnessFill.width - width / 2)))
+                                        x: Math.max(0, Math.min(parent.width - width, parent.width * root.screenBrightness - width / 2))
 
                                         border.color: Qt.rgba(0, 0, 0, 0.25)
                                         border.width: 1
@@ -1565,8 +1541,8 @@ PanelWindow {
                                     hoverEnabled: true
 
                                     function updateBrightness(mouse) {
-                                        const raw = I18n.isRTL ? ((width - mouse.x) / width) : (mouse.x / width);
-                                        root.setBrightness(Math.max(0, Math.min(1, raw)));
+                                        const raw = Math.max(0, Math.min(1, mouse.x / width));
+                                        root.setBrightness(raw);
                                     }
 
                                     onPressed: mouse => updateBrightness(mouse)
@@ -1584,7 +1560,6 @@ PanelWindow {
                                     }
                                 }
                             }
-
                         }
                     }
 
@@ -1614,7 +1589,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: I18n.isRTL ? "›" : "‹"
-                                font.pixelSize: 16
+                                font.pixelSize: Theme.fontSize(16)
                                 font.weight: Font.Bold
                                 color: Theme.notchText
                             }
@@ -1631,7 +1606,7 @@ PanelWindow {
                         Text {
                             text: I18n.isRTL ? "شبكات Wi-Fi" : "Wi-Fi Networks"
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.notchText
                             elide: Text.ElideRight
@@ -1647,7 +1622,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: "⟳"
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.fontSize(14)
                                 color: rescanMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                             }
 
@@ -1665,7 +1640,7 @@ PanelWindow {
                     Text {
                         text: I18n.isRTL ? "الشبكات المتاحة" : "Available Networks"
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontSize(10)
                         font.weight: Font.DemiBold
                         color: Theme.notchTextSecondary
                         Layout.topMargin: 2
@@ -1687,7 +1662,7 @@ PanelWindow {
                             width: 4
                             contentItem: Rectangle {
                                 radius: 2
-                                color: Qt.rgba(1, 1, 1, 0.25)
+                                color: Theme.notchBorderHighlight
                             }
                         }
 
@@ -1703,7 +1678,7 @@ PanelWindow {
                             implicitHeight: 34
                             radius: Theme.notchRadiusPill
                             color: isCurrent
-                                   ? Qt.rgba(1, 1, 1, 0.14)
+                                   ? Theme.notchSurfaceActive
                                    : (netMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
 
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -1723,7 +1698,7 @@ PanelWindow {
                                 Text {
                                     text: netItem.modelData && netItem.modelData.ssid ? netItem.modelData.ssid : ""
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: netItem.isCurrent ? Font.DemiBold : Font.Normal
                                     color: Theme.notchText
                                     elide: Text.ElideRight
@@ -1742,7 +1717,7 @@ PanelWindow {
                                           ? (I18n.isRTL ? "جارٍ الاتصال..." : "Connecting...")
                                           : (netItem.isCurrent ? "✓" : "")
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     color: netItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
                                 }
                             }
@@ -1782,7 +1757,7 @@ PanelWindow {
                                          ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
                                          : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found"))
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 color: Theme.notchTextTertiary
                             }
                         }
@@ -1812,7 +1787,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: I18n.isRTL ? "›" : "‹"
-                                font.pixelSize: 16
+                                font.pixelSize: Theme.fontSize(16)
                                 font.weight: Font.Bold
                                 color: Theme.notchText
                             }
@@ -1829,7 +1804,7 @@ PanelWindow {
                         Text {
                             text: I18n.isRTL ? "أجهزة Bluetooth" : "Bluetooth Devices"
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.notchText
                             Layout.fillWidth: true
@@ -1844,7 +1819,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: "⟳"
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.fontSize(14)
                                 color: btRescanMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                             }
 
@@ -1874,7 +1849,7 @@ PanelWindow {
                             width: 4
                             contentItem: Rectangle {
                                 radius: 2
-                                color: Qt.rgba(1, 1, 1, 0.25)
+                                color: Theme.notchBorderHighlight
                             }
                         }
 
@@ -1891,7 +1866,7 @@ PanelWindow {
                             implicitHeight: 34
                             radius: Theme.notchRadiusPill
                             color: isCurrent
-                                   ? Qt.rgba(1, 1, 1, 0.14)
+                                   ? Theme.notchSurfaceActive
                                    : (btItemMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
 
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -1911,7 +1886,7 @@ PanelWindow {
                                 Text {
                                     text: btItem.modelData && btItem.modelData.name ? btItem.modelData.name : ""
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: btItem.isCurrent ? Font.DemiBold : Font.Normal
                                     color: Theme.notchText
                                     elide: Text.ElideRight
@@ -1927,7 +1902,7 @@ PanelWindow {
                                                 ? (I18n.isRTL ? "مقترن" : "Paired")
                                                 : (I18n.isRTL ? "يحتاج اقتران من الإعدادات" : "Pair in Settings")))
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     color: btItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
                                 }
                             }
@@ -1970,7 +1945,7 @@ PanelWindow {
                                          ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is disabled")
                                          : (I18n.isRTL ? "لا توجد أجهزة مقترنة" : "No paired devices"))
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 color: Theme.notchTextTertiary
                             }
                         }
@@ -2002,7 +1977,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: I18n.isRTL ? "→" : "←"
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.fontSize(14)
                                 color: Theme.notchText
                             }
 
@@ -2018,7 +1993,7 @@ PanelWindow {
                         Text {
                             text: I18n.isRTL ? "إعدادات نقطة الاتصال" : "Hotspot Settings"
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.notchText
                             elide: Text.ElideRight
@@ -2034,7 +2009,7 @@ PanelWindow {
                             Text {
                                 anchors.centerIn: parent
                                 text: "⟳"
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.fontSize(14)
                                 color: hotspotRefreshMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                             }
 
@@ -2076,7 +2051,7 @@ PanelWindow {
                                 Text {
                                     text: I18n.isRTL ? "نقطة الاتصال الشخصية" : "Personal Hotspot"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.DemiBold
                                     color: Theme.notchText
                                 }
@@ -2088,7 +2063,7 @@ PanelWindow {
                                         return I18n.isRTL ? "معطلة" : "Disabled";
                                     }
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     color: root.hotspotEnabled ? Theme.accent : Theme.notchTextSecondary
                                     elide: Text.ElideRight
                                 }
@@ -2161,7 +2136,7 @@ PanelWindow {
                                 Text {
                                     text: I18n.isRTL ? "الاسم:" : "SSID:"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.Medium
                                     color: Theme.notchTextSecondary
                                     Layout.preferredWidth: 38
@@ -2182,7 +2157,7 @@ PanelWindow {
                                         anchors.rightMargin: 8
                                         verticalAlignment: TextInput.AlignVCenter
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 11
+                                        font.pixelSize: Theme.fontSize(11)
                                         color: Theme.notchText
                                         text: root.hotspotSsid
                                         selectByMouse: true
@@ -2200,7 +2175,7 @@ PanelWindow {
                                 Text {
                                     text: I18n.isRTL ? "السر:" : "Pass:"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.Medium
                                     color: Theme.notchTextSecondary
                                     Layout.preferredWidth: 38
@@ -2226,7 +2201,7 @@ PanelWindow {
                                             Layout.fillHeight: true
                                             verticalAlignment: TextInput.AlignVCenter
                                             font.family: Theme.typography.fontFamily
-                                            font.pixelSize: 11
+                                            font.pixelSize: Theme.fontSize(11)
                                             color: Theme.notchText
                                             text: root.hotspotPassword
                                             echoMode: showPwdBtn.showPassword ? TextInput.Normal : TextInput.Password
@@ -2248,7 +2223,7 @@ PanelWindow {
                                                 anchors.centerIn: parent
                                                 text: showPwdBtn.showPassword ? (I18n.isRTL ? "إخفاء" : "Hide") : (I18n.isRTL ? "إظهار" : "Show")
                                                 font.family: Theme.typography.fontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: Theme.fontSize(10)
                                                 font.weight: Font.Medium
                                                 color: eyeMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                                             }
@@ -2279,7 +2254,7 @@ PanelWindow {
                                         return "";
                                     }
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     color: {
                                         if (root.hotspotError.length > 0 || (pwdInput.text.length < 8 && pwdInput.text.length > 0)) return "#EF4444";
                                         if (root.hotspotSaveSuccess.length > 0) return "#10B981";
@@ -2303,7 +2278,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         text: hotspotConfigureProcess.running ? "..." : (I18n.isRTL ? "حفظ" : "Save")
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize(10)
                                         font.weight: Font.DemiBold
                                         color: parent.canSave ? Theme.notchText : Theme.notchTextTertiary
                                     }
@@ -2327,7 +2302,7 @@ PanelWindow {
                     Text {
                         text: I18n.isRTL ? "الأجهزة المتصلة" : "Connected Devices"
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontSize(10)
                         font.weight: Font.DemiBold
                         color: Theme.notchTextSecondary
                         Layout.topMargin: 2
@@ -2376,7 +2351,7 @@ PanelWindow {
                                         Text {
                                             text: modelData.hostname || modelData.ip || modelData.mac
                                             font.family: Theme.typography.fontFamily
-                                            font.pixelSize: 11
+                                            font.pixelSize: Theme.fontSize(11)
                                             font.weight: Font.DemiBold
                                             color: Theme.notchText
                                             elide: Text.ElideRight
@@ -2386,7 +2361,7 @@ PanelWindow {
                                         Text {
                                             text: (modelData.ip ? modelData.ip + " • " : "") + (modelData.mac || "")
                                             font.family: Theme.typography.fontFamily
-                                            font.pixelSize: 9
+                                            font.pixelSize: Theme.fontSize(9)
                                             color: Theme.notchTextTertiary
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
@@ -2409,7 +2384,7 @@ PanelWindow {
                                       ? (I18n.isRTL ? "قم بتفعيل نقطة الاتصال لعرض الأجهزة" : "Enable hotspot to see connected devices")
                                       : (I18n.isRTL ? "لا توجد أجهزة متصلة حالياً" : "No devices currently connected")
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.fontSize(10)
                                 color: Theme.notchTextTertiary
                             }
                         }
