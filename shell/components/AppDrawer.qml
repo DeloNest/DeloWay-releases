@@ -452,8 +452,8 @@ PanelWindow {
             anchors.fill: parent
             radius: root.radiusCard
             color: root.colorBackground
-            border.color: "transparent"
-            border.width: 0
+            border.color: Theme.notchBorderSubtle
+            border.width: 1
             z: 1
 
             LayoutMirroring.enabled: I18n.isRTL
@@ -527,7 +527,7 @@ PanelWindow {
                             text: "Ctrl + K"
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: Theme.typography.scaleCaption.size
+                            font.pixelSize: Theme.fontSize(11)
                             font.weight: Font.Medium
                             renderType: Theme.renderType
                             color: root.colorTextTertiary
@@ -550,7 +550,7 @@ PanelWindow {
                         spacing: Theme.spacing.gutter
 
                         Rectangle {
-                            Layout.preferredWidth: 164
+                            Layout.preferredWidth: Math.max(164, Math.round(168 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
                             Layout.fillHeight: true
                             radius: root.radiusPanel
                             color: root.colorSurface
@@ -584,7 +584,7 @@ PanelWindow {
                                         root.selectedCategory === categoryItem.modelData.id
 
                                     width: categoryList.width
-                                    height: 36
+                                    height: Math.max(36, Math.round(36 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
                                     radius: root.radiusItem
                                     color: categoryMouse.pressed
                                            ? root.colorHoverStrong
@@ -617,7 +617,7 @@ PanelWindow {
                                             text: categoryItem.modelData.label
                                             font.family: Theme.typography.fontFamily
                                             font.hintingPreference: Theme.hintingPreference
-                                            font.pixelSize: Theme.typography.scaleBody.size
+                                            font.pixelSize: Theme.fontSize(12)
                                             font.weight: Font.Medium
                                             renderType: Theme.renderType
                                             color: (categoryItem.isSelected || categoryMouse.containsMouse)
@@ -661,7 +661,7 @@ PanelWindow {
                                     text: I18n.tr("pinned")
                                     font.family: Theme.typography.fontFamily
                                     font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.typography.scaleTitle.size
+                                    font.pixelSize: Theme.fontSize(13)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: root.colorText
@@ -680,8 +680,8 @@ PanelWindow {
                                             id: pinnedCell
                                             required property var modelData
 
-                                            Layout.preferredWidth: 98
-                                            Layout.preferredHeight: 78
+                                            Layout.preferredWidth: Math.max(98, Math.round(98 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
+                                            Layout.preferredHeight: Math.max(78, Math.round(80 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
                                             radius: root.radiusItem
                                             color: pinnedMouse.pressed
                                                    ? root.colorHoverStrong
@@ -714,7 +714,7 @@ PanelWindow {
                                                     text: pinnedCell.modelData.name
                                                     font.family: Theme.typography.fontFamily
                                                     font.hintingPreference: Theme.hintingPreference
-                                                    font.pixelSize: Theme.typography.scaleBody.size
+                                                    font.pixelSize: Theme.fontSize(11)
                                                     font.weight: pinnedMouse.containsMouse ? Font.DemiBold : Font.Medium
                                                     renderType: Theme.renderType
                                                     color: pinnedMouse.containsMouse
@@ -751,7 +751,7 @@ PanelWindow {
                                     text: I18n.tr("more_apps")
                                     font.family: Theme.typography.fontFamily
                                     font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.typography.scaleTitle.size
+                                    font.pixelSize: Theme.fontSize(13)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: root.colorText
@@ -773,8 +773,8 @@ PanelWindow {
                                             id: recentCell
                                             required property var modelData
 
-                                            Layout.preferredWidth: 98
-                                            Layout.preferredHeight: 78
+                                            Layout.preferredWidth: Math.max(98, Math.round(98 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
+                                            Layout.preferredHeight: Math.max(78, Math.round(80 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
                                             radius: root.radiusItem
                                             color: recentMouse.pressed
                                                    ? root.colorHoverStrong
@@ -807,7 +807,7 @@ PanelWindow {
                                                     text: recentCell.modelData.name
                                                     font.family: Theme.typography.fontFamily
                                                     font.hintingPreference: Theme.hintingPreference
-                                                    font.pixelSize: Theme.typography.scaleBody.size
+                                                    font.pixelSize: Theme.fontSize(11)
                                                     font.weight: recentMouse.containsMouse ? Font.DemiBold : Font.Medium
                                                     renderType: Theme.renderType
                                                     color: recentMouse.containsMouse
@@ -858,7 +858,7 @@ PanelWindow {
                                 text: "Results (" + root.universalResults.length + ")"
                                 font.family: Theme.typography.fontFamily
                                 font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.typography.scaleDisplay.size
+                                font.pixelSize: Theme.fontSize(14)
                                 font.weight: Font.DemiBold
                                 renderType: Theme.renderType
                                 color: root.colorTextSecondary
@@ -870,7 +870,7 @@ PanelWindow {
                                 text: "↑ / ↓ navigate • ↵ select • Esc close"
                                 font.family: Theme.typography.fontFamily
                                 font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.typography.scaleCaption.size
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Normal
                                 renderType: Theme.renderType
                                 color: root.colorTextTertiary
@@ -923,7 +923,7 @@ PanelWindow {
                                             width: 32
                                             height: 32
 
-                                            AppIcon {
+                                             AppIcon {
                                                 anchors.centerIn: parent
                                                 visible: resultItem.modelData.type === "app"
                                                 iconSize: 30
@@ -965,7 +965,7 @@ PanelWindow {
                                                 text: resultItem.modelData.name || resultItem.modelData.title || ""
                                                 font.family: Theme.typography.fontFamily
                                                 font.hintingPreference: Theme.hintingPreference
-                                                font.pixelSize: Theme.typography.scaleBody.size
+                                                font.pixelSize: Theme.fontSize(13)
                                                 font.weight: Font.DemiBold
                                                 renderType: Theme.renderType
                                                 color: resultItem.isSelected
@@ -979,7 +979,7 @@ PanelWindow {
                                                 text: resultItem.modelData.desc
                                                 font.family: Theme.typography.fontFamily
                                                 font.hintingPreference: Theme.hintingPreference
-                                                font.pixelSize: Theme.typography.scaleCaption.size
+                                                font.pixelSize: Theme.fontSize(11)
                                                 font.weight: Font.Normal
                                                 renderType: Theme.renderType
                                                 color: root.colorTextTertiary
@@ -1007,7 +1007,7 @@ PanelWindow {
                                                             : "System"))
                                                 font.family: Theme.typography.fontFamily
                                                 font.hintingPreference: Theme.hintingPreference
-                                                font.pixelSize: Theme.typography.scaleCaption.size
+                                                font.pixelSize: Theme.fontSize(10)
                                                 font.weight: Font.Medium
                                                 renderType: Theme.renderType
                                                 color: resultItem.modelData.type === "app"
@@ -1040,10 +1040,10 @@ PanelWindow {
                                 }
                             }
 
-ColumnLayout {
-                                    anchors.centerIn: parent
-                                    visible: root.universalResults.length === 0
-                                    spacing: Theme.spacing.small
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                visible: root.universalResults.length === 0
+                                spacing: Theme.spacing.small
 
                                 SymbolicIcon {
                                     Layout.alignment: Qt.AlignHCenter
@@ -1057,7 +1057,7 @@ ColumnLayout {
                                     text: "No matches found for \"" + root.filterQuery + "\""
                                     font.family: Theme.typography.fontFamily
                                     font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.typography.scaleTitle.size
+                                    font.pixelSize: Theme.fontSize(14)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: root.colorTextSecondary
@@ -1068,7 +1068,7 @@ ColumnLayout {
                                     text: "Try searching for apps, settings panels, or system actions."
                                     font.family: Theme.typography.fontFamily
                                     font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.typography.scaleCaption.size
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.Normal
                                     renderType: Theme.renderType
                                     color: root.colorTextTertiary
@@ -1083,7 +1083,7 @@ ColumnLayout {
                 // ─────────────────────────────────────────────────────────
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 48
+                    Layout.preferredHeight: Math.max(48, Math.round(48 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
                     radius: root.radiusPanel
                     color: root.colorSurface
                     border.color: root.colorBorderSoft
@@ -1118,7 +1118,7 @@ ColumnLayout {
                                 text: "DeloOS"
                                 font.family: Theme.typography.fontFamily
                                 font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.typography.scaleDisplay.size
+                                font.pixelSize: Theme.fontSize(13)
                                 font.weight: Font.DemiBold
                                 renderType: Theme.renderType
                                 color: root.colorText
@@ -1128,7 +1128,7 @@ ColumnLayout {
                                 text: "Your workspace, your rules"
                                 font.family: Theme.typography.fontFamily
                                 font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.typography.scaleCaption.size
+                                font.pixelSize: Theme.fontSize(10)
                                 font.weight: Font.Normal
                                 renderType: Theme.renderType
                                 color: root.colorTextTertiary
@@ -1345,7 +1345,7 @@ ColumnLayout {
                                      "")
                                   : ""
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.typography.scaleMenuTitle.size
+                            font.pixelSize: Theme.fontSize(13)
                             font.weight: Font.DemiBold
                             color: root.colorText
                             elide: Text.ElideRight
@@ -1387,7 +1387,7 @@ ColumnLayout {
                         signal activated()
 
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 34
+                        Layout.preferredHeight: Math.max(34, Math.round(34 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
                         radius: root.radiusItem
                         color: menuMouse.pressed
                                ? Theme.notchSurfaceActive
@@ -1414,7 +1414,7 @@ ColumnLayout {
                                 Layout.fillWidth: true
                                 text: menuRow.label
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.typography.scaleBody.size
+                                font.pixelSize: Theme.fontSize(12)
                                 font.weight: menuMouse.containsMouse ? Font.DemiBold : Font.Normal
                                 color: menuMouse.containsMouse
                                        ? menuRow.hoverTextColor

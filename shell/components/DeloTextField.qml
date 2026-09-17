@@ -14,6 +14,7 @@ Rectangle {
     property alias readOnly: input.readOnly
     property alias inputFocus: input.focus
     property alias textInput: input
+    property int fontPixelSize: Theme.fontSize(13)
     property var customBackground: null
     property var customBorderColor: null
     property var customFocusBorderColor: null
@@ -34,10 +35,10 @@ Rectangle {
     radius: Theme.radiusSmall
 
     color: customBackground !== null
-           ? (input.activeFocus ? Qt.rgba(1, 1, 1, 0.12) : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : customBackground))
+           ? (input.activeFocus ? Theme.notchSurfaceActive : (mouseArea.containsMouse ? Theme.notchSurfaceHover : customBackground))
            : (input.activeFocus ? Theme.colors.surface : Theme.colors.surfaceElevated)
     border.color: customBorderColor !== null
-           ? (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.25) : customBorderColor))
+           ? (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Theme.notchBorderHighlight : customBorderColor))
            : (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
     border.width: input.activeFocus ? 1.5 : 1
 
@@ -63,8 +64,8 @@ Rectangle {
             source: "edit-find-symbolic"
             iconSize: 14
             iconColor: input.activeFocus
-                       ? (customFocusBorderColor !== null ? Qt.rgba(1, 1, 1, 0.90) : Theme.colors.accent)
-                       : Theme.colors.textTertiary
+                       ? (customFocusBorderColor !== null ? Theme.notchText : Theme.colors.accent)
+                       : Theme.notchTextTertiary
             Layout.alignment: Qt.AlignVCenter
             Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
         }
@@ -82,7 +83,7 @@ Rectangle {
                 selectedTextColor: Theme.colors.accentText
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference
-                font.pixelSize: Theme.typography.scaleBody.size
+                font.pixelSize: root.fontPixelSize
                 renderType: Theme.renderType
                 clip: true
 
@@ -97,7 +98,7 @@ Rectangle {
                 color: Theme.colors.textMuted
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference
-                font.pixelSize: Theme.typography.scaleBody.size
+                font.pixelSize: root.fontPixelSize
                 renderType: Theme.renderType
                 visible: input.text.length === 0 && !input.inputMethodComposing
                 elide: Text.ElideRight
@@ -116,7 +117,7 @@ Rectangle {
             Text {
                 anchors.centerIn: parent
                 text: "✕"
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontSize(10)
                 color: Theme.colors.textTertiary
             }
 
