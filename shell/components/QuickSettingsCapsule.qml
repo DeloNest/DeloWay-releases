@@ -54,7 +54,7 @@ PanelWindow {
     }
 
     implicitWidth: Math.round(capsuleCard.width + shadowMargin * 2)
-    implicitHeight: Math.round(capsuleCard.height + shadowMargin * 2 + 4)
+    implicitHeight: Math.round(root.isExpanded ? (capsuleCard.y + capsuleCard.height + shadowMargin * 2 + 4) : root.compactHeight)
 
     Shortcut {
         sequence: "Escape"
@@ -664,7 +664,10 @@ PanelWindow {
             anchors.bottomMargin: -4
             anchors.leftMargin: -2
             anchors.rightMargin: -2
-            radius: capsuleCard.radius + 2
+            topLeftRadius: capsuleCard.topLeftRadius + 2
+            topRightRadius: capsuleCard.topRightRadius + 2
+            bottomLeftRadius: capsuleCard.bottomLeftRadius + 2
+            bottomRightRadius: capsuleCard.bottomRightRadius + 2
             color: Theme.notchShadow
             opacity: root.isExpanded ? 1.0 : 0.0
             visible: opacity > 0.001
@@ -675,17 +678,28 @@ PanelWindow {
         // Single Morphing Capsule Card (Pure solid deep black, OLED notch feel)
         Rectangle {
             id: capsuleCard
-            anchors.top: parent.top
+            y: root.isExpanded ? 8 : 0
             anchors.horizontalCenter: parent.horizontalCenter
             width: root.isExpanded ? 416 : root.compactWidth
             height: root.isExpanded ? root.expandedHeight : 44
-            radius: root.isExpanded ? Theme.notchRadiusPanel : (height / 2)
+            
+            topLeftRadius: root.isExpanded ? Theme.notchRadiusPanel : 0
+            topRightRadius: root.isExpanded ? Theme.notchRadiusPanel : 0
+            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusPanel : Theme.notchRadius
+            bottomRightRadius: root.isExpanded ? Theme.notchRadiusPanel : Theme.notchRadius
+
             color: Theme.notchBackground
             border.color: Theme.notchBorderSubtle
             border.width: Theme.isDark ? 0 : 1
             clip: true
             z: 1
 
+            Behavior on y {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
             Behavior on width {
                 NumberAnimation {
                     duration: 130
@@ -698,7 +712,25 @@ PanelWindow {
                     easing.type: Easing.OutCubic
                 }
             }
-            Behavior on radius {
+            Behavior on topLeftRadius {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on topRightRadius {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on bottomLeftRadius {
+                NumberAnimation {
+                    duration: 130
+                    easing.type: Easing.OutCubic
+                }
+            }
+            Behavior on bottomRightRadius {
                 NumberAnimation {
                     duration: 130
                     easing.type: Easing.OutCubic
@@ -1323,6 +1355,7 @@ PanelWindow {
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
+                        clip: true
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1381,10 +1414,10 @@ PanelWindow {
                                 }
                             }
 
-                            // Bottom Slider Row: Interactive Volume Slider (LTR Physical Math)
+                            // Slim Volume Slider (5px track + 12px thumb, LTR math)
                             Item {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 18
+                                Layout.preferredHeight: 14
                                 LayoutMirroring.enabled: false
                                 LayoutMirroring.childrenInherit: true
 
@@ -1395,7 +1428,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     height: 5
                                     radius: 2.5
-                                    color: Theme.notchSurfaceActive
+                                    color: Qt.rgba(1, 1, 1, 0.12)
 
                                     Rectangle {
                                         id: volumeFill
@@ -1404,22 +1437,19 @@ PanelWindow {
                                         anchors.left: parent.left
                                         width: parent.width * Math.max(0, Math.min(1, root.isMuted ? 0 : root.currentVolume))
                                         radius: 2.5
-                                        color: root.isMuted ? Theme.notchTextTertiary : Theme.notchText
-
+                                        color: "#FFFFFF"
                                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                                     }
 
                                     Rectangle {
                                         id: volumeThumb
-                                        visible: !root.isMuted && root.currentVolume > 0.01
                                         width: 12
                                         height: 12
                                         radius: 6
-                                        color: Theme.notchText
+                                        color: "#FFFFFF"
                                         anchors.verticalCenter: parent.verticalCenter
                                         x: Math.max(0, Math.min(parent.width - width, parent.width * (root.isMuted ? 0 : root.currentVolume) - width / 2))
-
-                                        border.color: Qt.rgba(0, 0, 0, 0.25)
+                                        border.color: Qt.rgba(0, 0, 0, 0.18)
                                         border.width: 1
                                     }
                                 }
@@ -1445,6 +1475,7 @@ PanelWindow {
                         }
                     }
 
+
                     // ── Row 4: Display Card (Title + Percentage + Interactive Slider) ──
                     Rectangle {
                         visible: root.brightnessBackend !== "none"
@@ -1454,6 +1485,7 @@ PanelWindow {
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
+                        clip: true
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1493,10 +1525,10 @@ PanelWindow {
                                 }
                             }
 
-                            // Bottom Slider Row: Interactive Brightness Slider (LTR Physical Math)
+                            // Slim Brightness Slider (5px track + 12px thumb, LTR math)
                             Item {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 18
+                                Layout.preferredHeight: 14
                                 LayoutMirroring.enabled: false
                                 LayoutMirroring.childrenInherit: true
 
@@ -1507,7 +1539,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     height: 5
                                     radius: 2.5
-                                    color: Theme.notchSurfaceActive
+                                    color: Qt.rgba(1, 1, 1, 0.12)
 
                                     Rectangle {
                                         id: brightnessFill
@@ -1516,20 +1548,18 @@ PanelWindow {
                                         anchors.left: parent.left
                                         width: parent.width * Math.max(0, Math.min(1, root.screenBrightness))
                                         radius: 2.5
-                                        color: Theme.notchText
+                                        color: "#FFFFFF"
                                     }
 
                                     Rectangle {
                                         id: brightnessThumb
-                                        visible: root.screenBrightness > 0.01
                                         width: 12
                                         height: 12
                                         radius: 6
-                                        color: Theme.notchText
+                                        color: "#FFFFFF"
                                         anchors.verticalCenter: parent.verticalCenter
                                         x: Math.max(0, Math.min(parent.width - width, parent.width * root.screenBrightness - width / 2))
-
-                                        border.color: Qt.rgba(0, 0, 0, 0.25)
+                                        border.color: Qt.rgba(0, 0, 0, 0.18)
                                         border.width: 1
                                     }
                                 }
@@ -1562,6 +1592,7 @@ PanelWindow {
                             }
                         }
                     }
+
 
                     Item { Layout.fillHeight: true }
                 }
