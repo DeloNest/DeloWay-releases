@@ -16,6 +16,8 @@ Item {
     Layout.fillWidth: true
     implicitWidth: 300
     implicitHeight: mainCol.implicitHeight
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
 
     ColumnLayout {
         id: mainCol
@@ -35,7 +37,7 @@ Item {
             Layout.fillWidth: true
             Layout.leftMargin: Theme.space4
             Layout.rightMargin: Theme.space4
-            horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+            horizontalAlignment: Text.AlignLeft
         }
 
         // Floating Card Container
@@ -48,6 +50,8 @@ Item {
             border.color: Theme.notchBorderSubtle
             border.width: 1
             clip: true
+            LayoutMirroring.enabled: I18n.isRTL
+            LayoutMirroring.childrenInherit: true
 
             ColumnLayout {
                 id: contentLayout

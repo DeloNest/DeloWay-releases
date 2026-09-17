@@ -13,6 +13,8 @@ Item {
 
     implicitWidth: 240
     Layout.fillHeight: true
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
 
     // Background - transparent to reveal OLED black windowCard
     Rectangle {
@@ -119,6 +121,8 @@ Item {
         property alias text: headerText.text
         Layout.fillWidth: true
         implicitHeight: 28
+        LayoutMirroring.enabled: I18n.isRTL
+        LayoutMirroring.childrenInherit: true
 
         Text {
             id: headerText
@@ -132,7 +136,7 @@ Item {
             font.weight: Font.DemiBold
             font.letterSpacing: 0.8
             color: Theme.notchTextTertiary
-            horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+            horizontalAlignment: Text.AlignLeft
         }
     }
 
@@ -148,6 +152,8 @@ Item {
         Layout.leftMargin: Theme.space8
         Layout.rightMargin: Theme.space8
         implicitHeight: 38
+        LayoutMirroring.enabled: I18n.isRTL
+        LayoutMirroring.childrenInherit: true
 
         Rectangle {
             id: itemBg
@@ -169,6 +175,8 @@ Item {
                 anchors.leftMargin: Theme.space16
                 anchors.rightMargin: Theme.space16
                 spacing: Theme.space8
+                LayoutMirroring.enabled: I18n.isRTL
+                LayoutMirroring.childrenInherit: true
 
                 SymbolicIcon {
                     source: itemRoot.iconSource
@@ -189,7 +197,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
                     elide: Text.ElideRight
-                    horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                    horizontalAlignment: Text.AlignLeft
                     Behavior on color {
                         ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
                     }

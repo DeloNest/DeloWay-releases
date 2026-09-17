@@ -20,14 +20,30 @@ Rectangle {
     Layout.fillWidth: true
     implicitWidth: 300
     implicitHeight: Math.max(52, contentRow.implicitHeight + Theme.space16)
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
 
-    color: (root.clickable && rowMa.containsMouse) ? Theme.notchSurfaceHover : "transparent"
-    Behavior on color {
-        ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
+    color: "transparent"
+
+    // Inset Capsule Hover Background
+    Rectangle {
+        id: hoverBg
+        z: 0
+        anchors.fill: parent
+        anchors.leftMargin: 6
+        anchors.rightMargin: 6
+        anchors.topMargin: 2
+        anchors.bottomMargin: 2
+        radius: Theme.notchRadiusCard
+        color: (root.clickable && rowMa.containsMouse) ? Theme.notchSurfaceHover : "transparent"
+        Behavior on color {
+            ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter }
+        }
     }
 
     RowLayout {
         id: contentRow
+        z: 1
         anchors.fill: parent
         anchors.leftMargin: Theme.space16
         anchors.rightMargin: Theme.space16
@@ -52,6 +68,8 @@ Rectangle {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
             spacing: 2
+            LayoutMirroring.enabled: I18n.isRTL
+            LayoutMirroring.childrenInherit: true
 
             Text {
                 text: root.title
@@ -61,7 +79,7 @@ Rectangle {
                 color: Theme.notchText
                 Layout.fillWidth: true
                 elide: Text.ElideRight
-                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                horizontalAlignment: Text.AlignLeft
             }
 
             Text {
@@ -72,7 +90,7 @@ Rectangle {
                 color: Theme.notchTextSecondary
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
-                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                horizontalAlignment: Text.AlignLeft
             }
         }
 
@@ -81,11 +99,14 @@ Rectangle {
             id: controlLayout
             Layout.alignment: Qt.AlignVCenter
             spacing: Theme.space8
+            LayoutMirroring.enabled: I18n.isRTL
+            LayoutMirroring.childrenInherit: true
         }
     }
 
     // Bottom Subtle Divider
     Rectangle {
+        z: 1
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right

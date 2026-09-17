@@ -7,6 +7,7 @@ import Quickshell.Hyprland
 import "../../theme"
 import "../../services"
 import "../"
+import "tabs"
 
 PanelWindow {
     id: root
@@ -327,6 +328,8 @@ PanelWindow {
                         ColumnLayout {
                             anchors.fill: parent
                             spacing: 0
+                            LayoutMirroring.enabled: I18n.isRTL
+                            LayoutMirroring.childrenInherit: true
 
                             // Page Header (Title + Description, no wire divider)
                             Item {
@@ -339,6 +342,8 @@ PanelWindow {
                                     anchors.rightMargin: Theme.space24
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: Theme.space4
+                                    LayoutMirroring.enabled: I18n.isRTL
+                                    LayoutMirroring.childrenInherit: true
 
                                     Text {
                                         text: I18n.tr("tab_" + root.activeTab)
@@ -347,7 +352,7 @@ PanelWindow {
                                         font.weight: Font.Bold
                                         color: Theme.notchText
                                         Layout.fillWidth: true
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                                        horizontalAlignment: Text.AlignLeft
                                     }
 
                                     Text {
@@ -357,7 +362,7 @@ PanelWindow {
                                         color: Theme.notchTextSecondary
                                         Layout.fillWidth: true
                                         elide: Text.ElideRight
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                                        horizontalAlignment: Text.AlignLeft
                                     }
                                 }
                             }
@@ -399,7 +404,15 @@ PanelWindow {
                                                 if (isCurrent) contentContainer.activeLoader = tabLoader;
                                             }
 
-                                            sourceComponent: Component {
+                                            sourceComponent: (modelData.id === "appearance") ? appearanceComponent : placeholderComponent
+
+                                            Component {
+                                                id: appearanceComponent
+                                                AppearanceTab {}
+                                            }
+
+                                            Component {
+                                                id: placeholderComponent
                                                 Item {
                                                     id: placeholderRoot
                                                     width: tabLoader.width

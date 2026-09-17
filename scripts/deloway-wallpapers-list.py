@@ -13,8 +13,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 SEARCH_DIRS = [
     (str(PROJECT_ROOT / "assets"), "Deloway Presets"),
-    ("/usr/share/backgrounds", "System Backgrounds"),
+    (os.path.expanduser("~/Wallpapers"), "Wallpapers"),
     (os.path.expanduser("~/Pictures/Wallpapers"), "Wallpapers"),
+    ("/usr/share/backgrounds", "System Backgrounds"),
     (os.path.expanduser("~/Pictures"), "Pictures"),
     (os.path.expanduser("~/Downloads"), "Downloads"),
 ]
@@ -41,13 +42,15 @@ def scan():
                         
                         try:
                             st = entry.stat()
-                            # Filter out tiny icon files (< 50 KB) unless in Deloway assets
-                            if "Deloway/assets" not in full_path and st.st_size < 50 * 1024:
+                            is_wallpaper_dir = "Wallpapers" in dir_path or "Deloway/assets" in full_path
+                            min_size = 5 * 1024 if is_wallpaper_dir else 50 * 1024
+                            if st.st_size < min_size:
                                 continue
                         except Exception:
                             continue
 
-                        name = Path(entry.name).stem.replace("_", " ").replace("-", " ").title()
+                        raw_name = Path(entry.name).stem.replace("_", " ").replace("-", " ").strip().title()
+                        name = raw_name if raw_name else Path(entry.name).name
                         results.append({
                             "name": name,
                             "path": full_path,
