@@ -143,7 +143,7 @@ PopupWindow {
                 Text {
                     Layout.fillWidth: true
                     text: root.targetApp ? (root.targetApp.name || root.targetApp.id || "") : ""
-                    font.family: Theme.typography.fontFamily; font.pixelSize: 12; font.weight: Font.DemiBold
+                    font.family: Theme.typography.fontFamily; font.pixelSize: Theme.fontSize(12); font.weight: Font.DemiBold
                     color: Theme.notchText; elide: Text.ElideRight; maximumLineCount: 1
                 }
                 Rectangle {
@@ -165,20 +165,20 @@ PopupWindow {
 
             // Pin / Unpin
             Rectangle {
-                id: pinBg; Layout.fillWidth: true; Layout.preferredHeight: 36; radius: Theme.radiusSmall
+                id: pinBg; Layout.fillWidth: true; Layout.preferredHeight: 32; radius: Theme.radiusSmall
                 color: pinMouse.pressed ? Theme.notchSurfaceActive : (pinMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
                 border.color: "transparent"; border.width: 1
                 Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                 readonly property bool isPinned: root.targetApp ? ApplicationManager.isPinned(root.targetApp.id) : false
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
-                    SymbolicIcon { source: pinBg.isPinned?"list-remove":"list-add"; iconSize: 15
+                    SymbolicIcon { source: pinBg.isPinned?"list-remove":"list-add"; iconSize: 14
                         iconColor: pinMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         scale: pinMouse.containsMouse ? 1.12 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     }
                     Text { Layout.fillWidth:true; text: pinBg.isPinned ? I18n.tr("unpin_from_dock") : I18n.tr("pin_to_dock")
-                        font.family:Theme.typography.fontFamily; font.pixelSize:Theme.typography.scaleBody.size
+                        font.family:Theme.typography.fontFamily; font.pixelSize:Theme.fontSize(12)
                         font.weight: pinMouse.containsMouse ? Font.DemiBold : Font.Normal
                         color:Theme.notchText; elide:Text.ElideRight }
                 }
@@ -189,7 +189,7 @@ PopupWindow {
 
             // Open / New Window
             Rectangle {
-                id: openBg; Layout.fillWidth: true; Layout.preferredHeight: 36; radius: Theme.radiusSmall
+                id: openBg; Layout.fillWidth: true; Layout.preferredHeight: 32; radius: Theme.radiusSmall
                 color: openMouse.pressed ? Theme.notchSurfaceActive : (openMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
                 border.color: "transparent"; border.width: 1
                 Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -197,13 +197,13 @@ PopupWindow {
                     (root.targetApp.running || (root.targetApp.windows && root.targetApp.windows.length > 0)))
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
-                    SymbolicIcon { source: "document-open-symbolic"; iconSize: 15
+                    SymbolicIcon { source: "document-open-symbolic"; iconSize: 14
                         iconColor: openMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         scale: openMouse.containsMouse ? 1.12 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     }
                     Text { Layout.fillWidth:true; text: openBg.isRunning ? "New Window" : I18n.tr("open_app")
-                        font.family:Theme.typography.fontFamily; font.pixelSize:Theme.typography.scaleBody.size
+                        font.family:Theme.typography.fontFamily; font.pixelSize:Theme.fontSize(12)
                         font.weight: openMouse.containsMouse ? Font.DemiBold : Font.Normal
                         color:Theme.notchText; elide:Text.ElideRight }
                 }
@@ -223,7 +223,7 @@ PopupWindow {
 
             // Close (if running)
             Rectangle {
-                id: closeBg; Layout.fillWidth: true; Layout.preferredHeight: 36; radius: Theme.radiusSmall
+                id: closeBg; Layout.fillWidth: true; Layout.preferredHeight: 32; radius: Theme.radiusSmall
                 visible: Boolean(root.targetApp &&
                           (root.targetApp.running || (root.targetApp.windows && root.targetApp.windows.length > 0)))
                 color: closeMouse.pressed ? Qt.alpha(Theme.colors.urgent,0.22) : (closeMouse.containsMouse ? Qt.alpha(Theme.colors.urgent,0.12) : "transparent")
@@ -231,13 +231,13 @@ PopupWindow {
                 Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                 RowLayout {
                     anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; spacing: 10
-                    SymbolicIcon { source: "window-close"; iconSize: 15
+                    SymbolicIcon { source: "window-close"; iconSize: 14
                         iconColor: closeMouse.containsMouse ? Theme.colors.urgent : Theme.notchTextSecondary
                         scale: closeMouse.containsMouse ? 1.12 : 1.0
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     }
                     Text { Layout.fillWidth:true; text: I18n.tr("close_app")
-                        font.family:Theme.typography.fontFamily; font.pixelSize:Theme.typography.scaleBody.size
+                        font.family:Theme.typography.fontFamily; font.pixelSize:Theme.fontSize(12)
                         font.weight: closeMouse.containsMouse ? Font.DemiBold : Font.Normal
                         color:Theme.colors.urgent; elide:Text.ElideRight }
                 }
