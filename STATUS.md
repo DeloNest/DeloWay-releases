@@ -136,6 +136,16 @@
    - **الغرض**: مكوّن الأيقونات الرمزية القياسي. يقوم بمطابقة أسماء الأيقونات القياسية مع مسارات SVG المحلية وتلوينها بدقة عبر قناع لوني.
    - **الاعتماديات**: `Theme`.
 
+11. **`shell/components/settings/SettingsAppV2.qml` (598 سطراً)**:
+   - **الغرض**: نافذة إعدادات النظام الرئيسية المحدثة؛ نافذة عائمة قابلة للسحب والتحريك بحرية، تدعم تعدد المهام بالعمل جنباً إلى جنب مع التطبيقات الأخرى، وتوفر تكبيراً واستعادة سلسة لملء الشاشة.
+   - **الأقسام الداخلية**:
+     - `السطور 1-35`: إعدادات النافذة (`PanelWindow`)، قناع التفاعل `mask: Region { item: root.isOpen ? windowCard : null }` الذي يعزل تفاعل النافذة عن باقي الشاشة ويسمح بالنقرات على النوافذ الأخرى، وخصائص السحب والتموضع المقيد (`clampedX`, `clampedY`).
+     - `السطور 107-160`: اختصارات لوحة المفاتيح (`Escape`, `Super+Q`, `F11`, `Super+F`).
+     - `السطور 178-230`: بطاقة النافذة (`windowCard`) العائمة مع زوايا `Theme.notchRadiusWindow` (26px) في الوضع العائم وزوايا 0 في ملء الشاشة، وانتقالات انسيابية معطلة أثناء السحب لاستجابة فورية بدون أي تأخير.
+     - `السطور 231-315`: ترويسة النافذة (`windowHeader`) مع منطقة سحب متكاملة (`headerDragArea`)، مؤشر سحب اليد المقفلة، نقر مزدوج للتكبير، وأزرار التكبير والإغلاق.
+     - `السطور 316-598`: الشريط الجانبي للتبويبات (`SettingsSidebar`) وحاوية المحتوى الزجاجية العائمة.
+   - **الاعتماديات**: `Quickshell`, `Theme`, `ShellState`, `I18n`.
+
 ---
 
 ### ج) الخدمات السنجلتون والبيانات (Singletons & Services)
@@ -215,6 +225,9 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي لآخر 20 commit)*:
+* `c3e91b0` - fix(notch): keep music player visible on pause and bind viewMode to player presence (2026-09-19)
+* `f7d44e6` - feat(settings): make settings window draggable, resizable to fullscreen, and allow side-by-side multitasking (2026-09-19)
+* `c15d1b3` - docs: update STATUS.md changelog, active state, and architecture map for NotchFrame and tabs (2026-09-19)
 * `a1976fe` - feat(i18n): update Notch tab names to Home, Share, and Notifications with Arabic localization (2026-09-19)
 * `d089ff5` - fix(notch): center expanded tab row and decouple settings gear button (2026-09-19)
 * `373c94d` - refactor(capsule): extract NotchFrame component and unify QuickSettingsCapsule with Notch geometry and ceiling attachment (2026-09-19)
@@ -232,15 +245,14 @@
 * `5ce240b` - refactor: wire SettingsAppV2 and remove legacy SettingsApp (2026-09-16)
 * `d90b9d4` - refactor: remove expandedContentReady — expanded view now shows/fades directly with isExpanded (2026-09-16)
 * `d046548` - fix: decouple scroll-wheel from App Drawer on Notch/QuickSettingsCapsule — wheel now expands/collapses each surface itself; App Drawer scroll-control stays Dock-only (2026-09-16)
-* `79a00ef` - fix: pass scroll-wheel events from child elements in Notch and QuickSettings to App Drawer (2026-09-16)
-* `c2fadd8` - feat: add scroll-wheel open/close for App Drawer on Dock, Notch, and QuickSettingsCapsule (2026-09-16)
-* `e67c4fd` - refactor: remove App Drawer icon from Dock (2026-09-16)
 
 ---
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
 - **المهام المنجزة والمثبتة في HEAD**:
+  - تم حل مشكلة اختفاء مشغل الموسيقى في النوتش (الكبسولة الوسطى) عند الإيقاف المؤقت؛ تم ربط ظهور المشغل بوجود مصدر الموسيقى (`hasPlayer`) بدلاً من حالة التشغيل اللحظية (`isMusicPlaying`). يبقى المشغل ظاهراً بكامل تفاصيله (الغلاف، العنوان، وأزرار التحكم) عند الإيقاف المؤقت (Paused)، مع تمكين زر التشغيل من استئناف العزف، ولا يختفي إلا عند إغلاق التطبيق كلياً أو اختفاء المشغل من Mpris. تم تطبيق نفس السلوك في الوضعين المصغر والموسع، وضمان عدم قفز المشغل عشوائياً عند وجود أكثر من مشغل.
+  - تم تحسين نافذة الإعدادات (`SettingsAppV2.qml`) لتصبح نافذة عائمة قابلة للسحب والتحريك بحرية بسلاسة تامة، مع إزالة حجب النقرات الخارجية وتطبيق قناع `Region` لتتيح العمل جنباً إلى جنب مع التطبيقات الأخرى (Multitasking)، ودعم التبديل السلس بين الحجم العائم وملء الشاشة (Fullscreen Toggle & Restore) عبر النقر المزدوج على شريط العنوان أو زر التكبير أو الاختصارات.
   - تم استخراج المكون المشترك `shell/components/NotchFrame.qml` وتوحيد شكل وهندسة الكبسولة السريعة والنوتش بالكامل (الالتصاق بسقف الشاشة، الأذنان العلويتان 18px، الزوايا السفلية 26px، والظل الناعم).
   - تم توسيط شريط التبويبات الموسعة في `Notch.qml` هندسياً في المنتصف وفصل زر الترس على الحافة الجانبية.
   - تم تحديث مسميات التبويبات الثلاثة (Home / الرئيسية، Share / مشاركة، Notifications / الإشعارات) مع دعم كامل للغتين عبر `I18n.qml`.
@@ -254,13 +266,15 @@
 ---
 
 ## 8. المشاكل المعروفة والتحديات التقنية (Known Issues & Technical Constraints)
-1. **التصاق الكبسولة الموسعة بسقف الشاشة (Ceiling Attachment & Geometry)**:
+1. **استمرارية ظهور مشغل الموسيقى وتعدد المشغلات (MPRIS Persistence & Player Priority)**:
+   - تم حل مشكلة اختفاء المشغل عند الإيقاف المؤقت (Paused) عبر اعتماد دالة `updateActivePlayer()` التفاعلية مع `Instantiator` لمراقبة تغيرات حالة التشغيل (`isPlaying`, `playbackState`) لكافة المشغلات. الأولوية للمشغل الذي يعمل حالياً، وإذا توقف مؤقتاً يتم الاحتفاظ به كـ `activePlayer` دون الانتقال العشوائي لأي مشغل خامل آخر. يختفي المشغل ويعود النوتش لحالة الخمول (`idle`) فقط عند انعدام أي مشغل نشط على D-Bus.
+2. **التصاق الكبسولة الموسعة بسقف الشاشة (Ceiling Attachment & Geometry)**:
    - تم حل مشكلة الفراغ العلوي (8px gap) في الكبسولة الموسعة عبر إزالة إزاحة `currentY` وضبط `margins.top: root.isExpanded ? 0 : 10`، واعتماد المكون الموحد `NotchFrame` لضمان أن كلاً من النوتش والكبسولة يخرجان بسلاسة تامة من سقف الشاشة مع نفس الأذنين المنحنيتين وزوايا الحواف.
-2. **التعامل مع الـ Popups المنبثقة من Layer-Shell**:
+3. **التعامل مع الـ Popups المنبثقة من Layer-Shell**:
    - بروتوكول `wlr_layer_shell_v1` يقيد أحياناً ارتباط قوائم `xdg_popup` به إذا لم يتم تمرير التركيز وإدارته عبر `HyprlandFocusGrab` بشكل صريح، مما كان يسبب بقاء القوائم معلقة عند النقر بالخارج (تم حلها وتثبيتها في `DockContextMenu`).
-3. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
+4. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
    - إرسال أوامر عبر `hyprctl repl` أو تقييم دوال Lua عشوائية على جلسة المضيف قد يؤدي لـ SIGSEGV ودخول Compositor المضيف في وضع الأمان (`--safe-mode`). يجب قصر التحكم على استدعاءات `hyprctl dispatch` الآمنة.
-4. **أيقونات تطبيقات التراي الخارجية**:
+5. **أيقونات تطبيقات التراي الخارجية**:
    - بعض تطبيقات التراي الخارجية ترسل مسارات أيقونات نقطية (Pixmaps) أو أسماء لا تطابق نسق Symbolic. يعتمد `SystemTrayIndicators` على مكوّن `Image` المباشر بدلاً من `SymbolicIcon` لتجنب فشل التحميل.
 
 ---
