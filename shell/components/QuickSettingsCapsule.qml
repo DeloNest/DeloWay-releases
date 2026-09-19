@@ -1055,7 +1055,7 @@ PanelWindow {
                                     icon: "system-shutdown-symbolic"
                                     normalColor: Theme.qsTileBackground
                                     hoverColor: Theme.qsTileBackgroundHover
-                                    textColor: Theme.colors.danger
+                                    textColor: Theme.notchTextSecondary
                                     hoverTextColor: Theme.colors.danger
                                     onClicked: {
                                         ShellState.closeQuickSettingsCapsule();

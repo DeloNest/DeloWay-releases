@@ -150,7 +150,7 @@ Rectangle {
                     width: 4
                     height: 18
                     radius: 2
-                    color: Qt.rgba(1, 1, 1, 0.90)
+                    color: Theme.notchText
                     anchors.verticalCenter: parent.verticalCenter
                     x: {
                         const v = root.isMuted ? 0 : Math.max(0, Math.min(1, root.value));

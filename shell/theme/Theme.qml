@@ -267,9 +267,10 @@ Item {
     readonly property color qsTileIconCircleInactive: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
     readonly property color qsTileIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.60)
     readonly property color qsTileIconActive: isDark ? "#000000" : "#ffffff"
-    readonly property color qsSliderTrack: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
-    readonly property color qsSliderTrackHover: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.09)
-    readonly property color qsSliderFill: accent
+    readonly property color qsSliderTrack: notchSurfaceElevated
+    readonly property color qsSliderTrackHover: notchSurfaceHover
+    readonly property color notchSliderFill: isDark ? "#ffffff" : "#0f172a"
+    readonly property color qsSliderFill: notchSliderFill
     readonly property color qsSliderIconActive: isDark ? "#000000" : "#ffffff"
     readonly property color qsSliderIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.60) : Qt.rgba(0, 0, 0, 0.50)
 
