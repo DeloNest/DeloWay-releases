@@ -275,17 +275,24 @@ Item {
     readonly property color qsSliderIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.60) : Qt.rgba(0, 0, 0, 0.50)
 
     // Workspace Indicator Tokens
-    readonly property int wsDotSize:       6
-    readonly property int wsCircleSize:    28
-    readonly property int wsPillWidth:     36
-    readonly property int wsPillHeight:    32
-    readonly property int wsIconSize:      16
-    readonly property int wsBadgeSize:     14
-    readonly property int wsIndicatorSpacing: 5
+    readonly property int wsDotSize:            6
+    readonly property int wsCircleSize:         28
+    readonly property int wsPillHeight:         32
+    readonly property int wsPillBase:           30    // pill width: number only (active, no icons)
+    readonly property int wsPillIconGap:        4     // gap between number and icon area in pill
+    readonly property int wsIconSizeSingle:     15    // icon size when 1 shown (circle or pill)
+    readonly property int wsIconSizeDouble:     12    // each icon size when 2 overlapping
+    readonly property int wsIconOverlapOffset:  8     // horizontal offset of 2nd icon centre
+    readonly property int wsBadgeSize:          13
+    readonly property int wsIndicatorSpacing:   5
+
+    // kept for back-compat
+    readonly property int wsPillWidth:  wsPillBase
+    readonly property int wsIconSize:   wsIconSizeSingle
 
     // Workspace colours — OLED monochrome identity
-    readonly property color wsActiveBg:    isDark ? "#ffffff" : "#0f172a"   // solid white/dark pill
-    readonly property color wsActiveText:  isDark ? "#000000" : "#ffffff"   // inverse on the pill
+    readonly property color wsActiveBg:    isDark ? "#ffffff" : "#0f172a"
+    readonly property color wsActiveText:  isDark ? "#000000" : "#ffffff"
     readonly property color wsOccupiedBg:  isDark ? Qt.rgba(1, 1, 1, 0.13) : Qt.rgba(0, 0, 0, 0.09)
     readonly property color wsEmptyBg:     "transparent"
 
