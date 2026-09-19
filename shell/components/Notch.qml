@@ -28,7 +28,7 @@ PanelWindow {
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
         if (notchHomeItem.notificationActive) return 420;
-        if (notchHomeItem.isMusicPlaying) return 490;
+        if (notchHomeItem.hasPlayer) return 490;
         return 200;
     }
     readonly property real compactHeight: 44

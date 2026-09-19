@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQml.Models
 import Quickshell
 import Quickshell.Services.Mpris
 import Quickshell.Hyprland
@@ -26,17 +27,70 @@ Item {
         onTriggered: root.currentTime = new Date()
     }
 
-    // MPRIS Active Player
-    property var activePlayer: {
-        if (!Mpris.players || !Mpris.players.values)
-            return null;
-        const values = Mpris.players.values;
-        for (let i = 0; i < values.length; i++) {
-            if (values[i] && values[i].isPlaying) return values[i];
+    // MPRIS Active Player tracking
+    property var activePlayer: null
+    readonly property bool hasPlayer: activePlayer !== null
+    readonly property bool isMusicPlaying: hasPlayer && activePlayer.isPlaying
+
+    function updateActivePlayer() {
+        if (!Mpris.players || !Mpris.players.values) {
+            activePlayer = null;
+            return;
         }
-        return values.length > 0 ? values[0] : null;
+        const values = Mpris.players.values;
+        if (!values || values.length === 0) {
+            activePlayer = null;
+            return;
+        }
+
+        // 1. Priority 1: Check if any player is actively playing
+        for (let i = 0; i < values.length; i++) {
+            if (values[i] && values[i].isPlaying) {
+                if (activePlayer !== values[i]) {
+                    activePlayer = values[i];
+                }
+                return;
+            }
+        }
+
+        // 2. Priority 2: If current activePlayer is still in values, keep it (prevent jumping upon pause)
+        if (activePlayer) {
+            for (let i = 0; i < values.length; i++) {
+                if (values[i] === activePlayer) {
+                    return;
+                }
+            }
+        }
+
+        // 3. Fallback: Previous activePlayer was closed or not set; pick first available player
+        activePlayer = values[0] || null;
     }
-    readonly property bool isMusicPlaying: activePlayer !== null && activePlayer.isPlaying
+
+    Instantiator {
+        model: Mpris.players
+        delegate: Connections {
+            target: modelData
+            function onIsPlayingChanged() {
+                root.updateActivePlayer();
+            }
+            function onPlaybackStateChanged() {
+                root.updateActivePlayer();
+            }
+        }
+        onObjectAdded: root.updateActivePlayer()
+        onObjectRemoved: root.updateActivePlayer()
+    }
+
+    Connections {
+        target: Mpris.players
+        function onValuesChanged() {
+            root.updateActivePlayer();
+        }
+    }
+
+    Component.onCompleted: {
+        root.updateActivePlayer();
+    }
 
     // Notification State
     property var activeNotification: null
@@ -78,7 +132,7 @@ Item {
     }
 
     // Active View Mode: notification overrides music, music overrides idle
-    readonly property string viewMode: notificationActive ? "notification" : (isMusicPlaying ? "music" : "idle")
+    readonly property string viewMode: notificationActive ? "notification" : (hasPlayer ? "music" : "idle")
 
     // Calendar helper functions (100% NotchNook matching)
     function getMonthName() {
@@ -246,9 +300,9 @@ Item {
                 }
             }
 
-            // ── SECTION B: Subtle Divider (Visible when music is playing) ─
+            // ── SECTION B: Subtle Divider (Visible when music player is present) ─
             Rectangle {
-                visible: root.isMusicPlaying
+                visible: root.hasPlayer
                 Layout.preferredWidth: 1
                 Layout.preferredHeight: 20
                 Layout.alignment: Qt.AlignVCenter
@@ -258,7 +312,7 @@ Item {
             // ── SECTION C: Mini Music Player ──────────────────────────────
             RowLayout {
                 id: miniMusicPlayer
-                visible: root.isMusicPlaying
+                visible: root.hasPlayer
                 spacing: 6
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
@@ -560,7 +614,7 @@ Item {
                             font.pixelSize: Theme.fontSize(15)
                             font.weight: Font.Bold
                             renderType: Theme.renderType
-                            color: "#ffffff"
+                            color: Theme.notchText
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
@@ -573,7 +627,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(12)
                             renderType: Theme.renderType
-                            color: "#b0b0b0"
+                            color: Theme.notchTextSecondary
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
@@ -584,7 +638,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(11)
                             renderType: Theme.renderType
-                            color: "#757575"
+                            color: Theme.notchTextTertiary
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }
@@ -599,7 +653,7 @@ Item {
                                 text: "|◀"
                                 font.pixelSize: Theme.fontSize(12)
                                 font.weight: Font.Bold
-                                color: prevExpHover.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.85)
+                                color: prevExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
 
                                 MouseArea {
                                     id: prevExpHover
@@ -616,7 +670,7 @@ Item {
                                 text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
                                 font.pixelSize: Theme.fontSize(14)
                                 font.weight: Font.Bold
-                                color: playExpHover.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.95)
+                                color: playExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
 
                                 MouseArea {
                                     id: playExpHover
@@ -638,7 +692,7 @@ Item {
                                 text: "▶|"
                                 font.pixelSize: Theme.fontSize(12)
                                 font.weight: Font.Bold
-                                color: nextExpHover.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.85)
+                                color: nextExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
 
                                 MouseArea {
                                     id: nextExpHover

@@ -231,7 +231,7 @@ PanelWindow {
 
                     onPressed: mouse => {
                         if (!root.isFullScreen) {
-                            var p = mapToItem(root, mouse.x, mouse.y);
+                            var p = mapToItem(null, mouse.x, mouse.y);
                             pressPosRoot = p;
                             startCardX = (root.customX >= 0) ? root.customX : root.defaultX;
                             startCardY = (root.customY >= 0) ? root.customY : root.defaultY;
@@ -241,7 +241,7 @@ PanelWindow {
 
                     onPositionChanged: mouse => {
                         if (pressed && !root.isFullScreen) {
-                            var p = mapToItem(root, mouse.x, mouse.y);
+                            var p = mapToItem(null, mouse.x, mouse.y);
                             var deltaX = p.x - pressPosRoot.x;
                             var deltaY = p.y - pressPosRoot.y;
                             var newX = startCardX + deltaX;
