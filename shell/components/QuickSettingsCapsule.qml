@@ -46,12 +46,12 @@ PanelWindow {
 
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(108, compactRow.implicitWidth + 48)
-    readonly property real expandedWidth: 440
+    readonly property real expandedWidth: 480
     readonly property real expandedHeight: {
         if (root.currentView === "wifi") return 390;
         if (root.currentView === "bluetooth") return 390;
         if (root.currentView === "hotspot") return 430;
-        return 400;
+        return 436;
     }
 
     // Animated intermediates — same pattern as Notch.qml currentWidth/currentHeight
@@ -906,10 +906,10 @@ PanelWindow {
             Item {
                 id: expandedContent
                 anchors.fill: parent
-                anchors.leftMargin: 20
-                anchors.rightMargin: 20
-                anchors.topMargin: 8
-                anchors.bottomMargin: 12
+                anchors.leftMargin: Theme.qsPadding
+                anchors.rightMargin: Theme.qsPadding
+                anchors.topMargin: 10
+                anchors.bottomMargin: 14
                 opacity: root.isExpanded ? 1.0 : 0.0
                 visible: root.isExpanded
 
@@ -918,17 +918,17 @@ PanelWindow {
                 }
 
                 // ═════════════════════════════════════════════════════════════
-                // VIEW A: MAIN CONTROLS (Wi-Fi, BT, Volume, Brightness)
+                // VIEW A: MAIN CONTROLS (Header, Tiles, Sliders)
                 // ═════════════════════════════════════════════════════════════
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 4
+                    spacing: Theme.qsSpacing
                     visible: root.currentView === "main"
 
-                    // ── Rich Header: Clock + Battery + Close ──
+                    // ── Rich Header: Clock + Date + Settings + Power ──
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 48
+                        Layout.preferredHeight: 44
 
                         // Live clock timer
                         Timer {
@@ -938,8 +938,15 @@ PanelWindow {
                             running: root.isExpanded
                             triggeredOnStart: true
                             onTriggered: {
-                                headerTimeText.text = Qt.formatDateTime(new Date(), "hh:mm");
-                                headerDayText.text = Qt.formatDateTime(new Date(), I18n.isRTL ? "dddd" : "dddd");
+                                const now = new Date();
+                                headerTimeText.text = Qt.formatDateTime(now, "hh:mm");
+                                if (I18n.isRTL) {
+                                    const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+                                    const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+                                    headerDayText.text = days[now.getDay()] + "، " + now.getDate() + " " + months[now.getMonth()];
+                                } else {
+                                    headerDayText.text = Qt.formatDateTime(now, "dddd, MMMM d");
+                                }
                             }
                         }
 
@@ -955,22 +962,13 @@ PanelWindow {
 
                         RowLayout {
                             anchors.fill: parent
-                            spacing: 0
+                            LayoutMirroring.enabled: I18n.isRTL
+                            LayoutMirroring.childrenInherit: true
 
-                            // Left: Day + Time stack
+                            // Start: Time & Date stack
                             ColumnLayout {
-                                spacing: 0
                                 Layout.fillWidth: true
-
-                                Text {
-                                    id: headerDayText
-                                    text: Qt.formatDateTime(new Date(), I18n.isRTL ? "dddd" : "dddd")
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    font.weight: Font.Medium
-                                    color: Theme.notchTextTertiary
-                                    renderType: Theme.renderType
-                                }
+                                spacing: 0
 
                                 Text {
                                     id: headerTimeText
@@ -982,34 +980,31 @@ PanelWindow {
                                     renderType: Theme.renderType
                                     lineHeight: 1.0
                                 }
+
+                                Text {
+                                    id: headerDayText
+                                    text: Qt.formatDateTime(new Date(), I18n.isRTL ? "dddd, d MMMM" : "dddd, MMMM d")
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(11)
+                                    font.weight: Font.Normal
+                                    color: Theme.notchTextTertiary
+                                    renderType: Theme.renderType
+                                }
                             }
 
-                            // Right: Battery + Close
-                            ColumnLayout {
-                                spacing: 4
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            // End: Battery + Settings + Power Menu
+                            RowLayout {
+                                spacing: 8
+                                Layout.alignment: Qt.AlignVCenter
 
-                                // Close button
-                                QSRoundButton {
-                                    buttonSize: 24
-                                    text: "✕"
-                                    iconSize: 11
-                                    normalColor: Theme.notchSurface
-                                    hoverColor: Theme.notchSurfaceHover
-                                    textColor: Theme.notchTextTertiary
-                                    hoverTextColor: Theme.notchText
-                                    Layout.alignment: Qt.AlignRight
-                                    onClicked: ShellState.closeQuickSettingsCapsule()
-                                }
-
-                                // Battery row
+                                // Battery indicator (laptop)
                                 RowLayout {
                                     visible: SystemMonitor.hasBattery
                                     spacing: 4
-                                    Layout.alignment: Qt.AlignRight
+                                    Layout.alignment: Qt.AlignVCenter
 
                                     SymbolicIcon {
-                                        iconSize: 13
+                                        iconSize: 14
                                         source: {
                                             const p = SystemMonitor.batteryPercent;
                                             if (SystemMonitor.batteryStatusText === "Charging") return "battery-good-charging-symbolic";
@@ -1028,7 +1023,7 @@ PanelWindow {
                                     Text {
                                         text: SystemMonitor.batteryPercent + "%"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(10)
+                                        font.pixelSize: Theme.fontSize(11)
                                         font.weight: Font.Medium
                                         color: {
                                             if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
@@ -1038,23 +1033,46 @@ PanelWindow {
                                         renderType: Theme.renderType
                                     }
                                 }
+
+                                // Settings button (36px)
+                                QSRoundButton {
+                                    buttonSize: 36
+                                    iconSize: 16
+                                    icon: "settings-symbolic"
+                                    normalColor: Theme.qsTileBackground
+                                    hoverColor: Theme.qsTileBackgroundHover
+                                    textColor: Theme.notchText
+                                    onClicked: {
+                                        ShellState.closeQuickSettingsCapsule();
+                                        ShellState.openSettingsApp();
+                                    }
+                                }
+
+                                // Power / Session Menu button (36px)
+                                QSRoundButton {
+                                    buttonSize: 36
+                                    iconSize: 16
+                                    icon: "system-shutdown-symbolic"
+                                    normalColor: Theme.qsTileBackground
+                                    hoverColor: Theme.qsTileBackgroundHover
+                                    textColor: Theme.colors.danger
+                                    hoverTextColor: Theme.colors.danger
+                                    onClicked: {
+                                        ShellState.closeQuickSettingsCapsule();
+                                        ShellState.openSessionMenu();
+                                    }
+                                }
                             }
                         }
                     }
 
-                    // ── Thin separator ──
-                    Rectangle {
-                        Layout.fillWidth: true
-                        height: 1
-                        color: Theme.notchBorderSubtle
-                        opacity: 0.7
-                    }
-
-                    // ── Row 1: Wi-Fi Card + Bluetooth Card (2-Column Grid) ──
+                    // ── Row 1: Wi-Fi Card + Focus/DND Card + Lock Screen Button ──
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 60
-                        spacing: 8
+                        Layout.preferredHeight: Theme.qsTileHeight
+                        spacing: Theme.qsSpacing
+                        LayoutMirroring.enabled: I18n.isRTL
+                        LayoutMirroring.childrenInherit: true
 
                         QSToggleTile {
                             title: "Wi-Fi"
@@ -1064,6 +1082,7 @@ PanelWindow {
                             icon: "network-wireless-symbolic"
                             active: root.wifiEnabled
                             connected: root.wifiEnabled && root.wifiSsid.length > 0
+                            hasChevron: true
                             onClicked: {
                                 ShellState.quickSettingsCapsuleView = "wifi";
                                 root.rescanWifi();
@@ -1072,28 +1091,57 @@ PanelWindow {
                         }
 
                         QSToggleTile {
+                            title: I18n.isRTL ? "عدم الإزعاج" : "Focus"
+                            subtitle: ConfigManager.notificationsDnd
+                                      ? (I18n.isRTL ? "مفعّل" : "On")
+                                      : (I18n.isRTL ? "معطل" : "Off")
+                            icon: "focus-symbolic"
+                            active: ConfigManager.notificationsDnd
+                            connected: ConfigManager.notificationsDnd
+                            hasChevron: false
+                            onClicked: ConfigManager.setNotificationsDnd(!ConfigManager.notificationsDnd)
+                            onToggleClicked: ConfigManager.setNotificationsDnd(!ConfigManager.notificationsDnd)
+                        }
+
+                        QSRoundButton {
+                            buttonSize: Theme.qsRoundButtonSize
+                            iconSize: 20
+                            icon: "lock-symbolic"
+                            normalColor: Theme.qsTileBackground
+                            hoverColor: Theme.qsTileBackgroundHover
+                            textColor: Theme.notchText
+                            onClicked: {
+                                ShellState.closeQuickSettingsCapsule();
+                                ShellState.lockScreenActive = true;
+                            }
+                        }
+                    }
+
+                    // ── Row 2: Bluetooth Card + Hotspot Card + Night Light Button ──
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: Theme.qsTileHeight
+                        spacing: Theme.qsSpacing
+                        LayoutMirroring.enabled: I18n.isRTL
+                        LayoutMirroring.childrenInherit: true
+
+                        QSToggleTile {
                             title: "Bluetooth"
                             subtitle: !root.bluetoothEnabled
                                       ? (I18n.isRTL ? "معطل" : "Off")
                                       : (root.bluetoothConnectedDevice.length > 0
                                          ? root.bluetoothConnectedDevice
-                                         : (I18n.isRTL ? "لا يوجد جهاز" : "No device"))
+                                         : (I18n.isRTL ? "لا يوجد جهاز" : "On"))
                             icon: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
                             active: root.bluetoothEnabled
                             connected: root.bluetoothConnectedDevice.length > 0
+                            hasChevron: true
                             onClicked: {
                                 ShellState.quickSettingsCapsuleView = "bluetooth";
                                 root.refreshBluetooth();
                             }
                             onToggleClicked: root.toggleBluetooth()
                         }
-                    }
-
-                    // ── Row 2: Hotspot Card + Night Light Card (2-Column Symmetrical Grid) ──
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 60
-                        spacing: 8
 
                         QSToggleTile {
                             title: I18n.isRTL ? "نقطة اتصال" : "Hotspot"
@@ -1103,10 +1151,11 @@ PanelWindow {
                                          ? (root.hotspotClients.length > 0
                                             ? (root.hotspotClients.length + (I18n.isRTL ? " متصل" : " connected"))
                                             : (I18n.isRTL ? "مفعّلة" : "Active"))
-                                         : (I18n.isRTL ? "معطلة" : "Disabled"))
+                                         : (I18n.isRTL ? "معطلة" : "Off"))
                             icon: "network-wireless-hotspot-symbolic"
                             active: root.hotspotEnabled
                             connected: root.hotspotEnabled
+                            hasChevron: true
                             toggleEnabled: root.hotspotAvailable && !hotspotActionProcess.running
                             onClicked: {
                                 ShellState.quickSettingsCapsuleView = "hotspot";
@@ -1114,51 +1163,45 @@ PanelWindow {
                             onToggleClicked: root.toggleHotspot()
                         }
 
-                        QSToggleTile {
-                            title: I18n.isRTL ? "إضاءة ليلية" : "Night Light"
-                            subtitle: root.nightLightEnabled
-                                      ? (I18n.isRTL ? "مفعّلة" : "Active")
-                                      : (I18n.isRTL ? "معطلة" : "Disabled")
-                            icon: "night-light-symbolic"
+                        QSRoundButton {
+                            buttonSize: Theme.qsRoundButtonSize
+                            iconSize: 20
+                            icon: "weather-clear-night-symbolic"
                             active: root.nightLightEnabled
-                            connected: root.nightLightEnabled
-                            hasChevron: false
-                            activeColor: Qt.rgba(0.95, 0.65, 0.25, 0.35)
-                            activeIconColor: Qt.rgba(1.0, 0.78, 0.40, 1.0)
+                            activeColor: Theme.accent
+                            activeIconColor: Theme.qsTileIconActive
+                            normalColor: Theme.qsTileBackground
+                            hoverColor: Theme.qsTileBackgroundHover
+                            textColor: Theme.notchText
                             onClicked: root.toggleNightLight()
                         }
                     }
 
-                    // ── Row 3: Sound Card (Title + Percentage + Mute Toggle + Interactive Slider) ──
+                    // ── Row 3: Sound Card (~84px) ──
                     QSSliderCard {
                         title: I18n.isRTL ? "الصوت" : "Sound"
                         icon: root.volumeIconName + "-symbolic"
-                        iconColor: root.isMuted ? Theme.colors.danger : Theme.notchText
                         iconClickable: true
                         isMuted: root.isMuted
                         value: root.currentVolume
-                        valueText: root.isMuted
-                                   ? (I18n.isRTL ? "مكتوم" : "Muted")
-                                   : (Math.round(root.currentVolume * 100) + "%")
+                        hasSubpage: true
                         onSliderMoved: (newVal) => root.setVolume(newVal)
                         onIconClicked: root.toggleMute()
                     }
 
-                    // ── Row 4: Display Card (Title + Percentage + Interactive Slider) ──
+                    // ── Row 4: Display Card (~84px) ──
                     QSSliderCard {
                         visible: root.brightnessBackend !== "none"
                         title: I18n.isRTL ? "السطوع" : "Display"
                         icon: "display-brightness-symbolic"
-                        iconColor: Theme.notchText
                         value: root.screenBrightness
-                        valueText: Math.round(root.screenBrightness * 100) + "%"
+                        hasSubpage: true
                         onSliderMoved: (newVal) => root.setBrightness(newVal)
                         onSliderReleased: {
                             if (root.brightnessBackend === "ddc")
                                 root.applyDdcBrightness();
                         }
                     }
-
 
                     Item { Layout.fillHeight: true }
                 }

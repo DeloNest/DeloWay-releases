@@ -12,9 +12,9 @@ Rectangle {
     property string icon: ""
     property bool active: false
     property bool connected: false
-    property bool hasChevron: true
+    property bool hasChevron: false
     property color activeColor: Theme.accent
-    property color activeIconColor: "#FFFFFF"
+    property color activeIconColor: Theme.qsTileIconActive
     property bool toggleEnabled: true
 
     signal clicked()
@@ -22,18 +22,19 @@ Rectangle {
 
     Layout.fillWidth: true
     Layout.preferredWidth: 1
-    Layout.fillHeight: true
-    radius: Theme.notchRadiusCard
+    Layout.preferredHeight: Theme.qsTileHeight
+    implicitHeight: Theme.qsTileHeight
+    radius: Theme.qsTileRadius
 
-    color: tileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-    border.color: (root.active && root.connected)
-                  ? Qt.rgba(root.activeColor.r, root.activeColor.g, root.activeColor.b, 0.5)
-                  : (root.active ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
+    color: tileMa.containsMouse
+           ? Theme.qsTileBackgroundHover
+           : (root.active ? Theme.qsTileBackgroundActive : Theme.qsTileBackground)
+    border.color: root.active ? Theme.notchBorderHighlight : Theme.qsTileBorder
     border.width: 1
-    scale: tileMa.pressed ? 0.96 : (tileMa.containsMouse ? 1.01 : 1.0)
+    scale: tileMa.pressed ? 0.97 : (tileMa.containsMouse ? 1.01 : 1.0)
 
-    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-    Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+    Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+    Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
     Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
     MouseArea {
@@ -41,88 +42,99 @@ Rectangle {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
-        onClicked: root.clicked()
+        onClicked: {
+            if (root.toggleEnabled) {
+                root.toggleClicked();
+            }
+        }
     }
 
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 10
         anchors.rightMargin: 10
-        spacing: 9
+        spacing: 8
+        LayoutMirroring.enabled: I18n.isRTL
+        LayoutMirroring.childrenInherit: true
 
-        // Clickable Icon Circle
+        // Icon Circle (40px)
         Rectangle {
             id: iconCircle
-            implicitWidth: 36
-            implicitHeight: 36
-            radius: 18
-            color: root.connected
+            implicitWidth: Theme.qsIconCircleSize
+            implicitHeight: Theme.qsIconCircleSize
+            radius: Theme.qsIconCircleRadius
+            color: root.active
                    ? root.activeColor
-                   : (root.active ? Theme.notchBorderHighlight : Theme.notchSurfaceElevated)
+                   : Theme.qsTileIconCircleInactive
 
-            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
             SymbolicIcon {
                 anchors.centerIn: parent
                 source: root.icon
-                iconSize: 17
-                iconColor: root.connected
+                iconSize: 18
+                iconColor: root.active
                            ? root.activeIconColor
-                           : (root.active ? Theme.notchText : Theme.notchTextTertiary)
-            }
-
-            MouseArea {
-                id: toggleMa
-                anchors.fill: parent
-                enabled: root.toggleEnabled
-                cursorShape: root.toggleEnabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                hoverEnabled: true
-                onClicked: {
-                    if (root.hasChevron) {
-                        root.toggleClicked();
-                    } else {
-                        root.clicked();
-                    }
-                }
+                           : Theme.qsTileIconInactive
             }
         }
 
         // Text details
         ColumnLayout {
             Layout.fillWidth: true
-            spacing: 2
+            spacing: 1
 
             Text {
                 text: root.title
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(12)
+                font.pixelSize: Theme.fontSize(13)
                 font.weight: Font.DemiBold
                 color: Theme.notchText
-                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                 elide: Text.ElideRight
                 Layout.fillWidth: true
+                renderType: Theme.renderType
             }
 
             Text {
                 text: root.subtitle
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(10)
-                color: (root.active && root.connected) ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                font.pixelSize: Theme.fontSize(11)
+                font.weight: Font.Normal
+                color: Theme.notchTextTertiary
                 elide: Text.ElideRight
                 Layout.fillWidth: true
+                renderType: Theme.renderType
             }
         }
 
-        // Chevron
-        Text {
+        // Chevron to open subpage
+        Item {
             visible: root.hasChevron
-            text: I18n.isRTL ? "‹" : "›"
-            font.family: Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(13)
-            font.weight: Font.DemiBold
-            color: tileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
+            implicitWidth: 14
+            implicitHeight: 36
             Layout.alignment: Qt.AlignVCenter
+
+            Text {
+                anchors.centerIn: parent
+                text: I18n.isRTL ? "‹" : "›"
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(14)
+                font.weight: Font.Bold
+                color: chevronMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                renderType: Theme.renderType
+            }
+
+            MouseArea {
+                id: chevronMa
+                anchors.fill: parent
+                anchors.margins: -4
+                cursorShape: Qt.PointingHandCursor
+                hoverEnabled: true
+                onClicked: (mouse) => {
+                    mouse.accepted = true;
+                    root.clicked();
+                }
+            }
         }
     }
 }

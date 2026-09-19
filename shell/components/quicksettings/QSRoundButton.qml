@@ -1,16 +1,21 @@
 import QtQuick
+import QtQuick.Layouts
 import "../../theme"
+import "../../services"
 import ".."
 
 Rectangle {
     id: root
 
-    property real buttonSize: 28
+    property real buttonSize: Theme.qsRoundButtonSize
     property string icon: ""
     property string text: ""
-    property real iconSize: 14
-    property color normalColor: "transparent"
-    property color hoverColor: Theme.notchSurfaceHover
+    property real iconSize: 20
+    property bool active: false
+    property color activeColor: Theme.accent
+    property color activeIconColor: Theme.qsTileIconActive
+    property color normalColor: Theme.qsTileBackground
+    property color hoverColor: Theme.qsTileBackgroundHover
     property color textColor: Theme.notchText
     property color hoverTextColor: Theme.notchText
 
@@ -18,12 +23,17 @@ Rectangle {
 
     implicitWidth: buttonSize
     implicitHeight: buttonSize
+    Layout.preferredWidth: buttonSize
+    Layout.preferredHeight: buttonSize
     radius: buttonSize / 2
-    color: ma.containsMouse ? hoverColor : normalColor
-    scale: ma.pressed ? 0.92 : 1.0
+    color: root.active ? activeColor : (ma.containsMouse ? hoverColor : normalColor)
+    border.color: root.active ? Theme.notchBorderHighlight : Theme.qsTileBorder
+    border.width: 1
+    scale: ma.pressed ? 0.94 : (ma.containsMouse ? 1.02 : 1.0)
 
-    Behavior on color { ColorAnimation { duration: 80 } }
-    Behavior on scale { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
+    Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+    Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+    Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
     SymbolicIcon {
         id: symIcon
@@ -31,7 +41,9 @@ Rectangle {
         anchors.centerIn: parent
         source: root.icon
         iconSize: root.iconSize
-        iconColor: ma.containsMouse ? root.hoverTextColor : root.textColor
+        iconColor: root.active
+                   ? root.activeIconColor
+                   : (ma.containsMouse ? root.hoverTextColor : root.textColor)
     }
 
     Text {
@@ -41,7 +53,10 @@ Rectangle {
         font.family: Theme.typography.fontFamily
         font.pixelSize: root.iconSize
         font.weight: Font.DemiBold
-        color: ma.containsMouse ? root.hoverTextColor : root.textColor
+        color: root.active
+               ? root.activeIconColor
+               : (ma.containsMouse ? root.hoverTextColor : root.textColor)
+        renderType: Theme.renderType
     }
 
     MouseArea {

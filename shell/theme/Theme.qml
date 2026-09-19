@@ -246,6 +246,33 @@ Item {
     readonly property color sliderFill: isDark ? "#ffffff" : colors.textPrimary
     readonly property color sliderThumb: isDark ? "#ffffff" : colors.textPrimary
 
+    // Quick Settings Capsule Tokens
+    readonly property int qsTileHeight: 64
+    readonly property int qsTileRadius: 32
+    readonly property int qsIconCircleSize: 40
+    readonly property int qsIconCircleRadius: 20
+    readonly property int qsRoundButtonSize: 64
+    readonly property int qsRoundButtonRadius: 32
+    readonly property int qsSliderCardHeight: 84
+    readonly property int qsSliderTrackHeight: 32
+    readonly property int qsSliderTrackRadius: 16
+    readonly property int qsCardRadius: 20
+    readonly property int qsSpacing: 10
+    readonly property int qsPadding: 16
+
+    readonly property color qsTileBackground: isDark ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.04)
+    readonly property color qsTileBackgroundHover: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
+    readonly property color qsTileBackgroundActive: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
+    readonly property color qsTileBorder: isDark ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(0, 0, 0, 0.06)
+    readonly property color qsTileIconCircleInactive: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
+    readonly property color qsTileIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.60)
+    readonly property color qsTileIconActive: isDark ? "#000000" : "#ffffff"
+    readonly property color qsSliderTrack: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
+    readonly property color qsSliderTrackHover: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.09)
+    readonly property color qsSliderFill: accent
+    readonly property color qsSliderIconActive: isDark ? "#000000" : "#ffffff"
+    readonly property color qsSliderIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.60) : Qt.rgba(0, 0, 0, 0.50)
+
     // Exclusion & Strut Geometry Tokens (Reserved Space)
     readonly property int topBarHeight: 44
     readonly property int topBarMarginTop: 10
@@ -373,8 +400,13 @@ Item {
                 const textContent = themeWatcher.text();
                 if (!textContent || textContent.trim() === "") return;
                 const parsed = JSON.parse(textContent);
-                if (parsed.mode && parsed.mode !== root.mode) root.setMode(parsed.mode);
-                if (parsed.colors) root.colors = Object.assign({}, root.colors, parsed.colors);
+                if (parsed.mode && parsed.mode !== root.mode) {
+                    root.setMode(parsed.mode);
+                }
+                const activePalette = (root.mode === "light")
+                    ? (parsed.light || parsed.colors || {})
+                    : (parsed.dark || parsed.colors || {});
+                root.colors = Object.assign({}, (root.mode === "light" ? root.lightPalette : root.darkPalette), activePalette);
                 if (parsed.radius) root.radius = Object.assign({}, root.radius, parsed.radius);
                 if (parsed.spacing) root.spacing = Object.assign({}, root.spacing, parsed.spacing);
                 if (parsed.typography) root.baseTypography = Object.assign({}, root.baseTypography, parsed.typography);
