@@ -257,8 +257,8 @@ Item {
                             width: 48
                             height: 40
                             radius: 4
-                            color: "#181818"
-                            border.color: "#ffffff"
+                            color: Theme.notchSurfaceElevated
+                            border.color: Theme.notchBorderHighlight
                             border.width: 1.5
                             clip: true
                             Layout.alignment: Qt.AlignHCenter
@@ -303,7 +303,7 @@ Item {
                                     implicitWidth: 24
                                     implicitHeight: 10
                                     radius: 2
-                                    color: "#e53935"
+                                    color: Theme.danger
                                     visible: (fileItem.modelData || "").toLowerCase().endsWith(".pdf")
                                     Layout.alignment: Qt.AlignHCenter
 
@@ -312,7 +312,7 @@ Item {
                                         text: "PDF"
                                         font.pixelSize: 7
                                         font.bold: true
-                                        color: "#ffffff"
+                                        color: Theme.accentText
                                     }
                                 }
                             }
@@ -329,7 +329,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 10
                             font.weight: Font.Medium
-                            color: "#ffffff"
+                            color: Theme.notchText
                             elide: Text.ElideMiddle
                             Layout.maximumWidth: 64
                             Layout.alignment: Qt.AlignHCenter
@@ -342,8 +342,8 @@ Item {
                     implicitWidth: 32
                     implicitHeight: 32
                     radius: 16
-                    color: Qt.rgba(1, 1, 1, 0.16)
-                    border.color: Qt.rgba(1, 1, 1, 0.25)
+                    color: Theme.notchSurfaceElevated
+                    border.color: Theme.notchBorderHighlight
                     border.width: 1
                     Layout.alignment: Qt.AlignVCenter
 
@@ -351,7 +351,7 @@ Item {
                         anchors.centerIn: parent
                         source: "network-wireless"
                         iconSize: 14
-                        iconColor: "#ffffff"
+                        iconColor: Theme.notchText
                     }
 
                     MouseArea {

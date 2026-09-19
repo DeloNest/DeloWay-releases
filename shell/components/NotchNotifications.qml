@@ -41,7 +41,7 @@ Item {
                 Text {
                     text: I18n.isRTL ? "لا توجد إشعارات جديدة" : "No notifications"
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     font.weight: Font.Medium
                     color: Qt.rgba(1, 1, 1, 0.85)
                 }
@@ -49,7 +49,7 @@ Item {
                 Text {
                     text: I18n.isRTL ? "سجل الإشعارات فارغ حالياً" : "All caught up"
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     color: Qt.rgba(1, 1, 1, 0.40)
                 }
             }
@@ -136,24 +136,24 @@ Item {
                                 Text {
                                     text: card.modelData && card.modelData.appName ? card.modelData.appName : "System"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.DemiBold
-                                    color: Qt.rgba(1, 1, 1, 0.85)
+                                    color: Theme.notchText
                                     elide: Text.ElideRight
                                     Layout.maximumWidth: 140
                                 }
 
                                 Text {
                                     text: "•"
-                                    font.pixelSize: 9
-                                    color: Qt.rgba(1, 1, 1, 0.30)
+                                    font.pixelSize: Theme.fontSize(9)
+                                    color: Theme.notchTextTertiary
                                 }
 
                                 Text {
                                     text: card.modelData && card.modelData.timeStr ? card.modelData.timeStr : ""
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 9
-                                    color: Qt.rgba(1, 1, 1, 0.40)
+                                    font.pixelSize: Theme.fontSize(9)
+                                    color: Theme.notchTextTertiary
                                     Layout.fillWidth: true
                                 }
                             }
@@ -162,9 +162,9 @@ Item {
                             Text {
                                 text: card.modelData && card.modelData.summary ? card.modelData.summary : ""
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Medium
-                                color: "#ffffff"
+                                color: Theme.notchText
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
@@ -174,8 +174,8 @@ Item {
                                 visible: card.modelData && (card.modelData.body || "").length > 0
                                 text: card.modelData && card.modelData.body ? card.modelData.body : ""
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 10
-                                color: Qt.rgba(1, 1, 1, 0.55)
+                                font.pixelSize: Theme.fontSize(10)
+                                color: Theme.notchTextSecondary
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                             }
@@ -188,7 +188,7 @@ Item {
                             implicitHeight: 24
                             radius: 4
                             clip: true
-                            color: Qt.rgba(0, 0, 0, 0.40)
+                            color: Theme.notchSurface
                             Layout.alignment: Qt.AlignVCenter
 
                             Image {
@@ -203,14 +203,14 @@ Item {
                             implicitWidth: 18
                             implicitHeight: 18
                             radius: 9
-                            color: delMa.containsMouse ? Qt.rgba(1, 1, 1, 0.15) : "transparent"
+                            color: delMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
                             Layout.alignment: Qt.AlignVCenter
 
                             Text {
                                 anchors.centerIn: parent
                                 text: "✕"
-                                font.pixelSize: 9
-                                color: delMa.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.40)
+                                font.pixelSize: Theme.fontSize(9)
+                                color: delMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
                             }
 
                             MouseArea {
@@ -242,9 +242,9 @@ Item {
                     implicitHeight: 20
                     radius: 10
                     color: clearMa.pressed
-                           ? Qt.rgba(1, 1, 1, 0.16)
-                           : (clearMa.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : Qt.rgba(1, 1, 1, 0.05))
-                    border.color: clearMa.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : "transparent"
+                           ? Theme.notchSurfaceActive
+                           : (clearMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
+                    border.color: clearMa.containsMouse ? Theme.notchBorder : "transparent"
                     border.width: 1
 
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -257,15 +257,15 @@ Item {
                         SymbolicIcon {
                             source: "user-trash-symbolic"
                             iconSize: 10
-                            iconColor: clearMa.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.60)
+                            iconColor: clearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         }
 
                         Text {
                             text: I18n.isRTL ? "مسح الكل" : "Clear All"
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fontSize(10)
                             font.weight: Font.Medium
-                            color: clearMa.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                            color: clearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         }
                     }
 

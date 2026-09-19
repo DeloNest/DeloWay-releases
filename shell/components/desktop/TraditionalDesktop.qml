@@ -31,10 +31,10 @@ Item {
         y: root.selectionBoxY
         width: root.selectionBoxW
         height: root.selectionBoxH
-        color: Theme.colors.primary + "26"
-        border.color: Theme.colors.primary
+        color: Qt.rgba(1, 1, 1, 0.08)
+        border.color: Qt.rgba(1, 1, 1, 0.35)
         border.width: 1
-        radius: 2
+        radius: 4
         z: 99
     }
 
@@ -107,100 +107,156 @@ Item {
     }
 
     // ----------------------------------------------------
-    // DESKTOP ICON GRID
+    // DESKTOP ICONS (MOVABLE / DRAGGABLE CANVAS)
     // ----------------------------------------------------
-    Grid {
-        id: iconGrid
-        anchors.top: parent.top
-        anchors.left: I18n.isRTL ? undefined : parent.left
-        anchors.right: I18n.isRTL ? parent.right : undefined
-        anchors.topMargin: 56
-        anchors.leftMargin: I18n.isRTL ? 0 : 18
-        anchors.rightMargin: I18n.isRTL ? 18 : 0
-        spacing: 14
-        columns: 1
-        flow: Grid.TopToBottom
+    Item {
+        id: iconsContainer
+        anchors.fill: parent
         z: 10
-
-        LayoutMirroring.enabled: I18n.isRTL
-        LayoutMirroring.childrenInherit: true
 
         Repeater {
             id: iconRepeater
             model: DesktopManager.allItems
 
-            delegate: Rectangle {
-                id: deskItem
+            delegate: Item {
+                id: deskItemWrapper
                 property var itemData: modelData
                 readonly property bool isSelected: DesktopManager.isItemSelected(modelData.id)
                 readonly property bool isEditing: DesktopManager.editingItemId === modelData.id
 
-                implicitWidth: 76
-                implicitHeight: 76
-                radius: Theme.radiusMedium
-                color: isSelected
-                       ? Qt.alpha(Theme.colors.primary, 0.2)
-                       : (itemMouse.containsMouse ? Theme.colors.surfaceHover : "transparent")
-                border.color: isSelected
-                              ? Theme.colors.primary
-                              : (itemMouse.containsMouse ? Theme.colors.borderHighlight : "transparent")
-                border.width: isSelected ? 1.5 : 1
+                property real targetX: DesktopManager.getItemX(modelData.id, index, root.width, root.height)
+                property real targetY: DesktopManager.getItemY(modelData.id, index, root.width, root.height)
 
-                Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 4
-                    width: parent.width - 8
-
-                    AppIcon {
-                        Layout.alignment: Qt.AlignHCenter
-                        iconSize: 42
-                        source: deskItem.itemData.icon
+                onTargetXChanged: {
+                    if (!itemMouse.drag.active) {
+                        deskItemWrapper.x = targetX;
                     }
-
-                    // Display Name (Normal)
-                    Text {
-                        visible: !deskItem.isEditing
-                        Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignHCenter
-                        horizontalAlignment: Text.AlignHCenter
-                        elide: Text.ElideRight
-                        text: deskItem.itemData.name
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: 11
-                        font.weight: Font.Medium
-                        color: Theme.colors.text
-                        style: Text.Outline
-                        styleColor: Qt.alpha(Theme.colors.background, 0.7)
+                }
+                onTargetYChanged: {
+                    if (!itemMouse.drag.active) {
+                        deskItemWrapper.y = targetY;
                     }
+                }
+                Component.onCompleted: {
+                    deskItemWrapper.x = targetX;
+                    deskItemWrapper.y = targetY;
+                }
 
-                    // Inline Rename TextField
-                    TextField {
-                        id: renameField
-                        visible: deskItem.isEditing
-                        Layout.fillWidth: true
-                        text: deskItem.itemData.name
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: 11
-                        color: Theme.colors.text
-                        background: Rectangle {
-                            color: Theme.colors.surface
-                            radius: Theme.radiusSmall
-                            border.color: Theme.colors.primary
-                            border.width: 1
+                width: 88
+                height: 96
+                z: itemMouse.drag.active ? 1000 : (isSelected ? 20 : 10)
+
+                property real dragStartX: 0
+                property real dragStartY: 0
+
+                // Smooth position transition when snapping/repositioning
+                Behavior on x {
+                    enabled: !itemMouse.drag.active
+                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
+                Behavior on y {
+                    enabled: !itemMouse.drag.active
+                    NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                }
+
+                // Card Container (Translucent frosted highlight on hover/select)
+                Rectangle {
+                    id: deskItemCard
+                    anchors.fill: parent
+                    radius: 10
+                    color: deskItemWrapper.isSelected
+                           ? Qt.rgba(255, 255, 255, 0.16)
+                           : (itemMouse.containsMouse ? Qt.rgba(255, 255, 255, 0.08) : "transparent")
+                    border.color: deskItemWrapper.isSelected
+                                  ? Qt.rgba(255, 255, 255, 0.35)
+                                  : (itemMouse.containsMouse ? Qt.rgba(255, 255, 255, 0.14) : "transparent")
+                    border.width: 1
+                    scale: itemMouse.drag.active ? 1.05 : (itemMouse.pressed ? 0.97 : (itemMouse.containsMouse ? 1.02 : 1.0))
+                    opacity: itemMouse.drag.active ? 0.90 : 1.0
+
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                    Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 4
+                        spacing: 4
+
+                        AppIcon {
+                            Layout.alignment: Qt.AlignHCenter
+                            iconSize: 44
+                            source: deskItemWrapper.itemData.icon
                         }
-                        onAccepted: {
-                            DesktopManager.renameItem(deskItem.itemData, renameField.text);
+
+                        // Display Name (Normal) with refined frosted pill for crystal-clear readability
+                        Item {
+                            visible: !deskItemWrapper.isEditing
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: nameText.implicitHeight + 4
+                            Layout.alignment: Qt.AlignHCenter
+
+                            Rectangle {
+                                id: labelBackdrop
+                                anchors.centerIn: parent
+                                width: Math.min(parent.width, nameText.implicitWidth + 10)
+                                height: nameText.implicitHeight + 4
+                                radius: 5
+                                color: deskItemWrapper.isSelected
+                                       ? Qt.rgba(0, 0, 0, 0.72)
+                                       : (itemMouse.containsMouse ? Qt.rgba(0, 0, 0, 0.52) : Qt.rgba(0, 0, 0, 0.35))
+                                border.color: deskItemWrapper.isSelected ? Qt.rgba(255, 255, 255, 0.25) : "transparent"
+                                border.width: 1
+                                Behavior on color { ColorAnimation { duration: 100 } }
+                            }
+
+                            Text {
+                                id: nameText
+                                anchors.fill: parent
+                                anchors.leftMargin: 2
+                                anchors.rightMargin: 2
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                maximumLineCount: 2
+                                wrapMode: Text.Wrap
+                                text: deskItemWrapper.itemData.name
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: deskItemWrapper.isSelected ? Font.DemiBold : Font.Medium
+                                color: deskItemWrapper.isSelected ? Theme.accentText : Theme.text
+                                renderType: Theme.renderType
+                            }
                         }
-                        Keys.onEscapePressed: {
-                            DesktopManager.cancelRenaming();
-                        }
-                        Component.onCompleted: {
-                            if (deskItem.isEditing) {
-                                forceActiveFocus();
-                                selectAll();
+
+                        // Inline Rename TextField
+                        TextField {
+                            id: renameField
+                            visible: deskItemWrapper.isEditing
+                            Layout.fillWidth: true
+                            text: deskItemWrapper.itemData.name
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(11)
+                            color: Theme.notchText
+                            horizontalAlignment: Text.AlignHCenter
+                            background: Rectangle {
+                                color: Theme.notchBackground
+                                radius: 6
+                                border.color: Theme.notchBorderHighlight
+                                border.width: 1
+                            }
+                            onAccepted: {
+                                DesktopManager.renameItem(deskItemWrapper.itemData, renameField.text);
+                            }
+                            Keys.onEscapePressed: {
+                                DesktopManager.cancelRenaming();
+                            }
+                            Component.onCompleted: {
+                                if (deskItemWrapper.isEditing) {
+                                    forceActiveFocus();
+                                    selectAll();
+                                }
                             }
                         }
                     }
@@ -211,20 +267,55 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
-                    cursorShape: Qt.PointingHandCursor
+                    cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+
+                    drag.target: deskItemWrapper
+                    drag.axis: Drag.XAndYAxis
+                    drag.minimumX: 8
+                    drag.maximumX: root.width - deskItemWrapper.width - 8
+                    drag.minimumY: 48
+                    drag.maximumY: root.height - deskItemWrapper.height - 48
 
                     onPressed: function(mouse) {
+                        deskItemWrapper.dragStartX = deskItemWrapper.x;
+                        deskItemWrapper.dragStartY = deskItemWrapper.y;
+
                         if (mouse.button === Qt.LeftButton) {
                             const isMulti = (mouse.modifiers & Qt.ControlModifier);
-                            DesktopManager.selectItem(deskItem.itemData.id, isMulti);
+                            DesktopManager.selectItem(deskItemWrapper.itemData.id, isMulti);
                         } else if (mouse.button === Qt.RightButton) {
-                            DesktopManager.showItemContextMenu(deskItem.itemData, mouse.x + deskItem.x, mouse.y + deskItem.y + 56);
+                            DesktopManager.showItemContextMenu(deskItemWrapper.itemData, deskItemWrapper.x + mouse.x, deskItemWrapper.y + mouse.y);
+                        }
+                    }
+
+                    onReleased: function(mouse) {
+                        if (mouse.button === Qt.LeftButton) {
+                            // Check if dropped into Central Notch area (top center of screen)
+                            const itemCenterX = deskItemWrapper.x + deskItemWrapper.width / 2;
+                            const screenCenterX = root.width / 2;
+                            const isOverNotch = (deskItemWrapper.y < 56) && (Math.abs(itemCenterX - screenCenterX) < 260);
+
+                            if (isOverNotch && deskItemWrapper.itemData.path) {
+                                // Stage file into Central Notch LocalSend tray tab
+                                ShellState.setSmartNotchTab(1);
+                                ShellState.openSmartNotch();
+                                LocalSendService.stageFiles([deskItemWrapper.itemData.path]);
+
+                                // Return icon to original position
+                                deskItemWrapper.x = deskItemWrapper.targetX;
+                                deskItemWrapper.y = deskItemWrapper.targetY;
+                            } else {
+                                // Normal desktop repositioning with snap-to-grid
+                                DesktopManager.saveItemPosition(deskItemWrapper.itemData.id, deskItemWrapper.x, deskItemWrapper.y, root.width, root.height);
+                                deskItemWrapper.x = deskItemWrapper.targetX;
+                                deskItemWrapper.y = deskItemWrapper.targetY;
+                            }
                         }
                     }
 
                     onDoubleClicked: function(mouse) {
                         if (mouse.button === Qt.LeftButton) {
-                            DesktopManager.openItem(deskItem.itemData);
+                            DesktopManager.openItem(deskItemWrapper.itemData);
                         }
                     }
                 }

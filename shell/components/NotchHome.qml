@@ -262,7 +262,7 @@ Item {
                         radius: Theme.notchRadiusPill
 
                         color: isActive
-                               ? "#ffffff"
+                               ? Theme.notchText
                                : (wsMouse.pressed
                                   ? Theme.notchSurfaceActive
                                   : (wsMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
@@ -277,7 +277,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: wsBtn.wsId.toString()
-                            color: wsBtn.isActive ? "#000000" : Theme.notchTextTertiary
+                            color: wsBtn.isActive ? Theme.notchBackground : Theme.notchTextTertiary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
                             font.pixelSize: Theme.fontSize(13)
@@ -560,7 +560,7 @@ Item {
                             anchors.fill: parent
                             radius: 16
                             clip: true
-                            color: "#181818"
+                            color: Theme.notchSurfaceElevated
 
                             Image {
                                 anchors.fill: parent
@@ -573,7 +573,7 @@ Item {
                                 anchors.centerIn: parent
                                 iconSize: 32
                                 source: "applications-multimedia"
-                                iconColor: "#555555"
+                                iconColor: Theme.notchTextTertiary
                                 visible: !root.activePlayer || !root.activePlayer.trackArtUrl
                             }
                         }
@@ -587,8 +587,8 @@ Item {
                             width: 22
                             height: 22
                             radius: 6
-                            color: "#fa243c" // Apple Music Red
-                            border.color: "#000000"
+                            color: Theme.musicBadge
+                            border.color: Theme.notchBackground
                             border.width: 1.5
 
                             Text {
@@ -596,7 +596,7 @@ Item {
                                 text: "♫"
                                 font.pixelSize: Theme.fontSize(11)
                                 font.bold: true
-                                color: "#ffffff"
+                                color: Theme.accentText
                             }
                         }
                     }
@@ -722,7 +722,7 @@ Item {
                             font.pixelSize: Theme.fontSize(32)
                             font.weight: Font.Bold
                             renderType: Theme.renderType
-                            color: "#ffffff"
+                            color: Theme.notchText
                         }
 
                         ColumnLayout {
@@ -738,7 +738,7 @@ Item {
                                 text: Qt.formatTime(root.currentTime, ":ss")
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
-                                color: "#666666"
+                                color: Theme.notchTextTertiary
                             }
                         }
                     }
@@ -748,7 +748,7 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(12)
                         renderType: Theme.renderType
-                        color: "#999999"
+                        color: Theme.notchTextSecondary
                     }
                 }
             }
@@ -772,7 +772,7 @@ Item {
                         font.pixelSize: Theme.fontSize(24)
                         font.weight: Font.Bold
                         renderType: Theme.renderType
-                        color: "#ffffff"
+                        color: Theme.notchText
                         Layout.alignment: Qt.AlignVCenter
                     }
 
@@ -796,7 +796,7 @@ Item {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 9 : 8)
                                     font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
-                                    color: dayCol.modelData.isToday ? "#ffffff" : "#555555"
+                                    color: dayCol.modelData.isToday ? Theme.notchText : Theme.notchTextTertiary
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
@@ -807,8 +807,8 @@ Item {
                                     font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 22 : 15)
                                     font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
                                     color: dayCol.modelData.isToday
-                                           ? "#ffffff"
-                                           : (dayCol.modelData.dayOffset === -2 ? "#3b82f6" : (dayCol.modelData.dayOffset === 2 ? "#ef5350" : "#666666"))
+                                           ? Theme.notchText
+                                           : (dayCol.modelData.dayOffset === -2 ? Theme.calendarPast : (dayCol.modelData.dayOffset === 2 ? Theme.calendarFuture : Theme.notchTextTertiary))
                                     Layout.alignment: Qt.AlignHCenter
                                 }
                             }
@@ -824,7 +824,7 @@ Item {
                     SymbolicIcon {
                         iconSize: 13
                         source: "x-office-calendar-symbolic"
-                        iconColor: "#7e7e7e"
+                        iconColor: Theme.notchTextTertiary
                     }
 
                     Text {
@@ -832,7 +832,7 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(12)
                         renderType: Theme.renderType
-                        color: "#7e7e7e"
+                        color: Theme.notchTextTertiary
                     }
                 }
             }

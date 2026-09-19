@@ -4,10 +4,34 @@ import Quickshell
 import Quickshell.Io
 import "../services"
 
-QtObject {
+Item {
     id: root
 
-    property string mode: "dark"
+    property string mode: (typeof ConfigManager !== "undefined" && ConfigManager.themeMode)
+                          ? ConfigManager.themeMode : "dark"
+    readonly property bool isDark: mode === "dark"
+    readonly property real fontScale: (typeof ConfigManager !== "undefined" && ConfigManager.fontSizeScale)
+                                     ? ConfigManager.fontSizeScale : 1.0
+
+    function fontSize(baseSize) {
+        return Math.round(baseSize * root.fontScale);
+    }
+
+    function scaleFont(baseSize) {
+        return root.fontSize(baseSize);
+    }
+
+    Connections {
+        target: (typeof ConfigManager !== "undefined") ? ConfigManager : null
+        function onThemeModeChanged() {
+            if (ConfigManager.themeMode && ConfigManager.themeMode !== root.mode) {
+                root.setMode(ConfigManager.themeMode);
+            }
+        }
+        function onAccentColorChanged() {
+            root.setMode(root.mode);
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Performance Tiers (NewPlan.md §3)
@@ -183,20 +207,21 @@ QtObject {
     readonly property color hairlineSoft: Qt.alpha(colors.text, 0.05)
 
     // -------------------------------------------------------------------------
-    // Deep Black / Notch Surface Tokens (Unified OLED aesthetic)
+    // Dynamic Deep Black / Notch Surface Tokens (Unified OLED / Clean Light)
     // -------------------------------------------------------------------------
-    readonly property color notchBackground: "#000000"
-    readonly property color notchSurface: Qt.rgba(1, 1, 1, 0.05)
-    readonly property color notchSurfaceElevated: Qt.rgba(1, 1, 1, 0.08)
-    readonly property color notchSurfaceHover: Qt.rgba(1, 1, 1, 0.12)
-    readonly property color notchSurfaceActive: Qt.rgba(1, 1, 1, 0.18)
-    readonly property color notchBorder: Qt.rgba(1, 1, 1, 0.12)
-    readonly property color notchBorderSubtle: Qt.rgba(1, 1, 1, 0.06)
-    readonly property color notchBorderHighlight: Qt.rgba(1, 1, 1, 0.25)
-    readonly property color notchText: "#ffffff"
-    readonly property color notchTextSecondary: Qt.rgba(1, 1, 1, 0.70)
-    readonly property color notchTextTertiary: Qt.rgba(1, 1, 1, 0.45)
-    readonly property color notchShadow: Qt.rgba(0, 0, 0, 0.50)
+    readonly property color notchBackground: isDark ? "#000000" : "#ffffff"
+    readonly property color notchText: isDark ? "#ffffff" : "#0f172a"
+    readonly property color notchTextSecondary: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.65)
+    readonly property color notchTextTertiary: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
+    readonly property color notchSurface: isDark ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.04)
+    readonly property color notchSurfaceElevated: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.07)
+    readonly property color notchSurfaceHover: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
+    readonly property color notchSurfaceActive: isDark ? Qt.rgba(1, 1, 1, 0.18) : Qt.rgba(0, 0, 0, 0.12)
+    readonly property color notchBorder: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10)
+    readonly property color notchBorderSubtle: isDark ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.06)
+    readonly property color notchBorderHighlight: isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.18)
+    readonly property color notchShadow: isDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.12)
+    readonly property int notchRadius: 22
     readonly property int notchRadiusWindow: 26
     readonly property int notchRadiusPanel: 16
     readonly property int notchRadiusCard: 12
@@ -208,10 +233,15 @@ QtObject {
     readonly property color dockGlassSheen: notchBorderSubtle
     readonly property color dockBorder: notchBorder
     readonly property color dockShadow: notchShadow
-    readonly property color dockDot: Qt.rgba(1, 1, 1, 0.95)
+    readonly property color dockDot: isDark ? Qt.rgba(1, 1, 1, 0.95) : Qt.rgba(0, 0, 0, 0.85)
     readonly property color dockDivider: notchBorderHighlight
     readonly property color dockTooltipBg: notchBackground
     readonly property color dockTooltipBorder: notchBorder
+
+    // Semantic Component Tokens (Dark / Light adaptive)
+    readonly property color musicBadge: isDark ? "#fa243c" : "#e11d48"
+    readonly property color calendarPast: isDark ? "#3b82f6" : "#2563eb"
+    readonly property color calendarFuture: isDark ? "#ef5350" : "#dc2626"
 
     function setMode(newMode) {
         if (newMode !== "dark" && newMode !== "light") return;
@@ -263,11 +293,11 @@ QtObject {
     // High-fidelity typography rendering helpers
     readonly property int renderType: Text.NativeRendering
     readonly property int hintingPreference: Font.PreferFullHinting
-    readonly property var fontFamilies: ["SF Pro Display", "SF Arabic", "Cairo", "Readex Pro", "Rubik", "Noto Sans", "sans-serif"]
+    readonly property var fontFamilies: ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"]
 
-    property var typography: ({
-        "fontFamily": "SF Pro Display",
-        "fontFamilies": ["SF Pro Display", "SF Arabic", "Cairo", "Readex Pro", "Rubik", "Noto Sans", "sans-serif"],
+    property var baseTypography: ({
+        "fontFamily": "Inter",
+        "fontFamilies": ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"],
         "terminalFont": "JetBrainsMono Nerd Font",
 
         // 4-Level Semantic Type Scale
@@ -289,6 +319,26 @@ QtObject {
         "fontSizeTitle":   22
     })
 
+    readonly property var typography: ({
+        "fontFamily": baseTypography.fontFamily || "Inter",
+        "fontFamilies": baseTypography.fontFamilies || ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"],
+        "terminalFont": baseTypography.terminalFont || "JetBrainsMono Nerd Font",
+
+        // 4-Level Semantic Type Scale (Scaled dynamically)
+        "scaleDisplay":  { "size": Math.round(((baseTypography.scaleDisplay && baseTypography.scaleDisplay.size) ? baseTypography.scaleDisplay.size : 16) * root.fontScale), "weight": 600 },
+        "scaleTitle":    { "size": Math.round(((baseTypography.scaleTitle && baseTypography.scaleTitle.size) ? baseTypography.scaleTitle.size : 13) * root.fontScale), "weight": 600 },
+        "scaleBody":     { "size": Math.round(((baseTypography.scaleBody && baseTypography.scaleBody.size) ? baseTypography.scaleBody.size : 13) * root.fontScale), "weight": 400 },
+        "scaleCaption":  { "size": Math.round(((baseTypography.scaleCaption && baseTypography.scaleCaption.size) ? baseTypography.scaleCaption.size : 11) * root.fontScale), "weight": 400 },
+        "scaleMenuTitle": { "size": Math.round(((baseTypography.scaleMenuTitle && baseTypography.scaleMenuTitle.size) ? baseTypography.scaleMenuTitle.size : 12) * root.fontScale), "weight": 600 },
+
+        // Legacy compat keys (Scaled dynamically)
+        "fontSizeSmall":   Math.round((baseTypography.fontSizeSmall || 11) * root.fontScale),
+        "fontSizeRegular": Math.round((baseTypography.fontSizeRegular || 13) * root.fontScale),
+        "fontSizeMedium":  Math.round((baseTypography.fontSizeMedium || 15) * root.fontScale),
+        "fontSizeLarge":   Math.round((baseTypography.fontSizeLarge || 18) * root.fontScale),
+        "fontSizeTitle":   Math.round((baseTypography.fontSizeTitle || 22) * root.fontScale)
+    })
+
     property FileView themeWatcher: FileView {
         path: Qt.resolvedUrl("theme.json")
         watchChanges: true
@@ -303,7 +353,7 @@ QtObject {
                 if (parsed.colors) root.colors = Object.assign({}, root.colors, parsed.colors);
                 if (parsed.radius) root.radius = Object.assign({}, root.radius, parsed.radius);
                 if (parsed.spacing) root.spacing = Object.assign({}, root.spacing, parsed.spacing);
-                if (parsed.typography) root.typography = Object.assign({}, root.typography, parsed.typography);
+                if (parsed.typography) root.baseTypography = Object.assign({}, root.baseTypography, parsed.typography);
             } catch (e) {
                 console.warn("[Deloway/Theme] Failed to parse theme.json:", e);
             }
@@ -311,5 +361,9 @@ QtObject {
 
         onLoaded: reloadTheme()
         onTextChanged: reloadTheme()
+    }
+
+    Component.onCompleted: {
+        root.setMode(root.mode);
     }
 }
