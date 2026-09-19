@@ -8,6 +8,8 @@ import Quickshell.Hyprland
 import Quickshell.Services.Pipewire
 import "../theme"
 import "../services"
+import "./quicksettings"
+import "./quicksettings/pages"
 
 PanelWindow {
     id: root
@@ -988,29 +990,16 @@ PanelWindow {
                                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
 
                                 // Close button
-                                Rectangle {
-                                    implicitWidth: 24
-                                    implicitHeight: 24
-                                    radius: 12
-                                    color: closeMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
+                                QSRoundButton {
+                                    buttonSize: 24
+                                    text: "✕"
+                                    iconSize: 11
+                                    normalColor: Theme.notchSurface
+                                    hoverColor: Theme.notchSurfaceHover
+                                    textColor: Theme.notchTextTertiary
+                                    hoverTextColor: Theme.notchText
                                     Layout.alignment: Qt.AlignRight
-                                    Behavior on color { ColorAnimation { duration: 80 } }
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "✕"
-                                        font.pixelSize: Theme.fontSize(11)
-                                        font.weight: Font.Bold
-                                        color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
-                                    }
-
-                                    MouseArea {
-                                        id: closeMa
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        hoverEnabled: true
-                                        onClicked: ShellState.closeQuickSettingsCapsule()
-                                    }
+                                    onClicked: ShellState.closeQuickSettingsCapsule()
                                 }
 
                                 // Battery row
@@ -1067,214 +1056,36 @@ PanelWindow {
                         Layout.preferredHeight: 60
                         spacing: 8
 
-                        // ── Wi-Fi Card ──
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            Layout.fillHeight: true
-                            radius: Theme.notchRadiusCard
-                            color: wifiTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: (root.wifiEnabled && root.wifiSsid.length > 0)
-                                          ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
-                                          : (root.wifiEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
-                            border.width: 1
-                            scale: wifiTileMa.pressed ? 0.96 : (wifiTileMa.containsMouse ? 1.01 : 1.0)
-
-                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                            MouseArea {
-                                id: wifiTileMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    ShellState.quickSettingsCapsuleView = "wifi";
-                                    root.rescanWifi();
-                                }
+                        QSToggleTile {
+                            title: "Wi-Fi"
+                            subtitle: !root.wifiEnabled
+                                      ? (I18n.isRTL ? "معطل" : "Off")
+                                      : (root.wifiSsid.length > 0 ? root.wifiSsid : (I18n.isRTL ? "غير متصل" : "Disconnected"))
+                            icon: "network-wireless-symbolic"
+                            active: root.wifiEnabled
+                            connected: root.wifiEnabled && root.wifiSsid.length > 0
+                            onClicked: {
+                                ShellState.quickSettingsCapsuleView = "wifi";
+                                root.rescanWifi();
                             }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                spacing: 9
-
-                                // Clickable Wi-Fi Icon Circle (Toggle radio on/off)
-                                Rectangle {
-                                    id: wifiIconCircle
-                                    implicitWidth: 36
-                                    implicitHeight: 36
-                                    radius: 18
-                                    color: root.wifiEnabled
-                                           ? (root.wifiSsid.length > 0 ? Theme.accent : Theme.notchBorderHighlight)
-                                           : Theme.notchSurfaceElevated
-
-                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                                    SymbolicIcon {
-                                        anchors.centerIn: parent
-                                        source: "network-wireless-symbolic"
-                                        iconSize: 17
-                                        iconColor: root.wifiEnabled && root.wifiSsid.length > 0 ? "#FFFFFF" : (root.wifiEnabled ? Theme.notchText : Theme.notchTextTertiary)
-                                    }
-
-                                    MouseArea {
-                                        id: wifiToggleMa
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        hoverEnabled: true
-                                        onClicked: root.toggleWifi()
-                                    }
-                                }
-
-                                // Text details
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 2
-
-                                    Text {
-                                        text: "Wi-Fi"
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(12)
-                                        font.weight: Font.DemiBold
-                                        color: Theme.notchText
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Text {
-                                        text: !root.wifiEnabled
-                                              ? (I18n.isRTL ? "معطل" : "Off")
-                                              : (root.wifiSsid.length > 0 ? root.wifiSsid : (I18n.isRTL ? "غير متصل" : "Disconnected"))
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(10)
-                                        color: (root.wifiEnabled && root.wifiSsid.length > 0) ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-                                }
-
-                                // Subtle Chevron
-                                Text {
-                                    text: I18n.isRTL ? "‹" : "›"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(13)
-                                    font.weight: Font.DemiBold
-                                    color: wifiTileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-                            }
+                            onToggleClicked: root.toggleWifi()
                         }
 
-                        // ── Bluetooth Card ──
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            Layout.fillHeight: true
-                            radius: Theme.notchRadiusCard
-                            color: btTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.bluetoothConnectedDevice.length > 0
-                                          ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
-                                          : (root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
-                            border.width: 1
-                            scale: btTileMa.pressed ? 0.96 : (btTileMa.containsMouse ? 1.01 : 1.0)
-
-                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                            MouseArea {
-                                id: btTileMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    ShellState.quickSettingsCapsuleView = "bluetooth";
-                                    root.refreshBluetooth();
-                                }
+                        QSToggleTile {
+                            title: "Bluetooth"
+                            subtitle: !root.bluetoothEnabled
+                                      ? (I18n.isRTL ? "معطل" : "Off")
+                                      : (root.bluetoothConnectedDevice.length > 0
+                                         ? root.bluetoothConnectedDevice
+                                         : (I18n.isRTL ? "لا يوجد جهاز" : "No device"))
+                            icon: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
+                            active: root.bluetoothEnabled
+                            connected: root.bluetoothConnectedDevice.length > 0
+                            onClicked: {
+                                ShellState.quickSettingsCapsuleView = "bluetooth";
+                                root.refreshBluetooth();
                             }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                spacing: 9
-
-                                // Clickable Bluetooth Icon Circle (Toggle radio on/off)
-                                Rectangle {
-                                    id: btIconCircle
-                                    implicitWidth: 36
-                                    implicitHeight: 36
-                                    radius: 18
-                                    color: root.bluetoothConnectedDevice.length > 0
-                                           ? Theme.accent
-                                           : (root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchSurfaceElevated)
-
-                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                                    SymbolicIcon {
-                                        anchors.centerIn: parent
-                                        source: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
-                                        iconSize: 17
-                                        iconColor: root.bluetoothConnectedDevice.length > 0
-                                                   ? "#FFFFFF"
-                                                   : (root.bluetoothEnabled ? Theme.notchText : Theme.notchTextTertiary)
-                                    }
-
-                                    MouseArea {
-                                        id: btToggleMa
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        hoverEnabled: true
-                                        onClicked: root.toggleBluetooth()
-                                    }
-                                }
-
-                                // Text details
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 2
-
-                                    Text {
-                                        text: "Bluetooth"
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(12)
-                                        font.weight: Font.DemiBold
-                                        color: Theme.notchText
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Text {
-                                        text: !root.bluetoothEnabled
-                                              ? (I18n.isRTL ? "معطل" : "Off")
-                                              : (root.bluetoothConnectedDevice.length > 0
-                                                 ? root.bluetoothConnectedDevice
-                                                 : (I18n.isRTL ? "لا يوجد جهاز" : "No device"))
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(10)
-                                        color: (root.bluetoothEnabled && root.bluetoothConnectedDevice.length > 0) ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-                                }
-
-                                // Subtle Chevron
-                                Text {
-                                    text: I18n.isRTL ? "‹" : "›"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(13)
-                                    font.weight: Font.DemiBold
-                                    color: btTileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-                            }
+                            onToggleClicked: root.toggleBluetooth()
                         }
                     }
 
@@ -1284,453 +1095,67 @@ PanelWindow {
                         Layout.preferredHeight: 60
                         spacing: 8
 
-                        // ── Hotspot Card (Status Card with Drilldown) ──
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            Layout.fillHeight: true
-                            radius: Theme.notchRadiusCard
-                            color: hotspotTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.hotspotEnabled
-                                          ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
-                                          : Theme.notchBorderSubtle
-                            border.width: 1
-                            scale: hotspotTileMa.pressed ? 0.96 : (hotspotTileMa.containsMouse ? 1.01 : 1.0)
-
-                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                            MouseArea {
-                                id: hotspotTileMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    ShellState.quickSettingsCapsuleView = "hotspot";
-                                }
+                        QSToggleTile {
+                            title: I18n.isRTL ? "نقطة اتصال" : "Hotspot"
+                            subtitle: !root.hotspotAvailable
+                                      ? (I18n.isRTL ? "غير متوفرة" : "Unavailable")
+                                      : (root.hotspotEnabled
+                                         ? (root.hotspotClients.length > 0
+                                            ? (root.hotspotClients.length + (I18n.isRTL ? " متصل" : " connected"))
+                                            : (I18n.isRTL ? "مفعّلة" : "Active"))
+                                         : (I18n.isRTL ? "معطلة" : "Disabled"))
+                            icon: "network-wireless-hotspot-symbolic"
+                            active: root.hotspotEnabled
+                            connected: root.hotspotEnabled
+                            toggleEnabled: root.hotspotAvailable && !hotspotActionProcess.running
+                            onClicked: {
+                                ShellState.quickSettingsCapsuleView = "hotspot";
                             }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                spacing: 9
-
-                                // Clickable Hotspot Icon Circle (Toggle hotspot on/off)
-                                Rectangle {
-                                    id: hotspotIconCircle
-                                    implicitWidth: 36
-                                    implicitHeight: 36
-                                    radius: 18
-                                    color: root.hotspotEnabled
-                                           ? Theme.accent
-                                           : Theme.notchSurfaceElevated
-
-                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                                    SymbolicIcon {
-                                        anchors.centerIn: parent
-                                        source: "network-wireless-hotspot-symbolic"
-                                        iconSize: 17
-                                        iconColor: root.hotspotEnabled
-                                                   ? "#FFFFFF"
-                                                   : Theme.notchTextTertiary
-                                    }
-
-                                    MouseArea {
-                                        id: hotspotToggleMa
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        hoverEnabled: true
-                                        enabled: root.hotspotAvailable && !hotspotActionProcess.running
-                                        onClicked: root.toggleHotspot()
-                                    }
-                                }
-
-                                // Text details
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 2
-
-                                    Text {
-                                        text: I18n.isRTL ? "نقطة اتصال" : "Hotspot"
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(12)
-                                        font.weight: Font.DemiBold
-                                        color: Theme.notchText
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Text {
-                                        text: !root.hotspotAvailable
-                                              ? (I18n.isRTL ? "غير متوفرة" : "Unavailable")
-                                              : (root.hotspotEnabled
-                                                 ? (root.hotspotClients.length > 0
-                                                    ? (root.hotspotClients.length + (I18n.isRTL ? " متصل" : " connected"))
-                                                    : (I18n.isRTL ? "مفعّلة" : "Active"))
-                                                 : (I18n.isRTL ? "معطلة" : "Disabled"))
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(10)
-                                        color: root.hotspotEnabled ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-                                }
-
-                                // Subtle Chevron
-                                Text {
-                                    text: I18n.isRTL ? "‹" : "›"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(13)
-                                    font.weight: Font.DemiBold
-                                    color: hotspotTileMa.containsMouse ? Theme.notchTextSecondary : Theme.notchTextTertiary
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-                            }
+                            onToggleClicked: root.toggleHotspot()
                         }
 
-                        // ── Night Light Card (Matches wide card geometry) ──
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredWidth: 1
-                            Layout.fillHeight: true
-                            radius: Theme.notchRadiusCard
-                            color: nightLightTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.nightLightEnabled ? Qt.rgba(0.95, 0.65, 0.25, 0.55) : Theme.notchBorderSubtle
-                            border.width: 1
-                            scale: nightLightTileMa.pressed ? 0.96 : (nightLightTileMa.containsMouse ? 1.01 : 1.0)
-
-                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                            MouseArea {
-                                id: nightLightTileMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: root.toggleNightLight()
-                            }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 10
-                                anchors.rightMargin: 10
-                                spacing: 9
-
-                                // Icon circle
-                                Rectangle {
-                                    implicitWidth: 36
-                                    implicitHeight: 36
-                                    radius: 18
-                                    color: root.nightLightEnabled
-                                           ? Qt.rgba(0.95, 0.65, 0.25, 0.35)
-                                           : Theme.notchSurfaceActive
-
-                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-                                    SymbolicIcon {
-                                        anchors.centerIn: parent
-                                        source: "night-light-symbolic"
-                                        iconSize: 17
-                                        iconColor: root.nightLightEnabled
-                                                   ? Qt.rgba(1.0, 0.78, 0.40, 1.0)
-                                                   : Theme.notchTextTertiary
-                                    }
-                                }
-
-                                // Text details
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 2
-
-                                    Text {
-                                        text: I18n.isRTL ? "إضاءة ليلية" : "Night Light"
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(12)
-                                        font.weight: Font.DemiBold
-                                        color: Theme.notchText
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Text {
-                                        text: root.nightLightEnabled
-                                              ? (I18n.isRTL ? "مفعّلة" : "Active")
-                                              : (I18n.isRTL ? "معطلة" : "Disabled")
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(10)
-                                        color: root.nightLightEnabled ? Qt.rgba(1.0, 0.78, 0.40, 1.0) : Theme.notchTextTertiary
-                                        horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-                                }
-                            }
+                        QSToggleTile {
+                            title: I18n.isRTL ? "إضاءة ليلية" : "Night Light"
+                            subtitle: root.nightLightEnabled
+                                      ? (I18n.isRTL ? "مفعّلة" : "Active")
+                                      : (I18n.isRTL ? "معطلة" : "Disabled")
+                            icon: "night-light-symbolic"
+                            active: root.nightLightEnabled
+                            connected: root.nightLightEnabled
+                            hasChevron: false
+                            activeColor: Qt.rgba(0.95, 0.65, 0.25, 0.35)
+                            activeIconColor: Qt.rgba(1.0, 0.78, 0.40, 1.0)
+                            onClicked: root.toggleNightLight()
                         }
                     }
 
                     // ── Row 3: Sound Card (Title + Percentage + Mute Toggle + Interactive Slider) ──
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 60
-                        radius: Theme.notchRadiusCard
-                        color: (volumeSliderMa.containsMouse || volIcon.containsMouse) ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorderSubtle
-                        border.width: 1
-                        clip: true
-                        Behavior on color { ColorAnimation { duration: 100 } }
-
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            anchors.topMargin: 8
-                            anchors.bottomMargin: 8
-                            spacing: 6
-
-                            // Top Header Row: Clickable Mute Icon + Title + Value (Clean without stray chevrons)
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 6
-
-                                SymbolicIcon {
-                                    id: volIcon
-                                    source: root.volumeIconName + "-symbolic"
-                                    iconSize: 14
-                                    iconColor: root.isMuted ? Theme.colors.danger : Theme.notchText
-                                    Layout.alignment: Qt.AlignVCenter
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        hoverEnabled: true
-                                        onClicked: root.toggleMute()
-                                    }
-                                }
-
-                                Text {
-                                    text: I18n.isRTL ? "الصوت" : "Sound"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.DemiBold
-                                    color: Theme.notchText
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                Text {
-                                    text: root.isMuted
-                                          ? (I18n.isRTL ? "مكتوم" : "Muted")
-                                          : (Math.round(root.currentVolume * 100) + "%")
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    font.weight: Font.Medium
-                                    color: root.isMuted ? Theme.notchTextTertiary : Theme.notchTextSecondary
-                                }
-                            }
-
-                            // Slim Volume Slider (6px track + 14px thumb, LTR math)
-                            Item {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 16
-                                LayoutMirroring.enabled: false
-                                LayoutMirroring.childrenInherit: true
-
-                                Rectangle {
-                                    id: volumeTrack
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.sliderTrack
-
-                                    Rectangle {
-                                        id: volumeFill
-                                        anchors.top: parent.top
-                                        anchors.bottom: parent.bottom
-                                        anchors.left: parent.left
-                                        width: parent.width * Math.max(0, Math.min(1, root.isMuted ? 0 : root.currentVolume))
-                                        radius: 3
-                                        color: Theme.sliderFill
-                                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                        Behavior on width {
-                                            enabled: !volumeSliderMa.pressed
-                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        id: volumeThumb
-                                        width: 14
-                                        height: 14
-                                        radius: 7
-                                        color: Theme.sliderThumb
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        x: Math.max(0, Math.min(parent.width - width, parent.width * (root.isMuted ? 0 : root.currentVolume) - width / 2))
-                                        border.color: Qt.rgba(0, 0, 0, 0.20)
-                                        border.width: 1
-                                        scale: volumeSliderMa.pressed ? 1.25 : (volumeSliderMa.containsMouse ? 1.15 : 1.0)
-                                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                                        Behavior on x {
-                                            enabled: !volumeSliderMa.pressed
-                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
-                                        }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: volumeSliderMa
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-
-                                    function updateVolume(mouse) {
-                                        const raw = Math.max(0, Math.min(1, mouse.x / width));
-                                        root.setVolume(raw);
-                                    }
-
-                                    onPressed: mouse => updateVolume(mouse)
-                                    onPositionChanged: mouse => {
-                                        if (pressed)
-                                            updateVolume(mouse);
-                                    }
-                                }
-                            }
-                        }
+                    QSSliderCard {
+                        title: I18n.isRTL ? "الصوت" : "Sound"
+                        icon: root.volumeIconName + "-symbolic"
+                        iconColor: root.isMuted ? Theme.colors.danger : Theme.notchText
+                        iconClickable: true
+                        isMuted: root.isMuted
+                        value: root.currentVolume
+                        valueText: root.isMuted
+                                   ? (I18n.isRTL ? "مكتوم" : "Muted")
+                                   : (Math.round(root.currentVolume * 100) + "%")
+                        onSliderMoved: (newVal) => root.setVolume(newVal)
+                        onIconClicked: root.toggleMute()
                     }
 
                     // ── Row 4: Display Card (Title + Percentage + Interactive Slider) ──
-                    Rectangle {
+                    QSSliderCard {
                         visible: root.brightnessBackend !== "none"
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 60
-                        radius: Theme.notchRadiusCard
-                        color: brightnessSliderMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorderSubtle
-                        border.width: 1
-                        clip: true
-                        Behavior on color { ColorAnimation { duration: 100 } }
-
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            anchors.topMargin: 8
-                            anchors.bottomMargin: 8
-                            spacing: 6
-
-                            // Top Header Row: Icon + Title + Value (Clean without stray chevrons)
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 6
-
-                                SymbolicIcon {
-                                    source: "display-brightness-symbolic"
-                                    iconSize: 14
-                                    iconColor: Theme.notchText
-                                }
-
-                                Text {
-                                    text: I18n.isRTL ? "السطوع" : "Display"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.DemiBold
-                                    color: Theme.notchText
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                Text {
-                                    text: Math.round(root.screenBrightness * 100) + "%"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    font.weight: Font.Medium
-                                    color: Theme.notchTextSecondary
-                                }
-                            }
-
-                            // Slim Brightness Slider (6px track + 14px thumb, LTR math)
-                            Item {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 16
-                                LayoutMirroring.enabled: false
-                                LayoutMirroring.childrenInherit: true
-
-                                Rectangle {
-                                    id: brightnessTrack
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    height: 6
-                                    radius: 3
-                                    color: Theme.sliderTrack
-
-                                    Rectangle {
-                                        id: brightnessFill
-                                        anchors.top: parent.top
-                                        anchors.bottom: parent.bottom
-                                        anchors.left: parent.left
-                                        width: parent.width * Math.max(0, Math.min(1, root.screenBrightness))
-                                        radius: 3
-                                        color: Theme.sliderFill
-                                        Behavior on width {
-                                            enabled: !brightnessSliderMa.pressed
-                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
-                                        }
-                                    }
-
-                                    Rectangle {
-                                        id: brightnessThumb
-                                        width: 14
-                                        height: 14
-                                        radius: 7
-                                        color: Theme.sliderThumb
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        x: Math.max(0, Math.min(parent.width - width, parent.width * root.screenBrightness - width / 2))
-                                        border.color: Qt.rgba(0, 0, 0, 0.20)
-                                        border.width: 1
-                                        scale: brightnessSliderMa.pressed ? 1.25 : (brightnessSliderMa.containsMouse ? 1.15 : 1.0)
-                                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-                                        Behavior on x {
-                                            enabled: !brightnessSliderMa.pressed
-                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
-                                        }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: brightnessSliderMa
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-
-                                    function updateBrightness(mouse) {
-                                        const raw = Math.max(0, Math.min(1, mouse.x / width));
-                                        root.setBrightness(raw);
-                                    }
-
-                                    onPressed: mouse => updateBrightness(mouse)
-                                    onPositionChanged: mouse => {
-                                        if (pressed)
-                                            updateBrightness(mouse);
-                                    }
-                                    onReleased: {
-                                        if (root.brightnessBackend === "ddc")
-                                            root.applyDdcBrightness();
-                                    }
-                                    onCanceled: {
-                                        if (root.brightnessBackend === "ddc")
-                                            root.applyDdcBrightness();
-                                    }
-                                }
-                            }
+                        title: I18n.isRTL ? "السطوع" : "Display"
+                        icon: "display-brightness-symbolic"
+                        iconColor: Theme.notchText
+                        value: root.screenBrightness
+                        valueText: Math.round(root.screenBrightness * 100) + "%"
+                        onSliderMoved: (newVal) => root.setBrightness(newVal)
+                        onSliderReleased: {
+                            if (root.brightnessBackend === "ddc")
+                                root.applyDdcBrightness();
                         }
                     }
 
@@ -1741,826 +1166,53 @@ PanelWindow {
                 // ═════════════════════════════════════════════════════════════
                 // VIEW B: WI-FI NETWORKS LIST (Sub-view)
                 // ═════════════════════════════════════════════════════════════
-                ColumnLayout {
+                WifiPage {
                     anchors.fill: parent
-                    spacing: 8
                     visible: root.currentView === "wifi"
-
-                    // Header: Back button + Title + Rescan button
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        spacing: 6
-
-                        Rectangle {
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            radius: 14
-                            color: backMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: I18n.isRTL ? "›" : "‹"
-                                font.pixelSize: Theme.fontSize(16)
-                                font.weight: Font.Bold
-                                color: Theme.notchText
-                            }
-
-                            MouseArea {
-                                id: backMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: ShellState.quickSettingsCapsuleView = "main"
-                            }
-                        }
-
-                        Text {
-                            text: I18n.isRTL ? "شبكات Wi-Fi" : "Wi-Fi Networks"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(12)
-                            font.weight: Font.DemiBold
-                            color: Theme.notchText
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Rectangle {
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            radius: 14
-                            color: rescanMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "⟳"
-                                font.pixelSize: Theme.fontSize(14)
-                                color: rescanMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: rescanMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: root.rescanWifi()
-                            }
-                        }
-                    }
-
-                    // Available Networks Title
-                    Text {
-                        text: I18n.isRTL ? "الشبكات المتاحة" : "Available Networks"
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(10)
-                        font.weight: Font.DemiBold
-                        color: Theme.notchTextSecondary
-                        Layout.topMargin: 2
-                    }
-
-                    // Available Networks List
-                    ListView {
-                        id: wifiListView
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        spacing: 4
-                        model: root.wifiNetworks
-
-                        boundsBehavior: Flickable.StopAtBounds
-
-                        ScrollBar.vertical: ScrollBar {
-                            policy: wifiListView.contentHeight > wifiListView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                            width: 4
-                            contentItem: Rectangle {
-                                radius: 2
-                                color: Theme.notchBorderHighlight
-                            }
-                        }
-
-                        delegate: Rectangle {
-                            id: netItem
-                            required property var modelData
-                            required property int index
-
-                            readonly property bool isCurrent: netItem.modelData && netItem.modelData.connected
-                            readonly property bool isConnecting: root.connectingSsid.length > 0 && netItem.modelData && root.connectingSsid === netItem.modelData.ssid
-
-                            width: wifiListView.width - (wifiListView.contentHeight > wifiListView.height ? 6 : 0)
-                            implicitHeight: 34
-                            radius: Theme.notchRadiusPill
-                            color: isCurrent
-                                   ? Theme.notchSurfaceActive
-                                   : (netMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
-
-                                SymbolicIcon {
-                                    source: "network-wireless-symbolic"
-                                    iconSize: 14
-                                    iconColor: netItem.isCurrent ? Theme.notchText : Theme.notchTextSecondary
-                                }
-
-                                Text {
-                                    text: netItem.modelData && netItem.modelData.ssid ? netItem.modelData.ssid : ""
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: netItem.isCurrent ? Font.DemiBold : Font.Normal
-                                    color: Theme.notchText
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-
-                                SymbolicIcon {
-                                    visible: netItem.modelData && netItem.modelData.security && netItem.modelData.security !== "Open"
-                                    source: "system-lock-screen-symbolic"
-                                    iconSize: 11
-                                    iconColor: Theme.notchTextTertiary
-                                }
-
-                                Text {
-                                    text: netItem.isConnecting
-                                          ? (I18n.isRTL ? "جارٍ الاتصال..." : "Connecting...")
-                                          : (netItem.isCurrent ? "✓" : "")
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    color: netItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
-                                }
-                            }
-
-                            MouseArea {
-                                id: netMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    if (netItem.modelData && netItem.modelData.ssid) {
-                                        root.connectWifi(netItem.modelData.ssid, "");
-                                    }
-                                }
-                            }
-                        }
-
-                        // Empty State if no networks or on error
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 6
-                            visible: !root.wifiEnabled || root.wifiNetworks.length === 0
-
-                            SymbolicIcon {
-                                Layout.alignment: Qt.AlignHCenter
-                                visible: root.networkError.length > 0
-                                source: "dialog-warning-symbolic"
-                                iconSize: 18
-                                iconColor: Theme.notchTextTertiary
-                            }
-
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: root.networkError.length > 0
-                                      ? root.networkError
-                                      : (!root.wifiEnabled
-                                         ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
-                                         : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found"))
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                color: Theme.notchTextTertiary
-                            }
-                        }
-                    }
+                    networks: root.wifiNetworks
+                    wifiEnabled: root.wifiEnabled
+                    connectingSsid: root.connectingSsid
+                    networkError: root.networkError
+                    onBackClicked: ShellState.quickSettingsCapsuleView = "main"
+                    onRescanClicked: root.rescanWifi()
+                    onConnectClicked: (ssid, pwd) => root.connectWifi(ssid, pwd)
                 }
 
                 // ═════════════════════════════════════════════════════════════
-                // VIEW C: BLUETOOTH DEVICE LIST
+                // VIEW C: BLUETOOTH DEVICE LIST (Sub-view)
                 // ═════════════════════════════════════════════════════════════
-                ColumnLayout {
+                BluetoothPage {
                     anchors.fill: parent
-                    spacing: 8
                     visible: root.currentView === "bluetooth"
-
-                    // Header: Back button + Title + Refresh button
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        spacing: 8
-
-                        Rectangle {
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            radius: 14
-                            color: btBackMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: I18n.isRTL ? "›" : "‹"
-                                font.pixelSize: Theme.fontSize(16)
-                                font.weight: Font.Bold
-                                color: Theme.notchText
-                            }
-
-                            MouseArea {
-                                id: btBackMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: ShellState.quickSettingsCapsuleView = "main"
-                            }
-                        }
-
-                        Text {
-                            text: I18n.isRTL ? "أجهزة Bluetooth" : "Bluetooth Devices"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(12)
-                            font.weight: Font.DemiBold
-                            color: Theme.notchText
-                            Layout.fillWidth: true
-                        }
-
-                        Rectangle {
-                            implicitWidth: 28
-                            implicitHeight: 28
-                            radius: 14
-                            color: btRescanMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "⟳"
-                                font.pixelSize: Theme.fontSize(14)
-                                color: btRescanMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: btRescanMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: root.refreshBluetooth()
-                            }
-                        }
-                    }
-
-                    // Available Bluetooth Devices List
-                    ListView {
-                        id: btListView
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        clip: true
-                        spacing: 4
-                        model: root.bluetoothDevices
-
-                        boundsBehavior: Flickable.StopAtBounds
-
-                        ScrollBar.vertical: ScrollBar {
-                            policy: btListView.contentHeight > btListView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                            width: 4
-                            contentItem: Rectangle {
-                                radius: 2
-                                color: Theme.notchBorderHighlight
-                            }
-                        }
-
-                        delegate: Rectangle {
-                            id: btItem
-                            required property var modelData
-                            required property int index
-
-                            readonly property bool isCurrent: btItem.modelData && btItem.modelData.connected
-                            readonly property bool isConnecting: root.connectingBtAddress.length > 0 && btItem.modelData && root.connectingBtAddress === btItem.modelData.address
-                            readonly property bool isPaired: btItem.modelData && btItem.modelData.paired
-
-                            width: btListView.width - (btListView.contentHeight > btListView.height ? 6 : 0)
-                            implicitHeight: 34
-                            radius: Theme.notchRadiusPill
-                            color: isCurrent
-                                   ? Theme.notchSurfaceActive
-                                   : (btItemMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
-
-                                SymbolicIcon {
-                                    source: btItem.modelData && btItem.modelData.icon ? btItem.modelData.icon : "bluetooth-active-symbolic"
-                                    iconSize: 14
-                                    iconColor: btItem.isCurrent ? Theme.notchText : Theme.notchTextSecondary
-                                }
-
-                                Text {
-                                    text: btItem.modelData && btItem.modelData.name ? btItem.modelData.name : ""
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: btItem.isCurrent ? Font.DemiBold : Font.Normal
-                                    color: Theme.notchText
-                                    elide: Text.ElideRight
-                                    Layout.fillWidth: true
-                                }
-
-                                Text {
-                                    text: btItem.isConnecting
-                                          ? (I18n.isRTL ? "جارٍ الاتصال..." : "Connecting...")
-                                          : (btItem.isCurrent
-                                             ? "✓"
-                                             : (btItem.isPaired
-                                                ? (I18n.isRTL ? "مقترن" : "Paired")
-                                                : (I18n.isRTL ? "يحتاج اقتران من الإعدادات" : "Pair in Settings")))
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    color: btItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
-                                }
-                            }
-
-                            MouseArea {
-                                id: btItemMa
-                                anchors.fill: parent
-                                cursorShape: btItem.isPaired ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                hoverEnabled: true
-                                onClicked: {
-                                    if (!btItem.modelData) return;
-                                    if (btItem.modelData.connected) {
-                                        root.disconnectBluetooth(btItem.modelData.address);
-                                    } else if (btItem.modelData.paired) {
-                                        root.connectBluetooth(btItem.modelData.address);
-                                    }
-                                }
-                            }
-                        }
-
-                        // Empty State if bluetooth off or no devices
-                        ColumnLayout {
-                            anchors.centerIn: parent
-                            spacing: 6
-                            visible: !root.bluetoothEnabled || root.bluetoothDevices.length === 0
-
-                            SymbolicIcon {
-                                Layout.alignment: Qt.AlignHCenter
-                                visible: root.bluetoothError.length > 0
-                                source: "dialog-warning-symbolic"
-                                iconSize: 18
-                                iconColor: Theme.notchTextTertiary
-                            }
-
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: root.bluetoothError.length > 0
-                                      ? root.bluetoothError
-                                      : (!root.bluetoothEnabled
-                                         ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is disabled")
-                                         : (I18n.isRTL ? "لا توجد أجهزة مقترنة" : "No paired devices"))
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                color: Theme.notchTextTertiary
-                            }
-                        }
-                    }
+                    devices: root.bluetoothDevices
+                    bluetoothEnabled: root.bluetoothEnabled
+                    connectingBtAddress: root.connectingBtAddress
+                    bluetoothError: root.bluetoothError
+                    onBackClicked: ShellState.quickSettingsCapsuleView = "main"
+                    onRefreshClicked: root.refreshBluetooth()
+                    onConnectClicked: (addr) => root.connectBluetooth(addr)
+                    onDisconnectClicked: (addr) => root.disconnectBluetooth(addr)
                 }
 
                 // ═════════════════════════════════════════════════════════════
                 // VIEW D: HOTSPOT CONFIGURATION & CLIENTS (Sub-view)
                 // ═════════════════════════════════════════════════════════════
-                ColumnLayout {
+                HotspotPage {
                     anchors.fill: parent
-                    spacing: 10
                     visible: root.currentView === "hotspot"
-
-                    // Header: Back button + Title + Refresh
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        spacing: 8
-
-                        Rectangle {
-                            width: 28
-                            height: 28
-                            radius: 14
-                            color: hotspotBackMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchBackground
-                            border.color: Theme.notchBorder
-                            border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: I18n.isRTL ? "→" : "←"
-                                font.pixelSize: Theme.fontSize(14)
-                                color: Theme.notchText
-                            }
-
-                            MouseArea {
-                                id: hotspotBackMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: ShellState.quickSettingsCapsuleView = "main"
-                            }
-                        }
-
-                        Text {
-                            text: I18n.isRTL ? "إعدادات نقطة الاتصال" : "Hotspot Settings"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(12)
-                            font.weight: Font.DemiBold
-                            color: Theme.notchText
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        Rectangle {
-                            width: 28
-                            height: 28
-                            radius: 14
-                            color: hotspotRefreshMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "⟳"
-                                font.pixelSize: Theme.fontSize(14)
-                                color: hotspotRefreshMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: hotspotRefreshMa
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                hoverEnabled: true
-                                onClicked: networkStatusProcess.running = true
-                            }
-                        }
-                    }
-
-                    // Large Toggle Switch Card (Hotspot State)
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: 46
-                        radius: Theme.notchRadiusCard
-                        color: Theme.notchSurfaceElevated
-                        border.color: root.hotspotEnabled ? Theme.accent : Theme.notchBorder
-                        border.width: 1
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 12
-                            anchors.rightMargin: 12
-                            spacing: 10
-
-                            SymbolicIcon {
-                                source: "network-wireless-hotspot-symbolic"
-                                iconSize: 18
-                                iconColor: root.hotspotEnabled ? Theme.accent : Theme.notchTextSecondary
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 1
-
-                                Text {
-                                    text: I18n.isRTL ? "نقطة الاتصال الشخصية" : "Personal Hotspot"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.DemiBold
-                                    color: Theme.notchText
-                                }
-
-                                Text {
-                                    text: {
-                                        if (!root.hotspotAvailable) return I18n.isRTL ? "غير متوفرة" : "Unavailable";
-                                        if (root.hotspotEnabled) return I18n.isRTL ? ("مفعلة • " + (root.hotspotSsid || "Hotspot")) : ("Active • " + (root.hotspotSsid || "Hotspot"));
-                                        return I18n.isRTL ? "معطلة" : "Disabled";
-                                    }
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    color: root.hotspotEnabled ? Theme.accent : Theme.notchTextSecondary
-                                    elide: Text.ElideRight
-                                }
-                            }
-
-                            // Switch Pill
-                            Rectangle {
-                                width: 44
-                                height: 24
-                                radius: 12
-                                color: root.hotspotEnabled ? Theme.accent : Theme.notchBackground
-                                border.color: Theme.notchBorder
-                                border.width: 1
-                                opacity: root.hotspotAvailable && !hotspotActionProcess.running ? 1.0 : 0.5
-
-                                Rectangle {
-                                    x: root.hotspotEnabled ? (I18n.isRTL ? 4 : 24) : (I18n.isRTL ? 24 : 4)
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 16
-                                    height: 16
-                                    radius: 8
-                                    color: Theme.textOnAccent
-                                    Behavior on x { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    enabled: root.hotspotAvailable && !hotspotActionProcess.running
-                                    cursorShape: root.hotspotAvailable ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                    onClicked: root.toggleHotspot()
-                                }
-                            }
-                        }
-                    }
-
-                    // Configuration Card (SSID, Password, Save)
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: hotspotConfigCol.implicitHeight + 16
-                        radius: Theme.notchRadiusCard
-                        color: Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorder
-                        border.width: 1
-
-                        Connections {
-                            target: root
-                            function onHotspotSsidChanged() {
-                                if (!ssidInput.activeFocus) {
-                                    ssidInput.text = root.hotspotSsid;
-                                }
-                            }
-                            function onHotspotPasswordChanged() {
-                                if (!pwdInput.activeFocus) {
-                                    pwdInput.text = root.hotspotPassword;
-                                }
-                            }
-                        }
-
-                        ColumnLayout {
-                            id: hotspotConfigCol
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            spacing: 8
-
-                            // SSID Row
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                Text {
-                                    text: I18n.isRTL ? "الاسم:" : "SSID:"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    font.weight: Font.Medium
-                                    color: Theme.notchTextSecondary
-                                    Layout.preferredWidth: 38
-                                }
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 26
-                                    radius: Theme.notchRadiusPill
-                                    color: Theme.notchBackground
-                                    border.color: ssidInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorder
-                                    border.width: 1
-
-                                    TextInput {
-                                        id: ssidInput
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 8
-                                        anchors.rightMargin: 8
-                                        verticalAlignment: TextInput.AlignVCenter
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(11)
-                                        color: Theme.notchText
-                                        text: root.hotspotSsid
-                                        selectByMouse: true
-                                        clip: true
-                                        onTextChanged: root.hotspotSaveSuccess = ""
-                                    }
-                                }
-                            }
-
-                            // Password Row
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                Text {
-                                    text: I18n.isRTL ? "السر:" : "Pass:"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    font.weight: Font.Medium
-                                    color: Theme.notchTextSecondary
-                                    Layout.preferredWidth: 38
-                                }
-
-                                Rectangle {
-                                    Layout.fillWidth: true
-                                    height: 26
-                                    radius: Theme.notchRadiusPill
-                                    color: Theme.notchBackground
-                                    border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : (pwdInput.text.length < 8 && pwdInput.text.length > 0 ? Theme.colors.danger : Theme.notchBorder)
-                                    border.width: 1
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 8
-                                        anchors.rightMargin: 4
-                                        spacing: 4
-
-                                        TextInput {
-                                            id: pwdInput
-                                            Layout.fillWidth: true
-                                            Layout.fillHeight: true
-                                            verticalAlignment: TextInput.AlignVCenter
-                                            font.family: Theme.typography.fontFamily
-                                            font.pixelSize: Theme.fontSize(11)
-                                            color: Theme.notchText
-                                            text: root.hotspotPassword
-                                            echoMode: showPwdBtn.showPassword ? TextInput.Normal : TextInput.Password
-                                            selectByMouse: true
-                                            clip: true
-                                            onTextChanged: root.hotspotSaveSuccess = ""
-                                        }
-
-                                        Rectangle {
-                                            id: showPwdBtn
-                                            property bool showPassword: false
-                                            implicitWidth: pwdToggleText.implicitWidth + 10
-                                            implicitHeight: 20
-                                            radius: 10
-                                            color: eyeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                                            Text {
-                                                id: pwdToggleText
-                                                anchors.centerIn: parent
-                                                text: showPwdBtn.showPassword ? (I18n.isRTL ? "إخفاء" : "Hide") : (I18n.isRTL ? "إظهار" : "Show")
-                                                font.family: Theme.typography.fontFamily
-                                                font.pixelSize: Theme.fontSize(10)
-                                                font.weight: Font.Medium
-                                                color: eyeMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                                            }
-
-                                            MouseArea {
-                                                id: eyeMa
-                                                anchors.fill: parent
-                                                cursorShape: Qt.PointingHandCursor
-                                                hoverEnabled: true
-                                                onClicked: showPwdBtn.showPassword = !showPwdBtn.showPassword
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Save Button Row
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 8
-
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: {
-                                        if (root.hotspotError.length > 0) return root.hotspotError;
-                                        if (root.hotspotSaveSuccess.length > 0) return root.hotspotSaveSuccess;
-                                        if (pwdInput.text.length < 8) return (I18n.isRTL ? "كلمة المرور 8 خانات كحد أدنى" : "Password must be >= 8 chars");
-                                        return "";
-                                    }
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    color: {
-                                        if (root.hotspotError.length > 0 || (pwdInput.text.length < 8 && pwdInput.text.length > 0)) return Theme.colors.danger;
-                                        if (root.hotspotSaveSuccess.length > 0) return Theme.colors.success;
-                                        return Theme.notchTextTertiary;
-                                    }
-                                    elide: Text.ElideRight
-                                }
-
-                                Rectangle {
-                                    implicitWidth: 60
-                                    implicitHeight: 24
-                                    radius: Theme.notchRadiusPill
-                                    color: saveBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchBackground
-                                    border.color: canSave ? Theme.notchBorderHighlight : Theme.notchBorder
-                                    border.width: 1
-                                    opacity: canSave && !hotspotConfigureProcess.running ? 1.0 : 0.4
-
-                                    readonly property bool canSave: ssidInput.text.trim().length > 0 && pwdInput.text.length >= 8 && (ssidInput.text.trim() !== root.hotspotSsid || pwdInput.text !== root.hotspotPassword)
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: hotspotConfigureProcess.running ? "..." : (I18n.isRTL ? "حفظ" : "Save")
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(10)
-                                        font.weight: Font.DemiBold
-                                        color: parent.canSave ? Theme.notchText : Theme.notchTextTertiary
-                                    }
-
-                                    MouseArea {
-                                        id: saveBtnMa
-                                        anchors.fill: parent
-                                        enabled: parent.canSave && !hotspotConfigureProcess.running
-                                        cursorShape: parent.canSave ? Qt.PointingHandCursor : Qt.ArrowCursor
-                                        hoverEnabled: true
-                                        onClicked: {
-                                            root.configureHotspot(ssidInput.text.trim(), pwdInput.text);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Connected Devices Section Title
-                    Text {
-                        text: I18n.isRTL ? "الأجهزة المتصلة" : "Connected Devices"
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(10)
-                        font.weight: Font.DemiBold
-                        color: Theme.notchTextSecondary
-                        Layout.topMargin: 2
-                    }
-
-                    // Connected Devices Box / List
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        radius: Theme.notchRadiusCard
-                        color: Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorder
-                        border.width: 1
-                        clip: true
-
-                        ListView {
-                            id: clientsListView
-                            anchors.fill: parent
-                            anchors.margins: 6
-                            spacing: 4
-                            clip: true
-                            model: root.hotspotClients
-
-                            delegate: Rectangle {
-                                width: clientsListView.width
-                                height: 32
-                                radius: 6
-                                color: clientMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    spacing: 8
-
-                                    SymbolicIcon {
-                                        source: "computer-symbolic"
-                                        iconSize: 14
-                                        iconColor: Theme.notchTextSecondary
-                                    }
-
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: 1
-
-                                        Text {
-                                            text: modelData.hostname || modelData.ip || modelData.mac
-                                            font.family: Theme.typography.fontFamily
-                                            font.pixelSize: Theme.fontSize(11)
-                                            font.weight: Font.DemiBold
-                                            color: Theme.notchText
-                                            elide: Text.ElideRight
-                                            Layout.fillWidth: true
-                                        }
-
-                                        Text {
-                                            text: (modelData.ip ? modelData.ip + " • " : "") + (modelData.mac || "")
-                                            font.family: Theme.typography.fontFamily
-                                            font.pixelSize: Theme.fontSize(9)
-                                            color: Theme.notchTextTertiary
-                                            elide: Text.ElideRight
-                                            Layout.fillWidth: true
-                                        }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: clientMa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                }
-                            }
-
-                            // Empty State
-                            Text {
-                                anchors.centerIn: parent
-                                visible: clientsListView.count === 0
-                                text: !root.hotspotEnabled
-                                      ? (I18n.isRTL ? "قم بتفعيل نقطة الاتصال لعرض الأجهزة" : "Enable hotspot to see connected devices")
-                                      : (I18n.isRTL ? "لا توجد أجهزة متصلة حالياً" : "No devices currently connected")
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(10)
-                                color: Theme.notchTextTertiary
-                            }
-                        }
-                    }
+                    hotspotAvailable: root.hotspotAvailable
+                    hotspotEnabled: root.hotspotEnabled
+                    hotspotSsid: root.hotspotSsid
+                    hotspotPassword: root.hotspotPassword
+                    hotspotError: root.hotspotError
+                    hotspotSaveSuccess: root.hotspotSaveSuccess
+                    hotspotClients: root.hotspotClients
+                    actionRunning: hotspotActionProcess.running
+                    configureRunning: hotspotConfigureProcess.running
+                    onBackClicked: ShellState.quickSettingsCapsuleView = "main"
+                    onRefreshClicked: networkStatusProcess.running = true
+                    onToggleClicked: root.toggleHotspot()
+                    onSaveClicked: (ssid, pwd) => root.configureHotspot(ssid, pwd)
                 }
             }
         }
