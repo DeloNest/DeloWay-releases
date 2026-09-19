@@ -27,6 +27,7 @@ Item {
     property int transparencyLevel: 85
     property int elementRadius: 8
     property int performanceTier: 1 // 0=Efficient, 1=Balanced, 2=High
+    property bool applySystemTheme: true
 
     // Desktop Settings (§5.8)
     property string desktopMode: "clean"
@@ -58,6 +59,8 @@ Item {
     property int windowGapsIn: 5
     property int windowGapsOut: 10
     property int windowRounding: 10
+    property bool followMouse: true
+    property bool dimInactive: false
 
     // Notifications
     property bool notificationsDnd: false
@@ -127,6 +130,8 @@ Item {
             saveProcess.exec(["hyprctl", "keyword", "general:gaps_in", String(root.windowGapsIn)]);
             saveProcess.exec(["hyprctl", "keyword", "general:gaps_out", String(root.windowGapsOut)]);
             saveProcess.exec(["hyprctl", "keyword", "decoration:rounding", String(root.windowRounding)]);
+            saveProcess.exec(["hyprctl", "keyword", "input:follow_mouse", root.followMouse ? "1" : "0"]);
+            saveProcess.exec(["hyprctl", "keyword", "decoration:dim_inactive", root.dimInactive ? "true" : "false"]);
             if (root.activeBorder) {
                 saveProcess.exec(["hyprctl", "keyword", "general:col.active_border", root.activeBorder.toString()]);
             }
@@ -153,6 +158,7 @@ Item {
                 if (cfg.theme.transparencyLevel !== undefined) root.transparencyLevel = cfg.theme.transparencyLevel;
                 if (cfg.theme.elementRadius !== undefined) root.elementRadius = cfg.theme.elementRadius;
                 if (cfg.theme.performanceTier !== undefined) root.performanceTier = cfg.theme.performanceTier;
+                if (cfg.theme.applySystemTheme !== undefined) root.applySystemTheme = cfg.theme.applySystemTheme;
             }
             if (cfg.desktop) {
                 if (cfg.desktop.mode) root.desktopMode = cfg.desktop.mode;
@@ -179,6 +185,8 @@ Item {
                 if (cfg.windows.gapsIn !== undefined) root.windowGapsIn = cfg.windows.gapsIn;
                 if (cfg.windows.gapsOut !== undefined) root.windowGapsOut = cfg.windows.gapsOut;
                 if (cfg.windows.rounding !== undefined) root.windowRounding = cfg.windows.rounding;
+                if (cfg.windows.followMouse !== undefined) root.followMouse = cfg.windows.followMouse;
+                if (cfg.windows.dimInactive !== undefined) root.dimInactive = cfg.windows.dimInactive;
             }
             if (cfg.notifications) {
                 if (cfg.notifications.dnd !== undefined) root.notificationsDnd = cfg.notifications.dnd;
@@ -228,9 +236,11 @@ Item {
         saveThemeProcess.exec(["bash", "-c", "cat << 'EOF' > " + themeJsonPath + "\n" + themeJsonContent + "\nEOF"]);
 
         // Update GNOME/GTK preference
-        const scheme = (mode === "dark") ? "prefer-dark" : "prefer-light";
-        gtkThemeProcess.exec(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme]);
-        updateGtkThemes();
+        if (root.applySystemTheme) {
+            const scheme = (mode === "dark") ? "prefer-dark" : "prefer-light";
+            gtkThemeProcess.exec(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme]);
+            updateGtkThemes();
+        }
     }
 
     function setAccentColor(col) {
@@ -241,7 +251,19 @@ Item {
         // Update active border in Hyprland
         const hex = col.toString().replace("#", "");
         Hyprland.dispatch("exec hyprctl keyword general:col.active_border 'rgb(" + hex + ")'");
-        updateGtkThemes();
+        if (root.applySystemTheme) {
+            updateGtkThemes();
+        }
+    }
+
+    function setApplySystemTheme(val) {
+        root.applySystemTheme = val;
+        saveConfig();
+        if (val) {
+            const scheme = (root.themeMode === "dark") ? "prefer-dark" : "prefer-light";
+            gtkThemeProcess.exec(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", scheme]);
+            updateGtkThemes();
+        }
     }
 
     function setPerformanceTier(tier) {
@@ -253,6 +275,7 @@ Item {
     // TODO: Qt theming integration (kdeglobals/qt6ct) postponed - No core Qt applications currently in default list.
 
     function updateGtkThemes() {
+        if (!root.applySystemTheme) return;
         const col = Theme.colors;
         const areDark = (root.themeMode === "dark");
         const bg = col.background || (areDark ? "#101318" : "#f4f6f9");
@@ -423,6 +446,11 @@ Item {
         saveConfig();
     }
 
+    function setShowUnderline(val) {
+        root.showUnderline = val;
+        saveConfig();
+    }
+
     function setNotificationsDnd(val) {
         root.notificationsDnd = val;
         saveConfig();
@@ -449,6 +477,18 @@ Item {
     function setWindowRounding(r) {
         root.windowRounding = Math.max(0, Math.min(24, r));
         saveProcess.exec(["hyprctl", "keyword", "decoration:rounding", String(root.windowRounding)]);
+        saveConfig();
+    }
+
+    function setFollowMouse(val) {
+        root.followMouse = val;
+        saveProcess.exec(["hyprctl", "keyword", "input:follow_mouse", val ? "1" : "0"]);
+        saveConfig();
+    }
+
+    function setDimInactive(val) {
+        root.dimInactive = val;
+        saveProcess.exec(["hyprctl", "keyword", "decoration:dim_inactive", val ? "true" : "false"]);
         saveConfig();
     }
 
@@ -520,7 +560,7 @@ Item {
     }
 
     function setFontSizeScale(scale) {
-        root.fontSizeScale = Math.max(0.8, Math.min(1.5, scale));
+        root.fontSizeScale = Math.max(0.7, Math.min(1.5, scale));
         saveConfig();
     }
 
@@ -531,6 +571,8 @@ Item {
 
     function setElementRadius(r) {
         root.elementRadius = Math.max(0, Math.min(24, Math.round(r)));
+        root.windowRounding = root.elementRadius;
+        saveProcess.exec(["hyprctl", "keyword", "decoration:rounding", String(root.elementRadius)]);
         saveConfig();
     }
 
@@ -595,7 +637,8 @@ Item {
                 fontSizeScale: root.fontSizeScale,
                 transparencyLevel: root.transparencyLevel,
                 elementRadius: root.elementRadius,
-                performanceTier: root.performanceTier
+                performanceTier: root.performanceTier,
+                applySystemTheme: root.applySystemTheme
             },
             desktop: {
                 mode: root.desktopMode,
@@ -621,7 +664,9 @@ Item {
                 inactiveBorder: root.inactiveBorder.toString(),
                 gapsIn: root.windowGapsIn,
                 gapsOut: root.windowGapsOut,
-                rounding: root.windowRounding
+                rounding: root.windowRounding,
+                followMouse: root.followMouse,
+                dimInactive: root.dimInactive
             },
             notifications: {
                 dnd: root.notificationsDnd,

@@ -11,6 +11,8 @@ Item {
 
     implicitWidth: 500
     implicitHeight: mainCol.implicitHeight + (Theme.space24 * 2)
+    width: parent ? parent.width : implicitWidth
+    height: implicitHeight
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
@@ -67,13 +69,27 @@ Item {
                           ? (I18n.isRTL ? "مفعّل — أسطح داكنة نقية لتقليل استهلاك الطاقة وإراحة العين" : "Enabled — Deep dark surfaces for low eye strain")
                           : (I18n.isRTL ? "معطّل — أسطح فاتحة ناصعة (Light Mode)" : "Disabled — Clean light surfaces (Light Mode)")
                 icon: ConfigManager.themeMode === "dark" ? "weather-clear-night-symbolic" : "weather-sunny-symbolic"
-                showDivider: false
+                showDivider: true
                 clickable: true
                 onClicked: ConfigManager.setThemeMode(ConfigManager.themeMode === "dark" ? "light" : "dark")
 
                 SettingsToggle {
                     checked: ConfigManager.themeMode === "dark"
                     onToggled: ch => ConfigManager.setThemeMode(ch ? "dark" : "light")
+                }
+            }
+
+            SettingsRow {
+                title: I18n.tr("apply_system_theme")
+                subtitle: I18n.tr("apply_system_theme_desc")
+                icon: "preferences-desktop-theme-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setApplySystemTheme(!ConfigManager.applySystemTheme)
+
+                SettingsToggle {
+                    checked: ConfigManager.applySystemTheme
+                    onToggled: ch => ConfigManager.setApplySystemTheme(ch)
                 }
             }
         }
@@ -111,7 +127,7 @@ Item {
                         Text {
                             text: I18n.tr("browse_wallpaper")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.Medium
                             color: Theme.notchText
                         }
@@ -129,39 +145,49 @@ Item {
 
             // Thumbnail Gallery
             Item {
+                id: galleryContainer
                 Layout.fillWidth: true
-                implicitHeight: (root.wallpapersList.length > 0 ? wpFlow.implicitHeight : 60) + Theme.space32
+                implicitHeight: {
+                    if (!root.wallpapersList || root.wallpapersList.length === 0) return 60;
+                    var availW = galleryContainer.width > 0 ? galleryContainer.width : 500;
+                    var cardW = 140;
+                    var gap = Theme.space16;
+                    var cols = Math.max(1, Math.floor((availW - (gap * 2) + gap) / (cardW + gap)));
+                    var rows = Math.ceil(root.wallpapersList.length / cols);
+                    return (rows * 88) + (Math.max(0, rows - 1) * gap) + (gap * 2);
+                }
+                Layout.preferredHeight: implicitHeight
+                height: implicitHeight
 
                 Text {
                     visible: root.wallpapersList.length === 0
                     anchors.centerIn: parent
                     text: I18n.isRTL ? "جارٍ البحث عن الخلفيات..." : "Scanning wallpapers..."
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     color: Theme.notchTextTertiary
                 }
 
                 Flow {
                     id: wpFlow
                     visible: root.wallpapersList.length > 0
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    anchors.topMargin: Theme.space16
-                    anchors.leftMargin: Theme.space16
-                    anchors.rightMargin: Theme.space16
-                    anchors.bottomMargin: Theme.space16
+                    anchors.fill: parent
+                    anchors.margins: Theme.space16
                     spacing: Theme.space16
                     layoutDirection: I18n.isRTL ? Qt.RightToLeft : Qt.LeftToRight
                     LayoutMirroring.enabled: I18n.isRTL
                     LayoutMirroring.childrenInherit: true
-
                     Repeater {
                         model: root.wallpapersList
                         delegate: Rectangle {
                             id: wpCard
                             required property var modelData
-                            readonly property bool isSelected: ConfigManager.wallpaper === modelData.path
+                            readonly property bool isSelected: {
+                                if (!ConfigManager.wallpaper || !modelData.path) return false;
+                                var current = ConfigManager.wallpaper.replace(/^file:\/\//, "").replace(/\/+$/, "");
+                                var itemPath = modelData.path.replace(/^file:\/\//, "").replace(/\/+$/, "");
+                                return current === itemPath;
+                            }
 
                             width: 140
                             height: 88
@@ -199,7 +225,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: "✓"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.Bold
                                     color: "#ffffff"
                                 }
@@ -219,7 +245,7 @@ Item {
                                     anchors.rightMargin: Theme.space8
                                     text: wpCard.modelData.name
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.Medium
                                     color: wpCard.isSelected ? Theme.notchText : Theme.notchTextSecondary
                                     elide: Text.ElideRight
@@ -282,7 +308,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: radPill.modelData.label
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: radPill.isSelected ? Font.DemiBold : Font.Normal
                                 color: radPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
                             }
@@ -293,6 +319,60 @@ Item {
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ConfigManager.setElementRadius(radPill.modelData.val)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Font Scale
+            SettingsRow {
+                title: I18n.isRTL ? "حجم الخط" : "Font Size"
+                subtitle: I18n.isRTL ? "ضبط مقياس حجم الخطوط في الواجهة" : "Adjust user interface text scaling"
+                icon: "preferences-desktop-font-symbolic"
+                showDivider: true
+
+                RowLayout {
+                    spacing: Theme.space4
+                    LayoutMirroring.enabled: I18n.isRTL
+                    LayoutMirroring.childrenInherit: true
+
+                    Repeater {
+                        model: [
+                            { val: 0.85, label: I18n.isRTL ? "صغير" : "Small" },
+                            { val: 1.0,  label: I18n.isRTL ? "قياسي" : "Standard" },
+                            { val: 1.15, label: I18n.isRTL ? "كبير" : "Large" }
+                        ]
+                        delegate: Rectangle {
+                            id: fontPill
+                            required property var modelData
+                            readonly property bool isSelected: Math.abs(ConfigManager.fontSizeScale - modelData.val) < 0.05
+
+                            height: 28
+                            implicitWidth: fontText.implicitWidth + Theme.space16
+                            radius: 14
+                            color: fontPill.isSelected ? Theme.notchSurfaceActive : (fontMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: fontPill.isSelected ? Theme.notchBorderHighlight : (fontMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                id: fontText
+                                anchors.centerIn: parent
+                                text: fontPill.modelData.label
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: fontPill.isSelected ? Font.DemiBold : Font.Normal
+                                color: fontPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
+                            }
+
+                            MouseArea {
+                                id: fontMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ConfigManager.setFontSizeScale(fontPill.modelData.val)
                             }
                         }
                     }
@@ -336,7 +416,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: tierPill.modelData.label
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: tierPill.isSelected ? Font.DemiBold : Font.Normal
                                 color: tierPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
                             }

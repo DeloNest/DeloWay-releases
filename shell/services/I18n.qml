@@ -91,6 +91,8 @@ Item {
             "theme_mode_desc": "Switch between dark and light appearance",
             "dark_mode": "Dark",
             "light_mode": "Light",
+            "apply_system_theme": "Apply Theme to System Applications",
+            "apply_system_theme_desc": "Apply DeloWay dark and light color palette to GTK and system applications",
             "corner_radius": "Window Corner Radius",
             "corner_radius_desc": "Adjust roundness of desktop windows and panels",
 
@@ -357,7 +359,10 @@ Item {
             "notch_no_devices_hint": "Open LocalSend on your phone or other device on the same Wi-Fi",
             "notch_scan_network": "Scan Network",
             "notch_scanning": "Scanning network...",
-            "notch_send_to": "Send to"
+            "notch_send_to": "Send to",
+            "notch_paired_device": "Paired Device",
+            "notch_online": "Online",
+            "notch_send_now": "Send Now"
         },
         "ar": {
             // Navigation
@@ -440,6 +445,8 @@ Item {
             "theme_mode_desc": "التبديل بين المظهر الداكن والمظهر الفاتح",
             "dark_mode": "داكن",
             "light_mode": "فاتح",
+            "apply_system_theme": "تطبيق الثيم على برامج النظام",
+            "apply_system_theme_desc": "تطبيق لوحة ألوان DeloWay (الداكنة/الفاتحة) على تطبيقات GTK وبرامج النظام",
             "corner_radius": "استدارة حواف النوافذ",
             "corner_radius_desc": "ضبط درجة انحناء زوايا النوافذ والقوائم",
 
@@ -706,7 +713,10 @@ Item {
             "notch_no_devices_hint": "تأكد من فتح تطبيق LocalSend على هاتفك أو جهازك الآخر متصلاً بنفس شبكة الـ Wi-Fi",
             "notch_scan_network": "إعادة الفحص",
             "notch_scanning": "جارٍ فحص الشبكة...",
-            "notch_send_to": "إرسال إلى"
+            "notch_send_to": "إرسال إلى",
+            "notch_paired_device": "جهاز مقترن",
+            "notch_online": "متصل",
+            "notch_send_now": "إرسال الآن"
         }
     })
 
