@@ -17,17 +17,16 @@ PanelWindow {
 
     anchors {
         top: true
-        right: I18n.isRTL
-        left: !I18n.isRTL
+        left: true
     }
 
-    readonly property real bottomRadius: 22
-    readonly property real shadowMargin: 4
+    readonly property real earRadius: 18
+    readonly property real bottomRadius: 26
+    readonly property real capsuleGap: 10
 
     margins {
-        top: 0
-        right: I18n.isRTL ? (12 - shadowMargin) : 0
-        left: !I18n.isRTL ? (12 - shadowMargin) : 0
+        top: root.isExpanded ? 0 : 10
+        left: Math.round(targetScreen.width / 2 + ShellState.smartNotchCurrentWidth / 2 + capsuleGap - (root.isExpanded ? root.earRadius : 0))
     }
 
     color: "transparent"
@@ -44,17 +43,25 @@ PanelWindow {
     readonly property string currentView: ShellState.quickSettingsCapsuleView
 
     readonly property real compactHeight: 44
-    readonly property real compactWidth: Math.max(88, compactRow.implicitWidth + 44)
-    readonly property real expandedWidth: 416
+    readonly property real compactWidth: Math.max(108, compactRow.implicitWidth + 48)
+    readonly property real expandedWidth: 440
     readonly property real expandedHeight: {
-        if (root.currentView === "wifi") return 360;
-        if (root.currentView === "bluetooth") return 360;
-        if (root.currentView === "hotspot") return 390;
-        return 320;
+        if (root.currentView === "wifi") return 390;
+        if (root.currentView === "bluetooth") return 390;
+        if (root.currentView === "hotspot") return 430;
+        return 400;
     }
 
-    implicitWidth: Math.round(capsuleCard.width + shadowMargin * 2)
-    implicitHeight: Math.round(root.isExpanded ? (capsuleCard.y + capsuleCard.height + shadowMargin * 2 + 4) : root.compactHeight)
+    // Animated intermediates — same pattern as Notch.qml currentWidth/currentHeight
+    property real currentWidth: root.isExpanded ? root.expandedWidth : root.compactWidth
+    property real currentHeight: root.isExpanded ? root.expandedHeight : root.compactHeight
+
+    Behavior on currentWidth  { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+    Behavior on currentHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+
+    // PanelWindow dimensions driven by animated intermediates (shadow and ears preserved)
+    implicitWidth:  Math.round(root.currentWidth  + (root.isExpanded ? root.earRadius * 2 : 0))
+    implicitHeight: Math.round(root.currentHeight + 8)
 
     Shortcut {
         sequence: "Escape"
@@ -653,94 +660,18 @@ PanelWindow {
     // ─────────────────────────────────────────────────────────────────────────
     // Visual Hierarchy
     // ─────────────────────────────────────────────────────────────────────────
-    Item {
-        anchors.fill: parent
+    NotchFrame {
+        id: capsuleFrame
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        isExpanded: root.isExpanded
+        currentWidth: root.currentWidth
+        currentHeight: root.currentHeight
+        earRadius: root.earRadius
+        bottomRadius: root.bottomRadius
+        clipContent: true
 
-        // Ambient Drop Shadow (Matches Notch depth)
-        Rectangle {
-            id: capsuleShadow
-            anchors.fill: capsuleCard
-            anchors.topMargin: 4
-            anchors.bottomMargin: -4
-            anchors.leftMargin: -2
-            anchors.rightMargin: -2
-            topLeftRadius: capsuleCard.topLeftRadius + 2
-            topRightRadius: capsuleCard.topRightRadius + 2
-            bottomLeftRadius: capsuleCard.bottomLeftRadius + 2
-            bottomRightRadius: capsuleCard.bottomRightRadius + 2
-            color: Theme.notchShadow
-            opacity: root.isExpanded ? 1.0 : 0.0
-            visible: opacity > 0.001
-            Behavior on opacity { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
-            z: 0
-        }
-
-        // Single Morphing Capsule Card (Pure solid deep black, OLED notch feel)
-        Rectangle {
-            id: capsuleCard
-            y: root.isExpanded ? 8 : 0
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: root.isExpanded ? 416 : root.compactWidth
-            height: root.isExpanded ? root.expandedHeight : 44
-            
-            topLeftRadius: root.isExpanded ? Theme.notchRadiusPanel : 0
-            topRightRadius: root.isExpanded ? Theme.notchRadiusPanel : 0
-            bottomLeftRadius: root.isExpanded ? Theme.notchRadiusPanel : Theme.notchRadius
-            bottomRightRadius: root.isExpanded ? Theme.notchRadiusPanel : Theme.notchRadius
-
-            color: Theme.notchBackground
-            border.color: Theme.notchBorderSubtle
-            border.width: Theme.isDark ? 0 : 1
-            clip: true
-            z: 1
-
-            Behavior on y {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on width {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on height {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on topLeftRadius {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on topRightRadius {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on bottomLeftRadius {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-            Behavior on bottomRightRadius {
-                NumberAnimation {
-                    duration: 130
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            LayoutMirroring.enabled: I18n.isRTL
-            LayoutMirroring.childrenInherit: true
-
-            // ── Stage 1: Compact View ────────────────────────────────────────
+        // ── Stage 1: Compact View ────────────────────────────────────────
             Item {
                 id: compactView
                 anchors.top: parent.top
@@ -748,8 +679,8 @@ PanelWindow {
                 width: parent.width
                 height: root.compactHeight
                 opacity: root.isExpanded ? 0.0 : 1.0
-                visible: opacity > 0.0
-                Behavior on opacity { NumberAnimation { duration: 40 } }
+                visible: !root.isExpanded
+                Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
                 MouseArea {
                     anchors.fill: parent
@@ -775,9 +706,97 @@ PanelWindow {
                 RowLayout {
                     id: compactRow
                     anchors.centerIn: parent
-                    spacing: 10
+                    spacing: 8
 
-                    // Network display area (Clickable to toggle/expand Wi-Fi & Hotspot)
+                    // ── Battery Indicator (hidden on desktop) ──
+                    Item {
+                        visible: SystemMonitor.hasBattery
+                        implicitWidth: batteryCompactRow.implicitWidth
+                        implicitHeight: batteryCompactRow.implicitHeight
+                        Layout.alignment: Qt.AlignVCenter
+
+                        RowLayout {
+                            id: batteryCompactRow
+                            spacing: 3
+
+                            // Battery icon
+                            SymbolicIcon {
+                                iconSize: 14
+                                source: {
+                                    const p = SystemMonitor.batteryPercent;
+                                    if (SystemMonitor.batteryStatusText === "Charging") return "battery-good-charging-symbolic";
+                                    if (p <= 10) return "battery-empty-symbolic";
+                                    if (p <= 25) return "battery-low-symbolic";
+                                    if (p <= 60) return "battery-good-symbolic";
+                                    return "battery-full-symbolic";
+                                }
+                                iconColor: {
+                                    if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
+                                    if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                    return Theme.notchText;
+                                }
+                            }
+
+                            Text {
+                                text: SystemMonitor.batteryPercent + "%"
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(10)
+                                font.weight: Font.Medium
+                                color: {
+                                    if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
+                                    if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                    return Theme.notchTextSecondary;
+                                }
+                                renderType: Theme.renderType
+                            }
+                        }
+                    }
+
+                    // ── Separator dot ──
+                    Rectangle {
+                        visible: SystemMonitor.hasBattery
+                        width: 3; height: 3; radius: 1.5
+                        color: Theme.notchTextTertiary
+                        Layout.alignment: Qt.AlignVCenter
+                        opacity: 0.5
+                    }
+
+                    // ── Background Apps (System Tray) ──
+                    SystemTrayIndicators {
+                        Layout.alignment: Qt.AlignVCenter
+                    }
+
+                    // ── Volume icon (mutable, clickable to mute) ──
+                    Item {
+                        implicitWidth: 22; implicitHeight: 22
+                        Layout.alignment: Qt.AlignVCenter
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 6
+                            color: volumeCompactMa.containsMouse
+                                   ? Theme.notchSurfaceHover
+                                   : "transparent"
+                            Behavior on color { ColorAnimation { duration: 80 } }
+                        }
+
+                        SymbolicIcon {
+                            anchors.centerIn: parent
+                            iconSize: 14
+                            source: root.volumeIconName + "-symbolic"
+                            iconColor: root.isMuted ? "#f87171" : Theme.notchText
+                        }
+
+                        MouseArea {
+                            id: volumeCompactMa
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: root.toggleMute()
+                        }
+                    }
+
+                    // ── Network icon + SSID ──
                     Item {
                         id: networkCompactSection
                         implicitWidth: netRow.implicitWidth
@@ -786,13 +805,16 @@ PanelWindow {
 
                         RowLayout {
                             id: netRow
-                            anchors.fill: parent
-                            spacing: 6
+                            spacing: 4
 
                             SymbolicIcon {
                                 iconSize: 14
-                                source: SystemMonitor.isWifi ? "network-wireless-symbolic" : "network-wired-symbolic"
-                                iconColor: SystemMonitor.isOnline ? Theme.notchText : Theme.notchTextTertiary
+                                source: SystemMonitor.isWifi
+                                        ? "network-wireless-symbolic"
+                                        : "network-wired-symbolic"
+                                iconColor: SystemMonitor.isOnline
+                                           ? Theme.notchText
+                                           : Theme.notchTextTertiary
                             }
 
                             Text {
@@ -804,7 +826,7 @@ PanelWindow {
                                 font.weight: Font.Medium
                                 color: Theme.notchText
                                 elide: Text.ElideRight
-                                Layout.maximumWidth: 120
+                                Layout.maximumWidth: 90
                                 renderType: Theme.renderType
                             }
                         }
@@ -815,36 +837,51 @@ PanelWindow {
                             hoverEnabled: true
                             acceptedButtons: Qt.LeftButton
                             onClicked: (mouse) => {
-                                if (mouse.button === Qt.LeftButton) {
+                                if (mouse.button === Qt.LeftButton)
                                     ShellState.toggleQuickSettingsCapsule("wifi");
-                                }
                             }
                         }
                     }
 
-                    // Keyboard Language Indicator (Read-only status badge)
-                    Text {
-                        id: langLabel
-                        text: root.activeKeyboardCode
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(11)
-                        font.weight: Font.Bold
-                        color: Theme.notchTextSecondary
-                        renderType: Theme.renderType
+                    // ── Language badge capsule ──
+                    Rectangle {
+                        implicitWidth: langBadgeText.implicitWidth + 10
+                        implicitHeight: 18
+                        radius: 5
+                        color: Theme.notchSurfaceElevated
                         Layout.alignment: Qt.AlignVCenter
+
+                        Text {
+                            id: langBadgeText
+                            anchors.centerIn: parent
+                            text: root.activeKeyboardCode
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(10)
+                            font.weight: Font.Medium
+                            color: Theme.notchText
+                            renderType: Theme.renderType
+                        }
                     }
 
-                    // Settings icon area (Clickable to toggle/expand Main controls)
+                    // ── Gear icon (settings trigger) ──
                     Item {
-                        implicitWidth: 16
-                        implicitHeight: 16
+                        implicitWidth: 22; implicitHeight: 22
                         Layout.alignment: Qt.AlignVCenter
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 6
+                            color: settingsIconMa.containsMouse
+                                   ? Theme.notchSurfaceHover
+                                   : "transparent"
+                            Behavior on color { ColorAnimation { duration: 80 } }
+                        }
 
                         SymbolicIcon {
                             anchors.centerIn: parent
                             iconSize: 14
                             source: "settings-symbolic"
-                            iconColor: settingsIconMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            iconColor: Theme.notchText
                         }
 
                         MouseArea {
@@ -854,28 +891,28 @@ PanelWindow {
                             hoverEnabled: true
                             acceptedButtons: Qt.LeftButton
                             onClicked: (mouse) => {
-                                if (mouse.button === Qt.LeftButton) {
+                                if (mouse.button === Qt.LeftButton)
                                     ShellState.toggleQuickSettingsCapsule("main");
-                                }
                             }
                         }
                     }
                 }
             }
 
+
             // ── Stage 2: Expanded Content ────────────────────────────────────
             Item {
                 id: expandedContent
                 anchors.fill: parent
-                anchors.margins: 12
+                anchors.leftMargin: 20
+                anchors.rightMargin: 20
+                anchors.topMargin: 8
+                anchors.bottomMargin: 12
                 opacity: root.isExpanded ? 1.0 : 0.0
-                visible: opacity > 0.0
+                visible: root.isExpanded
 
                 Behavior on opacity {
-                    NumberAnimation {
-                        duration: 90
-                        easing.type: Easing.OutQuad
-                    }
+                    NumberAnimation { duration: Theme.motionFast }
                 }
 
                 // ═════════════════════════════════════════════════════════════
@@ -883,13 +920,26 @@ PanelWindow {
                 // ═════════════════════════════════════════════════════════════
                 ColumnLayout {
                     anchors.fill: parent
-                    spacing: 8
+                    spacing: 4
                     visible: root.currentView === "main"
 
-                    // Header: Quick Settings title + close button
+                    // ── Rich Header: Clock + Battery + Close ──
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 20
+                        Layout.preferredHeight: 48
+
+                        // Live clock timer
+                        Timer {
+                            id: clockTimer
+                            interval: 30000
+                            repeat: true
+                            running: root.isExpanded
+                            triggeredOnStart: true
+                            onTriggered: {
+                                headerTimeText.text = Qt.formatDateTime(new Date(), "hh:mm");
+                                headerDayText.text = Qt.formatDateTime(new Date(), I18n.isRTL ? "dddd" : "dddd");
+                            }
+                        }
 
                         MouseArea {
                             anchors.fill: parent
@@ -903,46 +953,118 @@ PanelWindow {
 
                         RowLayout {
                             anchors.fill: parent
+                            spacing: 0
 
-                            Text {
-                                text: I18n.isRTL ? "إعدادات سريعة" : "Quick Settings"
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchTextSecondary
+                            // Left: Day + Time stack
+                            ColumnLayout {
+                                spacing: 0
                                 Layout.fillWidth: true
-                            }
-
-                            Rectangle {
-                                implicitWidth: 20
-                                implicitHeight: 20
-                                radius: Theme.notchRadiusPill
-                                color: closeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                                 Text {
-                                    anchors.centerIn: parent
-                                    text: "✕"
+                                    id: headerDayText
+                                    text: Qt.formatDateTime(new Date(), I18n.isRTL ? "dddd" : "dddd")
+                                    font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(10)
-                                    color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                                    font.weight: Font.Medium
+                                    color: Theme.notchTextTertiary
+                                    renderType: Theme.renderType
                                 }
 
-                                MouseArea {
-                                    id: closeMa
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    hoverEnabled: true
-                                    onClicked: {
-                                        ShellState.closeQuickSettingsCapsule();
+                                Text {
+                                    id: headerTimeText
+                                    text: Qt.formatDateTime(new Date(), "hh:mm")
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(22)
+                                    font.weight: Font.Bold
+                                    color: Theme.notchText
+                                    renderType: Theme.renderType
+                                    lineHeight: 1.0
+                                }
+                            }
+
+                            // Right: Battery + Close
+                            ColumnLayout {
+                                spacing: 4
+                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+
+                                // Close button
+                                Rectangle {
+                                    implicitWidth: 24
+                                    implicitHeight: 24
+                                    radius: 12
+                                    color: closeMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
+                                    Layout.alignment: Qt.AlignRight
+                                    Behavior on color { ColorAnimation { duration: 80 } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "✕"
+                                        font.pixelSize: Theme.fontSize(11)
+                                        font.weight: Font.Bold
+                                        color: closeMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                                    }
+
+                                    MouseArea {
+                                        id: closeMa
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        hoverEnabled: true
+                                        onClicked: ShellState.closeQuickSettingsCapsule()
+                                    }
+                                }
+
+                                // Battery row
+                                RowLayout {
+                                    visible: SystemMonitor.hasBattery
+                                    spacing: 4
+                                    Layout.alignment: Qt.AlignRight
+
+                                    SymbolicIcon {
+                                        iconSize: 13
+                                        source: {
+                                            const p = SystemMonitor.batteryPercent;
+                                            if (SystemMonitor.batteryStatusText === "Charging") return "battery-good-charging-symbolic";
+                                            if (p <= 10) return "battery-empty-symbolic";
+                                            if (p <= 25) return "battery-low-symbolic";
+                                            if (p <= 60) return "battery-good-symbolic";
+                                            return "battery-full-symbolic";
+                                        }
+                                        iconColor: {
+                                            if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
+                                            if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                            return Theme.notchTextSecondary;
+                                        }
+                                    }
+
+                                    Text {
+                                        text: SystemMonitor.batteryPercent + "%"
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(10)
+                                        font.weight: Font.Medium
+                                        color: {
+                                            if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
+                                            if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                            return Theme.notchTextSecondary;
+                                        }
+                                        renderType: Theme.renderType
                                     }
                                 }
                             }
                         }
                     }
 
+                    // ── Thin separator ──
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 1
+                        color: Theme.notchBorderSubtle
+                        opacity: 0.7
+                    }
+
                     // ── Row 1: Wi-Fi Card + Bluetooth Card (2-Column Grid) ──
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 52
+                        Layout.preferredHeight: 60
                         spacing: 8
 
                         // ── Wi-Fi Card ──
@@ -952,13 +1074,15 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: wifiTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.wifiEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                            border.color: (root.wifiEnabled && root.wifiSsid.length > 0)
+                                          ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
+                                          : (root.wifiEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
                             border.width: 1
-                            scale: wifiTileMa.pressed ? 0.98 : 1.0
+                            scale: wifiTileMa.pressed ? 0.96 : (wifiTileMa.containsMouse ? 1.01 : 1.0)
 
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                             MouseArea {
                                 id: wifiTileMa
@@ -973,27 +1097,27 @@ PanelWindow {
 
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 9
 
                                 // Clickable Wi-Fi Icon Circle (Toggle radio on/off)
                                 Rectangle {
                                     id: wifiIconCircle
-                                    implicitWidth: 32
-                                    implicitHeight: 32
-                                    radius: 16
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    radius: 18
                                     color: root.wifiEnabled
-                                           ? (root.wifiSsid.length > 0 ? Theme.notchText : Theme.notchBorderHighlight)
+                                           ? (root.wifiSsid.length > 0 ? Theme.accent : Theme.notchBorderHighlight)
                                            : Theme.notchSurfaceElevated
 
-                                    Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent
                                         source: "network-wireless-symbolic"
-                                        iconSize: 16
-                                        iconColor: root.wifiEnabled && root.wifiSsid.length > 0 ? Theme.notchBackground : (root.wifiEnabled ? Theme.notchText : Theme.notchTextTertiary)
+                                        iconSize: 17
+                                        iconColor: root.wifiEnabled && root.wifiSsid.length > 0 ? "#FFFFFF" : (root.wifiEnabled ? Theme.notchText : Theme.notchTextTertiary)
                                     }
 
                                     MouseArea {
@@ -1053,13 +1177,15 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: btTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                            border.color: root.bluetoothConnectedDevice.length > 0
+                                          ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
+                                          : (root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
                             border.width: 1
-                            scale: btTileMa.pressed ? 0.98 : 1.0
+                            scale: btTileMa.pressed ? 0.96 : (btTileMa.containsMouse ? 1.01 : 1.0)
 
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                             MouseArea {
                                 id: btTileMa
@@ -1074,28 +1200,28 @@ PanelWindow {
 
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 9
 
                                 // Clickable Bluetooth Icon Circle (Toggle radio on/off)
                                 Rectangle {
                                     id: btIconCircle
-                                    implicitWidth: 32
-                                    implicitHeight: 32
-                                    radius: 16
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    radius: 18
                                     color: root.bluetoothConnectedDevice.length > 0
-                                           ? Theme.notchText
+                                           ? Theme.accent
                                            : (root.bluetoothEnabled ? Theme.notchBorderHighlight : Theme.notchSurfaceElevated)
 
-                                    Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent
                                         source: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
-                                        iconSize: 16
+                                        iconSize: 17
                                         iconColor: root.bluetoothConnectedDevice.length > 0
-                                                   ? Theme.notchBackground
+                                                   ? "#FFFFFF"
                                                    : (root.bluetoothEnabled ? Theme.notchText : Theme.notchTextTertiary)
                                     }
 
@@ -1155,7 +1281,7 @@ PanelWindow {
                     // ── Row 2: Hotspot Card + Night Light Card (2-Column Symmetrical Grid) ──
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 52
+                        Layout.preferredHeight: 60
                         spacing: 8
 
                         // ── Hotspot Card (Status Card with Drilldown) ──
@@ -1165,13 +1291,15 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: hotspotTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.hotspotEnabled ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                            border.color: root.hotspotEnabled
+                                          ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.5)
+                                          : Theme.notchBorderSubtle
                             border.width: 1
-                            scale: hotspotTileMa.pressed ? 0.98 : 1.0
+                            scale: hotspotTileMa.pressed ? 0.96 : (hotspotTileMa.containsMouse ? 1.01 : 1.0)
 
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                             MouseArea {
                                 id: hotspotTileMa
@@ -1185,28 +1313,28 @@ PanelWindow {
 
                             RowLayout {
                                 anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 8
-                                spacing: 8
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                spacing: 9
 
                                 // Clickable Hotspot Icon Circle (Toggle hotspot on/off)
                                 Rectangle {
                                     id: hotspotIconCircle
-                                    implicitWidth: 32
-                                    implicitHeight: 32
-                                    radius: 16
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    radius: 18
                                     color: root.hotspotEnabled
-                                           ? Theme.notchText
+                                           ? Theme.accent
                                            : Theme.notchSurfaceElevated
 
-                                    Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent
                                         source: "network-wireless-hotspot-symbolic"
-                                        iconSize: 16
+                                        iconSize: 17
                                         iconColor: root.hotspotEnabled
-                                                   ? Theme.notchBackground
+                                                   ? "#FFFFFF"
                                                    : Theme.notchTextTertiary
                                     }
 
@@ -1272,13 +1400,13 @@ PanelWindow {
                             Layout.fillHeight: true
                             radius: Theme.notchRadiusCard
                             color: nightLightTileMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                            border.color: root.nightLightEnabled ? Qt.rgba(0.95, 0.65, 0.25, 0.45) : Theme.notchBorderSubtle
+                            border.color: root.nightLightEnabled ? Qt.rgba(0.95, 0.65, 0.25, 0.55) : Theme.notchBorderSubtle
                             border.width: 1
-                            scale: nightLightTileMa.pressed ? 0.98 : 1.0
+                            scale: nightLightTileMa.pressed ? 0.96 : (nightLightTileMa.containsMouse ? 1.01 : 1.0)
 
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                            Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on border.color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                            Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                             MouseArea {
                                 id: nightLightTileMa
@@ -1292,23 +1420,23 @@ PanelWindow {
                                 anchors.fill: parent
                                 anchors.leftMargin: 10
                                 anchors.rightMargin: 10
-                                spacing: 10
+                                spacing: 9
 
                                 // Icon circle
                                 Rectangle {
-                                    width: 32
-                                    height: 32
-                                    radius: 16
+                                    implicitWidth: 36
+                                    implicitHeight: 36
+                                    radius: 18
                                     color: root.nightLightEnabled
-                                           ? Qt.rgba(0.95, 0.65, 0.25, 0.25)
+                                           ? Qt.rgba(0.95, 0.65, 0.25, 0.35)
                                            : Theme.notchSurfaceActive
 
-                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                    Behavior on color { ColorAnimation { duration: 100; easing.type: Easing.OutCubic } }
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent
                                         source: "night-light-symbolic"
-                                        iconSize: 16
+                                        iconSize: 17
                                         iconColor: root.nightLightEnabled
                                                    ? Qt.rgba(1.0, 0.78, 0.40, 1.0)
                                                    : Theme.notchTextTertiary
@@ -1350,12 +1478,13 @@ PanelWindow {
                     // ── Row 3: Sound Card (Title + Percentage + Mute Toggle + Interactive Slider) ──
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 56
+                        Layout.preferredHeight: 60
                         radius: Theme.notchRadiusCard
-                        color: Theme.notchSurfaceElevated
+                        color: (volumeSliderMa.containsMouse || muteBtnMa.containsMouse) ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
                         clip: true
+                        Behavior on color { ColorAnimation { duration: 100 } }
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1375,7 +1504,7 @@ PanelWindow {
                                     implicitHeight: 26
                                     radius: 13
                                     color: muteBtnMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                    Behavior on color { ColorAnimation { duration: 80 } }
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent
@@ -1414,10 +1543,10 @@ PanelWindow {
                                 }
                             }
 
-                            // Slim Volume Slider (5px track + 12px thumb, LTR math)
+                            // Slim Volume Slider (6px track + 14px thumb, LTR math)
                             Item {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 14
+                                Layout.preferredHeight: 16
                                 LayoutMirroring.enabled: false
                                 LayoutMirroring.childrenInherit: true
 
@@ -1426,8 +1555,8 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.left: parent.left
                                     anchors.right: parent.right
-                                    height: 5
-                                    radius: 2.5
+                                    height: 6
+                                    radius: 3
                                     color: Qt.rgba(1, 1, 1, 0.12)
 
                                     Rectangle {
@@ -1436,21 +1565,31 @@ PanelWindow {
                                         anchors.bottom: parent.bottom
                                         anchors.left: parent.left
                                         width: parent.width * Math.max(0, Math.min(1, root.isMuted ? 0 : root.currentVolume))
-                                        radius: 2.5
+                                        radius: 3
                                         color: "#FFFFFF"
                                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                        Behavior on width {
+                                            enabled: !volumeSliderMa.pressed
+                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
+                                        }
                                     }
 
                                     Rectangle {
                                         id: volumeThumb
-                                        width: 12
-                                        height: 12
-                                        radius: 6
+                                        width: 14
+                                        height: 14
+                                        radius: 7
                                         color: "#FFFFFF"
                                         anchors.verticalCenter: parent.verticalCenter
                                         x: Math.max(0, Math.min(parent.width - width, parent.width * (root.isMuted ? 0 : root.currentVolume) - width / 2))
-                                        border.color: Qt.rgba(0, 0, 0, 0.18)
+                                        border.color: Qt.rgba(0, 0, 0, 0.20)
                                         border.width: 1
+                                        scale: volumeSliderMa.pressed ? 1.25 : (volumeSliderMa.containsMouse ? 1.15 : 1.0)
+                                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                                        Behavior on x {
+                                            enabled: !volumeSliderMa.pressed
+                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
+                                        }
                                     }
                                 }
 
@@ -1475,17 +1614,17 @@ PanelWindow {
                         }
                     }
 
-
                     // ── Row 4: Display Card (Title + Percentage + Interactive Slider) ──
                     Rectangle {
                         visible: root.brightnessBackend !== "none"
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 56
+                        Layout.preferredHeight: 60
                         radius: Theme.notchRadiusCard
-                        color: Theme.notchSurfaceElevated
+                        color: brightnessSliderMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
                         clip: true
+                        Behavior on color { ColorAnimation { duration: 100 } }
 
                         ColumnLayout {
                             anchors.fill: parent
@@ -1525,10 +1664,10 @@ PanelWindow {
                                 }
                             }
 
-                            // Slim Brightness Slider (5px track + 12px thumb, LTR math)
+                            // Slim Brightness Slider (6px track + 14px thumb, LTR math)
                             Item {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 14
+                                Layout.preferredHeight: 16
                                 LayoutMirroring.enabled: false
                                 LayoutMirroring.childrenInherit: true
 
@@ -1537,8 +1676,8 @@ PanelWindow {
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.left: parent.left
                                     anchors.right: parent.right
-                                    height: 5
-                                    radius: 2.5
+                                    height: 6
+                                    radius: 3
                                     color: Qt.rgba(1, 1, 1, 0.12)
 
                                     Rectangle {
@@ -1547,20 +1686,30 @@ PanelWindow {
                                         anchors.bottom: parent.bottom
                                         anchors.left: parent.left
                                         width: parent.width * Math.max(0, Math.min(1, root.screenBrightness))
-                                        radius: 2.5
+                                        radius: 3
                                         color: "#FFFFFF"
+                                        Behavior on width {
+                                            enabled: !brightnessSliderMa.pressed
+                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
+                                        }
                                     }
 
                                     Rectangle {
                                         id: brightnessThumb
-                                        width: 12
-                                        height: 12
-                                        radius: 6
+                                        width: 14
+                                        height: 14
+                                        radius: 7
                                         color: "#FFFFFF"
                                         anchors.verticalCenter: parent.verticalCenter
                                         x: Math.max(0, Math.min(parent.width - width, parent.width * root.screenBrightness - width / 2))
-                                        border.color: Qt.rgba(0, 0, 0, 0.18)
+                                        border.color: Qt.rgba(0, 0, 0, 0.20)
                                         border.width: 1
+                                        scale: brightnessSliderMa.pressed ? 1.25 : (brightnessSliderMa.containsMouse ? 1.15 : 1.0)
+                                        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                                        Behavior on x {
+                                            enabled: !brightnessSliderMa.pressed
+                                            NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
+                                        }
                                     }
                                 }
 
@@ -2423,5 +2572,4 @@ PanelWindow {
                 }
             }
         }
-    }
 }

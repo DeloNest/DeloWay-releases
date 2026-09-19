@@ -54,112 +54,20 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
 
-    Item {
+    NotchFrame {
+        id: notchFrame
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
-        width: currentWidth + (root.isExpanded ? root.earRadius * 2 : 0)
-        height: currentHeight + 8
+        isExpanded: root.isExpanded
+        currentWidth: root.currentWidth
+        currentHeight: root.currentHeight
+        earRadius: root.earRadius
+        bottomRadius: 26
+        clipContent: false
 
-        // ──────────────────────────────────────────────────────────────────────
-        // SOFT AMBIENT DROP SHADOW (macOS card depth)
-        // ──────────────────────────────────────────────────────────────────────
-        Rectangle {
-            anchors.fill: notchBody
-            anchors.topMargin: 6
-            anchors.bottomMargin: -6
-            anchors.leftMargin: -2
-            anchors.rightMargin: -2
-            radius: 28
-            color: Qt.rgba(0, 0, 0, 0.40)
-            visible: root.isExpanded
-            z: 0
-        }
-
-        // ──────────────────────────────────────────────────────────────────────
-        // TOP CONCAVE FILLET EARS (macOS camera notch seamless integration)
-        // ──────────────────────────────────────────────────────────────────────
-        // Left Ear
-        Shape {
-            anchors.top: parent.top
-            anchors.right: notchBody.left
-            width: root.isExpanded ? root.earRadius : 0
-            height: root.earRadius
-            visible: width > 0
-            z: 1
-
-            ShapePath {
-                fillColor: Theme.notchBackground
-                strokeColor: "transparent"
-                startX: 0
-                startY: 0
-                PathLine { x: root.earRadius; y: 0 }
-                PathLine { x: root.earRadius; y: root.earRadius }
-                PathArc {
-                    x: 0
-                    y: 0
-                    radiusX: root.earRadius
-                    radiusY: root.earRadius
-                    direction: PathArc.Counterclockwise
-                }
-            }
-        }
-
-        // Right Ear
-        Shape {
-            anchors.top: parent.top
-            anchors.left: notchBody.right
-            width: root.isExpanded ? root.earRadius : 0
-            height: root.earRadius
-            visible: width > 0
-            z: 1
-
-            ShapePath {
-                fillColor: Theme.notchBackground
-                strokeColor: "transparent"
-                startX: 0
-                startY: 0
-                PathLine { x: root.earRadius; y: 0 }
-                PathArc {
-                    x: 0
-                    y: root.earRadius
-                    radiusX: root.earRadius
-                    radiusY: root.earRadius
-                    direction: PathArc.Counterclockwise
-                }
-                PathLine { x: 0; y: 0 }
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────────────
-        // MAIN NOTCH BODY (Pure solid deep black, macOS Retina/OLED feel)
-        // ──────────────────────────────────────────────────────────────────────
-        Rectangle {
-            id: notchBody
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: root.currentWidth
-            height: root.currentHeight
-            color: Theme.notchBackground
-            border.color: Theme.notchBorderSubtle
-            border.width: Theme.isDark ? 0 : 1
-            z: 2
-
-            topLeftRadius: root.isExpanded ? 0 : (height / 2)
-            topRightRadius: root.isExpanded ? 0 : (height / 2)
-            bottomLeftRadius: root.isExpanded ? 26 : (height / 2)
-            bottomRightRadius: root.isExpanded ? 26 : (height / 2)
-
-            Behavior on topLeftRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-            Behavior on topRightRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-
-            LayoutMirroring.enabled: I18n.isRTL
-            LayoutMirroring.childrenInherit: true
-
-            // ──────────────────────────────────────────────────────────────────
-            // COMPACT MODE — Click to expand
-            // ──────────────────────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────────
+        // COMPACT MODE — Click to expand
+        // ──────────────────────────────────────────────────────────────────
             Item {
                 anchors.fill: parent
                 visible: !root.isExpanded
@@ -454,5 +362,4 @@ PanelWindow {
                 }
             }
         }
-    }
 }
