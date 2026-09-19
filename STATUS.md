@@ -223,8 +223,89 @@
 
 ---
 
-## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
-*(مستخرج مباشرة من سجل Git الفعلي لآخر 20 commit)*:
+## 6. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
+*(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
+- **المهام المنجزة والمثبتة في HEAD**:
+  - **تطبيق ثيم DeloWay على برامج النظام (GTK 3.0 / GTK 4.0 / Libadwaita / Electron / Chromium)**:
+    - **المرحلة 1 (الحماية والنسخ الاحتياطي)**: تم حفظ نسخة احتياطية كاملة ودائمة لملفات `~/.config/gtk-3.0` و `gtk-4.0` و `gsettings` في `~/.config/deloway/backups/original/`، وتوفير سكربت استرجاع فوري `scripts/restore-system-theme.sh` مع دعم `--dry-run`، وإضافة مفتاح تحكم اختياري `applySystemTheme` في إعدادات الواجهة (`AppearanceTab.qml`) مع ترجمة كاملة للعربية والإنجليزية (`4982d64`).
+    - **المرحلة 2 (تنظيف الألوان الثابتة وتوسيع التوكنز)**: استبدال كافة الألوان الصلبة (Hardcoded) في `NotchHome.qml` و `NotchNotifications.qml` و `NotchLocalSend.qml` و `TraditionalDesktop.qml` و `DockTab.qml` بتوكنز `Theme` الدلالية، وإضافة توكنز التكيف اللوني (`musicBadge`, `calendarPast`, `calendarFuture`) في `Theme.qml` (`4e21ce7`).
+    - **المرحلة 3 (محرك الثيم الخارجي `deloway-theme-apply.py`)**: فصل توليد ملفات الثيم إلى سكربت بايثون مستقل ينفذ عمليات كتابة ذرية (Atomic Writes)، ويدعم وضع المعاينة `--dry-run`، ويقرأ الخطوط (`Google Sans Flex Medium 11`) والأيقونات (`Reversal-dark`) والمؤشرات (`default`) من `gsettings` للمضيف كمصدر وحيد للحقيقة، وتوليد ملفات `gtk.css` و `settings.ini` لكل من GTK 3 و GTK 4، وتوليد `theme.json` متكامل من `ConfigManager.qml` (`728c600`).
+    - **المرحلة 4 (التحقق من تطبيقات Electron/Chromium والتقرير الفني لـ Qt)**: التحقق من توافقية برامج Brave و VSCodium و Discord مع `color-scheme`، وتوثيق معمارية وخطوات ثيم برامج Qt المستقبلية دون المساس بالملفات.
+  - **مشغل الموسيقى المستمر في النوتش (MPRIS Persistence)**: تم ربط ظهور المشغل بوجود مصدر الموسيقى (`hasPlayer`) بدلاً من حالة التشغيل اللحظية (`isMusicPlaying`)، ليبقى ظاهراً بكامل تفاصيله عند الإيقاف المؤقت (Paused)، مع تمكين زر التشغيل من استئناف العزف، ولا يختفي إلا عند إغلاق التطبيق كلياً (`c3e91b0`).
+  - **نافذة الإعدادات العائمة متعددة المهام (`SettingsAppV2.qml`)**: نافذة عائمة قابلة للسحب والتحريك بحرية، مع إزالة حجب النقرات الخارجية وتطبيق قناع `Region` لتتيح العمل جنباً إلى جنب مع التطبيقات الأخرى (Multitasking)، ودعم التبديل السلس بين الحجم العائم وملء الشاشة (`f7d44e6`).
+  - **توحيد شكل وهندسة النوتش والكبسولة (`NotchFrame.qml`)**: استخراج المكون المشترك وتوحيد التصاق الكبسولة والنوتش بسقف الشاشة مع نفس الأذنين (18px) والزوايا السفلية (26px) والظل الناعم (`373c94d`).
+  - **توسيط تبويبات النوتش وتعريبها**: توسيط شريط التبويبات الموسعة هندسياً وفصل زر الترس، وتحديث مسميات التبويبات (Home / الرئيسية، Share / مشاركة، Notifications / الإشعارات) مع دعم كامل للغتين عبر `I18n.qml` (`d089ff5`, `a1976fe`).
+- **ملفات قيد التطوير / معدلة وموجودة على القرص بانتظار مهامها المخصصة**:
+  - `shell/components/SystemTrayIndicators.qml` (غير متتبع بعد): مكوّن تطبيقات الخلفية الجاهز والمحذوف منه الـ tooltip المكسور، بانتظار الـ commit المستقل.
+  - `shell/components/settings/tabs/WindowsTab.qml`: تبويب النوافذ ضمن هيكلة تطبيق الإعدادات الجديد `SettingsAppV2`.
+  - `shell/components/NotchLocalSend.qml` و `scripts/deloway-localsend.py` و `LocalSendService.qml`: تكامل سحب وإفلات الملفات لنقلها عبر LocalSend المدمج بالنوتش.
+  - `shell/components/desktop/DesktopContextMenu.qml`: تحسينات شبكة سطح المكتب وتوحيد مقاييس القائمة المنبثقة.
+  - `config/hyprland.conf`: إعدادات نوافذ Hyprland وتنسيق الحدود.
+
+---
+
+## 7. سجل القرارات المعمارية والتقارير الفنية (Architectural Decision Records - ADR & Technical Reports)
+
+### أ) ADR-001: فصل محرك تطبيق الثيم إلى سكربت خارجي (`scripts/deloway-theme-apply.py`)
+- **السياق**: كان `ConfigManager.qml` يولد نصوص CSS و INI ضخمة تصل لأكثر من 160 سطراً عبر سلاسل نصية مدمجة (Inline Bash Script) تُمرر إلى `Process`.
+- **القرار**: فصل المنطق بالكامل إلى سكربت بايثون تنفيذي مستقل `scripts/deloway-theme-apply.py` يستقبل `theme.json`، مع تفويض `ConfigManager.qml` لتحديث `theme.json` فقط ثم استدعاء المحرك.
+- **الأسباب والمزايا المعمارية**:
+  1. **الكتابة الذرية (Atomic Writes)**: استخدام ملف مؤقت (`.tmp.<pid>`) ثم النقل الفوري بـ `os.replace` يمنع كلياً تلف أو قصور ملفات تكوين المستخدم في حال تعطل العملية أو انقطاع الطاقة.
+  2. **التحديث المشروط الذكي (Diff-aware & Idempotent)**: فحص محتوى الملفات الموجودة على القرص قبل الكتابة، وعدم كتابة أي بايت أو استدعاء `gsettings set` إلا عند وجود اختلاف حقيقي، لتجنب عمليات I/O الزائدة وتفادي إعادة تحميل واجهات GTK بلا داعٍ.
+  3. **دعم وضع المعاينة الجافة (`--dry-run`)**: توفير إمكانية تشغيل المحرك من الطرفية لمعاينة ما سيتم تطبيقه وكتابته بالتفصيل دون المساس بأي ملف على القرص.
+  4. **الحفاظ على إعدادات المضيف كمصدر وحيد للحقيقة**: قراءة قيم الخطوط (`font-name`) والأيقونات (`icon-theme`) والمؤشرات (`cursor-theme`) لحظياً من `gsettings` وتثبيتها، بدلاً من افتراض قيم ثابتة غير دقيقة قد تفسد مظهر بيئة المستخدم.
+  5. **تحرير مسار واجهة المستخدم (UI Thread)**: نقل معالجة السلاسل النصية وحسابات الألوان من بيئة QML إلى عملية خارجية خفيفة وسريعة.
+
+### ب) التقرير الفني: سلوك وتوافقية تطبيقات Electron / Chromium مع ثيم DeloWay
+1. **Brave Browser (`/usr/bin/brave`)**:
+   - **السلوك**: يتبع تلقائياً قيمة `org.gnome.desktop.interface color-scheme` عبر XDG Desktop Portal و GSettings.
+   - **واجهة المتصفح**: عند ضبط خيار "Brave colors" على "Same as Windows/System" (في `brave://settings/appearance`)، تنعكس ألوان القوائم وأشرطة الأدوات فوراً بين الفاتح والداكن.
+   - **محتوى الويب**: مواقع الويب التي تدعم استعلام الميديا `@media (prefers-color-scheme: dark/light)` تستجيب فورياً.
+   - **المعاملات الإضافية**: لا يحتاج أي flags إضافية في الوضع العادي. خيار `--enable-features=WebContentsForceDark` لا يُنصح به افتراضياً لأنه يعكس ألوان المواقع قسرياً حتى لو كانت غير مهيأة.
+2. **VSCodium (`/usr/bin/vscodium`)**:
+   - **السلوك**: مبني على Electron الحديث ويدعم الاستماع المباشر لـ `color-scheme` عبر Portal و GSettings.
+   - **الإعدادات**: يتضمن إعداداً افتراضياً `"window.autoDetectColorScheme": true`. عند تغيير النظام إلى الداكن أو الفاتح، ينتقل محرر الأكواد تلقائياً بين الثيم الداكن المفضل (`workbench.preferredDarkColorTheme`) والثيم الفاتح المفضل (`workbench.preferredLightColorTheme`).
+3. **Discord (`/usr/bin/discord`)**:
+   - **السلوك**: تطبيق Discord على نظام Linux يعتمد إصداراً خاصاً من Electron.
+   - **الإعدادات**: في قائمة `User Settings -> Appearance -> Theme`، عند اختيار "Sync with computer"، يتبع ثيم النظام. وفي حال عدم الاستجابة الفورية، يتطلب إعادة تشغيل التطبيق ليقرأ `color-scheme` المحدث.
+
+### ج) التقرير الفني: خارطة طريق تطبيق ثيم DeloWay على تطبيقات Qt (`pavucontrol-qt`, `RPCS3`)
+- **الواقع الحالي للنظام**:
+  - تطبيقات Qt المثبتة: `pavucontrol-qt` (`/usr/bin/pavucontrol-qt`)، `RPCS3` (`/home/waleed/.local/bin/rpcs3`).
+  - الأدوات غير المثبتة: `qt5ct`، `qt6ct`، `kvantummanager`.
+  - متغيرات البيئة: `QT_QPA_PLATFORMTHEME` و `QT_STYLE_OVERRIDE` غير معينة حالياً، مما يجعل تطبيقات Qt تستخدم مظهر Qt الافتراضي (Fusion أو Breeze المشتق من نمط النظام).
+- **خيارات التنفيذ المستقبلية (مكتوبة فقط دون أي تعديل فعلي على النظام)**:
+  1. **الخيار الأول (الموصى به - خفيف ومباشر): `qt6ct` / `qt5ct` مع باليت ألوان مخصصة**:
+     - *آلية العمل*: تثبيت حزمتي `qt5ct` و `qt6ct`، وتعيين `QT_QPA_PLATFORMTHEME=qt6ct` في بيئة جلسة Hyprland.
+     - *التكامل مع DeloWay*: إضافة دالة في `deloway-theme-apply.py` لتوليد ملف باليت ألوان مخصص `~/.config/qt6ct/colors/deloway.conf` يستمد ألوانه من `theme.json` (الخلفية `#101318`، السطح `#1b202c`، الـ Accent `#0ea5e9` للداكن ومقابلاتها للفاتح)، وتعيين اسم الباليت في `~/.config/qt6ct/qt6ct.conf`.
+     - *الميزات*: يدعم تطبيقات Qt5 و Qt6 معاً، تحكم كامل بالألوان والخطوط بدون استهلاك موارد، خالي من أي تعارضات مع بيئة المضيف.
+  2. **الخيار الثاني: محرك Kvantum (`kvantummanager`)**:
+     - *آلية العمل*: تعيين `QT_STYLE_OVERRIDE=kvantum` وإنشاء ثيم مخصص `DeloWay.kvconfig` و `DeloWay.svg`.
+     - *الميزات*: يتيح مؤثرات بصرية متقدمة مثل زوايا النوافذ المنحنية، والشفافية مع الـ Blur في نوافذ Qt.
+     - *السلبيات*: يتطلب حزمة إضافية كبيرة وملفات SVG معقدة، وقد يسبب ثقلاً أو تشوهات مع بعض برامج المحاكاة مثل RPCS3.
+  3. **الخيار الثالث: توليد ملف `~/.config/kdeglobals` مباشرة**:
+     - *آلية العمل*: كتابة أقسام `[Colors:Window]` و `[Colors:View]` و `[Colors:Button]` و `[Colors:Selection]` في `~/.config/kdeglobals` مباشرة.
+     - *الميزات*: تقرأه معظم تطبيقات Qt الحديثة (Qt 6) و KF6 بدون وسيط.
+     - *التوصية*: اعتماد الخيار الأول (`qt6ct` + باليت مخصص) في المرحلة المستقبلية كحل قياسي موثوق.
+
+### د) التحديات التقنية السابقة المثبتة
+1. **استمرارية ظهور مشغل الموسيقى وتعدد المشغلات (MPRIS Persistence & Player Priority)**:
+   - تم حل مشكلة اختفاء المشغل عند الإيقاف المؤقت (Paused) عبر دالة `updateActivePlayer()` التفاعلية مع `Instantiator` لمراقبة تغيرات حالة التشغيل (`isPlaying`, `playbackState`).
+2. **التصاق الكبسولة الموسعة بسقف الشاشة (Ceiling Attachment & Geometry)**:
+   - تم حل الفراغ العلوي (8px gap) واعتماد المكون الموحد `NotchFrame` لضمان أن كلاً من النوتش والكبسولة يخرجان بسلاسة من سقف الشاشة مع نفس الأذنين المنحنيتين وزوايا الحواف.
+3. **التعامل مع الـ Popups المنبثقة من Layer-Shell**:
+   - بروتوكول `wlr_layer_shell_v1` يقيد أحياناً ارتباط قوائم `xdg_popup` به إذا لم يتم تمرير التركيز وإدارته عبر `HyprlandFocusGrab` بشكل صريح.
+4. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
+   - قصر التحكم على استدعاءات `hyprctl dispatch` الآمنة وتجنب `hyprctl repl` أو تقييم دوال Lua عشوائية.
+
+---
+
+## 8. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
+*(مستخرج مباشرة من سجل Git الفعلي)*:
+* `728c600` - feat(theme): add deloway-theme-apply.py engine and integrate with ConfigManager (2026-09-19)
+* `4e21ce7` - refactor(theme): replace hardcoded colors with Theme tokens across Notch, Desktop, and Dock (2026-09-19)
+* `4982d64` - feat(theme): add system theme backup, restore script, and applySystemTheme toggle (2026-09-19)
+* `08b2d8a` - docs: update STATUS.md changelog and state for persistent music player (2026-09-19)
 * `c3e91b0` - fix(notch): keep music player visible on pause and bind viewMode to player presence (2026-09-19)
 * `f7d44e6` - feat(settings): make settings window draggable, resizable to fullscreen, and allow side-by-side multitasking (2026-09-19)
 * `c15d1b3` - docs: update STATUS.md changelog, active state, and architecture map for NotchFrame and tabs (2026-09-19)
@@ -241,53 +322,21 @@
 * `d916a9d` - fix(drawer): bind typography and dimensions dynamically to font scale (2026-09-17)
 * `ae7f825` - fix(settings): add inset hover capsule and resolve RTL alignment (2026-09-17)
 * `59b229e` - feat(settings): add common components library (Section, Row, Toggle) (2026-09-16)
-* `8cde84a` - style(settings): elevate visual identity with pill capsules, OLED black, and glowing active states (2026-09-16)
-* `5ce240b` - refactor: wire SettingsAppV2 and remove legacy SettingsApp (2026-09-16)
-* `d90b9d4` - refactor: remove expandedContentReady — expanded view now shows/fades directly with isExpanded (2026-09-16)
-* `d046548` - fix: decouple scroll-wheel from App Drawer on Notch/QuickSettingsCapsule — wheel now expands/collapses each surface itself; App Drawer scroll-control stays Dock-only (2026-09-16)
 
 ---
 
-## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
-*(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
-- **المهام المنجزة والمثبتة في HEAD**:
-  - تم حل مشكلة اختفاء مشغل الموسيقى في النوتش (الكبسولة الوسطى) عند الإيقاف المؤقت؛ تم ربط ظهور المشغل بوجود مصدر الموسيقى (`hasPlayer`) بدلاً من حالة التشغيل اللحظية (`isMusicPlaying`). يبقى المشغل ظاهراً بكامل تفاصيله (الغلاف، العنوان، وأزرار التحكم) عند الإيقاف المؤقت (Paused)، مع تمكين زر التشغيل من استئناف العزف، ولا يختفي إلا عند إغلاق التطبيق كلياً أو اختفاء المشغل من Mpris. تم تطبيق نفس السلوك في الوضعين المصغر والموسع، وضمان عدم قفز المشغل عشوائياً عند وجود أكثر من مشغل.
-  - تم تحسين نافذة الإعدادات (`SettingsAppV2.qml`) لتصبح نافذة عائمة قابلة للسحب والتحريك بحرية بسلاسة تامة، مع إزالة حجب النقرات الخارجية وتطبيق قناع `Region` لتتيح العمل جنباً إلى جنب مع التطبيقات الأخرى (Multitasking)، ودعم التبديل السلس بين الحجم العائم وملء الشاشة (Fullscreen Toggle & Restore) عبر النقر المزدوج على شريط العنوان أو زر التكبير أو الاختصارات.
-  - تم استخراج المكون المشترك `shell/components/NotchFrame.qml` وتوحيد شكل وهندسة الكبسولة السريعة والنوتش بالكامل (الالتصاق بسقف الشاشة، الأذنان العلويتان 18px، الزوايا السفلية 26px، والظل الناعم).
-  - تم توسيط شريط التبويبات الموسعة في `Notch.qml` هندسياً في المنتصف وفصل زر الترس على الحافة الجانبية.
-  - تم تحديث مسميات التبويبات الثلاثة (Home / الرئيسية، Share / مشاركة، Notifications / الإشعارات) مع دعم كامل للغتين عبر `I18n.qml`.
-- **ملفات قيد التطوير / معدلة وموجودة على القرص بانتظار مهامها المخصصة**:
-  - `shell/components/SystemTrayIndicators.qml` (غير متتبع بعد): مكوّن تطبيقات الخلفية الجاهز والمحذوف منه الـ tooltip المكسور، بانتظار الـ commit المستقل.
-  - `shell/components/settings/tabs/DockTab.qml` و `WindowsTab.qml`: التبويبات المكتملة ضمن هيكلة تطبيق الإعدادات الجديد `SettingsAppV2`.
-  - `shell/components/NotchLocalSend.qml` و `scripts/deloway-localsend.py` و `LocalSendService.qml`: تكامل سحب وإفلات الملفات لنقلها عبر LocalSend المدمج بالنوتش.
-  - `shell/components/desktop/DesktopContextMenu.qml` و `TraditionalDesktop.qml`: تحسينات شبكة سطح المكتب وتوحيد مقاييس القائمة المنبثقة.
-  - `shell/services/ConfigManager.qml` و `Theme.qml`: دعم تبديل مقاييس الخط والأوضاع اللونية.
-
----
-
-## 8. المشاكل المعروفة والتحديات التقنية (Known Issues & Technical Constraints)
-1. **استمرارية ظهور مشغل الموسيقى وتعدد المشغلات (MPRIS Persistence & Player Priority)**:
-   - تم حل مشكلة اختفاء المشغل عند الإيقاف المؤقت (Paused) عبر اعتماد دالة `updateActivePlayer()` التفاعلية مع `Instantiator` لمراقبة تغيرات حالة التشغيل (`isPlaying`, `playbackState`) لكافة المشغلات. الأولوية للمشغل الذي يعمل حالياً، وإذا توقف مؤقتاً يتم الاحتفاظ به كـ `activePlayer` دون الانتقال العشوائي لأي مشغل خامل آخر. يختفي المشغل ويعود النوتش لحالة الخمول (`idle`) فقط عند انعدام أي مشغل نشط على D-Bus.
-2. **التصاق الكبسولة الموسعة بسقف الشاشة (Ceiling Attachment & Geometry)**:
-   - تم حل مشكلة الفراغ العلوي (8px gap) في الكبسولة الموسعة عبر إزالة إزاحة `currentY` وضبط `margins.top: root.isExpanded ? 0 : 10`، واعتماد المكون الموحد `NotchFrame` لضمان أن كلاً من النوتش والكبسولة يخرجان بسلاسة تامة من سقف الشاشة مع نفس الأذنين المنحنيتين وزوايا الحواف.
-3. **التعامل مع الـ Popups المنبثقة من Layer-Shell**:
-   - بروتوكول `wlr_layer_shell_v1` يقيد أحياناً ارتباط قوائم `xdg_popup` به إذا لم يتم تمرير التركيز وإدارته عبر `HyprlandFocusGrab` بشكل صريح، مما كان يسبب بقاء القوائم معلقة عند النقر بالخارج (تم حلها وتثبيتها في `DockContextMenu`).
-4. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
-   - إرسال أوامر عبر `hyprctl repl` أو تقييم دوال Lua عشوائية على جلسة المضيف قد يؤدي لـ SIGSEGV ودخول Compositor المضيف في وضع الأمان (`--safe-mode`). يجب قصر التحكم على استدعاءات `hyprctl dispatch` الآمنة.
-5. **أيقونات تطبيقات التراي الخارجية**:
-   - بعض تطبيقات التراي الخارجية ترسل مسارات أيقونات نقطية (Pixmaps) أو أسماء لا تطابق نسق Symbolic. يعتمد `SystemTrayIndicators` على مكوّن `Image` المباشر بدلاً من `SymbolicIcon` لتجنب فشل التحميل.
-
----
-
-## 9. خارطة الطريق والمهام القادمة (Roadmap & Next Steps)
-1. **تثبيت مهمة أيقونات التراي**:
+## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
+1. **تطبيق ثيم DeloWay على تطبيقات Qt (Qt Theming Integration)**:
+   - دعم الخيار الموصى به عبر `qt6ct` / `qt5ct` أو `kdeglobals` لتطبيق باليت ألوان DeloWay للوضعين الداكن والفاتح على تطبيقات Qt مثل `pavucontrol-qt` و `RPCS3` دون المساس بإعدادات المضيف.
+2. **تثبيت مهمة أيقونات التراي**:
    - عمل Commit مخصص لملف `SystemTrayIndicators.qml`:
      `fix: remove broken clipped tooltip causing black line artifact under system tray icons`
-2. **استكمال وتثبيت تبويبات الإعدادات**:
+3. **استكمال وتثبيت تبويبات الإعدادات**:
    - مراجعة وتثبيت `DockTab.qml` و `WindowsTab.qml` ودمجهما بالكامل في `SettingsAppV2`.
-3. **إتمام تكامل LocalSend في النوتش**:
+4. **إتمام تكامل LocalSend في النوتش**:
    - تثبيت ودعم سحب الملفات (Drag & Drop) إلى تبويب Share (Tray سابقاً) داخل النوتش لبدء إرسالها الفوري عبر الشبكة المحلية.
-4. **تكامل Syncthing**:
+5. **تكامل Syncthing**:
    - إعداد ومزامنة المجلدات المحلية ومراقبة حالة المزامنة اللحظية عبر كبسولة أو تبويب مخصص.
-5. **الفحص الشامل لاتجاه RTL والترجمة العربية**:
+6. **الفحص الشامل لاتجاه RTL والترجمة العربية**:
    - مراجعة كافة المحاذاة الأفقية للتأكد من أن جميع الحاويات والنصوص تنعكس تلقائياً بدقة عند اختيار اللغة العربية.
+
