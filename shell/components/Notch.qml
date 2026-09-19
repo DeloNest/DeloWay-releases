@@ -168,140 +168,144 @@ PanelWindow {
                             }
                         }
 
+                        // Expanded Tabs Row — centered horizontally in the Notch header
                         RowLayout {
-                            anchors.fill: parent
+                            id: notchTabsRow
+                            anchors.centerIn: parent
                             spacing: 6
                             LayoutMirroring.enabled: false
                             LayoutMirroring.childrenInherit: true
 
-                        // Tab 1: Nook
-                        Rectangle {
-                            implicitWidth: tab0Row.implicitWidth + 18
-                            implicitHeight: 24
-                            radius: 12
-                            color: swipeView.currentIndex === 0
-                                   ? Theme.notchSurfaceActive
-                                   : (tab0Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            // Tab 1: Nook
+                            Rectangle {
+                                implicitWidth: tab0Row.implicitWidth + 18
+                                implicitHeight: 24
+                                radius: 12
+                                color: swipeView.currentIndex === 0
+                                       ? Theme.notchSurfaceActive
+                                       : (tab0Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
-                            RowLayout {
-                                id: tab0Row
-                                anchors.centerIn: parent
-                                spacing: 6
+                                RowLayout {
+                                    id: tab0Row
+                                    anchors.centerIn: parent
+                                    spacing: 6
 
-                                SymbolicIcon {
-                                    source: "notch-nook"
-                                    iconSize: 13
-                                    iconColor: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
+                                    SymbolicIcon {
+                                        source: "notch-nook"
+                                        iconSize: 13
+                                        iconColor: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+
+                                    Text {
+                                        text: "Nook"
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal
+                                        color: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
+                                    }
                                 }
 
-                                Text {
-                                    text: "Nook"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal
-                                    color: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
+                                MouseArea {
+                                    id: tab0Ma
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: ShellState.setSmartNotchTab(0)
                                 }
                             }
 
-                            MouseArea {
-                                id: tab0Ma
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ShellState.setSmartNotchTab(0)
+                            // Tab 2: Tray
+                            Rectangle {
+                                implicitWidth: tab1Row.implicitWidth + 18
+                                implicitHeight: 24
+                                radius: 12
+                                color: swipeView.currentIndex === 1
+                                       ? Theme.notchSurfaceActive
+                                       : (tab1Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                RowLayout {
+                                    id: tab1Row
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    SymbolicIcon {
+                                        source: "notch-tray"
+                                        iconSize: 13
+                                        iconColor: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+
+                                    Text {
+                                        text: "Tray"
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: swipeView.currentIndex === 1 ? Font.DemiBold : Font.Normal
+                                        color: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: tab1Ma
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: ShellState.setSmartNotchTab(1)
+                                }
+
+                                DropArea {
+                                    anchors.fill: parent
+                                    onEntered: function(drag) {
+                                        ShellState.setSmartNotchTab(1);
+                                    }
+                                }
+                            }
+
+                            // Tab 3: Notify
+                            Rectangle {
+                                implicitWidth: tabNotifyRow.implicitWidth + 18
+                                implicitHeight: 24
+                                radius: 12
+                                color: swipeView.currentIndex === 2
+                                       ? Theme.notchSurfaceActive
+                                       : (tabNotifyMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                RowLayout {
+                                    id: tabNotifyRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    SymbolicIcon {
+                                        source: "preferences-system-notifications-symbolic"
+                                        iconSize: 13
+                                        iconColor: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+
+                                    Text {
+                                        text: "Notify"
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: swipeView.currentIndex === 2 ? Font.DemiBold : Font.Normal
+                                        color: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: tabNotifyMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: ShellState.setSmartNotchTab(2)
+                                }
                             }
                         }
 
-                        // Tab 2: Tray
+                        // Settings Icon (⚙) — Decoupled from tabs, anchored to trailing edge
                         Rectangle {
-                            implicitWidth: tab1Row.implicitWidth + 18
-                            implicitHeight: 24
-                            radius: 12
-                            color: swipeView.currentIndex === 1
-                                   ? Theme.notchSurfaceActive
-                                   : (tab1Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                id: tab1Row
-                                anchors.centerIn: parent
-                                spacing: 6
-
-                                SymbolicIcon {
-                                    source: "notch-tray"
-                                    iconSize: 13
-                                    iconColor: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
-                                }
-
-                                Text {
-                                    text: "Tray"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: swipeView.currentIndex === 1 ? Font.DemiBold : Font.Normal
-                                    color: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
-                                }
-                            }
-
-                            MouseArea {
-                                id: tab1Ma
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ShellState.setSmartNotchTab(1)
-                            }
-
-                            DropArea {
-                                anchors.fill: parent
-                                onEntered: function(drag) {
-                                    ShellState.setSmartNotchTab(1);
-                                }
-                            }
-                        }
-
-                        // Tab 3: Notify
-                        Rectangle {
-                            implicitWidth: tabNotifyRow.implicitWidth + 18
-                            implicitHeight: 24
-                            radius: 12
-                            color: swipeView.currentIndex === 2
-                                   ? Theme.notchSurfaceActive
-                                   : (tabNotifyMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                id: tabNotifyRow
-                                anchors.centerIn: parent
-                                spacing: 6
-
-                                SymbolicIcon {
-                                    source: "preferences-system-notifications-symbolic"
-                                    iconSize: 13
-                                    iconColor: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
-                                }
-
-                                Text {
-                                    text: "Notify"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: swipeView.currentIndex === 2 ? Font.DemiBold : Font.Normal
-                                    color: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
-                                }
-                            }
-
-                            MouseArea {
-                                id: tabNotifyMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ShellState.setSmartNotchTab(2)
-                            }
-                        }
-
-                        Item { Layout.fillWidth: true }
-
-                        // Settings Icon (⚙) — Solitary on right, matching reference
-                        Rectangle {
+                            anchors.right: !I18n.isRTL ? parent.right : undefined
+                            anchors.left: I18n.isRTL ? parent.left : undefined
+                            anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24
                             implicitHeight: 24
                             radius: 12
@@ -326,7 +330,6 @@ PanelWindow {
                                 }
                             }
                         }
-                    }
                 }
 
                     // ── TIER 2: Body Content (SwipeView) ──────────────────────
