@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Shapes
 import Quickshell
+import Quickshell.Hyprland
 import "../theme"
 import "../services"
 
@@ -16,6 +17,13 @@ PopupWindow {
 
     color: "transparent"
     visible: false
+    grabFocus: true
+
+    HyprlandFocusGrab {
+        windows: [ root ]
+        active: root.visible
+        onCleared: root.hide()
+    }
 
     anchor {
         window: root.dockWindow
@@ -35,6 +43,7 @@ PopupWindow {
         anchor.updateAnchor();
         visible = true;
         _cardVisible = true;
+        menuCard.forceActiveFocus();
     }
 
     function hide() {
@@ -89,6 +98,9 @@ PopupWindow {
         color: Theme.notchBackground
         border.color: Theme.notchBorder
         border.width: 1
+
+        focus: true
+        Keys.onEscapePressed: root.hide()
 
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
