@@ -225,6 +225,10 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي)*:
+* `478837b` - feat(workspace): phase3+4 — wheel scroll (throttled, no propagation), animate behaviors already in WorkspaceItem (2026-09-20)
+* `0b75c80` - feat(workspace): phase1+2 — WorkspaceIndicator with dots/circles/pill states, AppIcon, OLED tokens (2026-09-20)
+* `6f55691` - fix(quicksettings): phase2 — wifi tile & page reflect wifiAvailable from parser (no hardware = disabled state) (2026-09-20)
+* `39f5558` - fix(quicksettings): phase1 — remove hardcoded colors; QSSliderCard, power button, notchSliderFill tokens (2026-09-20)
 * `aabcd19` - feat(quicksettings): redesign main capsule page with modern pill tiles, header & slider cards (phase 1) (2026-09-20)
 * `084d30c` - fix(notch): fix settings icon placement, remove black line artifacts, enhance hover states, and reduce window spacing (2026-09-20)
 * `2999f02` - fix(shell): configure exclusive zones, margins, and top layer for Notch, Capsule, and Dock (2026-09-20)
@@ -250,118 +254,52 @@
 * `ae7f825` - fix(settings): add inset hover capsule and resolve RTL alignment (2026-09-17)
 * `59b229e` - feat(settings): add common components library (Section, Row, Toggle) (2026-09-16)
 
----
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
-- **المهام المنجزة والمثبتة في HEAD / قيد التثبيت**:
-  - **إعادة تصميم كبسولة الإعدادات السريعة (QuickSettingsCapsule) - المرحلة 1 (الصفحة الرئيسية)**:
-    - **الترويسة (Header)**:
-      - عرض الوقت بخط عريض (22px) مع التاريخ بالعربية والإنجليزية مع التحديث اللحظي (`00:45`، `الأحد، 20 سبتمبر`).
-      - محاذاة أزرار الترس (الإعدادات) والإغلاق/الجلسة (الطاقة بلون الخطر `#ef4444`) في الطرف المقابل للوقت مع عكس الترتيب تلقائياً في RTL/LTR.
-    - **الصف الأول (Row 1)**:
-      - بطاقة Wi-Fi: كبسولة دائرية (64px) مع حلقة أيقونة (40px) وسهم تنقل `›` ومؤشر نشاط باللون التمييزي وحالة الاتصال/عدم الاتصال.
-      - بطاقة Focus / عدم الإزعاج: أيقونة `focus-symbolic` مخصصة، مع تبديل حالة DND بنقرة واحدة وتحديث حالة التفعيل.
-      - زر قفل الشاشة: زر دائري (64px) برمز القفل يستدعي قفل الشاشة الفوري.
-    - **الصف الثاني (Row 2)**:
-      - بطاقة Bluetooth: كبسولة دائرية (64px) مع حلقة أيقونة وسهم تنقل وحالة الاتصال بالأجهزة.
-      - بطاقة Hotspot: كبسولة دائرية (64px) مع أيقونة البث وسهم تنقل وحالة البث وعدد الأجهزة المتصلة.
-      - زر الإضاءة الليلية (Night Light): زر دائري (64px) برمز الهلال يدعم حالة النشاط (تعبئة باللون التمييزي عند التفعيل عبر `hyprsunset`).
-    - **الصفان الثالث والرابع (مزالج الصوت والسطوع)**:
-      - بطاقتان بارتفاع ~84px مع مسار كبسولي سميك (32px) ذي حواف دائرية (16px).
-      - تموضع الأيقونة داخل بداية مسار/تعبئة المزلاج لتتحرك وتبرز مع التعبئة بشكل احترافي.
-      - ظهور نسبة مئوية دقيقة أعلى المزلاج عند السحب أو التحويم.
-      - دعم التعديل عبر عجلة الفأرة بمقدار +/- 5% مع كتم الصوت بنقرة واحدة على أيقونة الصوت.
-      - معادلات رياضية دقيقة لنمو التعبئة والسحب في اتجاهي RTL و LTR دون الاعتماد على unbinding الأنكورس.
-    - **التحقق والاختبار الشامل**:
-      - اجتياز فحص `qmllint` بنجاح 0 أخطاء/تحذيرات لكافة الملفات.
-      - نظافة كاملة لسجلات `qs log` وخلوها من أي أخطاء.
-      - التقاط واختبار لقطات شاشة كاملة للوضعين (الداكن والفاتح) والاتجاهين (العربي والإنجليزي) وبمقاييس الخط (0.85، 1.00، 1.15) مع انعدام تام لأي نصوص مقطوعة.
-  - **إصلاحات الكبسولة الوسطية (Smart Notch) وتقليل تباعد النوافذ**:
-    1. **تصحيح موضع أيقونة الإعدادات (⚙) ومنع تداخلها مع تبويبة الرئيسية**:
-       - *السبب الجذري*: حاوية الترويسة `Item` داخل `ColumnLayout` لم تكن تملك `implicitWidth` أو عرضاً صريحاً، مما جعل `ColumnLayout` يقلص أبعاد الحاوية لحدود عناصرها (`notchTabsRow`)، فأصبحت نقطة `parent.left` تطابق حافة التبويبة الأولى (الرئيسية)، فظهر الترس متداخلاً فوق نص "الرئيسية".
-       - *الحل*: إعطاء `Item` عرضاً صريحاً `implicitWidth: 560` و `Layout.preferredWidth: 560` وربط زر الترس بحافة `parent.right` بهامش 4px، مما فصله تماماً ووضعه في الزاوية اليمنى العلوية للنوتش بشكل مطابق لـ macOS NotchNook.
-    2. **إزالة الخطوط السوداء الغريبة في أجزاء الكبسولة**:
-       - *شريط التقويم*: دالة `substring(0, 1)` على أسماء الأيام بالعربية ("إثنين"، "أربعاء") كانت تُنتج حرف الألف المفرد `ا` الخالي من النقاط أو الهمزات، والذي يظهر في خطوط العرض كخط رأسي أسود مشوه `|` بين الأرقام. تم حلها باعتماد اختصارات قياسية ثنائية الحروف في `getDaysStrip()`: `["أح", "إث", "ثل", "أر", "خم", "جم", "سب"]`.
-       - *مشغل الموسيقى*: استبدال الرموز النصية `|◀` و `▶|` التي تحوي رمز الأنبوب `|` بأيقونات SVG رمزية موحدة عبر `SymbolicIcon` (`media-skip-backward-symbolic`, `media-playback-pause-symbolic`, `media-skip-forward-symbolic`).
-    3. **تصحيح وتوحيد تأثيرات التحويم (Hover Effects)**:
-       - إضافة حاويات دائرية ناعمة (26-28px) لأزرار مشغل الموسيقى الموسع مع تلوين الخلفية بـ `Theme.notchSurfaceHover` وحركة انتقالية سريعة.
-       - إزالة الإطار الخشن (1px border) الذي كان يظهر عند التحويم على أزرار مساحات العمل في النوتش المصغر وجعل `border.color: "transparent"` لتفادي الوميض الحاد.
-       - تمييز نصوص وأيقونات التبويبات في النوتش الموسع بلون `Theme.notchText` عند التحويم حتى للتبويبات غير المفعلة.
-    4. **تقليل تباعد النوافذ أسفل الشريط العلوي**:
-       - تخفيض `topBarGap` في `Theme.qml` من `8px` إلى `0px`، مما خفض إجمالي الحجز من `62px` إلى `54px` (مطابق لارتفاع الشريط العلوي 44px + هامش 10px).
-       - مع إضافة هامش النوافذ الخارجي في Hyprland (`gaps_out = 5`)، أصبحت النوافذ تبدأ من `y = 59px` (فراغ 5px متناسق تماماً تحت النوتش المصغر الذي ينتهي عند `y = 54px`).
-  - **تطبيق ثيم DeloWay على برامج النظام (GTK 3.0 / GTK 4.0 / Libadwaita / Electron / Chromium)**:
-    - **المرحلة 1 (الحماية والنسخ الاحتياطي)**: تم حفظ نسخة احتياطية كاملة ودائمة لملفات `~/.config/gtk-3.0` و `gtk-4.0` و `gsettings` في `~/.config/deloway/backups/original/`، وتوفير سكربت استرجاع فوري `scripts/restore-system-theme.sh` مع دعم `--dry-run`، وإضافة مفتاح تحكم اختياري `applySystemTheme` في إعدادات الواجهة (`AppearanceTab.qml`) مع ترجمة كاملة للعربية والإنجليزية (`4982d64`).
-    - **المرحلة 2 (تنظيف الألوان الثابتة وتوسيع التوكنز)**: استبدال كافة الألوان الصلبة (Hardcoded) في `NotchHome.qml` و `NotchNotifications.qml` و `NotchLocalSend.qml` و `TraditionalDesktop.qml` و `DockTab.qml` بتوكنز `Theme` الدلالية، وإضافة توكنز التكيف اللوني (`musicBadge`, `calendarPast`, `calendarFuture`) في `Theme.qml` (`4e21ce7`).
-    - **المرحلة 3 (محرك الثيم الخارجي `deloway-theme-apply.py`)**: فصل توليد ملفات الثيم إلى سكربت بايثون مستقل ينفذ عمليات كتابة ذرية (Atomic Writes)، ويدعم وضع المعاينة `--dry-run`، ويقرأ الخطوط (`Google Sans Flex Medium 11`) والأيقونات (`Reversal-dark`) والمؤشرات (`default`) من `gsettings` للمضيف كمصدر وحيد للحقيقة، وتوليد ملفات `gtk.css` و `settings.ini` لكل من GTK 3 و GTK 4، وتوليد `theme.json` متكامل من `ConfigManager.qml` (`728c600`).
-    - **المرحلة 4 (التحقق من تطبيقات Electron/Chromium والتقرير الفني لـ Qt)**: التحقق من توافقية برامج Brave و VSCodium و Discord مع `color-scheme`، وتوثيق معمارية وخطوات ثيم برامج Qt المستقبلية دون المساس بالملفات (`b13a75e`).
-  - **ضبط حجز المساحة (Exclusive Zones) والطبقات للشريط العلوي والدوك**:
-    - حل مشكلة تغطية النوتش والكبسولة لشريط تبويبات النوافذ بتعيين `exclusiveZone` ثابت في `Notch.qml` يضمن حجز 62px في أعلى الشاشة (`44px` ارتفاع النوتش المصغر + `10px` هامش علوي + `8px` فراغ تنفسي).
-    - منع ازدواجية الحجز بجعل الكبسولة (`QuickSettingsCapsule.qml`) في وضع `ExclusionMode.Ignore` لمشاركة نفس المساحة العلوية المحجوزة.
-    - ثبات النوافذ التام ومنع قفزها عند توسيع النوتش أو الكبسولة عبر معادلة تعويضية ذكية تحافظ على قيمة 62px المحجوزة بدقة دون أي حركة للنوافذ الخلفية.
-    - تصحيح الفراغ الكبير فوق الدوك بفصل قيمة الحجز عن ارتفاع النافذة الكامل (`implicitHeight: dockH + 46`)، وضبط `exclusiveZone` على الارتفاع الفعلي عبر توكن `Theme.dockExclusiveZoneFor(dockH)` ليحجز 86px فقط (68px كبسولة + 10px هامش + 8px فراغ) بدلاً من 124px المتضخمة سابقاً.
-    - تحويل طبقة النوتش والكبسولة من `WlrLayer.Overlay` إلى `WlrLayer.Top` لضمان اختفائهما التام تحت مقاطع الفيديو والتطبيقات بملء الشاشة (Fullscreen).
-  - **مشغل الموسيقى المستمر في النوتش (MPRIS Persistence)**: تم ربط ظهور المشغل بوجود مصدر الموسيقى (`hasPlayer`) بدلاً من حالة التشغيل اللحظية (`isMusicPlaying`)، ليبقى ظاهراً بكامل تفاصيله عند الإيقاف المؤقت (Paused)، مع تمكين زر التشغيل من استئناف العزف، ولا يختفي إلا عند إغلاق التطبيق كلياً (`c3e91b0`).
-  - **نافذة الإعدادات العائمة متعددة المهام (`SettingsAppV2.qml`)**: نافذة عائمة قابلة للسحب والتحريك بحرية، مع إزالة حجب النقرات الخارجية وتطبيق قناع `Region` لتتيح العمل جنباً إلى جنب مع التطبيقات الأخرى (Multitasking)، ودعم التبديل السلس بين الحجم العائم وملء الشاشة (`f7d44e6`).
-  - **توحيد شكل وهندسة النوتش والكبسولة (`NotchFrame.qml`)**: استخراج المكون المشترك وتوحيد التصاق الكبسولة والنوتش بسقف الشاشة مع نفس الأذنين (18px) والزوايا السفلية (26px) والظل الناعم (`373c94d`).
-  - **توسيط تبويبات النوتش وتعريبها**: توسيط شريط التبويبات الموسعة هندسياً وفصل زر الترس، وتحديث مسميات التبويبات (Home / الرئيسية، Share / مشاركة، Notifications / الإشعارات) مع دعم كامل للغتين عبر `I18n.qml` (`d089ff5`, `a1976fe`).
-- **ملفات قيد التطوير / معدلة وموجودة على القرص بانتظار مهامها المخصصة**:
-  - `shell/components/SystemTrayIndicators.qml` (غير متتبع بعد): مكوّن تطبيقات الخلفية الجاهز والمحذوف منه الـ tooltip المكسور، بانتظار الـ commit المستقل.
-  - `shell/components/settings/tabs/WindowsTab.qml`: تبويب النوافذ ضمن هيكلة تطبيق الإعدادات الجديد `SettingsAppV2`.
-  - `shell/components/NotchLocalSend.qml` و `scripts/deloway-localsend.py` و `LocalSendService.qml`: تكامل سحب وإفلات الملفات لنقلها عبر LocalSend المدمج بالنوتش.
-  - `shell/components/desktop/DesktopContextMenu.qml`: تحسينات شبكة سطح المكتب وتوحيد مقاييس القائمة المنبثقة.
-  - `config/hyprland.conf`: إعدادات نوافذ Hyprland وتنسيق الحدود.
+- **المهام المنجزة والمثبتة في HEAD**:
+  - **مؤشر مساحات العمل الديناميكي (WorkspaceIndicator) — مكتمل (commits 0b75c80, 478837b)**:
+    - مكوّنان جديدان: `WorkspaceIndicator.qml` (منسق البيانات) و `WorkspaceItem.qml` (الشكل الفردي).
+    - ثلاث حالات بصرية: نقطة 6px (فارغة) ← دائرة 28px بأيقونة AppIcon (مشغولة) ← كبسولة 36×32px (نشطة).
+    - بيانات event-driven: `ToplevelManager.toplevels.values → .handle → HyprlandToplevel.workspace.id`.
+    - عجلة الفأرة throttled (300ms)، `wheel.accepted = true` يمنع propagation للنوتش.
+    - 14 توكن جديدة في `Theme.qml` بقيمتين (داكن/فاتح): wsDotSize, wsCircleSize, wsPillWidth/Height, wsIconSize, wsBadgeSize, wsIndicatorSpacing, wsActiveBg/Text, wsOccupiedBg, wsEmptyBg.
+    - أداء: CPU مستقر 11.7% ← 11.6% بعد 8 تبديلات متتالية. صفر أخطاء `qs log`.
+  - **إصلاح ألوان كبسولة الإعدادات السريعة (commits 39f5558, 6f55691)**:
+    - إزالة كل الألوان الصلبة. Wi-Fi tile تعرض "غير متوفر" عند `WIFI-HW: missing`.
+  - **تصميم كبسولة الإعدادات السريعة - المرحلة 1 (commit aabcd19)**:
+    - ترويسة الوقت، كبسولات Wi-Fi/Focus/Lock/BT/Hotspot/NightLight، مزالج الصوت والسطوع.
+  - **إصلاحات Smart Notch وتقليل تباعد النوافذ (commit 084d30c)**.
+  - **ثيم DeloWay للنظام GTK/Electron (commits 728c600, b13a75e)**.
+  - **حجز المساحة Exclusive Zones للشريط والدوك (commit 2999f02)**.
+- **ملفات قيد التطوير / بانتظار commit مستقل**:
+  - `shell/components/SystemTrayIndicators.qml`: غير متتبع بعد.
+  - `shell/components/NotchLocalSend.qml` وملفاته: تكامل LocalSend.
 
 ---
 
 ## 8. المشاكل المعروفة والتحديات التقنية وسجل القرارات المعمارية (Known Issues, Technical Constraints & ADR)
 
 ### أ) ADR-001: فصل محرك تطبيق الثيم إلى سكربت خارجي (`scripts/deloway-theme-apply.py`)
-- **السياق**: كان `ConfigManager.qml` يولد نصوص CSS و INI ضخمة تصل لأكثر من 160 سطراً عبر سلاسل نصية مدمجة (Inline Bash Script) تُمرر إلى `Process`.
-- **القرار**: فصل المنطق بالكامل إلى سكربت بايثون تنفيذي مستقل `scripts/deloway-theme-apply.py` يستقبل `theme.json`، مع تفويض `ConfigManager.qml` لتحديث `theme.json` فقط ثم استدعاء المحرك.
-- **الأسباب والمزايا المعمارية**:
-  1. **الكتابة الذرية (Atomic Writes)**: استخدام ملف مؤقت (`.tmp.<pid>`) ثم النقل الفوري بـ `os.replace` يمنع كلياً تلف أو قصور ملفات تكوين المستخدم في حال تعطل العملية أو انقطاع الطاقة.
-  2. **التحديث المشروط الذكي (Diff-aware & Idempotent)**: فحص محتوى الملفات الموجودة على القرص قبل الكتابة، وعدم كتابة أي بايت أو استدعاء `gsettings set` إلا عند وجود اختلاف حقيقي، لتجنب عمليات I/O الزائدة وتفادي إعادة تحميل واجهات GTK بلا داعٍ.
-  3. **دعم وضع المعاينة الجافة (`--dry-run`)**: توفير إمكانية تشغيل المحرك من الطرفية لمعاينة ما سيتم تطبيقه وكتابته بالتفصيل دون المساس بأي ملف على القرص.
-  4. **الحفاظ على إعدادات المضيف كمصدر وحيد للحقيقة**: قراءة قيم الخطوط (`font-name`) والأيقونات (`icon-theme`) والمؤشرات (`cursor-theme`) لحظياً من `gsettings` وتثبيتها، بدلاً من افتراض قيم ثابتة غير دقيقة قد تفسد مظهر بيئة المستخدم.
-  5. **تحرير مسار واجهة المستخدم (UI Thread)**: نقل معالجة السلاسل النصية وحسابات الألوان من بيئة QML إلى عملية خارجية خفيفة وسريعة.
+- **القرار**: سكربت بايثون مستقل يستقبل `theme.json` ويكتب ملفات GTK ذرياً مع `--dry-run`.
 
-### ب) ADR-002: عزل باليت الألوان في `Theme.qml` ومنع تسرب ألوان الوضع الداكن للوضع الفاتح
-- **السياق**: عند قراءة `theme.json` عبر `FileView`، كان يتم دمج كائن `colors` العام مباشرة عبر `Object.assign`، مما قد يفرز قيماً بيضاء على بيضاء في حال كان `theme.json` يحوي ألواناً داكنة ومفتاح `mode: "light"`.
-- **القرار**: تعديل `reloadTheme()` في `Theme.qml` ليختار الباليت الهدف بناءً على `mode` النشط (`parsed.light` للوضع الفاتح و `parsed.dark` للوضع الداكن) قبل الدمج.
+### ب) ADR-002: عزل باليت الألوان في `Theme.qml` ومنع تسرب الألوان بين الوضعين
+- **القرار**: `reloadTheme()` يختار `parsed.light` أو `parsed.dark` بناءً على `mode` النشط.
 
-### ج) التقرير الفني: سلوك وتوافقية تطبيقات Electron / Chromium مع ثيم DeloWay
-1. **Brave Browser (`/usr/bin/brave`)**:
-   - **السلوك الملاحظ فعلياً**: عند تغيير `color-scheme` إلى `prefer-light`، يتغير شريط العنوان وإطار النافذة فوراً. أما صفحة الويب (مثل YouTube) فلا تتغير تلقائياً إلا إذا كان خيار المظهر داخل الموقع مضبوطاً على "حسب الجهاز (Device theme)" بدلاً من خيار يدوي ثابت.
-2. **VSCodium (`/usr/bin/vscodium`)**:
-   - **السلوك الملاحظ فعلياً**: بعد الفحص المخبري لملف `~/.config/VSCodium/User/settings.json`، تبين وجود ثيم مخصص صريح `"workbench.colorTheme": "Abyss"`، وبالتالي لم يتغير المحرر تلقائياً عند تغيير `color-scheme` لأن إعداد `"window.autoDetectColorScheme"` غير مفعل.
-3. **Discord (`/usr/bin/discord`)**:
-   - **السلوك الملاحظ فعلياً**: يعتمد إصدار Electron خاصاً على لينكس ومثبت في `settings.json` على `"BACKGROUND_COLOR": "#121214"`.
+### ج) ADR-003: WorkspaceIndicator يستخدم ToplevelManager لا Hyprland.toplevels (IPC)
+- **السبب**: `ToplevelManager.toplevels` (Wayland) يوفر `appId` للأيقونات. الربط الصحيح: `WlrToplevel.handle → HyprlandToplevel.workspace.id`.
 
-### د) التحديات التقنية السابقة المثبتة
-1. **حسابات RTL / LTR في مزالج QuickSettings دون تكسير الـ Bindings**:
-   - إسناد `undefined` لخاصية `anchors.left` أو `anchors.right` ديناميكياً يسبب تحذيرات وفشل في تحرير الـ Binding. تم اعتماد حسابات إحداثيات صريحة `x: I18n.isRTL ? (track.width - width) : 0` مع حساب مدخلات السحب `1.0 - (mouse.x / width)` في اتجاه اليمين لليسار، مما ضمن نمواً سلساً وموثوقاً لمسار التعبئة بنسبة 100%.
-2. **استمرارية ظهور مشغل الموسيقى وتعدد المشغlers (MPRIS Persistence)**:
-   - تم حل مشكلة اختفاء المشغل عند الإيقاف المؤقت (Paused) عبر دالة `updateActivePlayer()`.
-3. **التصاق الكبسولة الموسعة بسقف الشاشة (Ceiling Attachment & Geometry)**:
-   - اعتماد المكون الموحد `NotchFrame` لضمان أن كلاً من النوتش والكبسولة يخرجان بسلاسة من سقف الشاشة مع نفس الأذنين المنحنيتين وزوايا الحواف.
-4. **كراش Quickshell أثناء الـ Hot-Reload والتعديل السريع (SIGSEGV in RootWrapper / PopupAnchor)**:
-   - تم توثيق السبب الجذري والإجراء الوقائي بتعديل ملف واحد في كل مرة والتحقق عبر `qmllint`.
+### د) كراش Hot-Reload (SIGSEGV في PopupAnchor::onItemWindowChanged)
+- **الإجراء الوقائي**: دائماً `killall quickshell && hyprctl dispatch exec "quickshell -p ..."`. لا hot-reload.
+
+### هـ) لا يوجد كرت Wi-Fi فعلي (`WIFI-HW: missing`)
+- طبيعي — الكبسولة تعرض "غير متوفر" وهو السلوك المقصود.
 
 ---
 
 ## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
-1. **المرحلة 2 من كبسولة الإعدادات السريعة (قسم الإشعارات)**:
-   - بناء قسم الإشعارات أسفل مزالج الصوت والسطوع داخل `QuickSettingsCapsule.qml`.
-2. **المرحلة 3 (صفحات التفاصيل - Drill-down Overlay Sheets)**:
-   - تحويل صفحات Wi-Fi و Bluetooth و Hotspot والصوت والشاشة إلى بطاقات تنزلق للأعلى (Slide up) فوق الصفحة الرئيسية.
-3. **المرحلة 4 (الحركة والأداء - Motion & Performance)**:
-   - ضبط منحنيات الحركة الانتقالية بتوكنز `Theme` ومؤشرات الأداء.
-4. **المرحلة 5 (التقسيم المعماري وتحديث STATUS.md)**:
-   - تفكيك `QuickSettingsCapsule.qml` إلى مكونات معيارية نظيفة تحت `shell/components/quicksettings/`.
-5. **تطبيق ثيم DeloWay على تطبيقات Qt (Qt Theming Integration)**:
-   - دعم الخيار الموصى به عبر `qt6ct` / `qt5ct`.
-6. **تثبيت مهمة أيقونات التراي وتكامل LocalSend**.
-
+1. **تحسينات WorkspaceIndicator**: خيار "نمط المؤشر" في الإعدادات (أيقونات / أرقام / نقاط)، قائمة سياق النوافذ عند rightClick.
+2. **كبسولة الإعدادات السريعة — قسم الإشعارات**: بناء section الإشعارات أسفل مزالج الصوت والسطوع.
+3. **صفحات التفاصيل (Drill-down Overlay Sheets)**: Wi-Fi و Bluetooth و Hotspot تنزلق للأعلى.
+4. **تثبيت SystemTrayIndicators وتكامل LocalSend**.
 
