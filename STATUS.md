@@ -60,17 +60,21 @@
 ---
 
 ### ب) أسطح العرض النشطة في التطوير (Active Surfaces)
-3. **`shell/components/Notch.qml` (458 سطراً)**:
-   - **الغرض**: حاوية النوتش الذكي في أعلى منتصف الشاشة (مستوحى من macOS NotchNook)، يدعم التوسع الفيزيائي السلس.
-   - **الأقسام الداخلية**:
-     - `السطور 20-45`: أبعاد الحالات (`compactHeight: 44`, `expandedWidth: 600`, `expandedHeight: 176`, `earRadius: 18`) ومنحنيات الحركة.
-     - `السطور 46-130`: هندسة زوايا الأذن المنحنية والظلال عبر مسارات `ShapePath`.
-     - `السطور 131-228`: حاوية النوتش المصغر (تضم `NotchHome.qml` وتتعامل مع عجلة الفأرة للتوسيع وسحب الملفات).
-     - `السطور 229-423`: شريط التبويبات العلوي للوضع الموسع (Nook, Tray/LocalSend, Notify) وأيقونة الترس للإعدادات.
-     - `السطور 424-458`: حاوية محتوى التبويبات الموسعة عبر `SwipeView`.
-   - **الاعتماديات**: `NotchHome`, `ShellState`, `Theme`, `LocalSendService`.
+3. **`shell/components/NotchFrame.qml` (124 سطراً)**:
+   - **الغرض**: المكوّن الهيكلي الموحد والمشترك لهندسة وشكل النوتش والكبسولة الموسعة؛ يوفر الأذنين العلويتين المنحنيتين (Concave fillet ears: 18px)، الزوايا السفلية المنحنية (26px)، خلفية OLED Black (`Theme.notchBackground`)، الظل المحيطي الناعم، ودعم `LayoutMirroring` التلقائي للعربية.
+   - **الاعتماديات**: `Theme`, `I18n`.
 
-4. **`shell/components/NotchHome.qml` (798 سطراً)**:
+4. **`shell/components/Notch.qml` (369 سطراً)**:
+   - **الغرض**: حاوية النوتش الذكي في أعلى منتصف الشاشة (مستوحى من macOS NotchNook)، يعتمد على `NotchFrame` ويدعم التوسع الفيزيائي السلس مع تبويبات مُموضعة بالمنتصف الهندسي الدقيق.
+   - **الأقسام الداخلية**:
+     - `السطور 20-45`: أبعاد الحالات (`compactHeight: 44`, `expandedWidth: 600`, `expandedHeight: 176`, `earRadius: 18`) وتتبع العرض اللحظي بـ `ShellState`.
+     - `السطور 56-65`: استدعاء المكون الهيكلي الموحد `NotchFrame`.
+     - `السطور 66-140`: حاوية النوتش المصغر (تضم `NotchHome.qml` وتتعامل مع عجلة الفأرة للتوسيع وسحب الملفات).
+     - `السطور 170-329`: شريط التبويبات العلوي للوضع الموسع في المنتصف تماماً (Home, Share, Notifications مع ترجمة I18n)، وزر الترس للإعدادات مفصول ومثبت على الحافة الجانبية.
+     - `السطور 330-366`: حاوية محتوى التبويبات الموسعة عبر `SwipeView` (`NotchHome`, `NotchLocalSend`, `NotchNotifications`).
+   - **الاعتماديات**: `NotchFrame`, `NotchHome`, `ShellState`, `Theme`, `LocalSendService`, `I18n`.
+
+5. **`shell/components/NotchHome.qml` (798 سطراً)**:
    - **الغرض**: المحتوى الرئيسي للنوتش في الحالتين المصغرة والموسعة (مساحات العمل، مشغل الموسيقى، الإشعارات، والتقويم).
    - **الأقسام الداخلية**:
      - `السطور 1-118`: إدارة أولوية العرض (`viewMode`: الإشعار يتفوق على الموسيقى، والموسيقى تتفوق على الخمول).
@@ -84,20 +88,20 @@
      - `السطور 702-798`: الجانب الأيمن الموسع: شريط التقويم الأسبوعي (اليوم، الشهر، والأيام السبعة).
    - **الاعتماديات**: `Theme`, `MediaService`, `NotificationManager`, `I18n`.
 
-5. **`shell/components/QuickSettingsCapsule.qml` (2624 سطراً)**:
-   - **الغرض**: كبسولة الإعدادات السريعة في الشريط العلوي (بجوار النوتش من اليمين)، تمثل لوحة التحكم الشاملة.
+6. **`shell/components/QuickSettingsCapsule.qml` (2575 سطراً)**:
+   - **الغرض**: كبسولة الإعدادات السريعة في الشريط العلوي؛ تلتصق بسقف الشاشة عند التوسع وتعتمد على `NotchFrame` لمطابقة هندسة النوتش بالكامل (الأذنان، الزوايا، والظلال).
    - **الأقسام الداخلية**:
-     - `السطور 1-140`: تعريف النافذة (`PanelWindow`)، التموضع النسبي للنوتش، الأبعاد (`compactHeight: 44`, `expandedWidth: 440`)، وفيزياء التسارع `OutCubic`.
-     - `السطور 722-950`: المظهر المصغر (المرحلة 1): مؤشر البطارية، مؤشرات برامج الخلفية `SystemTrayIndicators`، الصوت، الشبكة، شارة اللغة، وترس فتح الإعدادات.
-     - `السطور 951-1802`: المظهر الموسع (المرحلة 2 - الشاشة الرئيسية `main`):
-       - `974-1103`: الترويسة الغنية (الساعة، كبسولة البطارية، زر الإغلاق).
-       - `1112-1328`: بطاقات الشبكة والبلوتوث في شبكة متوازية ذات عمودين.
-       - `1329-1525`: بطاقات نقطة الاتصال (Hotspot) والإضاءة الليلية (Night Light).
-       - `1526-1802`: بطاقات التحكم الدقيق بالصوت والسطوع (مزلاجات نحيفة 5px مع مقبض دائري thumb).
-     - `السطور 1803-2624`: الشاشات الفرعية التفصيلية (Wi-Fi Manager, Bluetooth Scanner, Hotspot Detail).
-   - **الاعتماديات**: `Theme`, `ShellState`, `SystemTrayIndicators`, `SystemMonitor`, `NetworkManager`.
+     - `السطور 1-67`: تعريف النافذة (`PanelWindow`)، التموضع النسبي للنوتش، الالتصاق بالسقف (`margins.top: root.isExpanded ? 0 : 10`)، والأبعاد (`compactHeight: 44`, `expandedWidth: 440`).
+     - `السطور 662-672`: الحاوية الهيكلية المشتركة `NotchFrame`.
+     - `السطور 673-900`: المظهر المصغر (المرحلة 1): مؤشر البطارية، مؤشرات برامج الخلفية `SystemTrayIndicators`، الصوت، الشبكة، وشارة اللغة.
+     - `السطور 901-1750`: المظهر الموسع (المرحلة 2 - الشاشة الرئيسية `main`):
+       - الساعة الحية وكبسولة البطارية وزر الإغلاق.
+       - بطاقات الشبكة والبلوتوث ونقطة الاتصال والإضاءة الليلية.
+       - بطاقات التحكم بالصوت والسطوع مع مزلاجات محسنة ومقابض تفاعلية.
+     - `السطور 1751-2575`: الشاشات الفرعية التفصيلية (Wi-Fi Manager, Bluetooth Scanner, Hotspot Detail).
+   - **الاعتماديات**: `NotchFrame`, `Theme`, `ShellState`, `SystemTrayIndicators`, `SystemMonitor`, `NetworkManager`.
 
-6. **`shell/components/SystemTrayIndicators.qml` (112 سطراً)**:
+7. **`shell/components/SystemTrayIndicators.qml` (112 سطراً)**:
    - **الغرض**: قراءة وعرض أيقونات تطبيقات الخلفية (System Tray / Applets) داخل الكبسولة السريعة.
    - **الأقسام الداخلية**:
      - `السطور 1-23`: التحقق من وجود أيقونات نشطة وتحديث خاصية `hasVisibleItems`.
@@ -105,7 +109,7 @@
      - `السطور 100-111`: فاصل رأسي خافت يعزل التطبيقات عن مؤشرات النظام.
    - **الاعتماديات**: `Quickshell.Services.SystemTray`, `Theme`.
 
-7. **`shell/components/Dock.qml` (331 سطراً)**:
+8. **`shell/components/Dock.qml` (331 سطراً)**:
    - **الغرض**: شريط التطبيقات السفلي العائم (Dock) بنمط OLED الأسود العميق والزجاج المصقول.
    - **الأقسام الداخلية**:
      - `السطور 1-85`: هندسة الكبسولة، التموضع السفلي، ارتفاع `dockH: 52`، والظلال الناعمة.
@@ -118,7 +122,7 @@
      - `السطور 328-331`: استدعاء وربط قائمة الكلك يمين `DockContextMenu`.
    - **الاعتماديات**: `ApplicationManager`, `Theme`, `ShellState`, `DockContextMenu`.
 
-8. **`shell/components/DockContextMenu.qml` (284 سطراً)**:
+9. **`shell/components/DockContextMenu.qml` (284 سطراً)**:
    - **الغرض**: قائمة السياق (الكلك يمين) لتطبيقات الـ Dock (تثبيت، فتح، إغلاق).
    - **الأقسام الداخلية**:
      - `السطور 1-38`: نافذة منبثقة (`PopupWindow`) مع تمكين `grabFocus: true` وربط `HyprlandFocusGrab` لإغلاق القائمة فوراً عند النقر بالخارج.
@@ -128,22 +132,22 @@
      - `السطور 166-255`: الخيارات الثلاثة (Pin, Open, Close) بارتفاع موحد 32px، حجم أيقونة 14px، وخط `Theme.fontSize(12)`.
    - **الاعتماديات**: `Quickshell.Hyprland`, `Theme`, `ApplicationManager`, `I18n`.
 
-9. **`shell/components/SymbolicIcon.qml` (213 سطراً)**:
+10. **`shell/components/SymbolicIcon.qml` (213 سطراً)**:
    - **الغرض**: مكوّن الأيقونات الرمزية القياسي. يقوم بمطابقة أسماء الأيقونات القياسية مع مسارات SVG المحلية وتلوينها بدقة عبر قناع لوني.
    - **الاعتماديات**: `Theme`.
 
 ---
 
 ### ج) الخدمات السنجلتون والبيانات (Singletons & Services)
-10. **`shell/services/NotificationManager.qml` (124 سطراً)**:
+11. **`shell/services/NotificationManager.qml` (124 سطراً)**:
     - **الغرض**: سنجلتون استقبال وإدارة الإشعارات من النظام عبر `NotificationServer`.
     - **الوظائف**: تتبع آخر 50 إشعاراً، إرسال تنبيه `toastRequested` للنافذة العائمة، ومزامنة الإشعارات مع النوتش.
-11. **`shell/services/ConfigManager.qml` (711 سطراً)**:
+12. **`shell/services/ConfigManager.qml` (711 سطراً)**:
     - **الغرض**: سنجلتون إدارة إعدادات وتفضيلات المستخدم، وحفظها وقراءتها من ملف JSON على القرص.
     - **الوظائف**: مقياس الخط (`fontSizeScale`: 0.85, 1.0, 1.15)، الثيم، خلفية الشاشة، إعدادات الدوك والنوتش.
-12. **`shell/services/ShellState.qml` (271 سطراً)**:
+13. **`shell/services/ShellState.qml` (271 سطراً)**:
     - **الغرض**: سنجلتون إدارة الحالات اللحظية للشاشات (الحالة المفتوحة/المغلقة للنوتش، الكبسولة، الدرج، والإعدادات).
-13. **`shell/services/DesktopManager.qml` (496 سطراً)**:
+14. **`shell/services/DesktopManager.qml` (496 سطراً)**:
     - **الغرض**: إدارة ملفات سطح المكتب، الأيقونات، وحالة القائمة المنبثقة لسطح المكتب.
 
 ---
@@ -211,7 +215,10 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي لآخر 20 commit)*:
-* `affac6c` - chore: add STATUS.md as self-contained architecture and state reference for planning-only AI models (2026-09-19)
+* `a1976fe` - feat(i18n): update Notch tab names to Home, Share, and Notifications with Arabic localization (2026-09-19)
+* `d089ff5` - fix(notch): center expanded tab row and decouple settings gear button (2026-09-19)
+* `373c94d` - refactor(capsule): extract NotchFrame component and unify QuickSettingsCapsule with Notch geometry and ceiling attachment (2026-09-19)
+* `1a5a204` - chore: add STATUS.md as self-contained architecture and state reference for planning-only AI models (2026-09-19)
 * `f561833` - style: unify DockContextMenu typography with Theme.fontSize() and DesktopContextMenu sizing standard (2026-09-19)
 * `0f41291` - fix: dismiss DockContextMenu on outside click and Escape via HyprlandFocusGrab (2026-09-19)
 * `2943330` - style: replace unicode glyphs with SymbolicIcon and enlarge compact mini music player elements (2026-09-19)
@@ -228,17 +235,16 @@
 * `79a00ef` - fix: pass scroll-wheel events from child elements in Notch and QuickSettings to App Drawer (2026-09-16)
 * `c2fadd8` - feat: add scroll-wheel open/close for App Drawer on Dock, Notch, and QuickSettingsCapsule (2026-09-16)
 * `e67c4fd` - refactor: remove App Drawer icon from Dock (2026-09-16)
-* `2ce81fe` - fix: correct dock icon hover overflow, radius consistency, and tooltip clipping (2026-09-16)
-* `1255313` - feat: add hotspot support to deloway-network.py (2026-09-14)
-* `6137334` - fix: scope hyprsunset daemon detection to DeloWay's own Hyprland session (avoid conflict with host compositor) (2026-09-14)
-* `8fe482f` - refactor: switch night light to persistent daemon + hyprctl temperature control (end-4 pattern) (2026-09-14)
 
 ---
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
-- **ملفات قيد التطوير / معدلة وموجودة على القرص**:
-  - `shell/components/QuickSettingsCapsule.qml`: نقل موضع الكبسولة لليمين بجوار النوتش، تحديث تصميم بطاقات Wi-Fi/Bluetooth وتنسيق المزلاجات.
+- **المهام المنجزة والمثبتة في HEAD**:
+  - تم استخراج المكون المشترك `shell/components/NotchFrame.qml` وتوحيد شكل وهندسة الكبسولة السريعة والنوتش بالكامل (الالتصاق بسقف الشاشة، الأذنان العلويتان 18px، الزوايا السفلية 26px، والظل الناعم).
+  - تم توسيط شريط التبويبات الموسعة في `Notch.qml` هندسياً في المنتصف وفصل زر الترس على الحافة الجانبية.
+  - تم تحديث مسميات التبويبات الثلاثة (Home / الرئيسية، Share / مشاركة، Notifications / الإشعارات) مع دعم كامل للغتين عبر `I18n.qml`.
+- **ملفات قيد التطوير / معدلة وموجودة على القرص بانتظار مهامها المخصصة**:
   - `shell/components/SystemTrayIndicators.qml` (غير متتبع بعد): مكوّن تطبيقات الخلفية الجاهز والمحذوف منه الـ tooltip المكسور، بانتظار الـ commit المستقل.
   - `shell/components/settings/tabs/DockTab.qml` و `WindowsTab.qml`: التبويبات المكتملة ضمن هيكلة تطبيق الإعدادات الجديد `SettingsAppV2`.
   - `shell/components/NotchLocalSend.qml` و `scripts/deloway-localsend.py` و `LocalSendService.qml`: تكامل سحب وإفلات الملفات لنقلها عبر LocalSend المدمج بالنوتش.
@@ -248,11 +254,13 @@
 ---
 
 ## 8. المشاكل المعروفة والتحديات التقنية (Known Issues & Technical Constraints)
-1. **التعامل مع الـ Popups المنبثقة من Layer-Shell**:
+1. **التصاق الكبسولة الموسعة بسقف الشاشة (Ceiling Attachment & Geometry)**:
+   - تم حل مشكلة الفراغ العلوي (8px gap) في الكبسولة الموسعة عبر إزالة إزاحة `currentY` وضبط `margins.top: root.isExpanded ? 0 : 10`، واعتماد المكون الموحد `NotchFrame` لضمان أن كلاً من النوتش والكبسولة يخرجان بسلاسة تامة من سقف الشاشة مع نفس الأذنين المنحنيتين وزوايا الحواف.
+2. **التعامل مع الـ Popups المنبثقة من Layer-Shell**:
    - بروتوكول `wlr_layer_shell_v1` يقيد أحياناً ارتباط قوائم `xdg_popup` به إذا لم يتم تمرير التركيز وإدارته عبر `HyprlandFocusGrab` بشكل صريح، مما كان يسبب بقاء القوائم معلقة عند النقر بالخارج (تم حلها وتثبيتها في `DockContextMenu`).
-2. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
+3. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
    - إرسال أوامر عبر `hyprctl repl` أو تقييم دوال Lua عشوائية على جلسة المضيف قد يؤدي لـ SIGSEGV ودخول Compositor المضيف في وضع الأمان (`--safe-mode`). يجب قصر التحكم على استدعاءات `hyprctl dispatch` الآمنة.
-3. **أيقونات تطبيقات التراي الخارجية**:
+4. **أيقونات تطبيقات التراي الخارجية**:
    - بعض تطبيقات التراي الخارجية ترسل مسارات أيقونات نقطية (Pixmaps) أو أسماء لا تطابق نسق Symbolic. يعتمد `SystemTrayIndicators` على مكوّن `Image` المباشر بدلاً من `SymbolicIcon` لتجنب فشل التحميل.
 
 ---
@@ -264,7 +272,7 @@
 2. **استكمال وتثبيت تبويبات الإعدادات**:
    - مراجعة وتثبيت `DockTab.qml` و `WindowsTab.qml` ودمجهما بالكامل في `SettingsAppV2`.
 3. **إتمام تكامل LocalSend في النوتش**:
-   - تثبيت ودعم سحب الملفات (Drag & Drop) إلى تبويب Tray داخل النوتش لبدء إرسالها الفوري عبر الشبكة المحلية.
+   - تثبيت ودعم سحب الملفات (Drag & Drop) إلى تبويب Share (Tray سابقاً) داخل النوتش لبدء إرسالها الفوري عبر الشبكة المحلية.
 4. **تكامل Syncthing**:
    - إعداد ومزامنة المجلدات المحلية ومراقبة حالة المزامنة اللحظية عبر كبسولة أو تبويب مخصص.
 5. **الفحص الشامل لاتجاه RTL والترجمة العربية**:
