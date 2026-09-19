@@ -52,6 +52,7 @@ Item {
     property bool topBarShowWorkspaces: true
     property string clockFormat: "12h"
     property int workspacesCount: 5
+    property string workspaceIndicatorStyle: "icons" // "icons" | "numbers" | "dots"
 
     // Windows & Hyprland Settings
     property color activeBorder: "#0084ff"
@@ -178,6 +179,7 @@ Item {
                 if (cfg.topBar.showWorkspaces !== undefined) root.topBarShowWorkspaces = cfg.topBar.showWorkspaces;
                 if (cfg.topBar.clockFormat) root.clockFormat = cfg.topBar.clockFormat;
                 if (cfg.topBar.workspacesCount) root.workspacesCount = cfg.topBar.workspacesCount;
+                if (cfg.topBar.workspaceIndicatorStyle) root.workspaceIndicatorStyle = cfg.topBar.workspaceIndicatorStyle;
             }
             if (cfg.windows) {
                 if (cfg.windows.activeBorder) root.activeBorder = cfg.windows.activeBorder;
@@ -423,6 +425,18 @@ Item {
         saveConfig();
     }
 
+    function setWorkspaceIndicatorStyle(style) {
+        if (style !== "icons" && style !== "numbers" && style !== "dots") return;
+        root.workspaceIndicatorStyle = style;
+        saveConfig();
+    }
+
+    function setWorkspacesCount(count) {
+        const val = Math.max(1, Math.min(10, Math.round(count)));
+        root.workspacesCount = val;
+        saveConfig();
+    }
+
     function setDockPosition(pos) {
         if (pos !== "bottom" && pos !== "left" && pos !== "right") return;
         root.dockPosition = pos;
@@ -504,7 +518,8 @@ Item {
                 showBrand: root.topBarShowBrand,
                 showWorkspaces: root.topBarShowWorkspaces,
                 clockFormat: root.clockFormat,
-                workspacesCount: root.workspacesCount
+                workspacesCount: root.workspacesCount,
+                workspaceIndicatorStyle: root.workspaceIndicatorStyle
             },
             windows: {
                 activeBorder: root.activeBorder.toString(),

@@ -294,7 +294,7 @@ Item {
     readonly property color wsActiveBg:    isDark ? "#ffffff" : "#0f172a"
     readonly property color wsActiveText:  isDark ? "#000000" : "#ffffff"
     readonly property color wsOccupiedBg:  isDark ? Qt.rgba(1, 1, 1, 0.13) : Qt.rgba(0, 0, 0, 0.09)
-    readonly property color wsEmptyBg:     "transparent"
+    readonly property color wsEmptyBg:     isDark ? Qt.rgba(1, 1, 1, 0.28) : Qt.rgba(0, 0, 0, 0.22)
 
     // Exclusion & Strut Geometry Tokens (Reserved Space)
     readonly property int topBarHeight: 44

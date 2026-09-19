@@ -7,7 +7,7 @@ import "../theme"
 import "../services"
 
 // WorkspaceIndicator — Dynamic workspace dots/icons/pills for the smart notch.
-// Event-driven: ToplevelManager.toplevels + Hyprland.activeWorkspace, no polling.
+// Event-driven: Hyprland.toplevels + Hyprland.activeWorkspace.
 // OLED identity: Theme tokens only. Wheel scroll is consumed here (no propagation).
 Item {
     id: root
@@ -21,32 +21,58 @@ Item {
     implicitHeight: wsRow.implicitHeight
 
     // ── Live data ─────────────────────────────────────────────────────────
-    readonly property var allToplevels:  ToplevelManager.toplevels.values
+    readonly property var hlToplevels:   Hyprland.toplevels.values
     readonly property var activeWsObj:   root.hyprMonitor ? root.hyprMonitor.activeWorkspace : null
-    readonly property int activeWsId:    activeWsObj ? activeWsObj.id : 0
+    readonly property int activeWsId:    activeWsObj ? activeWsObj.id : (Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1)
 
-    // Map: wsId (int) → WlrToplevel[]
+    // Map: wsId (int) → window item list
     readonly property var topsByWs: {
-        const _top = root.allToplevels;
-        const map  = {};
-        for (let i = 0; i < _top.length; i++) {
-            const t = _top[i];
-            if (!t || !t.handle) continue;
-            const hl = t.handle;           // HyprlandToplevel
-            if (!hl.workspace) continue;
-            const wid = hl.workspace.id;
+        const _list = root.hlToplevels;
+        const map   = {};
+        for (let i = 0; i < _list.length; i++) {
+            const hl = _list[i];
+            if (!hl) continue;
+
+            let wid = 0;
+            if (hl.workspace && hl.workspace.id !== undefined) {
+                wid = hl.workspace.id;
+            } else if (hl.lastIpcObject && hl.lastIpcObject.workspace && hl.lastIpcObject.workspace.id !== undefined) {
+                wid = hl.lastIpcObject.workspace.id;
+            }
             if (wid <= 0) continue;
+
+            let appId = "";
+            if (hl.wayland && hl.wayland.appId) {
+                appId = hl.wayland.appId;
+            } else if (hl.lastIpcObject) {
+                appId = hl.lastIpcObject.class || hl.lastIpcObject.initialClass || "";
+            }
+
+            const item = {
+                appId:     appId,
+                title:     hl.title || "",
+                activated: hl.activated || false,
+                address:   hl.address || "",
+                close: function() {
+                    if (hl.wayland && hl.wayland.close) {
+                        hl.wayland.close();
+                    } else if (hl.address) {
+                        Hyprland.dispatch("closewindow address:" + hl.address);
+                    }
+                }
+            };
+
             if (!map[wid]) map[wid] = [];
-            map[wid].push(t);
+            map[wid].push(item);
         }
         return map;
     }
 
     // Extra workspace IDs beyond static range that have toplevels or are active
     readonly property var extraWsIds: {
-        const _N   = root.staticCount;
-        const _act = root.activeWsId;
-        const map  = root.topsByWs;
+        const _N    = root.staticCount;
+        const _act  = root.activeWsId;
+        const map   = root.topsByWs;
         const extra = [];
         for (const key of Object.keys(map)) {
             const id = parseInt(key);
@@ -75,18 +101,25 @@ Item {
         return app ? (app.icon || top.appId) : top.appId;
     }
 
-    // Returns the "most relevant" toplevel (activated one first, else tops[0])
+    // Returns the primary toplevel (activated window first, else tops[0])
     function primaryToplevel(tops) {
         if (!tops || tops.length === 0) return null;
         for (const t of tops) { if (t && t.activated) return t; }
         return tops[0];
     }
 
-    // Returns the second-most-relevant toplevel (first one that is NOT primary)
+    // Returns the secondary toplevel (different app if possible, else second window)
     function secondaryToplevel(tops) {
         if (!tops || tops.length < 2) return null;
         const primary = primaryToplevel(tops);
-        for (const t of tops) { if (t && t !== primary) return t; }
+        // First try to find a window from a different app
+        for (const t of tops) {
+            if (t && t !== primary && t.appId !== primary.appId) return t;
+        }
+        // Otherwise return any second window
+        for (const t of tops) {
+            if (t && t !== primary) return t;
+        }
         return null;
     }
 
@@ -127,8 +160,8 @@ Item {
             delegate: WorkspaceItem {
                 required property int modelData
 
-                readonly property var myTops:     root.topsByWs[modelData] || []
-                readonly property var myPrimary:  root.primaryToplevel(myTops)
+                readonly property var myTops:      root.topsByWs[modelData] || []
+                readonly property var myPrimary:   root.primaryToplevel(myTops)
                 readonly property var mySecondary: root.secondaryToplevel(myTops)
 
                 wsId:          modelData

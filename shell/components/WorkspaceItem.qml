@@ -6,9 +6,9 @@ import "../theme"
 import "../services"
 
 // WorkspaceItem — Single workspace element with 3 visual states:
-//   1. Empty (transparent dot)    — faint, number on hover
-//   2. Occupied, not active       — circle with up to 2 overlapping icons, number on hover
-//   3. Active workspace           — pill: number + up to 2 overlapping icons
+//   1. Empty (transparent dot)    — faint dot (6px), expands to 22px with number on hover
+//   2. Occupied, not active       — circle (28px) with up to 2 overlapping icons, number on hover
+//   3. Active workspace           — pill (32px high): number + up to 2 overlapping icons + badge
 //
 // Style modes: "icons" (default) | "numbers" | "dots"
 Item {
@@ -41,16 +41,17 @@ Item {
         : 0
 
     // ── Dimension helpers ─────────────────────────────────────────────────
-    readonly property int dotSz:   Theme.wsDotSize
-    readonly property int circSz:  Theme.wsCircleSize
-    readonly property int pillH:   Theme.wsPillHeight
-    readonly property int ic1Sz:   Theme.wsIconSizeSingle   // 15
-    readonly property int ic2Sz:   Theme.wsIconSizeDouble   // 12
-    readonly property int icOff:   Theme.wsIconOverlapOffset // 8
+    readonly property int dotSz:        Theme.wsDotSize
+    readonly property int circSz:       Theme.wsCircleSize
+    readonly property int pillH:        Theme.wsPillHeight
+    readonly property int ic1Sz:        Theme.wsIconSizeSingle    // 15
+    readonly property int ic2Sz:        Theme.wsIconSizeDouble    // 12
+    readonly property int icOff:        Theme.wsIconOverlapOffset // 8
+    readonly property int emptyHoverSz: 22
 
     // Active pill width — adapts to shown content
     readonly property int activePillW: {
-        if (style === "dots")    return Theme.wsPillBase;
+        if (style === "dots")    return 24;
         if (style === "numbers") return Theme.wsPillBase;
         if (shownIcons === 2)    return Theme.wsPillBase + Theme.wsPillIconGap + ic2Sz + icOff;
         if (shownIcons === 1)    return Theme.wsPillBase + Theme.wsPillIconGap + ic1Sz;
@@ -58,8 +59,23 @@ Item {
     }
 
     // Shape dimensions based on state
-    readonly property int targetW: isActive ? activePillW : (hasTops ? circSz : dotSz)
-    readonly property int targetH: isActive ? pillH       : (hasTops ? circSz : dotSz)
+    readonly property int targetW: {
+        if (isActive) return activePillW;
+        if (style === "numbers") return circSz;
+        if (style === "dots") return hasTops ? 10 : dotSz;
+        // style === "icons"
+        if (hasTops) return circSz;
+        return wsMA.containsMouse ? emptyHoverSz : dotSz;
+    }
+
+    readonly property int targetH: {
+        if (isActive) return pillH;
+        if (style === "numbers") return circSz;
+        if (style === "dots") return hasTops ? 10 : dotSz;
+        // style === "icons"
+        if (hasTops) return circSz;
+        return wsMA.containsMouse ? emptyHoverSz : dotSz;
+    }
 
     // Fixed row height so the parent RowLayout never jumps
     implicitWidth:  targetW
@@ -80,15 +96,16 @@ Item {
 
         color: root.isActive
                ? Theme.wsActiveBg
-               : root.hasTops
-                 ? Theme.wsOccupiedBg
+               : (root.hasTops || root.style === "numbers")
+                 ? (wsMA.containsMouse ? Theme.notchSurfaceHover : Theme.wsOccupiedBg)
                  : (wsMA.containsMouse ? Theme.notchSurfaceHover : Theme.wsEmptyBg)
 
         Behavior on color   { ColorAnimation  { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
-        opacity: root.isActive  ? 1.0
-               : root.hasTops   ? 1.0
-               : wsMA.containsMouse ? 0.75 : 0.45
+        opacity: root.isActive ? 1.0
+               : root.hasTops ? 1.0
+               : root.style === "numbers" ? (root.hasTops ? 1.0 : 0.6)
+               : wsMA.containsMouse ? 0.9 : 0.55
         Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
         // ═══════════════════════════════════════════════════════════
@@ -111,9 +128,6 @@ Item {
                 visible:       root.style !== "dots"
                 Layout.alignment: Qt.AlignVCenter
             }
-
-            // Dot placeholder for "dots" style (no number, no icons)
-            // pill shape alone is sufficient — no extra child needed
 
             // Icon area (icons style + hasTops)
             Item {
@@ -143,7 +157,7 @@ Item {
                     height:  root.ic2Sz
                     visible: root.shownIcons >= 2 && root.secondaryIcon.length > 0
 
-                    // Separator ring — same colour as pill bg so icon looks separated
+                    // Separator ring — matches pill bg
                     Rectangle {
                         anchors.fill:    parent
                         anchors.margins: -1.5
@@ -166,16 +180,10 @@ Item {
         Item {
             id: circleContent
             anchors.centerIn: parent
-            visible: !root.isActive && root.hasTops
+            visible: !root.isActive && root.hasTops && root.style === "icons"
 
             // Width is the icon-cluster width, centred inside circle
-            implicitWidth: {
-                if (root.style === "icons") {
-                    if (root.shownIcons >= 2) return root.ic2Sz + root.icOff;
-                    if (root.shownIcons === 1) return root.ic1Sz;
-                }
-                return 0;
-            }
+            implicitWidth: root.shownIcons >= 2 ? (root.ic2Sz + root.icOff) : root.ic1Sz
             implicitHeight: root.shownIcons >= 2 ? root.ic2Sz : root.ic1Sz
             width:  implicitWidth
             height: implicitHeight
@@ -186,7 +194,7 @@ Item {
                 y: root.shownIcons >= 2 ? Math.round((parent.height - root.ic2Sz) / 2) : 0
                 iconSize: root.shownIcons >= 2 ? root.ic2Sz : root.ic1Sz
                 source:   root.primaryIcon
-                visible:  root.style === "icons" && root.primaryIcon.length > 0
+                visible:  root.primaryIcon.length > 0
             }
 
             // Secondary icon + separator ring
@@ -195,7 +203,7 @@ Item {
                 y: Math.round((parent.height - root.ic2Sz) / 2)
                 width:   root.ic2Sz
                 height:  root.ic2Sz
-                visible: root.style === "icons" && root.shownIcons >= 2 && root.secondaryIcon.length > 0
+                visible: root.shownIcons >= 2 && root.secondaryIcon.length > 0
 
                 Rectangle {
                     anchors.fill:    parent
@@ -210,80 +218,62 @@ Item {
                     source:       root.secondaryIcon
                 }
             }
-
-            // "numbers" style — centred number inside circle
-            Text {
-                anchors.centerIn: parent
-                visible: root.style === "numbers"
-                text:    root.wsId.toString()
-                font.family:    Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                font.weight:    Font.Medium
-                color:          Theme.notchTextSecondary
-                renderType:     Theme.renderType
-            }
         } // circleContent
 
-        // ── Hover: workspace number badge (occupied, icons/dots mode) ─────
+        // ── Hover: workspace number overlay for occupied circle (icons mode) ───
         Rectangle {
-            id: hoverBadge
-            anchors {
-                bottom:           shape.bottom
-                bottomMargin:     1
-                horizontalCenter: shape.horizontalCenter
-            }
-            width:   hoverBadgeText.implicitWidth + 6
-            height:  11
-            radius:  5.5
-            color:   Theme.notchBackground
-            opacity: 0.88
-            z:       4
+            id: hoverCircleOverlay
+            anchors.fill: parent
+            radius: height / 2
+            color: Theme.notchSurfaceActive
+            border.color: Theme.notchBorderHighlight
+            border.width: 1
+            z: 4
             visible: !root.isActive && root.hasTops
                      && root.style === "icons"
                      && wsMA.containsMouse
 
             Text {
-                id: hoverBadgeText
                 anchors.centerIn: parent
-                text:    root.wsId.toString()
-                font.family:    Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(8)
-                font.weight:    Font.Bold
-                color:          Theme.notchText
-                renderType:     Theme.renderType
+                text: root.wsId.toString()
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(12)
+                font.weight: Font.Bold
+                color: Theme.notchText
+                renderType: Theme.renderType
             }
         }
 
-        // ── Empty dot — hover number ──────────────────────────────────────
+        // ── Empty dot — hover number (icons mode) ─────────────────────────
         Text {
             anchors.centerIn: parent
             visible: !root.isActive && !root.hasTops
                      && wsMA.containsMouse
-                     && root.style !== "numbers"
+                     && root.style === "icons"
             text:    root.wsId.toString()
             font.family:    Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(8)
-            font.weight:    Font.Medium
-            color:          Theme.notchTextTertiary
+            font.pixelSize: Theme.fontSize(11)
+            font.weight:    Font.Bold
+            color:          Theme.notchText
             renderType:     Theme.renderType
         }
 
-        // ── Empty dot — "numbers" style always shows number ───────────────
+        // ── Numbers mode: number always visible for all inactive workspaces ─
         Text {
             anchors.centerIn: parent
-            visible: !root.isActive && !root.hasTops && root.style === "numbers"
+            visible: !root.isActive && root.style === "numbers"
             text:    root.wsId.toString()
             font.family:    Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(10)
-            font.weight:    Font.Medium
-            color:          Theme.notchTextTertiary
+            font.pixelSize: Theme.fontSize(11)
+            font.weight:    root.hasTops ? Font.DemiBold : Font.Normal
+            color:          root.hasTops ? Theme.notchText : Theme.notchTextTertiary
             renderType:     Theme.renderType
         }
 
         // ── Badge "+N" for extra windows beyond shown icons ───────────────
         Rectangle {
             id: badge
-            visible: root.hasTops && root.badgeCount > 0
+            visible: root.hasTops && root.badgeCount > 0 && root.style === "icons" && !wsMA.containsMouse
             width:   badgeLabel.implicitWidth + 5
             height:  Theme.wsBadgeSize
             radius:  Theme.wsBadgeSize / 2
@@ -294,7 +284,7 @@ Item {
                 right:       shape.right;  rightMargin: -2
                 top:         shape.top;    topMargin:   -2
             }
-            z: 3
+            z: 5
 
             Text {
                 id: badgeLabel
@@ -314,8 +304,7 @@ Item {
     MouseArea {
         id: wsMA
         anchors.fill:    parent
-        // expand hit area for tiny dots
-        anchors.margins: (root.hasTops || root.isActive) ? 0 : -5
+        anchors.margins: (root.hasTops || root.isActive || wsMA.containsMouse) ? 0 : -6
         hoverEnabled:    true
         cursorShape:     Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton

@@ -248,7 +248,7 @@ Item {
             WorkspaceIndicator {
                 hyprMonitor:    root.hyprMonitor
                 staticCount:    ConfigManager.workspacesCount
-                indicatorStyle: "icons"
+                indicatorStyle: ConfigManager.workspaceIndicatorStyle || "icons"
                 reduceMotion:   false
                 Layout.alignment: Qt.AlignVCenter
             }

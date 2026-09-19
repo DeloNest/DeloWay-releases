@@ -507,7 +507,7 @@ PanelWindow {
                                             onItemChanged: updateCurrent()
                                             Component.onCompleted: updateCurrent()
 
-                                            sourceComponent: (modelData.id === "appearance") ? appearanceComponent : (modelData.id === "dock" ? dockComponent : (modelData.id === "windows" ? windowsComponent : placeholderComponent))
+                                            sourceComponent: (modelData.id === "appearance") ? appearanceComponent : (modelData.id === "dock" ? dockComponent : (modelData.id === "windows" ? windowsComponent : (modelData.id === "topbar" ? topbarComponent : placeholderComponent)))
 
                                             Component {
                                                 id: appearanceComponent
@@ -522,6 +522,11 @@ PanelWindow {
                                             Component {
                                                 id: windowsComponent
                                                 WindowsTab {}
+                                            }
+
+                                            Component {
+                                                id: topbarComponent
+                                                TopBarTab {}
                                             }
 
                                             Component {
