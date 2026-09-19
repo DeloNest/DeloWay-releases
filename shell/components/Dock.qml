@@ -19,12 +19,13 @@ PanelWindow {
     property bool dockHovered: false
     property bool dockVisible: !autoHide || dockHovered
 
-    exclusionMode: autoHide ? ExclusionMode.Ignore : ExclusionMode.Auto
+    exclusionMode: autoHide ? ExclusionMode.Ignore : ExclusionMode.Normal
+    exclusiveZone: Theme.dockExclusiveZoneFor(dockH)
 
-    readonly property int dockH:      68
+    readonly property int iconSz:     ConfigManager.dockIconSize > 0 ? ConfigManager.dockIconSize : 48
+    readonly property int dockH:      iconSz + 20
     readonly property int cardRadius: Theme.radiusDock
     readonly property int itemPad:    8
-    readonly property int iconSz:     48
 
     implicitHeight: dockH + 46
     implicitWidth: dockCard.implicitWidth + 120

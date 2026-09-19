@@ -246,6 +246,27 @@ Item {
     readonly property color sliderFill: isDark ? "#ffffff" : colors.textPrimary
     readonly property color sliderThumb: isDark ? "#ffffff" : colors.textPrimary
 
+    // Exclusion & Strut Geometry Tokens (Reserved Space)
+    readonly property int topBarHeight: 44
+    readonly property int topBarMarginTop: 10
+    readonly property int topBarGap: 8
+    // In layer-shell, Hyprland calculates total reserved space as (exclusiveZone + margin).
+    // To achieve total reserved = topBarHeight + topBarMarginTop + topBarGap (62px),
+    // the exclusiveZone is set to (topBarHeight + topBarGap) = 52px.
+    readonly property int topBarExclusiveZone: topBarHeight + topBarGap // 52px
+    readonly property int topBarReserved: topBarHeight + topBarMarginTop + topBarGap // 62px
+
+    readonly property int dockMarginBottom: 10
+    readonly property int dockGap: 8
+    function dockExclusiveZoneFor(dockHeight) {
+        return Math.round((dockHeight > 0 ? dockHeight : 68) + dockGap); // 76px
+    }
+    function dockReservedFor(dockHeight) {
+        return Math.round((dockHeight > 0 ? dockHeight : 68) + dockMarginBottom + dockGap); // 86px
+    }
+    readonly property int dockExclusiveZone: dockExclusiveZoneFor(68) // 76px
+    readonly property int dockReserved: dockReservedFor(68) // 86px
+
     function setMode(newMode) {
         if (newMode !== "dark" && newMode !== "light") return;
         root.mode = newMode;

@@ -50,9 +50,10 @@ PanelWindow {
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:smart-notch"
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    exclusionMode: ExclusionMode.Ignore
+    exclusionMode: ExclusionMode.Normal
+    exclusiveZone: root.isExpanded ? Theme.topBarReserved : Theme.topBarExclusiveZone
 
     NotchFrame {
         id: notchFrame

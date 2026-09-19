@@ -32,7 +32,7 @@ PanelWindow {
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:quicksettings-capsule"
-    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: root.isExpanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
 
