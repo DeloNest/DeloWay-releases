@@ -106,6 +106,14 @@ Item {
         "audio-x-generic-symbolic": "status/audio-x-generic.svg",
         "music": "status/music-note.svg",
         "music-note": "status/music-note.svg",
+        "media-playback-start": "status/media-playback-start-symbolic.svg",
+        "media-playback-start-symbolic": "status/media-playback-start-symbolic.svg",
+        "media-playback-pause": "status/media-playback-pause-symbolic.svg",
+        "media-playback-pause-symbolic": "status/media-playback-pause-symbolic.svg",
+        "media-skip-forward": "status/media-skip-forward-symbolic.svg",
+        "media-skip-forward-symbolic": "status/media-skip-forward-symbolic.svg",
+        "media-skip-backward": "status/media-skip-backward-symbolic.svg",
+        "media-skip-backward-symbolic": "status/media-skip-backward-symbolic.svg",
 
         // Common Actions
         "search": "status/search.svg",

@@ -127,7 +127,7 @@ Item {
             Text {
                 text: root.activeNotification ? root.activeNotification.summary : ""
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize(11)
                 font.weight: Font.DemiBold
                 renderType: Theme.renderType
                 color: Theme.colors.text
@@ -137,14 +137,14 @@ Item {
 
             Text {
                 text: "•"
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontSize(10)
                 color: Theme.colors.textTertiary
             }
 
             Text {
                 text: root.activeNotification ? root.activeNotification.body : ""
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 10
+                font.pixelSize: Theme.fontSize(10)
                 renderType: Theme.renderType
                 color: Theme.colors.textSecondary
                 elide: Text.ElideRight
@@ -161,7 +161,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "✕"
-                    font.pixelSize: 8
+                    font.pixelSize: Theme.fontSize(8)
                     color: Theme.colors.textSecondary
                 }
 
@@ -181,8 +181,8 @@ Item {
         // 1.2 Merged Compact Row: Workspaces + Music Player
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
+            anchors.leftMargin: 12
+            anchors.rightMargin: 14
             spacing: 8
             visible: root.viewMode !== "notification"
             z: 1
@@ -226,7 +226,7 @@ Item {
                             color: wsBtn.isActive ? "#000000" : Theme.notchTextTertiary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fontSize(13)
                             font.weight: wsBtn.isActive ? Font.Bold : Font.Medium
                             renderType: Theme.renderType
                             Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -265,9 +265,9 @@ Item {
 
                 // Mini Album Art
                 Rectangle {
-                    implicitWidth: 28
-                    implicitHeight: 28
-                    radius: 7
+                    implicitWidth: 32
+                    implicitHeight: 32
+                    radius: 8
                     clip: true
                     color: Theme.notchSurfaceElevated
 
@@ -280,7 +280,7 @@ Item {
 
                     SymbolicIcon {
                         anchors.centerIn: parent
-                        iconSize: 16
+                        iconSize: 18
                         source: "applications-multimedia"
                         iconColor: Theme.notchTextSecondary
                         visible: !root.activePlayer || !root.activePlayer.trackArtUrl
@@ -291,13 +291,13 @@ Item {
                 Text {
                     text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 13
-                    font.weight: Font.Medium
+                    font.pixelSize: Theme.fontSize(14)
+                    font.weight: Font.DemiBold
                     renderType: Theme.renderType
                     color: Theme.notchText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
-                    Layout.maximumWidth: 150
+                    Layout.maximumWidth: 190
                 }
 
                 // Mini Controls
@@ -310,11 +310,11 @@ Item {
                         radius: 12
                         color: playPauseHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
-                        Text {
+                        SymbolicIcon {
                             anchors.centerIn: parent
-                            text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
-                            font.pixelSize: 11
-                            color: Theme.notchText
+                            iconSize: 14
+                            source: root.activePlayer && root.activePlayer.isPlaying ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
+                            iconColor: Theme.notchText
                         }
 
                         MouseArea {
@@ -338,11 +338,11 @@ Item {
                         radius: 12
                         color: nextHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
-                        Text {
+                        SymbolicIcon {
                             anchors.centerIn: parent
-                            text: "⏭"
-                            font.pixelSize: 10
-                            color: Theme.notchTextSecondary
+                            iconSize: 14
+                            source: "media-skip-forward-symbolic"
+                            iconColor: nextHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         }
 
                         MouseArea {
@@ -412,14 +412,14 @@ Item {
                     Text {
                         text: root.activeNotification ? root.activeNotification.appName : "System"
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize(11)
                         font.weight: Font.DemiBold
                         color: Theme.colors.accent
                     }
                     Text {
                         text: "• " + (root.activeNotification ? root.activeNotification.timeStr : "")
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontSize(10)
                         color: Theme.colors.textTertiary
                     }
                 }
@@ -427,7 +427,7 @@ Item {
                 Text {
                     text: root.activeNotification ? root.activeNotification.summary : ""
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontSize(13)
                     font.weight: Font.Bold
                     renderType: Theme.renderType
                     color: Theme.colors.text
@@ -438,7 +438,7 @@ Item {
                 Text {
                     text: root.activeNotification ? root.activeNotification.body : ""
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     renderType: Theme.renderType
                     color: Theme.colors.textSecondary
                     wrapMode: Text.WordWrap
@@ -460,7 +460,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "✕"
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.text
                 }
 
@@ -540,7 +540,7 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: "♫"
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.bold: true
                                 color: "#ffffff"
                             }
@@ -557,7 +557,7 @@ Item {
                         Text {
                             text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 15
+                            font.pixelSize: Theme.fontSize(15)
                             font.weight: Font.Bold
                             renderType: Theme.renderType
                             color: "#ffffff"
@@ -571,7 +571,7 @@ Item {
                                   ? root.activePlayer.trackAlbum
                                   : ((root.activePlayer && root.activePlayer.trackArtist) ? root.activePlayer.trackArtist : "Deloway Music")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             renderType: Theme.renderType
                             color: "#b0b0b0"
                             elide: Text.ElideRight
@@ -582,7 +582,7 @@ Item {
                         Text {
                             text: root.activePlayer && root.activePlayer.trackArtist ? root.activePlayer.trackArtist : "—"
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize(11)
                             renderType: Theme.renderType
                             color: "#757575"
                             elide: Text.ElideRight
@@ -597,7 +597,7 @@ Item {
                             // Previous (|◀)
                             Text {
                                 text: "|◀"
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontSize(12)
                                 font.weight: Font.Bold
                                 color: prevExpHover.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.85)
 
@@ -614,7 +614,7 @@ Item {
                             // Play / Pause (⏸ / ▶)
                             Text {
                                 text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.fontSize(14)
                                 font.weight: Font.Bold
                                 color: playExpHover.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.95)
 
@@ -636,7 +636,7 @@ Item {
                             // Next (▶|)
                             Text {
                                 text: "▶|"
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fontSize(12)
                                 font.weight: Font.Bold
                                 color: nextExpHover.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.85)
 
@@ -665,7 +665,7 @@ Item {
                         Text {
                             text: Qt.formatTime(root.currentTime, "hh:mm")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 32
+                            font.pixelSize: Theme.fontSize(32)
                             font.weight: Font.Bold
                             renderType: Theme.renderType
                             color: "#ffffff"
@@ -676,14 +676,14 @@ Item {
                             Text {
                                 text: Qt.formatTime(root.currentTime, "AP")
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Bold
                                 color: Theme.colors.accent
                             }
                             Text {
                                 text: Qt.formatTime(root.currentTime, ":ss")
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 color: "#666666"
                             }
                         }
@@ -692,7 +692,7 @@ Item {
                     Text {
                         text: Qt.formatDate(root.currentTime, I18n.isRTL ? "dddd، d MMMM yyyy" : "dddd, MMMM d, yyyy")
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         renderType: Theme.renderType
                         color: "#999999"
                     }
@@ -715,7 +715,7 @@ Item {
                     Text {
                         text: root.getMonthName()
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 24
+                        font.pixelSize: Theme.fontSize(24)
                         font.weight: Font.Bold
                         renderType: Theme.renderType
                         color: "#ffffff"
@@ -740,7 +740,7 @@ Item {
                                 Text {
                                     text: dayCol.modelData.isToday ? dayCol.modelData.dayName.toUpperCase() : dayCol.modelData.dayName.substring(0, 1).toUpperCase()
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: dayCol.modelData.isToday ? 9 : 8
+                                    font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 9 : 8)
                                     font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
                                     color: dayCol.modelData.isToday ? "#ffffff" : "#555555"
                                     Layout.alignment: Qt.AlignHCenter
@@ -750,7 +750,7 @@ Item {
                                 Text {
                                     text: dayCol.modelData.dayNumber.toString()
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: dayCol.modelData.isToday ? 22 : 15
+                                    font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 22 : 15)
                                     font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
                                     color: dayCol.modelData.isToday
                                            ? "#ffffff"
@@ -776,7 +776,7 @@ Item {
                     Text {
                         text: I18n.tr("notch_today_events")
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         renderType: Theme.renderType
                         color: "#7e7e7e"
                     }

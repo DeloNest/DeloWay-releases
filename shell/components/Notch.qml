@@ -17,6 +17,10 @@ PanelWindow {
         top: true
     }
 
+    margins {
+        top: root.isExpanded ? 0 : 10
+    }
+
     // Dynamic width & height with smooth physics animations
     property bool isExpanded: ShellState.smartNotchExpanded
     property bool isHovered: false
@@ -24,7 +28,7 @@ PanelWindow {
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
         if (notchHomeItem.notificationActive) return 420;
-        if (notchHomeItem.isMusicPlaying) return 450;
+        if (notchHomeItem.isMusicPlaying) return 490;
         return 200;
     }
     readonly property real compactHeight: 44
@@ -34,6 +38,9 @@ PanelWindow {
 
     property real currentWidth: isExpanded ? expandedWidth : compactWidth
     property real currentHeight: isExpanded ? expandedHeight : compactHeight
+
+    onCurrentWidthChanged: ShellState.smartNotchCurrentWidth = currentWidth
+    Component.onCompleted: ShellState.smartNotchCurrentWidth = currentWidth
 
     Behavior on currentWidth { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
     Behavior on currentHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
@@ -81,7 +88,7 @@ PanelWindow {
             z: 1
 
             ShapePath {
-                fillColor: "#000000"
+                fillColor: Theme.notchBackground
                 strokeColor: "transparent"
                 startX: 0
                 startY: 0
@@ -107,7 +114,7 @@ PanelWindow {
             z: 1
 
             ShapePath {
-                fillColor: "#000000"
+                fillColor: Theme.notchBackground
                 strokeColor: "transparent"
                 startX: 0
                 startY: 0
@@ -132,14 +139,20 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             width: root.currentWidth
             height: root.currentHeight
-            color: "#000000"
-            border.color: "transparent"
+            color: Theme.notchBackground
+            border.color: Theme.notchBorderSubtle
+            border.width: Theme.isDark ? 0 : 1
             z: 2
 
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: root.isExpanded ? 26 : 22
-            bottomRightRadius: root.isExpanded ? 26 : 22
+            topLeftRadius: root.isExpanded ? 0 : (height / 2)
+            topRightRadius: root.isExpanded ? 0 : (height / 2)
+            bottomLeftRadius: root.isExpanded ? 26 : (height / 2)
+            bottomRightRadius: root.isExpanded ? 26 : (height / 2)
+
+            Behavior on topLeftRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+            Behavior on topRightRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+            Behavior on bottomLeftRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+            Behavior on bottomRightRadius { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -182,6 +195,34 @@ PanelWindow {
                     expanded: false
                     targetScreen: root.targetScreen
                     z: 1
+                }
+
+                // Auto-expand into Tray Tab on file/item drag hover
+                DropArea {
+                    id: compactDropArea
+                    anchors.fill: parent
+                    enabled: !root.isExpanded
+                    z: 10
+
+                    onEntered: function(drag) {
+                        ShellState.setSmartNotchTab(1);
+                        ShellState.openSmartNotch();
+                    }
+
+                    onDropped: function(drop) {
+                        ShellState.setSmartNotchTab(1);
+                        ShellState.openSmartNotch();
+                        var urls = [];
+                        if (drop.hasUrls && drop.urls) {
+                            urls = drop.urls;
+                        } else if (drop.hasText && drop.text) {
+                            urls = [drop.text];
+                        }
+                        if (urls.length > 0) {
+                            LocalSendService.stageFiles(urls);
+                            drop.acceptProposedAction();
+                        }
+                    }
                 }
             }
 
@@ -231,8 +272,8 @@ PanelWindow {
                             implicitHeight: 24
                             radius: 12
                             color: swipeView.currentIndex === 0
-                                   ? Qt.rgba(1, 1, 1, 0.18)
-                                   : (tab0Ma.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent")
+                                   ? Theme.notchSurfaceActive
+                                   : (tab0Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                             RowLayout {
@@ -243,15 +284,15 @@ PanelWindow {
                                 SymbolicIcon {
                                     source: "notch-nook"
                                     iconSize: 13
-                                    iconColor: swipeView.currentIndex === 0 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                    iconColor: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
                                 }
 
                                 Text {
                                     text: "Nook"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal
-                                    color: swipeView.currentIndex === 0 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                    color: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
                                 }
                             }
 
@@ -270,8 +311,8 @@ PanelWindow {
                             implicitHeight: 24
                             radius: 12
                             color: swipeView.currentIndex === 1
-                                   ? Qt.rgba(1, 1, 1, 0.18)
-                                   : (tab1Ma.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent")
+                                   ? Theme.notchSurfaceActive
+                                   : (tab1Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                             RowLayout {
@@ -282,15 +323,15 @@ PanelWindow {
                                 SymbolicIcon {
                                     source: "notch-tray"
                                     iconSize: 13
-                                    iconColor: swipeView.currentIndex === 1 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                    iconColor: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
                                 }
 
                                 Text {
                                     text: "Tray"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: swipeView.currentIndex === 1 ? Font.DemiBold : Font.Normal
-                                    color: swipeView.currentIndex === 1 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                    color: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
                                 }
                             }
 
@@ -301,6 +342,13 @@ PanelWindow {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ShellState.setSmartNotchTab(1)
                             }
+
+                            DropArea {
+                                anchors.fill: parent
+                                onEntered: function(drag) {
+                                    ShellState.setSmartNotchTab(1);
+                                }
+                            }
                         }
 
                         // Tab 3: Notify
@@ -309,8 +357,8 @@ PanelWindow {
                             implicitHeight: 24
                             radius: 12
                             color: swipeView.currentIndex === 2
-                                   ? Qt.rgba(1, 1, 1, 0.18)
-                                   : (tabNotifyMa.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent")
+                                   ? Theme.notchSurfaceActive
+                                   : (tabNotifyMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                             RowLayout {
@@ -321,15 +369,15 @@ PanelWindow {
                                 SymbolicIcon {
                                     source: "preferences-system-notifications-symbolic"
                                     iconSize: 13
-                                    iconColor: swipeView.currentIndex === 2 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                    iconColor: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
                                 }
 
                                 Text {
                                     text: "Notify"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: swipeView.currentIndex === 2 ? Font.DemiBold : Font.Normal
-                                    color: swipeView.currentIndex === 2 ? "#ffffff" : Qt.rgba(1, 1, 1, 0.65)
+                                    color: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
                                 }
                             }
 
@@ -349,14 +397,14 @@ PanelWindow {
                             implicitWidth: 24
                             implicitHeight: 24
                             radius: 12
-                            color: gearMa.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : "transparent"
+                            color: gearMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                             SymbolicIcon {
                                 anchors.centerIn: parent
                                 source: "settings-symbolic"
                                 iconSize: 14
-                                iconColor: gearMa.containsMouse ? "#ffffff" : Qt.rgba(1, 1, 1, 0.75)
+                                iconColor: gearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                             }
 
                             MouseArea {
