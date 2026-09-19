@@ -10,6 +10,7 @@ ColumnLayout {
     id: root
 
     property var networks: []
+    property bool wifiAvailable: false
     property bool wifiEnabled: false
     property string connectingSsid: ""
     property string networkError: ""
@@ -132,12 +133,12 @@ ColumnLayout {
         ColumnLayout {
             anchors.centerIn: parent
             spacing: 6
-            visible: !root.wifiEnabled || root.networks.length === 0
+            visible: !root.wifiAvailable || !root.wifiEnabled || root.networks.length === 0
 
             SymbolicIcon {
                 Layout.alignment: Qt.AlignHCenter
-                visible: root.networkError.length > 0
-                source: "dialog-warning-symbolic"
+                visible: root.networkError.length > 0 || !root.wifiAvailable
+                source: !root.wifiAvailable ? "network-wireless-offline-symbolic" : "dialog-warning-symbolic"
                 iconSize: 18
                 iconColor: Theme.notchTextTertiary
             }
@@ -146,9 +147,11 @@ ColumnLayout {
                 Layout.alignment: Qt.AlignHCenter
                 text: root.networkError.length > 0
                       ? root.networkError
-                      : (!root.wifiEnabled
-                         ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
-                         : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found"))
+                      : (!root.wifiAvailable
+                         ? (I18n.isRTL ? "لا يوجد كرت Wi-Fi في هذا الجهاز" : "No Wi-Fi adapter found")
+                         : (!root.wifiEnabled
+                            ? (I18n.isRTL ? "Wi-Fi معطل" : "Wi-Fi is disabled")
+                            : (I18n.isRTL ? "لا توجد شبكات متاحة" : "No networks found")))
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(11)
                 color: Theme.notchTextTertiary

@@ -142,6 +142,7 @@ PanelWindow {
     // Network Data Logic (deloway-network.py)
     // ─────────────────────────────────────────────────────────────────────────
     property var networkData: null
+    property bool wifiAvailable: false   // hardware present
     property bool wifiEnabled: false
     property var wifiNetworks: []
     property string connectingSsid: ""
@@ -167,6 +168,7 @@ PanelWindow {
                     root.networkData = parsed;
                     root.networkError = "";
                     if (parsed.wifi) {
+                        root.wifiAvailable = !!parsed.wifi.available;
                         root.wifiEnabled = parsed.wifi.enabled;
                         root.wifiNetworks = parsed.wifi.networks || [];
                     }
@@ -1076,18 +1078,23 @@ PanelWindow {
 
                         QSToggleTile {
                             title: "Wi-Fi"
-                            subtitle: !root.wifiEnabled
-                                      ? (I18n.isRTL ? "معطل" : "Off")
-                                      : (root.wifiSsid.length > 0 ? root.wifiSsid : (I18n.isRTL ? "غير متصل" : "Disconnected"))
+                            subtitle: !root.wifiAvailable
+                                      ? (I18n.isRTL ? "غير متوفر" : "Unavailable")
+                                      : (!root.wifiEnabled
+                                         ? (I18n.isRTL ? "معطل" : "Off")
+                                         : (root.wifiSsid.length > 0 ? root.wifiSsid : (I18n.isRTL ? "غير متصل" : "Disconnected")))
                             icon: "network-wireless-symbolic"
-                            active: root.wifiEnabled
+                            active: root.wifiAvailable && root.wifiEnabled
                             connected: root.wifiEnabled && root.wifiSsid.length > 0
-                            hasChevron: true
+                            toggleEnabled: root.wifiAvailable
+                            hasChevron: root.wifiAvailable
                             onClicked: {
-                                ShellState.quickSettingsCapsuleView = "wifi";
-                                root.rescanWifi();
+                                if (root.wifiAvailable) {
+                                    ShellState.quickSettingsCapsuleView = "wifi";
+                                    root.rescanWifi();
+                                }
                             }
-                            onToggleClicked: root.toggleWifi()
+                            onToggleClicked: if (root.wifiAvailable) root.toggleWifi()
                         }
 
                         QSToggleTile {
@@ -1213,6 +1220,7 @@ PanelWindow {
                     anchors.fill: parent
                     visible: root.currentView === "wifi"
                     networks: root.wifiNetworks
+                    wifiAvailable: root.wifiAvailable
                     wifiEnabled: root.wifiEnabled
                     connectingSsid: root.connectingSsid
                     networkError: root.networkError
