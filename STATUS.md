@@ -223,58 +223,46 @@
 
 ---
 
+
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي)*:
+* `d493fe8` - feat(workspace): phase2 icons mode refinement, Hyprland.toplevels integration & TopBarTab settings (2026-09-20)
+* `1ca4cce` - feat(workspace): phase2 refinement — dual overlapping icons, hover number, +N badge, dynamic pill width (2026-09-20)
+* `4991cbc` - docs(status): update sections 6-9 for WorkspaceIndicator completion (phases 1-5) (2026-09-20)
 * `478837b` - feat(workspace): phase3+4 — wheel scroll (throttled, no propagation), animate behaviors already in WorkspaceItem (2026-09-20)
 * `0b75c80` - feat(workspace): phase1+2 — WorkspaceIndicator with dots/circles/pill states, AppIcon, OLED tokens (2026-09-20)
-* `6f55691` - fix(quicksettings): phase2 — wifi tile & page reflect wifiAvailable from parser (no hardware = disabled state) (2026-09-20)
+* `6f55691` - fix(qs): phase2 state truthfulness — wifiAvailable from hardware, wifi/hotspot unavailable states (2026-09-20)
 * `39f5558` - fix(quicksettings): phase1 — remove hardcoded colors; QSSliderCard, power button, notchSliderFill tokens (2026-09-20)
 * `aabcd19` - feat(quicksettings): redesign main capsule page with modern pill tiles, header & slider cards (phase 1) (2026-09-20)
 * `084d30c` - fix(notch): fix settings icon placement, remove black line artifacts, enhance hover states, and reduce window spacing (2026-09-20)
 * `2999f02` - fix(shell): configure exclusive zones, margins, and top layer for Notch, Capsule, and Dock (2026-09-20)
-* `b13a75e` - docs: update STATUS.md with system theming completion, ADR, Qt report, and roadmap (2026-09-19)
-* `728c600` - feat(theme): add deloway-theme-apply.py engine and integrate with ConfigManager (2026-09-19)
-* `4e21ce7` - refactor(theme): replace hardcoded colors with Theme tokens across Notch, Desktop, and Dock (2026-09-19)
-* `4982d64` - feat(theme): add system theme backup, restore script, and applySystemTheme toggle (2026-09-19)
-* `08b2d8a` - docs: update STATUS.md changelog and state for persistent music player (2026-09-19)
-* `c3e91b0` - fix(notch): keep music player visible on pause and bind viewMode to player presence (2026-09-19)
-* `f7d44e6` - feat(settings): make settings window draggable, resizable to fullscreen, and allow side-by-side multitasking (2026-09-19)
-* `c15d1b3` - docs: update STATUS.md changelog, active state, and architecture map for NotchFrame and tabs (2026-09-19)
-* `a1976fe` - feat(i18n): update Notch tab names to Home, Share, and Notifications with Arabic localization (2026-09-19)
-* `d089ff5` - fix(notch): center expanded tab row and decouple settings gear button (2026-09-19)
-* `373c94d` - refactor(capsule): extract NotchFrame component and unify QuickSettingsCapsule with Notch geometry and ceiling attachment (2026-09-19)
-* `1a5a204` - chore: add STATUS.md as self-contained architecture and state reference for planning-only AI models (2026-09-19)
-* `f561833` - style: unify DockContextMenu typography with Theme.fontSize() and DesktopContextMenu sizing standard (2026-09-19)
-* `0f41291` - fix: dismiss DockContextMenu on outside click and Escape via HyprlandFocusGrab (2026-09-19)
-* `2943330` - style: replace unicode glyphs with SymbolicIcon and enlarge compact mini music player elements (2026-09-19)
-* `c9d24bc` - chore: track status icons and add mappings for hotspot, localsend, session, and font settings (2026-09-19)
-* `fa44abb` - fix(capsule): slim sliders 5px+thumb, clip cards, compact edge geometry, premium compact bar icons (2026-09-17)
-* `3ad1bf9` - perf(capsule): accelerate expansion physics with snappy OutCubic easing (2026-09-17)
-* `d916a9d` - fix(drawer): bind typography and dimensions dynamically to font scale (2026-09-17)
-* `ae7f825` - fix(settings): add inset hover capsule and resolve RTL alignment (2026-09-17)
-* `59b229e` - feat(settings): add common components library (Section, Row, Toggle) (2026-09-16)
 
+---
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
 - **المهام المنجزة والمثبتة في HEAD**:
-  - **مؤشر مساحات العمل الديناميكي (WorkspaceIndicator) — مكتمل (commits 0b75c80, 478837b)**:
-    - مكوّنان جديدان: `WorkspaceIndicator.qml` (منسق البيانات) و `WorkspaceItem.qml` (الشكل الفردي).
-    - ثلاث حالات بصرية: نقطة 6px (فارغة) ← دائرة 28px بأيقونة AppIcon (مشغولة) ← كبسولة 36×32px (نشطة).
-    - بيانات event-driven: `ToplevelManager.toplevels.values → .handle → HyprlandToplevel.workspace.id`.
-    - عجلة الفأرة throttled (300ms)، `wheel.accepted = true` يمنع propagation للنوتش.
-    - 14 توكن جديدة في `Theme.qml` بقيمتين (داكن/فاتح): wsDotSize, wsCircleSize, wsPillWidth/Height, wsIconSize, wsBadgeSize, wsIndicatorSpacing, wsActiveBg/Text, wsOccupiedBg, wsEmptyBg.
-    - أداء: CPU مستقر 11.7% ← 11.6% بعد 8 تبديلات متتالية. صفر أخطاء `qs log`.
-  - **إصلاح ألوان كبسولة الإعدادات السريعة (commits 39f5558, 6f55691)**:
-    - إزالة كل الألوان الصلبة. Wi-Fi tile تعرض "غير متوفر" عند `WIFI-HW: missing`.
-  - **تصميم كبسولة الإعدادات السريعة - المرحلة 1 (commit aabcd19)**:
-    - ترويسة الوقت، كبسولات Wi-Fi/Focus/Lock/BT/Hotspot/NightLight، مزالج الصوت والسطوع.
-  - **إصلاحات Smart Notch وتقليل تباعد النوافذ (commit 084d30c)**.
-  - **ثيم DeloWay للنظام GTK/Electron (commits 728c600, b13a75e)**.
-  - **حجز المساحة Exclusive Zones للشريط والدوك (commit 2999f02)**.
+  - **مؤشر مساحات العمل الديناميكي المطور (WorkspaceIndicator) — مكتمل بنسبة 100% (Commits 0b75c80, 478837b, 1ca4cce, d493fe8)**:
+    - **نمط الأيقونات (الافتراضي)**:
+      - **المساحة النشطة**: كبسولة بارزة بيضاء/داكنة (Pill) متغيرة العرض ديناميكياً تضم رقم المساحة + أيقونات تطبيقاتها (حتى نافذتين بحجم 12px مع حلقة عازلة متراكبة، وشارة "+N" للعدد الإضافي).
+      - **المساحات غير النشطة التي تحوي نوافذ**: دائرة داكنة ناعمة (28px) تعرض أيقونات التطبيقات المتراكبة دون رقم، وعند التحويم (Hover) تظهر طبقة دائرية ناعمة برقم المساحة.
+      - **المساحات الفارغة**: نقاط دائرية صغيرة (6px) بلون خافت (`Theme.wsEmptyBg`) ثابتة الترتيب من 1 إلى 5 لا تختفي أبداً، وعند التحويم تتمدد بسلاسة إلى 22px لعرض رقم المساحة.
+    - **الأنماط الأخرى في الإعدادات**:
+      - **نمط الأرقام (Numbers Only)**: يعرض أرقاماً ثابتة لجميع المساحات 1 إلى 5 بأسلوب كبسولي OLED داكن.
+      - **نمط النقاط (Dots Only)**: يعرض نقاطاً صغيرة وكبسولة ملساء دون أرقام أو أيقونات.
+    - **تكامل تطبيق الإعدادات (Settings App V2 - TopBarTab)**:
+      - إنشاء تبويب كامل ومستقل للشريط العلوي (`shell/components/settings/tabs/TopBarTab.qml`) مرتبط بـ `ConfigManager`.
+      - خيار تفاعلي لاختيار نمط مؤشر مساحات العمل (`icons` | `numbers` | `dots`).
+      - خيار لاختيار عدد المساحات الثابتة (`3`, `5`, `8`, `10`).
+      - مفاتيح تبديل لإظهار/إخفاء مؤشر مساحات العمل وشعار DeloWay، وتنسيق الوقت (12h/24h).
+    - **المعمارية وربط النوافذ (Hyprland.toplevels)**:
+      - ربط مباشر ولحظي مع `Hyprland.toplevels.values` بالاعتماد على `lastIpcObject.class` و `wayland.appId` للتعرف على التطبيقات، و `workspace.id` لتحديد المساحة دون أي استطلاع دوري (Event-driven).
+    - **التفاعل والأداء**:
+      - عجلة الفأرة محدودة بمعدل 300ms ومستهلكة كلياً داخل المؤشر دون التأثير على النوتش.
+      - استقرار تام للأداء واجتياز فحوصات `qmllint` وخلو السجلات تماماً من الأخطاء.
 - **ملفات قيد التطوير / بانتظار commit مستقل**:
-  - `shell/components/SystemTrayIndicators.qml`: غير متتبع بعد.
-  - `shell/components/NotchLocalSend.qml` وملفاته: تكامل LocalSend.
+  - `shell/components/SystemTrayIndicators.qml`: مكوّن أيقونات شريط النظام بدون tooltips مكسورة.
+  - `shell/components/NotchLocalSend.qml` وملحقاته: تكامل LocalSend.
 
 ---
 
@@ -283,23 +271,20 @@
 ### أ) ADR-001: فصل محرك تطبيق الثيم إلى سكربت خارجي (`scripts/deloway-theme-apply.py`)
 - **القرار**: سكربت بايثون مستقل يستقبل `theme.json` ويكتب ملفات GTK ذرياً مع `--dry-run`.
 
-### ب) ADR-002: عزل باليت الألوان في `Theme.qml` ومنع تسرب الألوان بين الوضعين
+### ب) ADR-002: عزل باليت الألوان في `Theme.qml`
 - **القرار**: `reloadTheme()` يختار `parsed.light` أو `parsed.dark` بناءً على `mode` النشط.
 
-### ج) ADR-003: WorkspaceIndicator يستخدم ToplevelManager لا Hyprland.toplevels (IPC)
-- **السبب**: `ToplevelManager.toplevels` (Wayland) يوفر `appId` للأيقونات. الربط الصحيح: `WlrToplevel.handle → HyprlandToplevel.workspace.id`.
+### ج) ADR-003: استخدام `Hyprland.toplevels` لاستخراج النوافذ لكل مساحة عمل
+- **السياق**: بروتوكول Wayland القياسي `wlr-foreign-toplevel-management` لا يملك مفهوماً لمساحات العمل (Workspaces). محاولة قراءة `t.handle.workspace` من كائنات `WlrToplevel` أدت لفشل الربط لأن الخاصية غير موجودة على مستوى بروتوكول Wayland.
+- **القرار المعماري**: الاعتماد على سنجلتون `Hyprland.toplevels.values` من كويكشل، واستخراج رقم المساحة من `hl.workspace.id` أو `hl.lastIpcObject.workspace.id`، وهوية التطبيق من `hl.wayland.appId` أو `hl.lastIpcObject.class`، واستدعاء `ApplicationManager.findApp(appId)` لجلب الأيقونات المخصصة.
 
-### د) كراش Hot-Reload (SIGSEGV في PopupAnchor::onItemWindowChanged)
-- **الإجراء الوقائي**: دائماً `killall quickshell && hyprctl dispatch exec "quickshell -p ..."`. لا hot-reload.
-
-### هـ) لا يوجد كرت Wi-Fi فعلي (`WIFI-HW: missing`)
-- طبيعي — الكبسولة تعرض "غير متوفر" وهو السلوك المقصود.
+### د) ADR-004: تصحيح لون النقطة الفارغة `wsEmptyBg`
+- **السياق**: كانت خاصية `wsEmptyBg` مضبوطة سابقاً على `"transparent"`، مما جعل النقاط الفارغة غير مرئية كلياً بالعين المجردة.
+- **القرار**: ضبط `wsEmptyBg` إلى `isDark ? Qt.rgba(1, 1, 1, 0.28) : Qt.rgba(0, 0, 0, 0.22)`، مما يوفر نقاطاً دائرية خافتة واضحة وأنيقة مطابقة لمواصفات التصميم.
 
 ---
 
 ## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
-1. **تحسينات WorkspaceIndicator**: خيار "نمط المؤشر" في الإعدادات (أيقونات / أرقام / نقاط)، قائمة سياق النوافذ عند rightClick.
-2. **كبسولة الإعدادات السريعة — قسم الإشعارات**: بناء section الإشعارات أسفل مزالج الصوت والسطوع.
-3. **صفحات التفاصيل (Drill-down Overlay Sheets)**: Wi-Fi و Bluetooth و Hotspot تنزلق للأعلى.
-4. **تثبيت SystemTrayIndicators وتكامل LocalSend**.
-
+1. **كبسولة الإعدادات السريعة (QuickSettingsCapsule) — قسم الإشعارات**: بناء قسم الإشعارات أسفل مزالج الصوت والسطوع.
+2. **صفحات التفاصيل (Drill-down Overlay Sheets)**: تحويل صفحات الشبكة والبلوتوث ونقطة الاتصال إلى ألواح منبثقة تنزلق للأعلى.
+3. **تثبيت مهمة أيقونات التراي وتكامل LocalSend**.
