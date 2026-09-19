@@ -23,10 +23,28 @@ PanelWindow {
     WlrLayershell.keyboardFocus: root.isOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
 
+    mask: Region {
+        item: root.isOpen ? windowCard : null
+    }
+
     // State management
     property bool isOpen: ShellState.settingsAppOpen
     property string activeTab: ShellState.activeSettingsTab || "appearance"
     property bool isFullScreen: ShellState.settingsFullScreen
+
+    // Window dragging & sizing properties
+    property real customX: -1
+    property real customY: -1
+    property bool isDragging: false
+
+    readonly property real windowedW: Math.min(1060, Math.max(600, root.width - 80))
+    readonly property real windowedH: Math.min(700, Math.max(400, root.height - 80))
+
+    readonly property real defaultX: Math.max(0, Math.round((root.width - windowedW) / 2))
+    readonly property real defaultY: Math.max(0, Math.round((root.height - windowedH) / 2))
+
+    readonly property real clampedX: Math.max(10, Math.min(root.width - windowCard.width - 10, (root.customX >= 0) ? root.customX : defaultX))
+    readonly property real clampedY: Math.max(10, Math.min(root.height - windowCard.height - 10, (root.customY >= 0) ? root.customY : defaultY))
 
     // Tab definitions
     readonly property var tabList: [
@@ -86,6 +104,16 @@ PanelWindow {
         }
         function onSettingsFullScreenChanged() {
             root.isFullScreen = ShellState.settingsFullScreen;
+        }
+        function onSettingsScrollRequested(pos) {
+            if (contentScroll && contentScroll.contentItem) {
+                if (pos >= 0 && pos <= 1.0) {
+                    var maxScroll = Math.max(0, contentScroll.contentHeight - contentScroll.height);
+                    contentScroll.contentItem.contentY = pos * maxScroll;
+                } else {
+                    contentScroll.contentItem.contentY = pos;
+                }
+            }
         }
     }
 
@@ -148,24 +176,14 @@ PanelWindow {
 
     visible: root.isOpen || windowCard.opacity > 0.01
 
-    // Backdrop click-outside dismissal
-    MouseArea {
-        id: backdrop
-        anchors.fill: parent
-        enabled: root.isOpen && !root.isFullScreen
-        onClicked: root.close()
-    }
-
     // Main window card
     Rectangle {
         id: windowCard
-        readonly property real targetW: root.isFullScreen ? root.width : Math.min(1060, root.width - 80)
-        readonly property real targetH: root.isFullScreen ? root.height : Math.min(700, root.height - 80)
 
-        width: targetW
-        height: targetH
-        x: root.isFullScreen ? 0 : Math.round((root.width - targetW) / 2)
-        y: root.isFullScreen ? 0 : Math.round((root.height - targetH) / 2)
+        width: root.isFullScreen ? root.width : root.windowedW
+        height: root.isFullScreen ? root.height : root.windowedH
+        x: root.isFullScreen ? 0 : root.clampedX
+        y: root.isFullScreen ? 0 : root.clampedY
         radius: root.isFullScreen ? 0 : Theme.notchRadiusWindow
         color: Theme.notchBackground
         border.color: root.isFullScreen ? "transparent" : Theme.notchBorderSubtle
@@ -182,16 +200,11 @@ PanelWindow {
             Behavior on yScale { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
         }
 
-        // Prevent click-outside dismissal when clicking inside the window
-        MouseArea {
-            anchors.fill: parent
-        }
-
         Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
         Behavior on width   { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
         Behavior on height  { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-        Behavior on x       { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-        Behavior on y       { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+        Behavior on x       { enabled: !root.isDragging; NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+        Behavior on y       { enabled: !root.isDragging; NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 
         // Window Layout: Header + Body (Sidebar & Floating Content Canvas)
         ColumnLayout {
@@ -205,6 +218,67 @@ PanelWindow {
                 id: windowHeader
                 Layout.fillWidth: true
                 height: 50
+
+                // Header drag area for moving the window & double-click fullscreen
+                MouseArea {
+                    id: headerDragArea
+                    anchors.fill: parent
+                    cursorShape: root.isFullScreen ? Qt.ArrowCursor : (pressed ? Qt.ClosedHandCursor : Qt.ArrowCursor)
+
+                    property point pressPosRoot: Qt.point(0, 0)
+                    property real startCardX: 0
+                    property real startCardY: 0
+
+                    onPressed: mouse => {
+                        if (!root.isFullScreen) {
+                            var p = mapToItem(root, mouse.x, mouse.y);
+                            pressPosRoot = p;
+                            startCardX = (root.customX >= 0) ? root.customX : root.defaultX;
+                            startCardY = (root.customY >= 0) ? root.customY : root.defaultY;
+                            root.isDragging = true;
+                        }
+                    }
+
+                    onPositionChanged: mouse => {
+                        if (pressed && !root.isFullScreen) {
+                            var p = mapToItem(root, mouse.x, mouse.y);
+                            var deltaX = p.x - pressPosRoot.x;
+                            var deltaY = p.y - pressPosRoot.y;
+                            var newX = startCardX + deltaX;
+                            var newY = startCardY + deltaY;
+
+                            var minX = 10;
+                            var maxX = root.width - windowCard.width - 10;
+                            var minY = 10;
+                            var maxY = root.height - windowCard.height - 10;
+
+                            if (maxX < minX) {
+                                minX = 0;
+                                maxX = root.width - 100;
+                            }
+                            if (maxY < minY) {
+                                minY = 0;
+                                maxY = root.height - 50;
+                            }
+
+                            root.customX = Math.max(minX, Math.min(maxX, newX));
+                            root.customY = Math.max(minY, Math.min(maxY, newY));
+                        }
+                    }
+
+                    onReleased: {
+                        root.isDragging = false;
+                    }
+
+                    onCanceled: {
+                        root.isDragging = false;
+                    }
+
+                    onDoubleClicked: {
+                        root.isFullScreen = !root.isFullScreen;
+                        ShellState.settingsFullScreen = root.isFullScreen;
+                    }
+                }
 
                 RowLayout {
                     anchors.fill: parent
@@ -227,7 +301,7 @@ PanelWindow {
                             Text {
                                 text: I18n.isRTL ? "إعدادات النظام" : "System Settings"
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontSize(13)
                                 font.weight: Font.DemiBold
                                 color: Theme.notchText
                                 Layout.alignment: Qt.AlignVCenter
@@ -348,7 +422,7 @@ PanelWindow {
                                     Text {
                                         text: I18n.tr("tab_" + root.activeTab)
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 18
+                                        font.pixelSize: Theme.fontSize(18)
                                         font.weight: Font.Bold
                                         color: Theme.notchText
                                         Layout.fillWidth: true
@@ -358,7 +432,7 @@ PanelWindow {
                                     Text {
                                         text: I18n.tr(root.activeTab + "_desc")
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         color: Theme.notchTextSecondary
                                         Layout.fillWidth: true
                                         elide: Text.ElideRight
@@ -373,13 +447,38 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 clip: true
-                                ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                                contentWidth: availableWidth
+                                contentHeight: contentContainer.implicitHeight
+
+                                ScrollBar.vertical: ScrollBar {
+                                    id: vBar
+                                    policy: contentScroll.contentHeight > contentScroll.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                                    width: 6
+                                    contentItem: Rectangle {
+                                        implicitWidth: 6
+                                        radius: 3
+                                        color: vBar.pressed ? Theme.colors.accent : (vBar.hovered ? Theme.notchBorderHighlight : Theme.notchBorder)
+                                        opacity: (vBar.active || vBar.hovered) ? 0.8 : 0.4
+                                        Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+                                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                    }
+                                }
+
+                                Connections {
+                                    target: ShellState
+                                    function onSettingsScrollRequested(pos) {
+                                        if (vBar) {
+                                            vBar.position = Math.max(0, Math.min(1.0 - vBar.size, pos));
+                                        }
+                                    }
+                                }
 
                                 Item {
                                     id: contentContainer
                                     width: contentScroll.availableWidth
-                                    implicitHeight: activeLoader ? activeLoader.implicitHeight : 340
-                                    property var activeLoader: null
+                                    implicitHeight: currentItem ? (currentItem.implicitHeight > 0 ? currentItem.implicitHeight : currentItem.height) : 340
+                                    height: implicitHeight
+                                    property Item currentItem: null
 
                                     Repeater {
                                         model: root.tabList
@@ -390,6 +489,7 @@ PanelWindow {
                                             readonly property bool wasVisited: !!root.visitedTabs[modelData.id]
 
                                             width: parent ? parent.width : 0
+                                            height: item ? item.implicitHeight : implicitHeight
                                             anchors.top: parent ? parent.top : undefined
                                             anchors.left: parent ? parent.left : undefined
                                             anchors.right: parent ? parent.right : undefined
@@ -397,18 +497,31 @@ PanelWindow {
                                             visible: isCurrent
                                             active: wasVisited
 
-                                            onIsCurrentChanged: {
-                                                if (isCurrent) contentContainer.activeLoader = tabLoader;
-                                            }
-                                            Component.onCompleted: {
-                                                if (isCurrent) contentContainer.activeLoader = tabLoader;
+                                            function updateCurrent() {
+                                                if (isCurrent && item) {
+                                                    contentContainer.currentItem = item;
+                                                }
                                             }
 
-                                            sourceComponent: (modelData.id === "appearance") ? appearanceComponent : placeholderComponent
+                                            onIsCurrentChanged: updateCurrent()
+                                            onItemChanged: updateCurrent()
+                                            Component.onCompleted: updateCurrent()
+
+                                            sourceComponent: (modelData.id === "appearance") ? appearanceComponent : (modelData.id === "dock" ? dockComponent : (modelData.id === "windows" ? windowsComponent : placeholderComponent))
 
                                             Component {
                                                 id: appearanceComponent
                                                 AppearanceTab {}
+                                            }
+
+                                            Component {
+                                                id: dockComponent
+                                                DockTab {}
+                                            }
+
+                                            Component {
+                                                id: windowsComponent
+                                                WindowsTab {}
                                             }
 
                                             Component {
@@ -440,7 +553,7 @@ PanelWindow {
                                                             Text {
                                                                 text: I18n.tr("tab_" + modelData.id)
                                                                 font.family: Theme.typography.fontFamily
-                                                                font.pixelSize: 18
+                                                                font.pixelSize: Theme.fontSize(18)
                                                                 font.weight: Font.DemiBold
                                                                 color: Theme.notchText
                                                                 Layout.alignment: Qt.AlignHCenter
@@ -449,7 +562,7 @@ PanelWindow {
                                                             Text {
                                                                 text: (I18n.isRTL ? "مساحة التبويب (Placeholder) — " : "Tab Placeholder — ") + modelData.id
                                                                 font.family: Theme.typography.fontFamily
-                                                                font.pixelSize: 13
+                                                                font.pixelSize: Theme.fontSize(13)
                                                                 color: Theme.notchTextTertiary
                                                                 Layout.alignment: Qt.AlignHCenter
                                                             }
