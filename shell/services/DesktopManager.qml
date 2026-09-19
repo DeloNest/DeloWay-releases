@@ -32,7 +32,7 @@ Item {
         {
             "id": "trash",
             "name": "Trash",
-            "icon": root.isTrashEmpty ? "user-trash" : "user-trash",
+            "icon": root.isTrashEmpty ? "user-trash" : "user-trash-full",
             "path": "trash://",
             "isSystem": true,
             "isTrash": true,
@@ -70,12 +70,26 @@ Item {
     // User created files and folders on ~/Desktop
     property var userItems: []
 
-    // Combined items array
-    readonly property var allItems: systemItems.concat(userItems)
+    // Combined items array (reactive and explicitly updated on changes)
+    property var allItems: []
 
     // Selection management
     property var selectedItemIds: []
     property string editingItemId: ""
+
+    // ----------------------------------------------------
+    // GRID METRICS & ICON POSITION PERSISTENCE
+    // ----------------------------------------------------
+    readonly property real cellWidth: 96
+    readonly property real cellHeight: 104
+    readonly property real topMargin: 56
+    readonly property real sideMargin: 24
+
+    property bool snapToGrid: true
+
+    readonly property string positionsPath: homeDir + "/.config/deloway/desktop_positions.json"
+    property var iconPositions: ({})
+    property int positionsRevision: 0
 
     // Context Menu State
     property bool contextMenuVisible: false
@@ -107,26 +121,25 @@ Item {
 
     function clearSelection() {
         selectedItemIds = [];
-        editingItemId = "";
     }
 
     // ----------------------------------------------------
-    // CONTEXT MENU TRIGGERS
+    // CONTEXT MENU HANDLERS
     // ----------------------------------------------------
     function showWallpaperContextMenu(x, y) {
         contextMenuTargetItem = null;
-        contextMenuX = Math.min(x, 1920 - 240);
-        contextMenuY = Math.min(y, 1080 - 320);
+        contextMenuX = x;
+        contextMenuY = y;
         contextMenuVisible = true;
     }
 
     function showItemContextMenu(item, x, y) {
         contextMenuTargetItem = item;
-        if (!selectedItemIds.includes(item.id)) {
+        contextMenuX = x;
+        contextMenuY = y;
+        if (item && item.id && !isItemSelected(item.id)) {
             selectedItemIds = [item.id];
         }
-        contextMenuX = Math.min(x, 1920 - 240);
-        contextMenuY = Math.min(y, 1080 - 280);
         contextMenuVisible = true;
     }
 
@@ -136,32 +149,33 @@ Item {
     }
 
     // ----------------------------------------------------
-    // ACTIONS & LAUNCHERS
+    // ACTIONS (NEW FOLDER, NEW FILE, OPEN TERMINAL, ETC.)
     // ----------------------------------------------------
+    function createFolder(baseName) {
+        const name = (baseName && baseName.trim().length > 0) ? baseName.trim() : (I18n.isRTL ? "مجلد جديد" : "New Folder");
+        const cmd = "cd '" + root.desktopDir + "' && name='" + name + "'; i=1; while [ -e \"$name\" ]; do name=\"" + name + " ($i)\"; i=$((i+1)); done; mkdir -p \"$name\"";
+        Quickshell.execDetached(["bash", "-c", cmd]);
+        refreshTimer.restart();
+    }
+
+    function createDocument(baseName) {
+        const name = (baseName && baseName.trim().length > 0) ? baseName.trim() : (I18n.isRTL ? "مستند جديد.txt" : "New Document.txt");
+        const cmd = "cd '" + root.desktopDir + "' && name='" + name + "'; i=1; while [ -e \"$name\" ]; do name=\"" + name.replace(/\.txt$/, "") + " ($i).txt\"; i=$((i+1)); done; touch \"$name\"";
+        Quickshell.execDetached(["bash", "-c", cmd]);
+        refreshTimer.restart();
+    }
+
+    function openTerminalHere() {
+        Quickshell.execDetached(["kitty", "--directory", root.desktopDir]);
+    }
+
     function openItem(item) {
         if (!item) return;
-        if (item.isTrash) {
-            Hyprland.dispatch("exec thunar trash://");
-        } else if (item.isDesktopEntry && item.path) {
-            Hyprland.dispatch("exec gio launch '" + item.path + "'");
+        if (item.isDesktopEntry && item.path) {
+            Quickshell.execDetached(["gtk-launch", item.fileName || item.name]);
         } else if (item.path) {
-            Hyprland.dispatch("exec xdg-open '" + item.path + "'");
+            Quickshell.execDetached(["xdg-open", item.path]);
         }
-    }
-
-    function openTerminalHere(dirPath) {
-        const target = dirPath || root.desktopDir;
-        Hyprland.dispatch("exec kitty --directory '" + target + "'");
-    }
-
-    function createFolder(folderName) {
-        const name = (folderName && folderName.trim().length > 0) ? folderName.trim() : "New Folder";
-        mkdirProcess.exec(["mkdir", "-p", root.desktopDir + "/" + name]);
-    }
-
-    function createDocument(fileName) {
-        const name = (fileName && fileName.trim().length > 0) ? fileName.trim() : "New Document.txt";
-        touchProcess.exec(["touch", root.desktopDir + "/" + name]);
     }
 
     function renameItem(item, newName) {
@@ -170,66 +184,167 @@ Item {
             return;
         }
         if (item.isSystem) {
-            // System folders cannot be physically renamed
             editingItemId = "";
             return;
         }
         const oldP = item.path;
         const newP = root.desktopDir + "/" + newName.trim();
-        renameProcess.exec(["mv", oldP, newP]);
+        Quickshell.execDetached(["mv", oldP, newP]);
         editingItemId = "";
+        refreshTimer.restart();
     }
 
     function moveToTrash(item) {
         if (!item || item.isSystem) return;
-        trashProcess.exec(["gio", "trash", item.path]);
+        Quickshell.execDetached(["gio", "trash", item.path]);
+        refreshTimer.restart();
     }
 
     function emptyTrash() {
-        emptyTrashProcess.exec(["bash", "-c", "rm -rf " + root.trashFilesDir + "/* " + root.trashInfoDir + "/*"]);
+        Quickshell.execDetached(["bash", "-c", "rm -rf '" + root.trashFilesDir + "'/* '" + root.trashInfoDir + "'/*"]);
+        root.isTrashEmpty = true;
+        refreshTimer.restart();
     }
 
     function startRenaming(id) {
         editingItemId = id;
     }
 
+    function cancelRenaming() {
+        editingItemId = "";
+    }
+
+    // ----------------------------------------------------
+    // POSITION CALCULATION & PERSISTENCE
+    // ----------------------------------------------------
+    function getItemX(id, index, parentW, parentH) {
+        // Dependency on revision to re-evaluate on changes
+        const _rev = root.positionsRevision;
+        if (root.iconPositions && root.iconPositions[id] && root.iconPositions[id].x !== undefined) {
+            return root.iconPositions[id].x;
+        }
+        const pW = (parentW && parentW > 0) ? parentW : 1920;
+        const pH = (parentH && parentH > 0) ? parentH : 1080;
+        const availableH = Math.max(200, pH - root.topMargin - 60);
+        const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
+        const col = Math.floor(index / itemsPerCol);
+
+        if (I18n.isRTL) {
+            return Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth));
+        } else {
+            return root.sideMargin + (col * root.cellWidth);
+        }
+    }
+
+    function getItemY(id, index, parentW, parentH) {
+        const _rev = root.positionsRevision;
+        if (root.iconPositions && root.iconPositions[id] && root.iconPositions[id].y !== undefined) {
+            return root.iconPositions[id].y;
+        }
+        const pH = (parentH && parentH > 0) ? parentH : 1080;
+        const availableH = Math.max(200, pH - root.topMargin - 60);
+        const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
+        const row = index % itemsPerCol;
+        return root.topMargin + (row * root.cellHeight);
+    }
+
+    function saveItemPosition(id, rawX, rawY, parentW, parentH) {
+        let finalX = Math.round(rawX);
+        let finalY = Math.round(rawY);
+
+        if (root.snapToGrid) {
+            const pW = (parentW && parentW > 0) ? parentW : 1920;
+            finalY = root.topMargin + Math.max(0, Math.round((finalY - root.topMargin) / root.cellHeight)) * root.cellHeight;
+            if (I18n.isRTL) {
+                // RTL columns snap from right
+                const col = Math.max(0, Math.round((pW - root.sideMargin - root.cellWidth - finalX) / root.cellWidth));
+                finalX = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth));
+            } else {
+                const col = Math.max(0, Math.round((finalX - root.sideMargin) / root.cellWidth));
+                finalX = root.sideMargin + (col * root.cellWidth);
+            }
+        }
+
+        let updated = Object.assign({}, root.iconPositions);
+        updated[id] = { "x": finalX, "y": finalY };
+        root.iconPositions = updated;
+        root.positionsRevision++;
+        savePositionsTimer.restart();
+    }
+
+    function autoArrangeIcons(parentW, parentH) {
+        const pW = parentW || 1920;
+        const pH = parentH || 1080;
+        const availableH = Math.max(200, pH - root.topMargin - 60);
+        const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
+
+        let updated = {};
+        for (let i = 0; i < root.allItems.length; i++) {
+            const item = root.allItems[i];
+            const col = Math.floor(i / itemsPerCol);
+            const row = i % itemsPerCol;
+            const y = root.topMargin + (row * root.cellHeight);
+            let x = 0;
+            if (I18n.isRTL) {
+                x = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth));
+            } else {
+                x = root.sideMargin + (col * root.cellWidth);
+            }
+            updated[item.id] = { "x": Math.round(x), "y": Math.round(y) };
+        }
+        root.iconPositions = updated;
+        root.positionsRevision++;
+        savePositionsTimer.restart();
+    }
+
+    function resetPositions() {
+        root.iconPositions = ({});
+        root.positionsRevision++;
+        Quickshell.execDetached(["bash", "-c", "mkdir -p '" + root.homeDir + "/.config/deloway' && echo '{}' > '" + root.positionsPath + "'"]);
+    }
+
     // ----------------------------------------------------
     // BACKGROUND SCANNING & PROCESSES
     // ----------------------------------------------------
+    Process {
+        id: loadPositionsProcess
+        stdout: SplitParser {
+            onRead: function(data) {
+                try {
+                    const trimmed = data.trim();
+                    if (trimmed.length > 0) {
+                        const parsed = JSON.parse(trimmed);
+                        if (parsed && typeof parsed === "object") {
+                            root.iconPositions = parsed;
+                            root.positionsRevision++;
+                        }
+                    }
+                } catch(e) {}
+            }
+        }
+    }
+
+    Timer {
+        id: savePositionsTimer
+        interval: 350
+        repeat: false
+        onTriggered: {
+            const jsonStr = JSON.stringify(root.iconPositions, null, 2);
+            Quickshell.execDetached(["bash", "-c", "mkdir -p '" + root.homeDir + "/.config/deloway' && cat << 'EOF' > '" + root.positionsPath + "'\n" + jsonStr + "\nEOF"]);
+        }
+    }
+
+    function loadPositions() {
+        loadPositionsProcess.command = ["bash", "-c", "cat '" + root.positionsPath + "' 2>/dev/null || echo '{}'"];
+        loadPositionsProcess.running = true;
+    }
+
     Process {
         id: checkTrashProcess
         stdout: SplitParser {
             onRead: function(data) {
                 root.isTrashEmpty = (data.trim() === "empty");
             }
-        }
-    }
-
-    Process {
-        id: mkdirProcess
-        onExited: refreshDesktop()
-    }
-
-    Process {
-        id: touchProcess
-        onExited: refreshDesktop()
-    }
-
-    Process {
-        id: renameProcess
-        onExited: refreshDesktop()
-    }
-
-    Process {
-        id: trashProcess
-        onExited: refreshDesktop()
-    }
-
-    Process {
-        id: emptyTrashProcess
-        onExited: {
-            root.isTrashEmpty = true;
-            refreshDesktop();
         }
     }
 
@@ -344,24 +459,59 @@ Item {
         }
         onExited: {
             root.userItems = root._pendingUserItems;
+            root.allItems = root.systemItems.concat(root.userItems);
+            console.log("[Deloway Desktop] Scan complete. Found " + root.userItems.length + " user items, total allItems: " + root.allItems.length);
         }
     }
 
     function refreshDesktop() {
         root._pendingUserItems = [];
         const scanCmd = "mkdir -p '" + root.desktopDir + "' && for entry in '" + root.desktopDir + "'/*; do [ -e \"$entry\" ] || continue; name=$(basename \"$entry\"); if [ -d \"$entry\" ]; then printf \"DIR\\t\\t%s\\n\" \"$name\"; elif [[ \"$name\" == *.desktop ]]; then d_name=$(grep -m1 '^Name=' \"$entry\" | cut -d= -f2-); d_icon=$(grep -m1 '^Icon=' \"$entry\" | cut -d= -f2-); [ -z \"$d_name\" ] && d_name=\"$name\"; printf \"DESKTOP\\t%s\\t%s\\t%s\\n\" \"$d_icon\" \"$d_name\" \"$name\"; else printf \"FILE\\t\\t%s\\n\" \"$name\"; fi; done";
-        listDesktopProcess.exec(["bash", "-c", scanCmd]);
-        checkTrashProcess.exec(["bash", "-c", "[ -d " + root.trashFilesDir + " ] && [ $(ls -A " + root.trashFilesDir + " 2>/dev/null | wc -l) -gt 0 ] && echo 'full' || echo 'empty'"]);
+        listDesktopProcess.command = ["bash", "-c", scanCmd];
+        listDesktopProcess.running = true;
+
+        checkTrashProcess.command = ["bash", "-c", "[ -d '" + root.trashFilesDir + "' ] && [ $(ls -A '" + root.trashFilesDir + "' 2>/dev/null | wc -l) -gt 0 ] && echo 'full' || echo 'empty'"];
+        checkTrashProcess.running = true;
+    }
+
+    Process {
+        id: desktopWatcherProcess
+        command: [
+            "python3", "-u", "-c",
+            "import os, sys, ctypes\n" +
+            "libc = ctypes.CDLL(None)\n" +
+            "fd = libc.inotify_init()\n" +
+            "MASK = 0x100 | 0x200 | 0x40 | 0x80\n" +
+            "d = sys.argv[1]\n" +
+            "os.makedirs(d, exist_ok=True)\n" +
+            "libc.inotify_add_watch(fd, d.encode(), MASK)\n" +
+            "t = sys.argv[2]\n" +
+            "if os.path.exists(t):\n" +
+            "    libc.inotify_add_watch(fd, t.encode(), MASK)\n" +
+            "while True:\n" +
+            "    if os.read(fd, 1024):\n" +
+            "        print('change', flush=True)\n",
+            root.desktopDir,
+            root.trashFilesDir
+        ]
+        running: true
+        stdout: SplitParser {
+            onRead: function(line) {
+                refreshTimer.restart();
+            }
+        }
     }
 
     Timer {
-        interval: 3000
-        repeat: true
-        running: true
+        id: refreshTimer
+        interval: 300
+        repeat: false
         onTriggered: refreshDesktop()
     }
 
     Component.onCompleted: {
+        root.allItems = root.systemItems.concat([]);
+        loadPositions();
         refreshDesktop();
     }
 }

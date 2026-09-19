@@ -242,6 +242,9 @@ Item {
     readonly property color musicBadge: isDark ? "#fa243c" : "#e11d48"
     readonly property color calendarPast: isDark ? "#3b82f6" : "#2563eb"
     readonly property color calendarFuture: isDark ? "#ef5350" : "#dc2626"
+    readonly property color sliderTrack: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
+    readonly property color sliderFill: isDark ? "#ffffff" : colors.textPrimary
+    readonly property color sliderThumb: isDark ? "#ffffff" : colors.textPrimary
 
     function setMode(newMode) {
         if (newMode !== "dark" && newMode !== "light") return;

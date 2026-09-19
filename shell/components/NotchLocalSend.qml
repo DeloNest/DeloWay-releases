@@ -178,8 +178,8 @@ Item {
             Shape {
                 anchors.fill: parent
                 ShapePath {
-                    fillColor: dropArea.containsDrag ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
-                    strokeColor: dropArea.containsDrag ? Theme.colors.accent : Qt.rgba(1, 1, 1, 0.22)
+                    fillColor: dropArea.containsDrag ? Theme.notchSurfaceHover : "transparent"
+                    strokeColor: dropArea.containsDrag ? Theme.colors.accent : Theme.notchBorder
                     strokeWidth: 1.5
                     strokeStyle: ShapePath.DashLine
                     dashPattern: [6, 4]
@@ -204,7 +204,7 @@ Item {
                 SymbolicIcon {
                     source: "notch-tray"
                     iconSize: 22
-                    iconColor: Qt.rgba(1, 1, 1, 0.40)
+                    iconColor: Theme.notchTextTertiary
                     Layout.alignment: Qt.AlignVCenter
                 }
 
@@ -217,13 +217,13 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Medium
-                        color: Qt.rgba(1, 1, 1, 0.85)
+                        color: Theme.notchText
                     }
                     Text {
                         text: "LocalSend: " + LocalSendService.localAlias + " • " + (LocalSendService.isRunning ? I18n.tr("notch_status_ready") : I18n.tr("notch_status_stopped"))
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: 10
-                        color: LocalSendService.isRunning ? Theme.colors.success : Qt.rgba(1, 1, 1, 0.40)
+                        color: LocalSendService.isRunning ? Theme.colors.success : Theme.notchTextTertiary
                     }
                 }
             }

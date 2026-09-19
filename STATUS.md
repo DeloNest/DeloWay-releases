@@ -223,14 +223,40 @@
 
 ---
 
-## 6. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
+## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
+*(مستخرج مباشرة من سجل Git الفعلي)*:
+* `b13a75e` - docs: update STATUS.md with system theming completion, ADR, Qt report, and roadmap (2026-09-19)
+* `728c600` - feat(theme): add deloway-theme-apply.py engine and integrate with ConfigManager (2026-09-19)
+* `4e21ce7` - refactor(theme): replace hardcoded colors with Theme tokens across Notch, Desktop, and Dock (2026-09-19)
+* `4982d64` - feat(theme): add system theme backup, restore script, and applySystemTheme toggle (2026-09-19)
+* `08b2d8a` - docs: update STATUS.md changelog and state for persistent music player (2026-09-19)
+* `c3e91b0` - fix(notch): keep music player visible on pause and bind viewMode to player presence (2026-09-19)
+* `f7d44e6` - feat(settings): make settings window draggable, resizable to fullscreen, and allow side-by-side multitasking (2026-09-19)
+* `c15d1b3` - docs: update STATUS.md changelog, active state, and architecture map for NotchFrame and tabs (2026-09-19)
+* `a1976fe` - feat(i18n): update Notch tab names to Home, Share, and Notifications with Arabic localization (2026-09-19)
+* `d089ff5` - fix(notch): center expanded tab row and decouple settings gear button (2026-09-19)
+* `373c94d` - refactor(capsule): extract NotchFrame component and unify QuickSettingsCapsule with Notch geometry and ceiling attachment (2026-09-19)
+* `1a5a204` - chore: add STATUS.md as self-contained architecture and state reference for planning-only AI models (2026-09-19)
+* `f561833` - style: unify DockContextMenu typography with Theme.fontSize() and DesktopContextMenu sizing standard (2026-09-19)
+* `0f41291` - fix: dismiss DockContextMenu on outside click and Escape via HyprlandFocusGrab (2026-09-19)
+* `2943330` - style: replace unicode glyphs with SymbolicIcon and enlarge compact mini music player elements (2026-09-19)
+* `c9d24bc` - chore: track status icons and add mappings for hotspot, localsend, session, and font settings (2026-09-19)
+* `fa44abb` - fix(capsule): slim sliders 5px+thumb, clip cards, compact edge geometry, premium compact bar icons (2026-09-17)
+* `3ad1bf9` - perf(capsule): accelerate expansion physics with snappy OutCubic easing (2026-09-17)
+* `d916a9d` - fix(drawer): bind typography and dimensions dynamically to font scale (2026-09-17)
+* `ae7f825` - fix(settings): add inset hover capsule and resolve RTL alignment (2026-09-17)
+* `59b229e` - feat(settings): add common components library (Section, Row, Toggle) (2026-09-16)
+
+---
+
+## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
 - **المهام المنجزة والمثبتة في HEAD**:
   - **تطبيق ثيم DeloWay على برامج النظام (GTK 3.0 / GTK 4.0 / Libadwaita / Electron / Chromium)**:
     - **المرحلة 1 (الحماية والنسخ الاحتياطي)**: تم حفظ نسخة احتياطية كاملة ودائمة لملفات `~/.config/gtk-3.0` و `gtk-4.0` و `gsettings` في `~/.config/deloway/backups/original/`، وتوفير سكربت استرجاع فوري `scripts/restore-system-theme.sh` مع دعم `--dry-run`، وإضافة مفتاح تحكم اختياري `applySystemTheme` في إعدادات الواجهة (`AppearanceTab.qml`) مع ترجمة كاملة للعربية والإنجليزية (`4982d64`).
     - **المرحلة 2 (تنظيف الألوان الثابتة وتوسيع التوكنز)**: استبدال كافة الألوان الصلبة (Hardcoded) في `NotchHome.qml` و `NotchNotifications.qml` و `NotchLocalSend.qml` و `TraditionalDesktop.qml` و `DockTab.qml` بتوكنز `Theme` الدلالية، وإضافة توكنز التكيف اللوني (`musicBadge`, `calendarPast`, `calendarFuture`) في `Theme.qml` (`4e21ce7`).
     - **المرحلة 3 (محرك الثيم الخارجي `deloway-theme-apply.py`)**: فصل توليد ملفات الثيم إلى سكربت بايثون مستقل ينفذ عمليات كتابة ذرية (Atomic Writes)، ويدعم وضع المعاينة `--dry-run`، ويقرأ الخطوط (`Google Sans Flex Medium 11`) والأيقونات (`Reversal-dark`) والمؤشرات (`default`) من `gsettings` للمضيف كمصدر وحيد للحقيقة، وتوليد ملفات `gtk.css` و `settings.ini` لكل من GTK 3 و GTK 4، وتوليد `theme.json` متكامل من `ConfigManager.qml` (`728c600`).
-    - **المرحلة 4 (التحقق من تطبيقات Electron/Chromium والتقرير الفني لـ Qt)**: التحقق من توافقية برامج Brave و VSCodium و Discord مع `color-scheme`، وتوثيق معمارية وخطوات ثيم برامج Qt المستقبلية دون المساس بالملفات.
+    - **المرحلة 4 (التحقق من تطبيقات Electron/Chromium والتقرير الفني لـ Qt)**: التحقق من توافقية برامج Brave و VSCodium و Discord مع `color-scheme`، وتوثيق معمارية وخطوات ثيم برامج Qt المستقبلية دون المساس بالملفات (`b13a75e`).
   - **مشغل الموسيقى المستمر في النوتش (MPRIS Persistence)**: تم ربط ظهور المشغل بوجود مصدر الموسيقى (`hasPlayer`) بدلاً من حالة التشغيل اللحظية (`isMusicPlaying`)، ليبقى ظاهراً بكامل تفاصيله عند الإيقاف المؤقت (Paused)، مع تمكين زر التشغيل من استئناف العزف، ولا يختفي إلا عند إغلاق التطبيق كلياً (`c3e91b0`).
   - **نافذة الإعدادات العائمة متعددة المهام (`SettingsAppV2.qml`)**: نافذة عائمة قابلة للسحب والتحريك بحرية، مع إزالة حجب النقرات الخارجية وتطبيق قناع `Region` لتتيح العمل جنباً إلى جنب مع التطبيقات الأخرى (Multitasking)، ودعم التبديل السلس بين الحجم العائم وملء الشاشة (`f7d44e6`).
   - **توحيد شكل وهندسة النوتش والكبسولة (`NotchFrame.qml`)**: استخراج المكون المشترك وتوحيد التصاق الكبسولة والنوتش بسقف الشاشة مع نفس الأذنين (18px) والزوايا السفلية (26px) والظل الناعم (`373c94d`).
@@ -244,7 +270,7 @@
 
 ---
 
-## 7. سجل القرارات المعمارية والتقارير الفنية (Architectural Decision Records - ADR & Technical Reports)
+## 8. المشاكل المعروفة والتحديات التقنية وسجل القرارات المعمارية (Known Issues, Technical Constraints & ADR)
 
 ### أ) ADR-001: فصل محرك تطبيق الثيم إلى سكربت خارجي (`scripts/deloway-theme-apply.py`)
 - **السياق**: كان `ConfigManager.qml` يولد نصوص CSS و INI ضخمة تصل لأكثر من 160 سطراً عبر سلاسل نصية مدمجة (Inline Bash Script) تُمرر إلى `Process`.
@@ -258,16 +284,12 @@
 
 ### ب) التقرير الفني: سلوك وتوافقية تطبيقات Electron / Chromium مع ثيم DeloWay
 1. **Brave Browser (`/usr/bin/brave`)**:
-   - **السلوك**: يتبع تلقائياً قيمة `org.gnome.desktop.interface color-scheme` عبر XDG Desktop Portal و GSettings.
-   - **واجهة المتصفح**: عند ضبط خيار "Brave colors" على "Same as Windows/System" (في `brave://settings/appearance`)، تنعكس ألوان القوائم وأشرطة الأدوات فوراً بين الفاتح والداكن.
-   - **محتوى الويب**: مواقع الويب التي تدعم استعلام الميديا `@media (prefers-color-scheme: dark/light)` تستجيب فورياً.
-   - **المعاملات الإضافية**: لا يحتاج أي flags إضافية في الوضع العادي. خيار `--enable-features=WebContentsForceDark` لا يُنصح به افتراضياً لأنه يعكس ألوان المواقع قسرياً حتى لو كانت غير مهيأة.
+   - **السلوك الملاحظ فعلياً**: عند تغيير `color-scheme` إلى `prefer-light`، يتغير شريط العنوان وإطار النافذة فوراً. أما صفحة الويب (مثل YouTube) فلا تتغير تلقائياً إلا إذا كان خيار المظهر داخل الموقع مضبوطاً على "حسب الجهاز (Device theme)" بدلاً من خيار يدوي ثابت.
+   - **المعاملات**: لا يتطلب flags إضافية في الوضع العادي.
 2. **VSCodium (`/usr/bin/vscodium`)**:
-   - **السلوك**: مبني على Electron الحديث ويدعم الاستماع المباشر لـ `color-scheme` عبر Portal و GSettings.
-   - **الإعدادات**: يتضمن إعداداً افتراضياً `"window.autoDetectColorScheme": true`. عند تغيير النظام إلى الداكن أو الفاتح، ينتقل محرر الأكواد تلقائياً بين الثيم الداكن المفضل (`workbench.preferredDarkColorTheme`) والثيم الفاتح المفضل (`workbench.preferredLightColorTheme`).
+   - **السلوك الملاحظ فعلياً**: بعد الفحص المخبري لملف `~/.config/VSCodium/User/settings.json`، تبين وجود ثيم مخصص صريح `"workbench.colorTheme": "Abyss"`، وبالتالي لم يتغير المحرر تلقائياً عند تغيير `color-scheme` لأن إعداد `"window.autoDetectColorScheme"` غير مفعل. يتطلب التبديل التلقائي تفعيل هذا الإعداد في إعدادات المستخدم.
 3. **Discord (`/usr/bin/discord`)**:
-   - **السلوك**: تطبيق Discord على نظام Linux يعتمد إصداراً خاصاً من Electron.
-   - **الإعدادات**: في قائمة `User Settings -> Appearance -> Theme`، عند اختيار "Sync with computer"، يتبع ثيم النظام. وفي حال عدم الاستجابة الفورية، يتطلب إعادة تشغيل التطبيق ليقرأ `color-scheme` المحدث.
+   - **السلوك الملاحظ فعلياً**: يعتمد إصدار Electron خاصاً على لينكس ومثبت في `settings.json` على `"BACKGROUND_COLOR": "#121214"`. لا يتغير تلقائياً مع `gsettings` مباشرة إلا عند تفعيل "Sync with computer" داخل إعدادات التطبيق وقد يتطلب إعادة تشغيل لقراءة المتغير.
 
 ### ج) التقرير الفني: خارطة طريق تطبيق ثيم DeloWay على تطبيقات Qt (`pavucontrol-qt`, `RPCS3`)
 - **الواقع الحالي للنظام**:
@@ -297,31 +319,22 @@
    - بروتوكول `wlr_layer_shell_v1` يقيد أحياناً ارتباط قوائم `xdg_popup` به إذا لم يتم تمرير التركيز وإدارته عبر `HyprlandFocusGrab` بشكل صريح.
 4. **حساسية الـ REPL والتعديل على إعدادات Hyprland للمضيف**:
    - قصر التحكم على استدعاءات `hyprctl dispatch` الآمنة وتجنب `hyprctl repl` أو تقييم دوال Lua عشوائية.
-
----
-
-## 8. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
-*(مستخرج مباشرة من سجل Git الفعلي)*:
-* `728c600` - feat(theme): add deloway-theme-apply.py engine and integrate with ConfigManager (2026-09-19)
-* `4e21ce7` - refactor(theme): replace hardcoded colors with Theme tokens across Notch, Desktop, and Dock (2026-09-19)
-* `4982d64` - feat(theme): add system theme backup, restore script, and applySystemTheme toggle (2026-09-19)
-* `08b2d8a` - docs: update STATUS.md changelog and state for persistent music player (2026-09-19)
-* `c3e91b0` - fix(notch): keep music player visible on pause and bind viewMode to player presence (2026-09-19)
-* `f7d44e6` - feat(settings): make settings window draggable, resizable to fullscreen, and allow side-by-side multitasking (2026-09-19)
-* `c15d1b3` - docs: update STATUS.md changelog, active state, and architecture map for NotchFrame and tabs (2026-09-19)
-* `a1976fe` - feat(i18n): update Notch tab names to Home, Share, and Notifications with Arabic localization (2026-09-19)
-* `d089ff5` - fix(notch): center expanded tab row and decouple settings gear button (2026-09-19)
-* `373c94d` - refactor(capsule): extract NotchFrame component and unify QuickSettingsCapsule with Notch geometry and ceiling attachment (2026-09-19)
-* `1a5a204` - chore: add STATUS.md as self-contained architecture and state reference for planning-only AI models (2026-09-19)
-* `f561833` - style: unify DockContextMenu typography with Theme.fontSize() and DesktopContextMenu sizing standard (2026-09-19)
-* `0f41291` - fix: dismiss DockContextMenu on outside click and Escape via HyprlandFocusGrab (2026-09-19)
-* `2943330` - style: replace unicode glyphs with SymbolicIcon and enlarge compact mini music player elements (2026-09-19)
-* `c9d24bc` - chore: track status icons and add mappings for hotspot, localsend, session, and font settings (2026-09-19)
-* `fa44abb` - fix(capsule): slim sliders 5px+thumb, clip cards, compact edge geometry, premium compact bar icons (2026-09-17)
-* `3ad1bf9` - perf(capsule): accelerate expansion physics with snappy OutCubic easing (2026-09-17)
-* `d916a9d` - fix(drawer): bind typography and dimensions dynamically to font scale (2026-09-17)
-* `ae7f825` - fix(settings): add inset hover capsule and resolve RTL alignment (2026-09-17)
-* `59b229e` - feat(settings): add common components library (Section, Row, Toggle) (2026-09-16)
+5. **كراش Quickshell أثناء الـ Hot-Reload والتعديل السريع (SIGSEGV in RootWrapper / PopupAnchor)**:
+   - **المشكلة**: عند حفظ ملفات متعددة في أجزاء من الثانية (مثل حفظ عدة ملفات QML متزامنة عبر أدوات التحرير أو git checkout)، يستلم محرك `quickshell-git` إشعار مراقبة الملفات `EngineGeneration::filesChanged()` ويبدأ إعادة بناء الشجرة فورياً عبر `RootWrapper::reloadGraph()`. أثناء فك ارتباط نوافذ layer-shell (`WlrLayershell::disownWindow`)، تستدعي نوافذ الـ popup المعلقة دالة `PopupAnchor::onItemWindowChanged()` على كائن تم تحريره بالفعل (Use-After-Free / Null pointer dereference)، مما يسبب انهياراً فورياً للعملية بإشارة `SIGSEGV` (Signal 11).
+   - **الـ Stack Trace المختصر (من `coredumpctl`)**:
+     ```text
+     #0  0x00005d54da80dc18 PopupAnchor::onItemWindowChanged() (quickshell)
+     #1  0x000078ce09f3ee51 QCallableObject::impl(int, QSlotObjectBase*, QObject*, void**, bool*)
+     #2  0x000078ce0a02cb06 QObject::event(QEvent*) (libQt6Core.so.6)
+     #3  0x000078ce0a0e5b7b QCoreApplication::notifyInternal2(QObject*, QEvent*) (libQt6Core.so.6)
+     #4  0x00005d54da828fe7 WlrLayershell::disownWindow(WlrLayershellWindow*) (quickshell)
+     #5  0x00005d54da81fc8a RootWrapper::reloadGraph() (quickshell)
+     #6  0x00005d54da8202d6 EngineGeneration::filesChanged() (quickshell)
+     ```
+   - **الإجراء الوقائي والعلاج**:
+     1. تعديل ملف واحد في كل مرة والانتظار حتى اكتمال المعالجة لتجنب تتابع أحداث `filesChanged`.
+     2. التحقق دائماً من صحة ملفات QML عبر `qmllint` قبل الحفظ.
+     3. في حال حدوث الانهيار، يتم إعادة إطلاق الواجهة بأمر صريح ونظيف: `hyprctl dispatch exec "quickshell -p /home/waleed/Projects/Deloway/shell"`.
 
 ---
 
@@ -339,4 +352,5 @@
    - إعداد ومزامنة المجلدات المحلية ومراقبة حالة المزامنة اللحظية عبر كبسولة أو تبويب مخصص.
 6. **الفحص الشامل لاتجاه RTL والترجمة العربية**:
    - مراجعة كافة المحاذاة الأفقية للتأكد من أن جميع الحاويات والنصوص تنعكس تلقائياً بدقة عند اختيار اللغة العربية.
+
 

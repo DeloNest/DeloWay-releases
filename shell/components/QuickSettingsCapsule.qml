@@ -731,8 +731,8 @@ PanelWindow {
                                     return "battery-full-symbolic";
                                 }
                                 iconColor: {
-                                    if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
-                                    if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                    if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
+                                    if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
                                     return Theme.notchText;
                                 }
                             }
@@ -743,8 +743,8 @@ PanelWindow {
                                 font.pixelSize: Theme.fontSize(10)
                                 font.weight: Font.Medium
                                 color: {
-                                    if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
-                                    if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                    if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
+                                    if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
                                     return Theme.notchTextSecondary;
                                 }
                                 renderType: Theme.renderType
@@ -784,7 +784,7 @@ PanelWindow {
                             anchors.centerIn: parent
                             iconSize: 14
                             source: root.volumeIconName + "-symbolic"
-                            iconColor: root.isMuted ? "#f87171" : Theme.notchText
+                            iconColor: root.isMuted ? Theme.colors.danger : Theme.notchText
                         }
 
                         MouseArea {
@@ -1030,8 +1030,8 @@ PanelWindow {
                                             return "battery-full-symbolic";
                                         }
                                         iconColor: {
-                                            if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
-                                            if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                            if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
+                                            if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
                                             return Theme.notchTextSecondary;
                                         }
                                     }
@@ -1042,8 +1042,8 @@ PanelWindow {
                                         font.pixelSize: Theme.fontSize(10)
                                         font.weight: Font.Medium
                                         color: {
-                                            if (SystemMonitor.batteryStatusText === "Charging") return "#34d399";
-                                            if (SystemMonitor.batteryPercent <= 20) return "#f87171";
+                                            if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
+                                            if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
                                             return Theme.notchTextSecondary;
                                         }
                                         renderType: Theme.renderType
@@ -1480,7 +1480,7 @@ PanelWindow {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 60
                         radius: Theme.notchRadiusCard
-                        color: (volumeSliderMa.containsMouse || muteBtnMa.containsMouse) ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                        color: (volumeSliderMa.containsMouse || volIcon.containsMouse) ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
                         clip: true
@@ -1499,22 +1499,14 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 spacing: 6
 
-                                Rectangle {
-                                    implicitWidth: 26
-                                    implicitHeight: 26
-                                    radius: 13
-                                    color: muteBtnMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 80 } }
-
-                                    SymbolicIcon {
-                                        anchors.centerIn: parent
-                                        source: root.volumeIconName + "-symbolic"
-                                        iconSize: 14
-                                        iconColor: root.isMuted ? "#f87171" : Theme.notchText
-                                    }
+                                SymbolicIcon {
+                                    id: volIcon
+                                    source: root.volumeIconName + "-symbolic"
+                                    iconSize: 14
+                                    iconColor: root.isMuted ? Theme.colors.danger : Theme.notchText
+                                    Layout.alignment: Qt.AlignVCenter
 
                                     MouseArea {
-                                        id: muteBtnMa
                                         anchors.fill: parent
                                         cursorShape: Qt.PointingHandCursor
                                         hoverEnabled: true
@@ -1557,7 +1549,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     height: 6
                                     radius: 3
-                                    color: Qt.rgba(1, 1, 1, 0.12)
+                                    color: Theme.sliderTrack
 
                                     Rectangle {
                                         id: volumeFill
@@ -1566,7 +1558,7 @@ PanelWindow {
                                         anchors.left: parent.left
                                         width: parent.width * Math.max(0, Math.min(1, root.isMuted ? 0 : root.currentVolume))
                                         radius: 3
-                                        color: "#FFFFFF"
+                                        color: Theme.sliderFill
                                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                                         Behavior on width {
                                             enabled: !volumeSliderMa.pressed
@@ -1579,7 +1571,7 @@ PanelWindow {
                                         width: 14
                                         height: 14
                                         radius: 7
-                                        color: "#FFFFFF"
+                                        color: Theme.sliderThumb
                                         anchors.verticalCenter: parent.verticalCenter
                                         x: Math.max(0, Math.min(parent.width - width, parent.width * (root.isMuted ? 0 : root.currentVolume) - width / 2))
                                         border.color: Qt.rgba(0, 0, 0, 0.20)
@@ -1678,7 +1670,7 @@ PanelWindow {
                                     anchors.right: parent.right
                                     height: 6
                                     radius: 3
-                                    color: Qt.rgba(1, 1, 1, 0.12)
+                                    color: Theme.sliderTrack
 
                                     Rectangle {
                                         id: brightnessFill
@@ -1687,7 +1679,7 @@ PanelWindow {
                                         anchors.left: parent.left
                                         width: parent.width * Math.max(0, Math.min(1, root.screenBrightness))
                                         radius: 3
-                                        color: "#FFFFFF"
+                                        color: Theme.sliderFill
                                         Behavior on width {
                                             enabled: !brightnessSliderMa.pressed
                                             NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
@@ -1699,7 +1691,7 @@ PanelWindow {
                                         width: 14
                                         height: 14
                                         radius: 7
-                                        color: "#FFFFFF"
+                                        color: Theme.sliderThumb
                                         anchors.verticalCenter: parent.verticalCenter
                                         x: Math.max(0, Math.min(parent.width - width, parent.width * root.screenBrightness - width / 2))
                                         border.color: Qt.rgba(0, 0, 0, 0.20)
@@ -2366,7 +2358,7 @@ PanelWindow {
                                     height: 26
                                     radius: Theme.notchRadiusPill
                                     color: Theme.notchBackground
-                                    border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : (pwdInput.text.length < 8 && pwdInput.text.length > 0 ? "#EF4444" : Theme.notchBorder)
+                                    border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : (pwdInput.text.length < 8 && pwdInput.text.length > 0 ? Theme.colors.danger : Theme.notchBorder)
                                     border.width: 1
 
                                     RowLayout {
@@ -2436,8 +2428,8 @@ PanelWindow {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(10)
                                     color: {
-                                        if (root.hotspotError.length > 0 || (pwdInput.text.length < 8 && pwdInput.text.length > 0)) return "#EF4444";
-                                        if (root.hotspotSaveSuccess.length > 0) return "#10B981";
+                                        if (root.hotspotError.length > 0 || (pwdInput.text.length < 8 && pwdInput.text.length > 0)) return Theme.colors.danger;
+                                        if (root.hotspotSaveSuccess.length > 0) return Theme.colors.success;
                                         return Theme.notchTextTertiary;
                                     }
                                     elide: Text.ElideRight

@@ -30,7 +30,7 @@ Item {
             SymbolicIcon {
                 source: "preferences-system-notifications-symbolic"
                 iconSize: 22
-                iconColor: Qt.rgba(1, 1, 1, 0.40)
+                iconColor: Theme.notchTextTertiary
                 Layout.alignment: Qt.AlignVCenter
             }
 
@@ -43,14 +43,14 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(12)
                     font.weight: Font.Medium
-                    color: Qt.rgba(1, 1, 1, 0.85)
+                    color: Theme.notchText
                 }
 
                 Text {
                     text: I18n.isRTL ? "سجل الإشعارات فارغ حالياً" : "All caught up"
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(10)
-                    color: Qt.rgba(1, 1, 1, 0.40)
+                    color: Theme.notchTextTertiary
                 }
             }
         }
@@ -82,7 +82,7 @@ Item {
                     contentItem: Rectangle {
                         implicitWidth: 4
                         radius: 2
-                        color: Qt.rgba(1, 1, 1, 0.25)
+                        color: Theme.notchBorderHighlight
                     }
                 }
 
@@ -94,8 +94,8 @@ Item {
                     width: notifListView.width - (vbar.visible ? 8 : 0)
                     implicitHeight: cardContent.implicitHeight + 10
                     radius: 8
-                    color: cardMa.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.04)
-                    border.color: cardMa.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.06)
+                    color: cardMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                    border.color: cardMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                     border.width: 1
 
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -183,7 +183,7 @@ Item {
 
                         // 3. معاينة مصغرة للقطات الشاشة (إذا وجدت)
                         Rectangle {
-                            visible: card.modelData && card.modelData.isScreenshot && (card.modelData.imagePath || "").length > 0
+                            visible: Boolean(card.modelData && card.modelData.isScreenshot && card.modelData.imagePath && card.modelData.imagePath.length > 0)
                             implicitWidth: 36
                             implicitHeight: 24
                             radius: 4
