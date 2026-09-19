@@ -244,61 +244,13 @@ Item {
             visible: root.viewMode !== "notification"
             z: 1
 
-            // ── SECTION A: Workspaces (Always visible) ────────────────────
-            RowLayout {
-                spacing: 4
+            // ── SECTION A: Workspaces (Dynamic WorkspaceIndicator) ────────────
+            WorkspaceIndicator {
+                hyprMonitor:    root.hyprMonitor
+                staticCount:    ConfigManager.workspacesCount
+                indicatorStyle: "icons"
+                reduceMotion:   false
                 Layout.alignment: Qt.AlignVCenter
-
-                Repeater {
-                    model: ConfigManager.workspacesCount
-
-                    delegate: Rectangle {
-                        id: wsBtn
-                        required property int index
-                        readonly property int wsId: index + 1
-                        readonly property bool isActive:
-                            (root.hyprMonitor && root.hyprMonitor.activeWorkspace
-                             && root.hyprMonitor.activeWorkspace.id === wsId)
-
-                        implicitWidth: isActive ? 30 : 26
-                        implicitHeight: 28
-                        radius: Theme.notchRadiusPill
-
-                        color: isActive
-                               ? Theme.notchText
-                               : (wsMouse.pressed
-                                  ? Theme.notchSurfaceActive
-                                  : (wsMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
-                        border.color: "transparent"
-                        border.width: 1
-
-                        Behavior on color        { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                        Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: wsBtn.wsId.toString()
-                            color: wsBtn.isActive ? Theme.notchBackground : Theme.notchTextTertiary
-                            font.family: Theme.typography.fontFamily
-                            font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: Theme.fontSize(13)
-                            font.weight: wsBtn.isActive ? Font.Bold : Font.Medium
-                            renderType: Theme.renderType
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                        }
-
-                        MouseArea {
-                            id: wsMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            acceptedButtons: Qt.LeftButton
-                            onClicked: (mouse) => {
-                                if (mouse.button === Qt.LeftButton) Hyprland.dispatch("workspace " + wsBtn.wsId);
-                            }
-                        }
-                    }
-                }
             }
 
             // ── SECTION B: Subtle Divider (Visible when music player is present) ─

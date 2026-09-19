@@ -274,6 +274,21 @@ Item {
     readonly property color qsSliderIconActive: isDark ? "#000000" : "#ffffff"
     readonly property color qsSliderIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.60) : Qt.rgba(0, 0, 0, 0.50)
 
+    // Workspace Indicator Tokens
+    readonly property int wsDotSize:       6
+    readonly property int wsCircleSize:    28
+    readonly property int wsPillWidth:     36
+    readonly property int wsPillHeight:    32
+    readonly property int wsIconSize:      16
+    readonly property int wsBadgeSize:     14
+    readonly property int wsIndicatorSpacing: 5
+
+    // Workspace colours — OLED monochrome identity
+    readonly property color wsActiveBg:    isDark ? "#ffffff" : "#0f172a"   // solid white/dark pill
+    readonly property color wsActiveText:  isDark ? "#000000" : "#ffffff"   // inverse on the pill
+    readonly property color wsOccupiedBg:  isDark ? Qt.rgba(1, 1, 1, 0.13) : Qt.rgba(0, 0, 0, 0.09)
+    readonly property color wsEmptyBg:     "transparent"
+
     // Exclusion & Strut Geometry Tokens (Reserved Space)
     readonly property int topBarHeight: 44
     readonly property int topBarMarginTop: 10
