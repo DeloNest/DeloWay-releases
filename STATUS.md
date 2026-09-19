@@ -225,6 +225,8 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي)*:
+* `084d30c` - fix(notch): fix settings icon placement, remove black line artifacts, enhance hover states, and reduce window spacing (2026-09-20)
+* `2999f02` - fix(shell): configure exclusive zones, margins, and top layer for Notch, Capsule, and Dock (2026-09-20)
 * `b13a75e` - docs: update STATUS.md with system theming completion, ADR, Qt report, and roadmap (2026-09-19)
 * `728c600` - feat(theme): add deloway-theme-apply.py engine and integrate with ConfigManager (2026-09-19)
 * `4e21ce7` - refactor(theme): replace hardcoded colors with Theme tokens across Notch, Desktop, and Dock (2026-09-19)
@@ -251,7 +253,21 @@
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
-- **المهام المنجزة والمثبتة في HEAD**:
+- **المهام المنجزة والمثبتة في HEAD / قيد التثبيت**:
+  - **إصلاحات الكبسولة الوسطية (Smart Notch) وتقليل تباعد النوافذ**:
+    1. **تصحيح موضع أيقونة الإعدادات (⚙) ومنع تداخلها مع تبويبة الرئيسية**:
+       - *السبب الجذري*: حاوية الترويسة `Item` داخل `ColumnLayout` لم تكن تملك `implicitWidth` أو عرضاً صريحاً، مما جعل `ColumnLayout` يقلص أبعاد الحاوية لحدود عناصرها (`notchTabsRow`)، فأصبحت نقطة `parent.left` تطابق حافة التبويبة الأولى (الرئيسية)، فظهر الترس متداخلاً فوق نص "الرئيسية".
+       - *الحل*: إعطاء `Item` عرضاً صريحاً `implicitWidth: 560` و `Layout.preferredWidth: 560` وربط زر الترس بحافة `parent.right` بهامش 4px، مما فصله تماماً ووضعه في الزاوية اليمنى العلوية للنوتش بشكل مطابق لـ macOS NotchNook.
+    2. **إزالة الخطوط السوداء الغريبة في أجزاء الكبسولة**:
+       - *شريط التقويم*: دالة `substring(0, 1)` على أسماء الأيام بالعربية ("إثنين"، "أربعاء") كانت تُنتج حرف الألف المفرد `ا` الخالي من النقاط أو الهمزات، والذي يظهر في خطوط العرض كخط رأسي أسود مشوه `|` بين الأرقام. تم حلها باعتماد اختصارات قياسية ثنائية الحروف في `getDaysStrip()`: `["أح", "إث", "ثل", "أر", "خم", "جم", "سب"]`.
+       - *مشغل الموسيقى*: استبدال الرموز النصية `|◀` و `▶|` التي تحوي رمز الأنبوب `|` بأيقونات SVG رمزية موحدة عبر `SymbolicIcon` (`media-skip-backward-symbolic`, `media-playback-pause-symbolic`, `media-skip-forward-symbolic`).
+    3. **تصحيح وتوحيد تأثيرات التحويم (Hover Effects)**:
+       - إضافة حاويات دائرية ناعمة (26-28px) لأزرار مشغل الموسيقى الموسع مع تلوين الخلفية بـ `Theme.notchSurfaceHover` وحركة انتقالية سريعة.
+       - إزالة الإطار الخشن (1px border) الذي كان يظهر عند التحويم على أزرار مساحات العمل في النوتش المصغر وجعل `border.color: "transparent"` لتفادي الوميض الحاد.
+       - تمييز نصوص وأيقونات التبويبات في النوتش الموسع بلون `Theme.notchText` عند التحويم حتى للتبويبات غير المفعلة.
+    4. **تقليل تباعد النوافذ أسفل الشريط العلوي**:
+       - تخفيض `topBarGap` في `Theme.qml` من `8px` إلى `0px`، مما خفض إجمالي الحجز من `62px` إلى `54px` (مطابق لارتفاع الشريط العلوي 44px + هامش 10px).
+       - مع إضافة هامش النوافذ الخارجي في Hyprland (`gaps_out = 5`)، أصبحت النوافذ تبدأ من `y = 59px` (فراغ 5px متناسق تماماً تحت النوتش المصغر الذي ينتهي عند `y = 54px`).
   - **تطبيق ثيم DeloWay على برامج النظام (GTK 3.0 / GTK 4.0 / Libadwaita / Electron / Chromium)**:
     - **المرحلة 1 (الحماية والنسخ الاحتياطي)**: تم حفظ نسخة احتياطية كاملة ودائمة لملفات `~/.config/gtk-3.0` و `gtk-4.0` و `gsettings` في `~/.config/deloway/backups/original/`، وتوفير سكربت استرجاع فوري `scripts/restore-system-theme.sh` مع دعم `--dry-run`، وإضافة مفتاح تحكم اختياري `applySystemTheme` في إعدادات الواجهة (`AppearanceTab.qml`) مع ترجمة كاملة للعربية والإنجليزية (`4982d64`).
     - **المرحلة 2 (تنظيف الألوان الثابتة وتوسيع التوكنز)**: استبدال كافة الألوان الصلبة (Hardcoded) في `NotchHome.qml` و `NotchNotifications.qml` و `NotchLocalSend.qml` و `TraditionalDesktop.qml` و `DockTab.qml` بتوكنز `Theme` الدلالية، وإضافة توكنز التكيف اللوني (`musicBadge`, `calendarPast`, `calendarFuture`) في `Theme.qml` (`4e21ce7`).
@@ -346,6 +362,12 @@
      $$\text{reserved} = \text{exclusiveZone} + \text{margin}$$
    - لذلك، لحجز 62px في الأعلى مع وجود `marginTop = 10px` في الوضع المصغر، يجب تعيين `exclusiveZone = 52px`. وعند توسيع النوتش ليلتصق بالسقف (`marginTop = 0`)، يتم ضبط `exclusiveZone = 62px` تعويضياً لتبقى المساحة المحجوزة ثابتة عند 62px تماماً، مما يمنع قفز النوافذ أو تحركها بمقدار بكسل واحد.
    - بالمثل للدوك، بدلاً من ترك الحجز تلقائياً على كامل ارتفاع النافذة (`implicitHeight = 114px` الذي يحجز 124px)، تم تعيين `exclusiveZone` مستقلاً عبر توكن `dockExclusiveZoneFor(dockH)` ليكون 76px، فينتج حجز إجمالي قدره `76 + 10 = 86px` بالضبط.
+
+7. **أبعاد عناصر Layout بدون implicitWidth وتأثيرها على Anchors**:
+   - في Qt Quick Layouts، عندما يوضع عنصر `Item` مجرد داخل `ColumnLayout` مع `Layout.fillWidth: true` فقط ودون تعيين `implicitWidth` أو `width` صريح، فإن الـ Layout لا يملك مقياساً ضمنياً لعرض الحاوية، مما يجعل نقطة ارتكاز `parent.left` لعناصره التابعة تنكمش لحدود أول عنصر فرعي (مثل `notchTabsRow`).
+   - لذلك، يجب دائماً تزويد أي حاوية `Item` داخل الـ Layout بخاصية `implicitWidth: parent ? parent.width : 560` و `Layout.preferredWidth: 560` لضمان صحة جميع حسابات الـ Anchors لأبنائها.
+8. **ظاهرة الحرف المفرد في خطوط العربية وتشوه الرموز**:
+   - في الخطوط العربية، يظهر حرف الألف المفرد `ا` (الناتج عن `substring(0, 1)` لكلمة مثل "إثنين" أو "أربعاء") كخط رأسي مجرد مطابق لرمز الأنبوب `|`، مما يُربك المستخدم ويظهر كعنصر رسومي مشوه بين الأرقام. الحل المعماري الإلزامي هو استخدام اختصارات ثنائية الحروف ("أح", "إث", "ثل", "أر", "خم", "جم", "سب") في أي واجهات تقويمية.
 
 ---
 

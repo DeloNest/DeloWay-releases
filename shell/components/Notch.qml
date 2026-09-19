@@ -154,10 +154,13 @@ PanelWindow {
                     LayoutMirroring.enabled: false
                     LayoutMirroring.childrenInherit: true
 
-                    // ── TIER 1: Header Bar (Nook & Tray Tabs on left, ⚙ on right) ──
+                    // ── TIER 1: Header Bar (Tabs centered, ⚙ on right) ──
                     Item {
                         Layout.fillWidth: true
+                        Layout.preferredWidth: parent ? parent.width : 560
                         Layout.preferredHeight: 28
+                        implicitWidth: parent ? parent.width : 560
+                        implicitHeight: 28
 
                         MouseArea {
                             anchors.fill: parent
@@ -195,7 +198,7 @@ PanelWindow {
                                     SymbolicIcon {
                                         source: "notch-nook"
                                         iconSize: 13
-                                        iconColor: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
+                                        iconColor: (swipeView.currentIndex === 0 || tab0Ma.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
 
                                     Text {
@@ -203,7 +206,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal
-                                        color: swipeView.currentIndex === 0 ? Theme.notchText : Theme.notchTextSecondary
+                                        color: (swipeView.currentIndex === 0 || tab0Ma.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
                                 }
 
@@ -234,7 +237,7 @@ PanelWindow {
                                     SymbolicIcon {
                                         source: "notch-tray"
                                         iconSize: 13
-                                        iconColor: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
+                                        iconColor: (swipeView.currentIndex === 1 || tab1Ma.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
 
                                     Text {
@@ -242,7 +245,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 1 ? Font.DemiBold : Font.Normal
-                                        color: swipeView.currentIndex === 1 ? Theme.notchText : Theme.notchTextSecondary
+                                        color: (swipeView.currentIndex === 1 || tab1Ma.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
                                 }
 
@@ -280,7 +283,7 @@ PanelWindow {
                                     SymbolicIcon {
                                         source: "preferences-system-notifications-symbolic"
                                         iconSize: 13
-                                        iconColor: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
+                                        iconColor: (swipeView.currentIndex === 2 || tabNotifyMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
 
                                     Text {
@@ -288,7 +291,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 2 ? Font.DemiBold : Font.Normal
-                                        color: swipeView.currentIndex === 2 ? Theme.notchText : Theme.notchTextSecondary
+                                        color: (swipeView.currentIndex === 2 || tabNotifyMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
                                 }
 
@@ -304,8 +307,8 @@ PanelWindow {
 
                         // Settings Icon (⚙) — Decoupled from tabs, anchored to trailing edge
                         Rectangle {
-                            anchors.right: !I18n.isRTL ? parent.right : undefined
-                            anchors.left: I18n.isRTL ? parent.left : undefined
+                            anchors.right: parent.right
+                            anchors.rightMargin: 4
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24
                             implicitHeight: 24
@@ -331,7 +334,7 @@ PanelWindow {
                                 }
                             }
                         }
-                }
+                    }
 
                     // ── TIER 2: Body Content (SwipeView) ──────────────────────
                     Item {

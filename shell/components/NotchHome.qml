@@ -144,13 +144,16 @@ Item {
     function getDaysStrip() {
         const days = [];
         const dayNamesEn = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-        const dayNamesAr = ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+        const dayNamesAr = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+        const dayAbbrAr = ["أح", "إث", "ثل", "أر", "خم", "جم", "سب"];
         for (let offset = -3; offset <= 3; offset++) {
             const d = new Date(root.currentTime.getFullYear(), root.currentTime.getMonth(), root.currentTime.getDate() + offset);
+            const dayIdx = d.getDay();
             days.push({
                 dayOffset: offset,
                 dayNumber: d.getDate(),
-                dayName: I18n.isRTL ? dayNamesAr[d.getDay()] : dayNamesEn[d.getDay()],
+                dayName: I18n.isRTL ? dayNamesAr[dayIdx] : dayNamesEn[dayIdx],
+                dayAbbr: I18n.isRTL ? dayAbbrAr[dayIdx] : dayNamesEn[dayIdx].substring(0, 1),
                 isToday: offset === 0
             });
         }
@@ -266,9 +269,7 @@ Item {
                                : (wsMouse.pressed
                                   ? Theme.notchSurfaceActive
                                   : (wsMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
-                        border.color: isActive
-                                      ? "transparent"
-                                      : (wsMouse.containsMouse ? Theme.notchBorder : "transparent")
+                        border.color: "transparent"
                         border.width: 1
 
                         Behavior on color        { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -507,8 +508,8 @@ Item {
                 implicitWidth: 28
                 implicitHeight: 28
                 radius: 14
-                color: dismissExpHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                border.color: Theme.colors.borderSubtle
+                color: dismissExpHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
+                border.color: Theme.notchBorderSubtle
                 border.width: 1
 
                 Text {
@@ -643,39 +644,53 @@ Item {
                             Layout.fillWidth: true
                         }
 
-                        // Playback Controls Row: |◀   ⏸   ▶| (Pure solid white glyphs, no circles)
+                        // Playback Controls Row: Previous, Play/Pause, Next
                         RowLayout {
-                            spacing: 16
+                            spacing: 8
                             Layout.topMargin: 4
 
-                            // Previous (|◀)
-                            Text {
-                                text: "|◀"
-                                font.pixelSize: Theme.fontSize(12)
-                                font.weight: Font.Bold
-                                color: prevExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            // Previous
+                            Rectangle {
+                                implicitWidth: 26
+                                implicitHeight: 26
+                                radius: 13
+                                color: prevExpHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                SymbolicIcon {
+                                    anchors.centerIn: parent
+                                    source: "media-skip-backward-symbolic"
+                                    iconSize: 13
+                                    iconColor: prevExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                }
 
                                 MouseArea {
                                     id: prevExpHover
                                     anchors.fill: parent
-                                    anchors.margins: -4
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: if (root.activePlayer) root.activePlayer.previous()
                                 }
                             }
 
-                            // Play / Pause (⏸ / ▶)
-                            Text {
-                                text: root.activePlayer && root.activePlayer.isPlaying ? "⏸" : "▶"
-                                font.pixelSize: Theme.fontSize(14)
-                                font.weight: Font.Bold
-                                color: playExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            // Play / Pause
+                            Rectangle {
+                                implicitWidth: 28
+                                implicitHeight: 28
+                                radius: 14
+                                color: playExpHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                SymbolicIcon {
+                                    anchors.centerIn: parent
+                                    source: (root.activePlayer && root.activePlayer.isPlaying) ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
+                                    iconSize: 15
+                                    iconColor: playExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                }
 
                                 MouseArea {
                                     id: playExpHover
                                     anchors.fill: parent
-                                    anchors.margins: -4
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
@@ -687,17 +702,24 @@ Item {
                                 }
                             }
 
-                            // Next (▶|)
-                            Text {
-                                text: "▶|"
-                                font.pixelSize: Theme.fontSize(12)
-                                font.weight: Font.Bold
-                                color: nextExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            // Next
+                            Rectangle {
+                                implicitWidth: 26
+                                implicitHeight: 26
+                                radius: 13
+                                color: nextExpHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                SymbolicIcon {
+                                    anchors.centerIn: parent
+                                    source: "media-skip-forward-symbolic"
+                                    iconSize: 13
+                                    iconColor: nextExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                }
 
                                 MouseArea {
                                     id: nextExpHover
                                     anchors.fill: parent
-                                    anchors.margins: -4
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: if (root.activePlayer) root.activePlayer.next()
@@ -790,9 +812,9 @@ Item {
                                 spacing: 2
                                 Layout.alignment: Qt.AlignHCenter
 
-                                // Day of week abbreviation (M, T, W, THU, F, S, S)
+                                // Day of week abbreviation
                                 Text {
-                                    text: dayCol.modelData.isToday ? dayCol.modelData.dayName.toUpperCase() : dayCol.modelData.dayName.substring(0, 1).toUpperCase()
+                                    text: dayCol.modelData.isToday ? dayCol.modelData.dayName.toUpperCase() : dayCol.modelData.dayAbbr.toUpperCase()
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 9 : 8)
                                     font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal

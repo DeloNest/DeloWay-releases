@@ -249,12 +249,12 @@ Item {
     // Exclusion & Strut Geometry Tokens (Reserved Space)
     readonly property int topBarHeight: 44
     readonly property int topBarMarginTop: 10
-    readonly property int topBarGap: 8
+    readonly property int topBarGap: 0
     // In layer-shell, Hyprland calculates total reserved space as (exclusiveZone + margin).
-    // To achieve total reserved = topBarHeight + topBarMarginTop + topBarGap (62px),
-    // the exclusiveZone is set to (topBarHeight + topBarGap) = 52px.
-    readonly property int topBarExclusiveZone: topBarHeight + topBarGap // 52px
-    readonly property int topBarReserved: topBarHeight + topBarMarginTop + topBarGap // 62px
+    // To achieve total reserved = topBarHeight + topBarMarginTop + topBarGap (54px),
+    // the exclusiveZone is set to (topBarHeight + topBarGap) = 44px.
+    readonly property int topBarExclusiveZone: topBarHeight + topBarGap // 44px
+    readonly property int topBarReserved: topBarHeight + topBarMarginTop + topBarGap // 54px
 
     readonly property int dockMarginBottom: 10
     readonly property int dockGap: 8
