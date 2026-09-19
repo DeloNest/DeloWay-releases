@@ -198,7 +198,7 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: "Nook"
+                                        text: I18n.tr("notch_tab_home")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal
@@ -237,7 +237,7 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: "Tray"
+                                        text: I18n.tr("notch_tab_share")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 1 ? Font.DemiBold : Font.Normal
@@ -283,7 +283,7 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: "Notify"
+                                        text: I18n.tr("notch_tab_notifications")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 2 ? Font.DemiBold : Font.Normal

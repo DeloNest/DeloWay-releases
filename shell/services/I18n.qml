@@ -26,6 +26,11 @@ Item {
             "tab_applications": "Default Apps",
             "tab_about": "About System",
 
+            // Smart Notch Tabs
+            "notch_tab_home": "Home",
+            "notch_tab_share": "Share",
+            "notch_tab_notifications": "Notifications",
+
             // Common
             "settings": "Settings",
             "search_settings": "Search settings...",
@@ -369,6 +374,11 @@ Item {
             "tab_notifications": "الإشعارات",
             "tab_applications": "التطبيقات الافتراضية",
             "tab_about": "حول النظام",
+
+            // Smart Notch Tabs
+            "notch_tab_home": "الرئيسية",
+            "notch_tab_share": "مشاركة",
+            "notch_tab_notifications": "الإشعارات",
 
             // Common
             "settings": "الإعدادات",
