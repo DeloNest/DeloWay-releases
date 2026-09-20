@@ -239,7 +239,7 @@ Item {
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 12
-            anchors.rightMargin: 14
+            anchors.rightMargin: 12
             spacing: 8
             visible: root.viewMode !== "notification"
             z: 1

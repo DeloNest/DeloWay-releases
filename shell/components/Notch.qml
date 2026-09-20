@@ -154,12 +154,10 @@ PanelWindow {
                     LayoutMirroring.enabled: false
                     LayoutMirroring.childrenInherit: true
 
-                    // ── TIER 1: Header Bar (Tabs centered, ⚙ on right) ──
+                    // ── TIER 1: Header Bar (Tabs centered, ⚙ on trailing edge) ──
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredWidth: parent ? parent.width : 560
                         Layout.preferredHeight: 28
-                        implicitWidth: parent ? parent.width : 560
                         implicitHeight: 28
 
                         MouseArea {
@@ -172,7 +170,7 @@ PanelWindow {
                             }
                         }
 
-                        // Expanded Tabs Row — centered horizontally in the Notch header
+                        // Expanded Tabs Row — centered independently in the Notch header
                         RowLayout {
                             id: notchTabsRow
                             anchors.centerIn: parent
@@ -307,8 +305,10 @@ PanelWindow {
 
                         // Settings Icon (⚙) — Decoupled from tabs, anchored to trailing edge
                         Rectangle {
-                            anchors.right: parent.right
-                            anchors.rightMargin: 4
+                            anchors.right: I18n.isRTL ? undefined : parent.right
+                            anchors.left: I18n.isRTL ? parent.left : undefined
+                            anchors.rightMargin: I18n.isRTL ? 0 : 4
+                            anchors.leftMargin: I18n.isRTL ? 4 : 0
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24
                             implicitHeight: 24
