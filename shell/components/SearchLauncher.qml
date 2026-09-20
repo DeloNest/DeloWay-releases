@@ -145,25 +145,13 @@ PanelWindow {
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Dimmed Backdrop
+    // Transparent Backdrop (Click outside to dismiss, zero dimming shadow)
     // ─────────────────────────────────────────────────────────────────────
-    Rectangle {
+    MouseArea {
         id: backdrop
         anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.45)
-        opacity: ShellState.launcherOpen ? 1.0 : 0.0
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: ShellState.launcherOpen ? 150 : 110
-                easing.type: ShellState.launcherOpen ? Easing.OutCubic : Easing.InQuad
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: ShellState.closeLauncher()
-        }
+        hoverEnabled: false
+        onClicked: ShellState.closeLauncher()
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -174,18 +162,18 @@ PanelWindow {
 
         anchors.horizontalCenter: parent.horizontalCenter
         y: Math.round(targetScreen.height * 0.20)
-        width: Math.min(640, root.width - 32)
+        width: Math.min(500, root.width - 32)
 
-        readonly property int headerHeight: 56
-        readonly property int maxResultRows: 8
-        readonly property int resultRowHeight: 52
+        readonly property int headerHeight: 52
+        readonly property int maxResultRows: 7
+        readonly property int resultRowHeight: 48
         readonly property bool hasQuery: root.filterQuery.trim().length > 0
         readonly property int resultCount: hasQuery ? (root.results ? root.results.length : 0) : 0
 
-        // In empty state, height is exactly 56px (search bar alone).
+        // In empty state, height is exactly 52px (search bar alone).
         // When typing, height expands dynamically to fit results list.
         height: hasQuery
-                ? (headerHeight + 1 + (resultCount > 0 ? (Math.min(maxResultRows, resultCount) * resultRowHeight + 12) : 48))
+                ? (headerHeight + 1 + (resultCount > 0 ? (Math.min(maxResultRows, resultCount) * resultRowHeight + 10) : 44))
                 : headerHeight
 
         radius: Theme.notchRadiusWindow
@@ -225,21 +213,21 @@ PanelWindow {
             anchors.fill: parent
             spacing: 0
 
-            // ── Search Input Bar (56px) ───────────────────────────────────
+            // ── Search Input Bar (52px) ───────────────────────────────────
             Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: launcherCard.headerHeight
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 18
-                    anchors.rightMargin: 18
-                    spacing: 12
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 14
+                    spacing: 10
 
                     // Search Icon
                     SymbolicIcon {
                         source: "edit-find-symbolic"
-                        iconSize: 20
+                        iconSize: 18
                         iconColor: Theme.notchText
                         Layout.alignment: Qt.AlignVCenter
                     }
@@ -253,12 +241,13 @@ PanelWindow {
                             id: searchInput
                             anchors.fill: parent
                             verticalAlignment: TextInput.AlignVCenter
+                            horizontalAlignment: TextInput.AlignLeft
                             color: Theme.notchText
                             selectionColor: Qt.rgba(1, 1, 1, 0.25)
                             selectedTextColor: Theme.notchText
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: Theme.fontSize(16)
+                            font.pixelSize: Theme.fontSize(15)
                             renderType: Theme.renderType
                             clip: true
 
@@ -290,10 +279,11 @@ PanelWindow {
                         Text {
                             anchors.fill: parent
                             verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignLeft
                             color: Theme.notchTextSecondary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: Theme.fontSize(16)
+                            font.pixelSize: Theme.fontSize(15)
                             font.weight: Font.Normal
                             renderType: Theme.renderType
                             visible: searchInput.text.length === 0 && !searchInput.inputMethodComposing
@@ -369,16 +359,16 @@ PanelWindow {
             // ── Results List ──────────────────────────────────────────────
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(launcherCard.maxResultRows, launcherCard.resultCount) * launcherCard.resultRowHeight + 12
+                Layout.preferredHeight: Math.min(launcherCard.maxResultRows, launcherCard.resultCount) * launcherCard.resultRowHeight + 10
                 visible: launcherCard.hasQuery && launcherCard.resultCount > 0
 
                 ListView {
                     id: resultsList
                     anchors.fill: parent
-                    anchors.topMargin: 6
-                    anchors.bottomMargin: 6
-                    anchors.leftMargin: 12
-                    anchors.rightMargin: 12
+                    anchors.topMargin: 5
+                    anchors.bottomMargin: 5
+                    anchors.leftMargin: 8
+                    anchors.rightMargin: 8
                     spacing: 2
                     clip: true
 

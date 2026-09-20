@@ -14,8 +14,8 @@ Rectangle {
     signal clicked(var mouse)
     signal hovered()
 
-    height: 52
-    width: ListView.view ? ListView.view.width : (parent ? parent.width : 616)
+    height: 48
+    width: ListView.view ? ListView.view.width : (parent ? parent.width : 500)
     radius: Theme.notchRadiusCard
 
     color: isSelected
@@ -30,19 +30,19 @@ Rectangle {
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 12
-        anchors.rightMargin: 12
-        spacing: 12
+        anchors.leftMargin: 10
+        anchors.rightMargin: 10
+        spacing: 10
 
-        // Icon container (32x32)
+        // Icon container (30x30)
         Item {
-            Layout.preferredWidth: 32
-            Layout.preferredHeight: 32
+            Layout.preferredWidth: 30
+            Layout.preferredHeight: 30
             Layout.alignment: Qt.AlignVCenter
 
             AppIcon {
                 anchors.centerIn: parent
-                iconSize: 32
+                iconSize: 28
                 source: (root.resultData && root.resultData.icon) ? root.resultData.icon : ""
                 visible: root.resultData && root.resultData.isAppIcon
             }
@@ -55,7 +55,7 @@ Rectangle {
 
                 SymbolicIcon {
                     anchors.centerIn: parent
-                    iconSize: 18
+                    iconSize: 16
                     source: (root.resultData && root.resultData.icon) ? root.resultData.icon : ""
                     iconColor: (root.resultData && (root.resultData.id === "shutdown" || root.resultData.id === "restart"))
                                ? Theme.colors.urgent
@@ -68,13 +68,14 @@ Rectangle {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            spacing: 2
+            spacing: 1
 
             Text {
                 Layout.fillWidth: true
                 text: (root.resultData && root.resultData.name) ? root.resultData.name : ""
+                horizontalAlignment: Text.AlignLeft
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(14)
+                font.pixelSize: Theme.fontSize(13.5)
                 font.weight: root.isSelected ? Font.DemiBold : Font.Medium
                 color: Theme.notchText
                 renderType: Theme.renderType
@@ -84,8 +85,9 @@ Rectangle {
             Text {
                 Layout.fillWidth: true
                 text: (root.resultData && root.resultData.desc) ? root.resultData.desc : ""
+                horizontalAlignment: Text.AlignLeft
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(12)
+                font.pixelSize: Theme.fontSize(11.5)
                 font.weight: Font.Normal
                 color: Theme.notchTextSecondary
                 renderType: Theme.renderType
@@ -99,7 +101,7 @@ Rectangle {
             visible: root.isSelected
             text: "↵"
             font.family: Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(14)
+            font.pixelSize: Theme.fontSize(13)
             font.weight: Font.DemiBold
             color: Theme.notchTextTertiary
             renderType: Theme.renderType

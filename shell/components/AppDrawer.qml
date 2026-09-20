@@ -951,6 +951,7 @@ PanelWindow {
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: resultItem.modelData.name || ""
+                                                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                                 font.family: Theme.typography.fontFamily
                                                 font.pixelSize: Theme.fontSize(13)
                                                 font.weight: resultItem.isSelected ? Font.DemiBold : Font.Medium
@@ -962,6 +963,7 @@ PanelWindow {
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: resultItem.modelData.desc || ""
+                                                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                                 font.family: Theme.typography.fontFamily
                                                 font.pixelSize: Theme.fontSize(10)
                                                 font.weight: Font.Normal
