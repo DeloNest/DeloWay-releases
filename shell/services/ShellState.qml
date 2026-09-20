@@ -5,17 +5,20 @@ QtObject {
     id: root
 
     property bool appDrawerOpen: false
-    property bool quickSettingsOpen: false
     property bool settingsAppOpen: false
     property bool sessionMenuOpen: false
     property bool lockScreenActive: false
     property bool setupWizardOpen: false
     property bool smartNotchExpanded: false
     property int smartNotchTab: 0
+    property real smartNotchCurrentWidth: 200
     property string searchQuery: ""
 
-    function openSmartNotch() {
-        smartNotchTab = 0;
+    function openSmartNotch(tab) {
+        if (tab !== undefined && tab !== null && tab !== "") {
+            smartNotchTab = parseInt(tab) || 0;
+        }
+        timeCapsuleExpanded = false;
         smartNotchExpanded = true;
     }
 
@@ -32,11 +35,40 @@ QtObject {
         smartNotchTab = parseInt(index) || 0;
     }
 
+    property bool timeCapsuleExpanded: false
+
+    function openTimeCapsule() {
+        appDrawerOpen = false;
+        appStoreOpen = false;
+        cheatSheetOpen = false;
+        sessionMenuOpen = false;
+        quickSettingsCapsuleExpanded = false;
+        smartNotchExpanded = false;
+        timeCapsuleExpanded = true;
+    }
+
+    function closeTimeCapsule() {
+        timeCapsuleExpanded = false;
+    }
+
+    function toggleTimeCapsule() {
+        if (!timeCapsuleExpanded) {
+            openTimeCapsule();
+        } else {
+            closeTimeCapsule();
+        }
+    }
+
     property bool quickSettingsCapsuleExpanded: false
-    property string quickSettingsCapsuleView: "wifi"
+    property string quickSettingsCapsuleView: "main"
 
     function openQuickSettingsCapsule(viewName) {
-        quickSettingsCapsuleView = viewName || "wifi";
+        appDrawerOpen = false;
+        appStoreOpen = false;
+        cheatSheetOpen = false;
+        sessionMenuOpen = false;
+        timeCapsuleExpanded = false;
+        quickSettingsCapsuleView = viewName || "main";
         quickSettingsCapsuleExpanded = true;
     }
 
@@ -46,13 +78,40 @@ QtObject {
 
     function toggleQuickSettingsCapsule(viewName) {
         if (!quickSettingsCapsuleExpanded) {
-            quickSettingsCapsuleView = viewName || "wifi";
+            appDrawerOpen = false;
+            appStoreOpen = false;
+            cheatSheetOpen = false;
+            sessionMenuOpen = false;
+            quickSettingsCapsuleView = viewName || "main";
+            quickSettingsCapsuleExpanded = true;
+        } else {
+            if (viewName && quickSettingsCapsuleView !== viewName) {
+                quickSettingsCapsuleView = viewName;
+            } else {
+                quickSettingsCapsuleExpanded = false;
+            }
         }
-        quickSettingsCapsuleExpanded = !quickSettingsCapsuleExpanded;
     }
 
     function openHotspot() {
         openQuickSettingsCapsule("hotspot");
+    }
+
+    // Aliases directing legacy calls to the capsule exclusively
+    function toggleQuickSettings() {
+        toggleQuickSettingsCapsule("main");
+    }
+
+    function openQuickSettings(view) {
+        openQuickSettingsCapsule(view || "main");
+    }
+
+    function openQuickSettingsWithView(viewName) {
+        openQuickSettingsCapsule(viewName || "main");
+    }
+
+    function closeQuickSettings() {
+        closeQuickSettingsCapsule();
     }
 
     function openSetupWizard() {
@@ -64,7 +123,7 @@ QtObject {
     }
 
     function openAppDrawer() {
-        quickSettingsOpen = false;
+        quickSettingsCapsuleExpanded = false;
         appStoreOpen = false;
         searchQuery = "";
         appDrawerOpen = true;
@@ -72,7 +131,7 @@ QtObject {
 
     function toggleAppDrawer() {
         if (!appDrawerOpen) {
-            quickSettingsOpen = false;
+            quickSettingsCapsuleExpanded = false;
             appStoreOpen = false;
             searchQuery = "";
         }
@@ -82,31 +141,6 @@ QtObject {
     function closeAppDrawer() {
         appDrawerOpen = false;
         searchQuery = "";
-    }
-
-    property string quickSettingsInitialView: "main"
-
-    function openQuickSettingsWithView(viewName) {
-        quickSettingsInitialView = viewName || "main";
-        if (!quickSettingsOpen) {
-            appDrawerOpen = false;
-            appStoreOpen = false;
-            quickSettingsOpen = true;
-        }
-    }
-
-    function toggleQuickSettings() {
-        if (!quickSettingsOpen) {
-            appDrawerOpen = false;
-            appStoreOpen = false;
-            quickSettingsInitialView = "main";
-        }
-        quickSettingsOpen = !quickSettingsOpen;
-    }
-
-    function closeQuickSettings() {
-        quickSettingsOpen = false;
-        quickSettingsInitialView = "main";
     }
 
     property string activeSettingsTab: "appearance"
@@ -125,6 +159,10 @@ QtObject {
         }
     }
 
+    function openSettingsApp() {
+        settingsAppOpen = true;
+    }
+
     function openSettingsTab(tabId) {
         activeSettingsTab = tabId;
         settingsAppOpen = true;
@@ -135,6 +173,11 @@ QtObject {
         settingsFullScreen = false;
     }
 
+    signal settingsScrollRequested(real position)
+    function scrollSettings(pos) {
+        settingsScrollRequested(pos);
+    }
+
     property bool appStoreOpen: false
     property string storeCategory: "featured"
     property string storeSearchQuery: ""
@@ -142,7 +185,7 @@ QtObject {
 
     function openAppStore(category, search) {
         appDrawerOpen = false;
-        quickSettingsOpen = false;
+        quickSettingsCapsuleExpanded = false;
         selectedStoreApp = null;
         if (category) storeCategory = category;
         if (search !== undefined) storeSearchQuery = search;
@@ -152,7 +195,7 @@ QtObject {
     function toggleAppStore() {
         if (!appStoreOpen) {
             appDrawerOpen = false;
-            quickSettingsOpen = false;
+            quickSettingsCapsuleExpanded = false;
             selectedStoreApp = null;
         }
         appStoreOpen = !appStoreOpen;
@@ -165,7 +208,7 @@ QtObject {
 
     function openAppDetails(app) {
         appDrawerOpen = false;
-        quickSettingsOpen = false;
+        quickSettingsCapsuleExpanded = false;
         selectedStoreApp = app;
         appStoreOpen = true;
     }
@@ -190,7 +233,7 @@ QtObject {
     function toggleCheatSheet() {
         if (!cheatSheetOpen) {
             appDrawerOpen = false;
-            quickSettingsOpen = false;
+            quickSettingsCapsuleExpanded = false;
             appStoreOpen = false;
         }
         cheatSheetOpen = !cheatSheetOpen;
@@ -198,7 +241,7 @@ QtObject {
 
     function openCheatSheet() {
         appDrawerOpen = false;
-        quickSettingsOpen = false;
+        quickSettingsCapsuleExpanded = false;
         appStoreOpen = false;
         cheatSheetOpen = true;
     }
@@ -213,13 +256,13 @@ QtObject {
     }
 
     function toggleRightSidebar() {
-        toggleQuickSettings();
+        toggleQuickSettingsCapsule("main");
     }
 
     function toggleSessionMenu() {
         if (!sessionMenuOpen) {
             appDrawerOpen = false;
-            quickSettingsOpen = false;
+            quickSettingsCapsuleExpanded = false;
             appStoreOpen = false;
         }
         sessionMenuOpen = !sessionMenuOpen;
@@ -227,7 +270,7 @@ QtObject {
 
     function openSessionMenu() {
         appDrawerOpen = false;
-        quickSettingsOpen = false;
+        quickSettingsCapsuleExpanded = false;
         appStoreOpen = false;
         sessionMenuOpen = true;
     }
@@ -244,7 +287,7 @@ QtObject {
 
     function closeAll() {
         appDrawerOpen = false;
-        quickSettingsOpen = false;
+        quickSettingsCapsuleExpanded = false;
         sessionMenuOpen = false;
         appStoreOpen = false;
         settingsAppOpen = false;

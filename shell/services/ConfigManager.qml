@@ -53,6 +53,7 @@ Item {
     property string clockFormat: "12h"
     property int workspacesCount: 5
     property string workspaceIndicatorStyle: "icons" // "icons" | "numbers" | "dots"
+    property bool timeCapsuleEnabled: true
 
     // Windows & Hyprland Settings
     property color activeBorder: "#0084ff"
@@ -180,6 +181,7 @@ Item {
                 if (cfg.topBar.clockFormat) root.clockFormat = cfg.topBar.clockFormat;
                 if (cfg.topBar.workspacesCount) root.workspacesCount = cfg.topBar.workspacesCount;
                 if (cfg.topBar.workspaceIndicatorStyle) root.workspaceIndicatorStyle = cfg.topBar.workspaceIndicatorStyle;
+                if (cfg.topBar.timeCapsuleEnabled !== undefined) root.timeCapsuleEnabled = cfg.topBar.timeCapsuleEnabled;
             }
             if (cfg.windows) {
                 if (cfg.windows.activeBorder) root.activeBorder = cfg.windows.activeBorder;
@@ -437,6 +439,11 @@ Item {
         saveConfig();
     }
 
+    function setTimeCapsuleEnabled(enabled) {
+        root.timeCapsuleEnabled = !!enabled;
+        saveConfig();
+    }
+
     function setDockPosition(pos) {
         if (pos !== "bottom" && pos !== "left" && pos !== "right") return;
         root.dockPosition = pos;
@@ -519,7 +526,8 @@ Item {
                 showWorkspaces: root.topBarShowWorkspaces,
                 clockFormat: root.clockFormat,
                 workspacesCount: root.workspacesCount,
-                workspaceIndicatorStyle: root.workspaceIndicatorStyle
+                workspaceIndicatorStyle: root.workspaceIndicatorStyle,
+                timeCapsuleEnabled: root.timeCapsuleEnabled
             },
             windows: {
                 activeBorder: root.activeBorder.toString(),

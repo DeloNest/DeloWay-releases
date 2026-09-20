@@ -102,6 +102,14 @@ ShellRoot {
         function openSmartNotch()      { ShellState.openSmartNotch(); }
         function closeSmartNotch()     { ShellState.closeSmartNotch(); }
         function setSmartNotchTab(tab: string) { ShellState.setSmartNotchTab(tab); }
+        function stageLocalSend(path: string) {
+            ShellState.setSmartNotchTab(1);
+            ShellState.openSmartNotch();
+            LocalSendService.stageFiles([path || "/tmp/deloway_test.txt"]);
+        }
+        function resetLocalSend() {
+            LocalSendService.resetStage();
+        }
 
         // ── App Drawer ──────────────────────────────────────────────────────
         function toggleDrawer()        { ShellState.toggleAppDrawer(); }
@@ -119,17 +127,22 @@ ShellRoot {
         function toggleSettingsFullscreen()   { ShellState.toggleSettingsFullscreen(); }
         function isSettingsOpen(): bool       { return ShellState.settingsAppOpen; }
         function openSettingsTab(tabId: string) { ShellState.openSettingsTab(tabId); }
+        function scrollSettings(pos: real)    { ShellState.scrollSettings(pos); }
 
         // ── Sidebars & Session ──────────────────────────────────────────────
         function toggleLeftSidebar()  { ShellState.toggleLeftSidebar(); }
         function toggleRightSidebar() { ShellState.toggleRightSidebar(); }
         function toggleSessionMenu()  { ShellState.toggleSessionMenu(); }
-        function toggleQuickSettings(){ ShellState.toggleQuickSettings(); }
-        function openQuickSettings(view: string) { ShellState.openQuickSettingsWithView(view || "main"); }
-        function toggleCapsule() { ShellState.toggleQuickSettingsCapsule(); }
-        function openCapsule(view: string) { ShellState.openQuickSettingsCapsule(view || "wifi"); }
+        function toggleQuickSettings(){ ShellState.toggleQuickSettingsCapsule("main"); }
+        function openQuickSettings(view: string) { ShellState.openQuickSettingsCapsule(view || "main"); }
+        function closeQuickSettings() { ShellState.closeQuickSettingsCapsule(); }
+        function toggleCapsule() { ShellState.toggleQuickSettingsCapsule("main"); }
+        function openCapsule(view: string) { ShellState.openQuickSettingsCapsule(view || "main"); }
         function closeCapsule() { ShellState.closeQuickSettingsCapsule(); }
         function openHotspot() { ShellState.openHotspot(); }
+        function toggleTimeCapsule() { ShellState.toggleTimeCapsule(); }
+        function openTimeCapsule()   { ShellState.openTimeCapsule(); }
+        function closeTimeCapsule()  { ShellState.closeTimeCapsule(); }
 
         // ── Cheat Sheet & Screenshot ────────────────────────────────────────
         function toggleCheatsheet() { ShellState.toggleCheatSheet(); }
@@ -156,6 +169,10 @@ ShellRoot {
         function setMode(mode: string)          { ConfigManager.setThemeMode(mode); }
         function setUiLanguage(lang: string)    { ConfigManager.setUiLanguage(lang); }
         function setWallpaper(path: string)     { ConfigManager.setWallpaper(path); }
+        function setFontSizeScale(scale: real)  { ConfigManager.setFontSizeScale(scale); }
+        function setDockPosition(pos: string)   { ConfigManager.setDockPosition(pos); }
+        function setDockIconSize(sz: int)       { ConfigManager.setDockIconSize(sz); }
+        function setDockAutoHide(val: bool)     { ConfigManager.setDockAutoHide(val); }
         function setDesktopMode(mode: string) {
             DesktopManager.closeContextMenu();
             ConfigManager.setDesktopMode(mode);
@@ -180,7 +197,7 @@ ShellRoot {
             if (ShellState.settingsAppOpen)   { ShellState.closeSettingsApp();   return true; }
             if (ShellState.appDrawerOpen)     { ShellState.closeAppDrawer();     return true; }
             if (ShellState.cheatSheetOpen)    { ShellState.closeCheatSheet();    return true; }
-            if (ShellState.quickSettingsOpen) { ShellState.closeQuickSettings(); return true; }
+            if (ShellState.quickSettingsCapsuleExpanded) { ShellState.closeQuickSettingsCapsule(); return true; }
             if (ShellState.appStoreOpen)      { ShellState.closeAppStore();      return true; }
             if (ShellState.sessionMenuOpen)   { ShellState.closeSessionMenu();   return true; }
             return false;
@@ -240,10 +257,10 @@ ShellRoot {
             Dock         { targetScreen: screenScope.modelData }
             Notch        { targetScreen: screenScope.modelData }
             QuickSettingsCapsule { targetScreen: screenScope.modelData }
+            TimeCapsule  { targetScreen: screenScope.modelData }
 
             // ── On-demand overlays ──────────────────────────────────────────
             AppDrawer        { targetScreen: screenScope.modelData }
-            QuickSettings    { targetScreen: screenScope.modelData }
             NotificationToast{ targetScreen: screenScope.modelData }
 
             // NOTE: previously missing. GlobalShortcut "sessionMenuToggle" and
