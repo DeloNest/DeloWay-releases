@@ -368,16 +368,6 @@ Item {
                 }
             }
         }
-
-        // Notification countdown bar at the bottom edge
-        Rectangle {
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            width: parent.width * root.notifRemainingRatio
-            height: 1.5
-            color: Theme.notchText
-            visible: root.viewMode === "notification"
-        }
     }
 
     // =========================================================================
@@ -786,16 +776,6 @@ Item {
                     }
                 }
             }
-        }
-
-        // Notification countdown bar at the bottom edge
-        Rectangle {
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            width: parent.width * root.notifRemainingRatio
-            height: 2
-            color: Theme.notchText
-            visible: root.viewMode === "notification"
         }
     }
 }

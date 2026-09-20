@@ -64,7 +64,7 @@ PanelWindow {
         currentHeight: root.currentHeight
         earRadius: root.earRadius
         bottomRadius: 26
-        clipContent: false
+        clipContent: true
 
         // ──────────────────────────────────────────────────────────────────
         // COMPACT MODE — Click to expand
