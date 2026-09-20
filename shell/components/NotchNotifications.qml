@@ -117,10 +117,20 @@ Item {
                         spacing: 8
 
                         // 1. أيقونة التطبيق
-                        AppIcon {
-                            iconSize: 20
-                            source: card.modelData && card.modelData.appIcon ? card.modelData.appIcon : "dialog-information"
+                        Rectangle {
+                            implicitWidth: 26
+                            implicitHeight: 26
+                            radius: 6
+                            color: Theme.notchSurface
+                            border.color: Theme.notchBorderSubtle
+                            border.width: 1
                             Layout.alignment: Qt.AlignTop
+
+                            AppIcon {
+                                anchors.centerIn: parent
+                                iconSize: 16
+                                source: card.modelData && card.modelData.appIcon ? card.modelData.appIcon : "dialog-information"
+                            }
                         }
 
                         // 2. النصوص والتفاصيل
@@ -200,11 +210,16 @@ Item {
 
                         // 4. زر الحذف الفردي (✕)
                         Rectangle {
-                            implicitWidth: 18
-                            implicitHeight: 18
-                            radius: 9
-                            color: delMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                            implicitWidth: 20
+                            implicitHeight: 20
+                            radius: 10
+                            color: delMa.pressed ? Theme.notchSurfaceActive : (delMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: delMa.containsMouse ? Theme.notchBorderHighlight : "transparent"
+                            border.width: 1
                             Layout.alignment: Qt.AlignVCenter
+
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 anchors.centerIn: parent
@@ -236,7 +251,8 @@ Item {
                 color: "transparent"
 
                 Rectangle {
-                    anchors.right: parent.right
+                    anchors.right: I18n.isRTL ? undefined : parent.right
+                    anchors.left: I18n.isRTL ? parent.left : undefined
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: clearContent.implicitWidth + 16
                     implicitHeight: 20

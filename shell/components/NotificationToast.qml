@@ -14,16 +14,14 @@ PanelWindow {
 
     anchors {
         top: true
-        right: true
     }
 
     margins {
         top: 52
-        right: 16
     }
 
-    implicitWidth: 350
-    implicitHeight: toastCard.implicitHeight
+    implicitWidth: 380
+    implicitHeight: toastCard.implicitHeight + 10
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:notification-toast"
@@ -39,14 +37,12 @@ PanelWindow {
     Rectangle {
         id: toastCard
         anchors.top: parent.top
-        anchors.right: I18n.isRTL ? undefined : parent.right
-        anchors.left: I18n.isRTL ? parent.left : undefined
-        anchors.margins: Theme.space16
-        width: 350
-        implicitHeight: contentCol.implicitHeight + 20
-        radius: Theme.radiusLarge
-        color: Theme.colors.surface
-        border.color: Theme.hairline
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: 380
+        implicitHeight: contentCol.implicitHeight + 24
+        radius: 14
+        color: Theme.notchBackground
+        border.color: Theme.notchBorder
         border.width: 1
 
         LayoutMirroring.enabled: I18n.isRTL
@@ -54,15 +50,15 @@ PanelWindow {
 
         opacity: root.showing ? 1.0 : 0.0
         transform: Translate {
-            x: root.showing ? 0 : (I18n.isRTL ? -30 : 30)
-            Behavior on x { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+            y: root.showing ? 0 : -20
+            Behavior on y { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
         }
         Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 
         ColumnLayout {
             id: contentCol
             anchors.fill: parent
-            anchors.margins: 10
+            anchors.margins: 12
             spacing: 8
 
             // App Name & Close button header
@@ -70,9 +66,20 @@ PanelWindow {
                 Layout.fillWidth: true
                 spacing: 8
 
-                AppIcon {
-                    iconSize: 18
-                    source: (root.currentNotif && root.currentNotif.appIcon) ? root.currentNotif.appIcon : "dialog-information"
+                Rectangle {
+                    implicitWidth: 26
+                    implicitHeight: 26
+                    radius: 6
+                    color: Theme.notchSurfaceElevated
+                    border.color: Theme.notchBorderSubtle
+                    border.width: 1
+                    Layout.alignment: Qt.AlignVCenter
+
+                    AppIcon {
+                        anchors.centerIn: parent
+                        iconSize: 16
+                        source: (root.currentNotif && root.currentNotif.appIcon) ? root.currentNotif.appIcon : "dialog-information"
+                    }
                 }
 
                 Text {
@@ -80,10 +87,10 @@ PanelWindow {
                     text: (root.currentNotif && root.currentNotif.appName) ? root.currentNotif.appName : "System"
                     font.family: Theme.typography.fontFamily
                     font.hintingPreference: Theme.hintingPreference
-                    font.pixelSize: Theme.typography.scaleCaption.size
+                    font.pixelSize: Theme.fontSize(11)
                     font.weight: Font.DemiBold
                     renderType: Theme.renderType
-                    color: Theme.colors.textSecondary
+                    color: Theme.notchText
                     elide: Text.ElideRight
                 }
 
@@ -91,20 +98,20 @@ PanelWindow {
                     text: (root.currentNotif && root.currentNotif.timeStr) ? root.currentNotif.timeStr : ""
                     font.family: Theme.typography.fontFamily
                     font.hintingPreference: Theme.hintingPreference
-                    font.pixelSize: Theme.typography.scaleCaption.size
+                    font.pixelSize: Theme.fontSize(10)
                     renderType: Theme.renderType
-                    color: Theme.colors.textTertiary
+                    color: Theme.notchTextTertiary
                 }
 
                 // Close Button
                 Rectangle {
-                    width: 22
-                    height: 22
-                    radius: 11
-                    color: closeMouse.pressed ? Theme.colors.surfaceActive : (closeMouse.containsMouse ? Theme.colors.surfaceHover : "transparent")
-                    border.color: closeMouse.containsMouse ? Theme.colors.borderHighlight : "transparent"
+                    implicitWidth: 20
+                    implicitHeight: 20
+                    radius: 10
+                    color: closeMouse.pressed ? Theme.notchSurfaceActive : (closeMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.color: closeMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1
-                    scale: closeMouse.pressed ? 0.90 : (closeMouse.containsMouse ? 1.12 : 1.0)
+                    scale: closeMouse.pressed ? 0.90 : (closeMouse.containsMouse ? 1.10 : 1.0)
                     Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                     Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
@@ -112,9 +119,9 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: "✕"
-                        font.pixelSize: Theme.typography.scaleCaption.size
+                        font.pixelSize: Theme.fontSize(9)
                         renderType: Theme.renderType
-                        color: closeMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
+                        color: closeMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                     }
 
                     MouseArea {
@@ -140,10 +147,10 @@ PanelWindow {
                     text: (root.currentNotif && root.currentNotif.summary) ? root.currentNotif.summary : ""
                     font.family: Theme.typography.fontFamily
                     font.hintingPreference: Theme.hintingPreference
-                    font.pixelSize: Theme.typography.fontSizeRegular
+                    font.pixelSize: Theme.fontSize(12)
                     font.weight: Font.DemiBold
                     renderType: Theme.renderType
-                    color: Theme.colors.text
+                    color: Theme.notchText
                     wrapMode: Text.Wrap
                     maximumLineCount: 2
                     elide: Text.ElideRight
@@ -154,9 +161,9 @@ PanelWindow {
                     text: (root.currentNotif && root.currentNotif.body) ? root.currentNotif.body : ""
                     font.family: Theme.typography.fontFamily
                     font.hintingPreference: Theme.hintingPreference
-                    font.pixelSize: Theme.typography.fontSizeSmall
+                    font.pixelSize: Theme.fontSize(11)
                     renderType: Theme.renderType
-                    color: Theme.colors.textSecondary
+                    color: Theme.notchTextSecondary
                     wrapMode: Text.Wrap
                     maximumLineCount: 3
                     elide: Text.ElideRight
@@ -167,10 +174,10 @@ PanelWindow {
             // Screenshot Preview Thumbnail (if present)
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 130
-                radius: Theme.radius.medium
-                color: Theme.colors.surfaceElevated
-                border.color: Theme.colors.border
+                Layout.preferredHeight: 120
+                radius: 8
+                color: Theme.notchSurfaceElevated
+                border.color: Theme.notchBorderSubtle
                 border.width: 1
                 clip: true
                 visible: root.currentNotif && root.currentNotif.imagePath ? true : false
@@ -198,7 +205,7 @@ PanelWindow {
             // Screenshot Actions Row
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Theme.space8
+                spacing: 8
                 visible: root.currentNotif && root.currentNotif.imagePath ? true : false
 
                 DeloButton {
@@ -234,7 +241,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 2
                 radius: 1
-                color: Theme.colors.surfaceHover
+                color: Theme.notchSurfaceHover
 
                 Rectangle {
                     height: parent.height
