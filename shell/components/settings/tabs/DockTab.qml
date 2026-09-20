@@ -91,7 +91,7 @@ Item {
                             return (mockDesktop.height - height) / 2;
                         }
 
-                        opacity: ConfigManager.dockAutoHide ? 0.70 : 1.0
+                        opacity: ConfigManager.dockMode === "disabled" ? 0.25 : (ConfigManager.dockMode === "autohide" ? 0.65 : 1.0)
                         Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                         Behavior on implicitWidth { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                         Behavior on implicitHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
@@ -336,18 +336,64 @@ Item {
         SettingsSection {
             title: I18n.isRTL ? "السلوك والتفاعل" : "Behavior & Visibility"
 
-            // Auto-Hide Dock
+            // Dock Display Mode (Always / Auto-Hide / Disabled)
             SettingsRow {
-                title: I18n.tr("dock_autohide")
-                subtitle: I18n.tr("dock_autohide_desc")
-                icon: "weather-clear-night-symbolic"
+                title: I18n.isRTL ? "وضع عرض شريط المهام" : "Dock Display Mode"
+                subtitle: {
+                    if (ConfigManager.dockMode === "disabled")
+                        return I18n.isRTL ? "معطل تماماً ولا يستهلك أي موارد" : "Completely disabled, zero resource usage";
+                    if (ConfigManager.dockMode === "autohide")
+                        return I18n.isRTL ? "يختفي تلقائياً ويتمدد سطح المكتب لكامل الشاشة" : "Auto-hides, windows expand to full screen";
+                    return I18n.isRTL ? "ظاهر دائماً مع حجز مساحة حقيقي للنوافذ" : "Always visible with reserved screen space";
+                }
+                icon: "settings-symbolic"
                 showDivider: true
-                clickable: true
-                onClicked: ConfigManager.setDockAutoHide(!ConfigManager.dockAutoHide)
 
-                SettingsToggle {
-                    checked: ConfigManager.dockAutoHide
-                    onToggled: ch => ConfigManager.setDockAutoHide(ch)
+                RowLayout {
+                    spacing: Theme.space4
+                    LayoutMirroring.enabled: I18n.isRTL
+                    LayoutMirroring.childrenInherit: true
+
+                    Repeater {
+                        model: [
+                            { id: "always",   label: I18n.isRTL ? "دائماً" : "Always" },
+                            { id: "autohide", label: I18n.isRTL ? "إخفاء تلقائي" : "Auto-Hide" },
+                            { id: "disabled", label: I18n.isRTL ? "معطل" : "Disabled" }
+                        ]
+                        delegate: Rectangle {
+                            id: modePill
+                            required property var modelData
+                            readonly property bool isSelected: (ConfigManager.dockMode || "always") === modelData.id
+
+                            height: 28
+                            implicitWidth: modeText.implicitWidth + Theme.space16
+                            radius: 14
+                            color: modePill.isSelected ? Theme.notchSurfaceActive : (modeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: modePill.isSelected ? Theme.notchBorderHighlight : (modeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                id: modeText
+                                anchors.centerIn: parent
+                                text: modePill.modelData.label
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: modePill.isSelected ? Font.DemiBold : Font.Normal
+                                color: modePill.isSelected ? Theme.notchText : Theme.notchTextSecondary
+                                renderType: Theme.renderType
+                            }
+
+                            MouseArea {
+                                id: modeMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ConfigManager.setDockMode(modePill.modelData.id)
+                            }
+                        }
+                    }
                 }
             }
 

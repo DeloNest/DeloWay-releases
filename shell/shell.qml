@@ -173,6 +173,7 @@ ShellRoot {
         function setDockPosition(pos: string)   { ConfigManager.setDockPosition(pos); }
         function setDockIconSize(sz: int)       { ConfigManager.setDockIconSize(sz); }
         function setDockAutoHide(val: bool)     { ConfigManager.setDockAutoHide(val); }
+        function setDockMode(mode: string)      { ConfigManager.setDockMode(mode); }
         function setDesktopMode(mode: string) {
             DesktopManager.closeContextMenu();
             ConfigManager.setDesktopMode(mode);
@@ -255,7 +256,12 @@ ShellRoot {
 
             // ── Always-on surfaces ──────────────────────────────────────────
             Background   { targetScreen: screenScope.modelData }
-            Dock         { targetScreen: screenScope.modelData }
+            Loader {
+                active: ConfigManager.dockMode !== "disabled"
+                sourceComponent: Component {
+                    Dock { targetScreen: screenScope.modelData }
+                }
+            }
             Notch        { targetScreen: screenScope.modelData }
             QuickSettingsCapsule { targetScreen: screenScope.modelData }
             TimeCapsule  { targetScreen: screenScope.modelData }

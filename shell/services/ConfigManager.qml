@@ -41,8 +41,10 @@ Item {
     })
 
     // Dock Settings
+    property string dockMode: "always" // "always" | "autohide" | "disabled"
+    property bool dockAutoHide: dockMode === "autohide"
+    property bool dockEnabled: dockMode !== "disabled"
     property string dockPosition: "bottom"
-    property bool dockAutoHide: false
     property int dockIconSize: 38
     property bool showUnderline: true
     property var pinnedApps: ["brave-browser", "kitty", "thunar", "spotify", "settings", "store"]
@@ -175,8 +177,14 @@ Item {
                 if (cfg.desktop.enabledWidgets) root.enabledWidgets = cfg.desktop.enabledWidgets;
             }
             if (cfg.dock) {
+                if (cfg.dock.mode) {
+                    root.dockMode = cfg.dock.mode;
+                } else if (cfg.dock.enabled === false) {
+                    root.dockMode = "disabled";
+                } else if (cfg.dock.autoHide !== undefined) {
+                    root.dockMode = cfg.dock.autoHide ? "autohide" : "always";
+                }
                 if (cfg.dock.position) root.dockPosition = cfg.dock.position;
-                if (cfg.dock.autoHide !== undefined) root.dockAutoHide = cfg.dock.autoHide;
                 if (cfg.dock.iconSize) root.dockIconSize = cfg.dock.iconSize;
                 if (cfg.dock.showUnderline !== undefined) root.showUnderline = cfg.dock.showUnderline;
                 if (cfg.dock.pinnedApps) root.pinnedApps = cfg.dock.pinnedApps;
@@ -296,9 +304,22 @@ Item {
         gtkThemeProcess.exec(["python3", root.projectDir + "/scripts/deloway-theme-apply.py"]);
     }
 
-    function setDockAutoHide(val) {
-        root.dockAutoHide = val;
+    function setDockMode(mode) {
+        if (mode !== "always" && mode !== "autohide" && mode !== "disabled") return;
+        root.dockMode = mode;
         saveConfig();
+    }
+
+    function setDockAutoHide(val) {
+        root.setDockMode(val ? "autohide" : "always");
+    }
+
+    function setDockEnabled(val) {
+        if (!val) {
+            root.setDockMode("disabled");
+        } else {
+            root.setDockMode(root.dockAutoHide ? "autohide" : "always");
+        }
     }
 
     function setDockIconSize(sz) {
@@ -574,8 +595,10 @@ Item {
                 enabledWidgets: root.enabledWidgets
             },
             dock: {
-                position: root.dockPosition,
+                mode: root.dockMode,
                 autoHide: root.dockAutoHide,
+                enabled: root.dockEnabled,
+                position: root.dockPosition,
                 iconSize: root.dockIconSize,
                 showUnderline: root.showUnderline,
                 pinnedApps: root.pinnedApps

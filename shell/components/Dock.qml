@@ -12,39 +12,141 @@ PanelWindow {
     required property ShellScreen targetScreen
     screen: targetScreen
 
-    anchors { bottom: true }
-    margins { bottom: 10 }
+    anchors {
+        bottom: true
+        left: true
+        right: true
+    }
+    margins {
+        bottom: 0
+        left: 0
+        right: 0
+    }
 
-    property bool autoHide: ConfigManager.dockAutoHide
+    readonly property string dockMode: ConfigManager.dockMode
+    readonly property bool isAutoHide: dockMode === "autohide"
     property bool dockHovered: false
-    property bool dockVisible: !autoHide || dockHovered
+    property bool isMenuOpen: Boolean(dockContextMenu && dockContextMenu.visible)
+    property bool dockVisible: !isAutoHide || dockHovered || isMenuOpen
 
-    exclusionMode: autoHide ? ExclusionMode.Ignore : ExclusionMode.Normal
-    exclusiveZone: Theme.dockExclusiveZoneFor(dockH)
+    exclusionMode: isAutoHide ? ExclusionMode.Ignore : ExclusionMode.Normal
+    exclusiveZone: isAutoHide ? 0 : Theme.dockExclusiveZoneFor(dockH)
 
     readonly property int iconSz:     ConfigManager.dockIconSize > 0 ? ConfigManager.dockIconSize : 48
     readonly property int dockH:      iconSz + 20
     readonly property int cardRadius: Theme.radiusDock
     readonly property int itemPad:    8
 
-    implicitHeight: dockH + 46
-    implicitWidth: dockCard.implicitWidth + 120
+    implicitHeight: dockH + 36
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:dock"
     WlrLayershell.layer: WlrLayer.Top
 
+    mask: Region {
+        item: (!root.isAutoHide || root.dockVisible) ? dockHitBox : triggerStrip
+    }
+
+    // ── Timers for Auto-hide hysteresis (220ms show delay, 400ms hide delay) ──
+    Timer {
+        id: showTimer
+        interval: 220
+        repeat: false
+        onTriggered: {
+            if (root.isAutoHide) {
+                root.dockVisible = true;
+            }
+        }
+    }
+
+    Timer {
+        id: hideTimer
+        interval: 400
+        repeat: false
+        onTriggered: {
+            if (root.isAutoHide && !root.dockHovered && !triggerHover.hovered && !root.isMenuOpen) {
+                root.dockVisible = false;
+            }
+        }
+    }
+
+    onIsAutoHideChanged: {
+        showTimer.stop();
+        hideTimer.stop();
+        root.dockVisible = !root.isAutoHide;
+    }
+
+    onIsMenuOpenChanged: {
+        if (!isMenuOpen && root.isAutoHide && !root.dockHovered && !triggerHover.hovered) {
+            hideTimer.restart();
+        }
+    }
+
+    // ── 2px Trigger Strip at bottom edge (entire screen width) ─────────────
+    Item {
+        id: triggerStrip
+        anchors.bottom: parent.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        height: 2
+        visible: root.isAutoHide
+
+        HoverHandler {
+            id: triggerHover
+            onHoveredChanged: {
+                if (hovered) {
+                    hideTimer.stop();
+                    if (!root.dockVisible) {
+                        showTimer.restart();
+                    }
+                } else {
+                    showTimer.stop();
+                    if (root.isAutoHide && !root.dockHovered && !root.isMenuOpen) {
+                        hideTimer.restart();
+                    }
+                }
+            }
+        }
+    }
+
+    // ── HitBox for Dock Card & Gap (Centered at bottom) ─────────────────────
+    Item {
+        id: dockHitBox
+        anchors.top: slideWrapper.top
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: dockCard.implicitWidth + 32
+
+        HoverHandler {
+            id: dockHoverHandler
+            onHoveredChanged: {
+                root.dockHovered = hovered;
+                if (hovered) {
+                    showTimer.stop();
+                    hideTimer.stop();
+                    if (root.isAutoHide) root.dockVisible = true;
+                } else {
+                    if (root.isAutoHide && !triggerHover.hovered && !root.isMenuOpen) {
+                        hideTimer.restart();
+                    }
+                }
+            }
+        }
+    }
+
     // ── Auto-hide slide ─────────────────────────────────────────────────────
     Item {
         id: slideWrapper
-        anchors.fill: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 8
+        width: dockCard.implicitWidth + 24
+        height: root.dockH + 12
 
         transform: Translate {
-            y: (root.autoHide && !root.dockVisible) ? 90 : 0
+            y: (root.isAutoHide && !root.dockVisible) ? (root.dockH + 30) : 0
             Behavior on y { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
         }
-
-        HoverHandler { onHoveredChanged: root.dockHovered = hovered }
 
         // ─── Ambient Drop Shadow (Depth Layer) ──────────────────────────────
         Rectangle {
@@ -82,8 +184,6 @@ PanelWindow {
                 border.width: 1
                 anchors.margins: 1
             }
-
-            HoverHandler { onHoveredChanged: root.dockHovered = hovered }
 
             MouseArea {
                 id: dockWheelMa
