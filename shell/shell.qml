@@ -198,6 +198,7 @@ ShellRoot {
             if (ShellState.appDrawerOpen)     { ShellState.closeAppDrawer();     return true; }
             if (ShellState.cheatSheetOpen)    { ShellState.closeCheatSheet();    return true; }
             if (ShellState.quickSettingsCapsuleExpanded) { ShellState.closeQuickSettingsCapsule(); return true; }
+            if (ShellState.timeCapsuleExpanded)          { ShellState.closeTimeCapsule();          return true; }
             if (ShellState.appStoreOpen)      { ShellState.closeAppStore();      return true; }
             if (ShellState.sessionMenuOpen)   { ShellState.closeSessionMenu();   return true; }
             return false;

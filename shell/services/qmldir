@@ -8,3 +8,4 @@ singleton SystemMonitor 1.0 SystemMonitor.qml
 singleton ScreenshotManager 1.0 ScreenshotManager.qml
 singleton I18n 1.0 I18n.qml
 singleton LocalSendService 1.0 LocalSendService.qml
+singleton HardwareService 1.0 HardwareService.qml

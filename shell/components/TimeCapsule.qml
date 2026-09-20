@@ -55,7 +55,7 @@ PanelWindow {
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(132, compactContentRow.implicitWidth + 36)
     readonly property real expandedWidth: 440
-    readonly property real expandedHeight: ConfigManager.timeCapsuleShowHardware ? 486 : 374
+    readonly property real expandedHeight: ConfigManager.timeCapsuleShowHardware ? 504 : 374
 
     property real currentWidth: root.isExpanded ? root.expandedWidth : root.compactWidth
     property real currentHeight: root.isExpanded ? root.expandedHeight : root.compactHeight
@@ -677,7 +677,7 @@ PanelWindow {
                 // ── CPU Card ──
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 82
+                    Layout.preferredHeight: 96
                     radius: Theme.radiusMedium
                     color: Theme.notchSurfaceElevated
                     border.color: Theme.notchBorderSubtle
@@ -686,7 +686,7 @@ PanelWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: Theme.space8
-                        spacing: 4
+                        spacing: 3
                         LayoutMirroring.enabled: I18n.isRTL
                         LayoutMirroring.childrenInherit: true
 
@@ -702,18 +702,18 @@ PanelWindow {
                             }
                             Item { Layout.fillWidth: true }
                             Text {
-                                text: SystemMonitor.cpuPercentText
+                                text: HardwareService.cpuPercentText
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Bold
-                                color: root.getLoadColor(SystemMonitor.cpuUsage, 45)
+                                color: root.getLoadColor(HardwareService.cpuUsage, HardwareService.cpuTemp)
                                 renderType: Theme.renderType
                             }
                         }
 
-                        // Temp / subtext
+                        // Temp
                         Text {
-                            text: "45°C" // CPU temp from hwmon discovered in Phase 0 (wired dynamically in Phase 3)
+                            text: HardwareService.cpuTempText
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(10)
                             font.weight: Font.Normal
@@ -721,20 +721,59 @@ PanelWindow {
                             renderType: Theme.renderType
                         }
 
-                        Item { Layout.fillHeight: true }
+                        // Sparkline Canvas (~60s history)
+                        Canvas {
+                            id: cpuCanvas
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 20
+                            property var history: HardwareService.cpuHistory
+                            property color strokeColor: root.getLoadColor(HardwareService.cpuUsage, HardwareService.cpuTemp)
+                            property color fillColor: Qt.rgba(strokeColor.r, strokeColor.g, strokeColor.b, 0.15)
+
+                            onHistoryChanged: if (root.isExpanded) requestPaint()
+                            onStrokeColorChanged: if (root.isExpanded) requestPaint()
+
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                if (!history || history.length < 2) return;
+                                const w = width;
+                                const h = height;
+                                const n = history.length;
+                                const step = w / Math.max(1, n - 1);
+
+                                ctx.beginPath();
+                                for (let i = 0; i < n; i++) {
+                                    const x = i * step;
+                                    const y = h - 2 - (history[i] * (h - 4));
+                                    if (i === 0) ctx.moveTo(x, y);
+                                    else ctx.lineTo(x, y);
+                                }
+                                ctx.strokeStyle = strokeColor;
+                                ctx.lineWidth = 1.5;
+                                ctx.lineJoin = "round";
+                                ctx.stroke();
+
+                                ctx.lineTo(w, h);
+                                ctx.lineTo(0, h);
+                                ctx.closePath();
+                                ctx.fillStyle = fillColor;
+                                ctx.fill();
+                            }
+                        }
 
                         // Load bar
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 3
-                            radius: 1.5
+                            Layout.preferredHeight: 2
+                            radius: 1
                             color: Theme.notchBorderSubtle
 
                             Rectangle {
-                                width: Math.max(2, Math.round(parent.width * SystemMonitor.cpuUsage))
+                                width: Math.max(2, Math.round(parent.width * HardwareService.cpuUsage))
                                 height: parent.height
-                                radius: 1.5
-                                color: root.getLoadColor(SystemMonitor.cpuUsage, 45)
+                                radius: 1
+                                color: root.getLoadColor(HardwareService.cpuUsage, HardwareService.cpuTemp)
                             }
                         }
                     }
@@ -743,7 +782,7 @@ PanelWindow {
                 // ── RAM Card ──
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 82
+                    Layout.preferredHeight: 96
                     radius: Theme.radiusMedium
                     color: Theme.notchSurfaceElevated
                     border.color: Theme.notchBorderSubtle
@@ -752,7 +791,7 @@ PanelWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: Theme.space8
-                        spacing: 4
+                        spacing: 3
                         LayoutMirroring.enabled: I18n.isRTL
                         LayoutMirroring.childrenInherit: true
 
@@ -768,18 +807,18 @@ PanelWindow {
                             }
                             Item { Layout.fillWidth: true }
                             Text {
-                                text: Math.round(SystemMonitor.ramUsage * 100) + "%"
+                                text: HardwareService.ramPercentText
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Bold
-                                color: root.getLoadColor(SystemMonitor.ramUsage, null)
+                                color: root.getLoadColor(HardwareService.ramUsage, null)
                                 renderType: Theme.renderType
                             }
                         }
 
                         // Memory used / total
                         Text {
-                            text: SystemMonitor.ramText
+                            text: HardwareService.ramText
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(10)
                             font.weight: Font.Normal
@@ -789,20 +828,59 @@ PanelWindow {
                             Layout.fillWidth: true
                         }
 
-                        Item { Layout.fillHeight: true }
+                        // Sparkline Canvas (~60s history)
+                        Canvas {
+                            id: ramCanvas
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 20
+                            property var history: HardwareService.ramHistory
+                            property color strokeColor: root.getLoadColor(HardwareService.ramUsage, null)
+                            property color fillColor: Qt.rgba(strokeColor.r, strokeColor.g, strokeColor.b, 0.15)
+
+                            onHistoryChanged: if (root.isExpanded) requestPaint()
+                            onStrokeColorChanged: if (root.isExpanded) requestPaint()
+
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                if (!history || history.length < 2) return;
+                                const w = width;
+                                const h = height;
+                                const n = history.length;
+                                const step = w / Math.max(1, n - 1);
+
+                                ctx.beginPath();
+                                for (let i = 0; i < n; i++) {
+                                    const x = i * step;
+                                    const y = h - 2 - (history[i] * (h - 4));
+                                    if (i === 0) ctx.moveTo(x, y);
+                                    else ctx.lineTo(x, y);
+                                }
+                                ctx.strokeStyle = strokeColor;
+                                ctx.lineWidth = 1.5;
+                                ctx.lineJoin = "round";
+                                ctx.stroke();
+
+                                ctx.lineTo(w, h);
+                                ctx.lineTo(0, h);
+                                ctx.closePath();
+                                ctx.fillStyle = fillColor;
+                                ctx.fill();
+                            }
+                        }
 
                         // Load bar
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 3
-                            radius: 1.5
+                            Layout.preferredHeight: 2
+                            radius: 1
                             color: Theme.notchBorderSubtle
 
                             Rectangle {
-                                width: Math.max(2, Math.round(parent.width * SystemMonitor.ramUsage))
+                                width: Math.max(2, Math.round(parent.width * HardwareService.ramUsage))
                                 height: parent.height
-                                radius: 1.5
-                                color: root.getLoadColor(SystemMonitor.ramUsage, null)
+                                radius: 1
+                                color: root.getLoadColor(HardwareService.ramUsage, null)
                             }
                         }
                     }
@@ -811,7 +889,7 @@ PanelWindow {
                 // ── GPU Card ──
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 82
+                    Layout.preferredHeight: 96
                     radius: Theme.radiusMedium
                     color: Theme.notchSurfaceElevated
                     border.color: Theme.notchBorderSubtle
@@ -820,7 +898,7 @@ PanelWindow {
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: Theme.space8
-                        spacing: 4
+                        spacing: 3
                         LayoutMirroring.enabled: I18n.isRTL
                         LayoutMirroring.childrenInherit: true
 
@@ -836,33 +914,81 @@ PanelWindow {
                             }
                             Item { Layout.fillWidth: true }
                             Text {
-                                text: "—" // Populated dynamically in Phase 3
+                                text: HardwareService.gpuPercentText
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Bold
-                                color: Theme.notchTextTertiary
+                                color: HardwareService.hasGpu ? root.getLoadColor(HardwareService.gpuUsage || 0, HardwareService.gpuTemp) : Theme.notchTextTertiary
                                 renderType: Theme.renderType
                             }
                         }
 
                         // GPU subtext (temp or VRAM)
                         Text {
-                            text: "—" // Populated dynamically in Phase 3
+                            text: HardwareService.hasGpu ? (HardwareService.gpuTempText + " • " + HardwareService.gpuVramText) : "—"
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(10)
                             font.weight: Font.Normal
                             color: Theme.notchTextTertiary
                             renderType: Theme.renderType
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
                         }
 
-                        Item { Layout.fillHeight: true }
+                        // Sparkline Canvas (~60s history)
+                        Canvas {
+                            id: gpuCanvas
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 20
+                            property var history: HardwareService.gpuHistory
+                            property color strokeColor: HardwareService.hasGpu ? root.getLoadColor(HardwareService.gpuUsage || 0, HardwareService.gpuTemp) : Theme.notchTextTertiary
+                            property color fillColor: Qt.rgba(strokeColor.r, strokeColor.g, strokeColor.b, 0.15)
 
-                        // Load bar placeholder
+                            onHistoryChanged: if (root.isExpanded) requestPaint()
+                            onStrokeColorChanged: if (root.isExpanded) requestPaint()
+
+                            onPaint: {
+                                const ctx = getContext("2d");
+                                ctx.clearRect(0, 0, width, height);
+                                if (!history || history.length < 2) return;
+                                const w = width;
+                                const h = height;
+                                const n = history.length;
+                                const step = w / Math.max(1, n - 1);
+
+                                ctx.beginPath();
+                                for (let i = 0; i < n; i++) {
+                                    const x = i * step;
+                                    const y = h - 2 - (history[i] * (h - 4));
+                                    if (i === 0) ctx.moveTo(x, y);
+                                    else ctx.lineTo(x, y);
+                                }
+                                ctx.strokeStyle = strokeColor;
+                                ctx.lineWidth = 1.5;
+                                ctx.lineJoin = "round";
+                                ctx.stroke();
+
+                                ctx.lineTo(w, h);
+                                ctx.lineTo(0, h);
+                                ctx.closePath();
+                                ctx.fillStyle = fillColor;
+                                ctx.fill();
+                            }
+                        }
+
+                        // Load bar
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 3
-                            radius: 1.5
+                            Layout.preferredHeight: 2
+                            radius: 1
                             color: Theme.notchBorderSubtle
+
+                            Rectangle {
+                                width: Math.max(2, Math.round(parent.width * (HardwareService.gpuUsage || 0.0)))
+                                height: parent.height
+                                radius: 1
+                                color: HardwareService.hasGpu ? root.getLoadColor(HardwareService.gpuUsage || 0, HardwareService.gpuTemp) : Theme.notchBorderSubtle
+                            }
                         }
                     }
                 }
