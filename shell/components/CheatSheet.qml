@@ -98,7 +98,7 @@ PanelWindow {
                     SectionBox {
                         title: I18n.tr("cs_shell")
                         items: [
-                            { keys: ["Super"], desc: "Toggle overview/launcher" },
+                            { keys: ["Super", "Space"], desc: "Unified launcher (search & apps)" },
                             { keys: ["Super", "V"], desc: "Clipboard history >> clipboard" },
                             { keys: ["Super", "Period"], desc: "Emoji >> clipboard" },
                             { keys: ["Super", "A"], desc: "Toggle left sidebar" },

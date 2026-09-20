@@ -122,10 +122,10 @@ QtObject {
         setupWizardOpen = false;
     }
 
-    function openAppDrawer() {
+    function openAppDrawer(initialQuery) {
         quickSettingsCapsuleExpanded = false;
         appStoreOpen = false;
-        searchQuery = "";
+        searchQuery = (typeof initialQuery === "string") ? initialQuery : "";
         appDrawerOpen = true;
     }
 

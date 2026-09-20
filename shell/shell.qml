@@ -22,6 +22,12 @@ ShellRoot {
 
     // ── Launchers ───────────────────────────────────────────────────────────
     GlobalShortcut {
+        name: "launcherToggle"
+        description: "Toggles the Deloway Unified Launcher (Super + Space)"
+        onPressed: ShellState.toggleAppDrawer()
+    }
+
+    GlobalShortcut {
         name: "drawerToggle"
         description: "Toggles the Deloway App Drawer (Super + D / Super + Space)"
         onPressed: ShellState.toggleAppDrawer()
@@ -111,13 +117,17 @@ ShellRoot {
             LocalSendService.resetStage();
         }
 
+        // ── Unified Launcher ────────────────────────────────────────────────
+        function toggleLauncher()             { ShellState.toggleAppDrawer(); }
+        function openLauncher()               { ShellState.openAppDrawer(); }
+        function closeLauncher()              { ShellState.closeAppDrawer(); }
+
         // ── App Drawer ──────────────────────────────────────────────────────
         function toggleDrawer()        { ShellState.toggleAppDrawer(); }
         function openDrawer()          { ShellState.openAppDrawer(); }
         function closeDrawer()         { ShellState.closeAppDrawer(); }
         function setSearchQuery(query: string) {
-            ShellState.searchQuery = query;
-            ShellState.openAppDrawer();
+            ShellState.openAppDrawer(query);
         }
 
         // ── Settings ────────────────────────────────────────────────────────

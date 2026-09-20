@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import "../theme"
@@ -13,15 +14,16 @@ PanelWindow {
     required property ShellScreen targetScreen
     screen: targetScreen
 
-    anchors { bottom: true }
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
 
-    margins { bottom: 84 }
-
-    implicitWidth: 780
-    implicitHeight: 560
     color: "transparent"
 
-    WlrLayershell.namespace: "deloway:appdrawer"
+    WlrLayershell.namespace: "deloway:launcher"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: ShellState.appDrawerOpen
                                  ? WlrKeyboardFocus.OnDemand
@@ -31,14 +33,13 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     // ─────────────────────────────────────────────────────────────────────
-    // Design tokens (harmonized with Notch OLED deep black aesthetic)
+    // Design tokens (Strict monochrome OLED deep black aesthetic)
     // ─────────────────────────────────────────────────────────────────────
     readonly property int radiusCard: Theme.notchRadiusWindow
     readonly property int radiusPanel: Theme.notchRadiusPanel
     readonly property int radiusItem: Theme.notchRadiusCard
     readonly property int radiusPill: Theme.notchRadiusPill
 
-    // Pure deep black OLED background matching Notch
     readonly property color colorBackground: Theme.notchBackground
     readonly property color colorSurface: Theme.notchSurface
     readonly property color colorElevated: Theme.notchSurfaceElevated
@@ -57,6 +58,7 @@ PanelWindow {
 
     readonly property color colorAccent: Theme.notchText
     readonly property color colorUrgent: Theme.colors.urgent
+    readonly property color colorSuccess: Theme.colors.success
 
     // ─────────────────────────────────────────────────────────────────────
     // State
@@ -64,200 +66,367 @@ PanelWindow {
     property string filterQuery: ""
     property string selectedCategory: "All"
     property int selectedIndex: 0
+    property bool isGridView: true
 
     readonly property var allApps: ApplicationManager.allApps
 
     // ─────────────────────────────────────────────────────────────────────
-    // Data
+    // Clipboard helper process for calculator
+    // ─────────────────────────────────────────────────────────────────────
+    Process {
+        id: wlCopyProcess
+        command: ["wl-copy", ""]
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Safe Math Calculator (Zero eval, Recursive Descent Parser)
+    // ─────────────────────────────────────────────────────────────────────
+    function evaluateMath(expr) {
+        if (!expr) return null;
+        const clean = expr.trim();
+        const hasMathOp = /[\+\-\*\/\%\^\(\)]/.test(clean) ||
+                          /\b(sqrt|abs|sin|cos|tan|log|ln|floor|ceil|round|pi|e)\b/i.test(clean);
+        if (!hasMathOp) return null;
+        if (!/^[\d\s\+\-\*\/\%\^\(\)\.\,a-zA-Z]+$/.test(clean)) return null;
+
+        let pos = 0;
+        const len = clean.length;
+
+        function peek() {
+            while (pos < len && clean[pos] === " ") pos++;
+            return pos < len ? clean[pos] : null;
+        }
+
+        function getWord() {
+            let start = pos;
+            while (pos < len && /[a-zA-Z_]/.test(clean[pos])) pos++;
+            return clean.slice(start, pos).toLowerCase();
+        }
+
+        function getNumber() {
+            let start = pos;
+            let hasDot = false;
+            while (pos < len && (/[0-9]/.test(clean[pos]) || (clean[pos] === "." && !hasDot))) {
+                if (clean[pos] === ".") hasDot = true;
+                pos++;
+            }
+            return parseFloat(clean.slice(start, pos));
+        }
+
+        function parseExpr() {
+            let left = parseTerm();
+            while (true) {
+                let ch = peek();
+                if (ch === "+") { pos++; left = left + parseTerm(); }
+                else if (ch === "-") { pos++; left = left - parseTerm(); }
+                else break;
+            }
+            return left;
+        }
+
+        function parseTerm() {
+            let left = parseFactor();
+            while (true) {
+                let ch = peek();
+                if (ch === "*") { pos++; left = left * parseFactor(); }
+                else if (ch === "/") {
+                    pos++;
+                    let denom = parseFactor();
+                    if (denom === 0) throw new Error("ZeroDivision");
+                    left = left / denom;
+                }
+                else if (ch === "%") { pos++; left = left % parseFactor(); }
+                else break;
+            }
+            return left;
+        }
+
+        function parseFactor() {
+            let left = parseUnary();
+            let ch = peek();
+            if (ch === "^") {
+                pos++;
+                let right = parseFactor();
+                return Math.pow(left, right);
+            }
+            return left;
+        }
+
+        function parseUnary() {
+            let ch = peek();
+            if (ch === "+") { pos++; return parseUnary(); }
+            if (ch === "-") { pos++; return -parseUnary(); }
+            return parsePrimary();
+        }
+
+        function parsePrimary() {
+            let ch = peek();
+            if (ch === null) throw new Error("EOF");
+            if (ch === "(") {
+                pos++;
+                let val = parseExpr();
+                if (peek() !== ")") throw new Error("NoClosingParen");
+                pos++;
+                return val;
+            }
+            if (/[0-9\.]/.test(ch)) return getNumber();
+            if (/[a-zA-Z]/.test(ch)) {
+                let word = getWord();
+                if (word === "pi") return Math.PI;
+                if (word === "e") return Math.E;
+                if (peek() === "(") {
+                    pos++;
+                    let arg = parseExpr();
+                    if (peek() !== ")") throw new Error("NoClosingParen");
+                    pos++;
+                    switch (word) {
+                        case "sqrt": return Math.sqrt(arg);
+                        case "abs":  return Math.abs(arg);
+                        case "sin":  return Math.sin(arg);
+                        case "cos":  return Math.cos(arg);
+                        case "tan":  return Math.tan(arg);
+                        case "log":  return Math.log10(arg);
+                        case "ln":   return Math.log(arg);
+                        case "floor": return Math.floor(arg);
+                        case "ceil":  return Math.ceil(arg);
+                        case "round": return Math.round(arg);
+                        default: throw new Error("UnknownFunc");
+                    }
+                }
+                throw new Error("UnknownId");
+            }
+            throw new Error("BadChar");
+        }
+
+        try {
+            let res = parseExpr();
+            if (peek() !== null) return null;
+            if (typeof res === "number" && !isNaN(res) && isFinite(res)) {
+                return Math.abs(res - Math.round(res)) < 1e-12
+                    ? Math.round(res).toString()
+                    : Number(res.toFixed(8)).toString();
+            }
+            return null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Arabic & English text normalization
+    // ─────────────────────────────────────────────────────────────────────
+    function normalizeText(text) {
+        if (!text) return "";
+        return text.toString().toLowerCase()
+            .replace(/[\u064B-\u065F\u0670]/g, "")
+            .replace(/[أإآٱ]/g, "ا")
+            .replace(/ة/g, "ه")
+            .replace(/ى/g, "ي");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Settings index for unified search
     // ─────────────────────────────────────────────────────────────────────
     readonly property var settingsIndex: [
+        {
+            "id": "settings-main",
+            "type": "setting",
+            "badge": "SETTING",
+            "name": I18n.isRTL ? "إعدادات النظام" : "System Settings",
+            "desc": I18n.isRTL ? "فتح نافذة إعدادات DeloWay الرئيسية" : "Open DeloWay system settings",
+            "icon": "settings-symbolic",
+            "keywords": ["settings", "preferences", "config", "control", "اعدادات", "إعدادات", "تفضيلات", "ضبط"]
+        },
         {
             "id": "appearance",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Appearance & Theme",
-            "desc": "Dark Mode, Light Mode, Accent colors, Calm Mica",
+            "name": I18n.isRTL ? "المظهر والسمة" : "Appearance & Theme",
+            "desc": I18n.isRTL ? "الوضع الداكن، الفاتح، والشفافية" : "Dark Mode, Light Mode, Contrast",
             "icon": "applications-graphics-symbolic",
-            "isAppIcon": false,
-            "keywords": ["theme", "dark", "light", "color", "accent", "appearance", "mica"]
+            "keywords": ["theme", "dark", "light", "color", "appearance", "مظهر", "سمة", "داكن", "فاتح", "الوان", "اعدادات", "إعدادات"]
         },
         {
             "id": "desktop",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Desktop & Wallpaper",
-            "desc": "Desktop mode, icons, widgets, and wallpaper",
+            "name": I18n.isRTL ? "سطح المكتب والخلفية" : "Desktop & Wallpaper",
+            "desc": I18n.isRTL ? "أوضاع سطح المكتب، الأيقونات، والودجات" : "Desktop mode, icons, widgets, and wallpaper",
             "icon": "user-home-symbolic",
-            "isAppIcon": false,
-            "keywords": ["desktop", "wallpaper", "background", "icons", "clean", "widgets", "traditional"]
+            "keywords": ["desktop", "wallpaper", "background", "icons", "clean", "widgets", "خلفية", "سطح المكتب", "ايقونات"]
         },
         {
             "id": "dock",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Dock Settings",
-            "desc": "Dock position, auto-hide, icon size, active indicator",
+            "name": I18n.isRTL ? "شريط المهام" : "Dock Settings",
+            "desc": I18n.isRTL ? "أوضاع العرض، الإخفاء التلقائي، ومقاس الأيقونات" : "Dock mode, auto-hide, icon size",
             "icon": "view-app-grid-symbolic",
-            "isAppIcon": false,
-            "keywords": ["dock", "taskbar", "autohide", "size", "pin"]
+            "keywords": ["dock", "taskbar", "autohide", "size", "pin", "شريط", "مهام", "اخفاء"]
         },
         {
             "id": "topbar",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Top Bar",
-            "desc": "Clock format, workspaces count, brand logo",
+            "name": I18n.isRTL ? "الشريط العلوي والكبسولات" : "Top Bar & Capsules",
+            "desc": I18n.isRTL ? "صيغة الساعة، مساحات العمل، وشعار النظام" : "Clock format, workspaces count, brand logo",
             "icon": "preferences-system-symbolic",
-            "isAppIcon": false,
-            "keywords": ["topbar", "bar", "clock", "workspaces", "brand"]
+            "keywords": ["topbar", "bar", "clock", "workspaces", "brand", "علوي", "شريط", "ساعة", "كبسولة"]
         },
         {
             "id": "windows",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Window Management",
-            "desc": "Active borders, gaps, corner rounding",
+            "name": I18n.isRTL ? "إدارة النوافذ" : "Window Management",
+            "desc": I18n.isRTL ? "حدود النوافذ، الفراغات، واستدارة الزوايا" : "Active borders, gaps, corner rounding",
             "icon": "view-fullscreen-symbolic",
-            "isAppIcon": false,
-            "keywords": ["window", "border", "gaps", "rounding", "hyprland"]
+            "keywords": ["window", "border", "gaps", "rounding", "hyprland", "نوافذ", "حدود", "فراغات"]
         },
         {
             "id": "shortcuts",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Keyboard Shortcuts",
-            "desc": "Keybindings reference and Super key cheat sheet",
+            "name": I18n.isRTL ? "اختصارات لوحة المفاتيح" : "Keyboard Shortcuts",
+            "desc": I18n.isRTL ? "دليل الاختصارات وورقة مفتاح Super" : "Keybindings reference and Super key cheat sheet",
             "icon": "preferences-desktop-keyboard-shortcuts-symbolic",
-            "isAppIcon": false,
-            "keywords": ["shortcuts", "keys", "hotkeys", "keyboard", "super"]
+            "keywords": ["shortcuts", "keys", "hotkeys", "keyboard", "super", "اختصارات", "لوحة", "مفاتيح"]
         },
         {
             "id": "network",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Network & Wi-Fi",
-            "desc": "Wi-Fi, Ethernet, IP address, signal strength",
+            "name": I18n.isRTL ? "الشبكة والواي فاي" : "Network & Wi-Fi",
+            "desc": I18n.isRTL ? "الواي فاي، إيثرنت، وعنوان IP" : "Wi-Fi, Ethernet, IP address, signal",
             "icon": "network-wireless-symbolic",
-            "isAppIcon": false,
-            "keywords": ["network", "wifi", "internet", "ethernet", "ip", "wireless"]
+            "keywords": ["network", "wifi", "internet", "ethernet", "ip", "شبكة", "واي فاي", "انترنت"]
         },
         {
             "id": "bluetooth",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Bluetooth",
-            "desc": "Bluetooth devices, pairing, adapters",
+            "name": I18n.isRTL ? "البلوتوث" : "Bluetooth",
+            "desc": I18n.isRTL ? "أجهزة البلوتوث، الاقتران، والمحولات" : "Bluetooth devices, pairing, adapters",
             "icon": "bluetooth-active-symbolic",
-            "isAppIcon": false,
-            "keywords": ["bluetooth", "pair", "device", "audio"]
+            "keywords": ["bluetooth", "pair", "device", "audio", "بلوتوث", "اقتران", "سماعات"]
         },
         {
             "id": "power",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Power & Battery",
-            "desc": "Power profiles, sleep timeout, battery status",
+            "name": I18n.isRTL ? "الطاقة والبطارية" : "Power & Battery",
+            "desc": I18n.isRTL ? "أنماط الطاقة، توقيت السكون، والبطارية" : "Power profiles, sleep timeout, battery status",
             "icon": "power-profile-balanced-symbolic",
-            "isAppIcon": false,
-            "keywords": ["power", "battery", "sleep", "profile", "saver", "performance"]
+            "keywords": ["power", "battery", "sleep", "profile", "طاقة", "بطارية", "سكون"]
         },
         {
             "id": "notifications",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Notifications",
-            "desc": "Do Not Disturb, banners, sounds",
+            "name": I18n.isRTL ? "الإشعارات" : "Notifications",
+            "desc": I18n.isRTL ? "عدم الإزعاج، واللافتات" : "Do Not Disturb, banners, sounds",
             "icon": "preferences-system-notifications-symbolic",
-            "isAppIcon": false,
-            "keywords": ["notification", "dnd", "timeout", "alert"]
+            "keywords": ["notification", "dnd", "timeout", "alert", "اشعارات", "ازعاج", "تنبيه"]
         },
         {
             "id": "applications",
             "type": "setting",
             "badge": "SETTING",
-            "name": "Default Applications",
-            "desc": "Default browser, terminal, file manager, editor",
+            "name": I18n.isRTL ? "التطبيقات الافتراضية" : "Default Applications",
+            "desc": I18n.isRTL ? "المتصفح، الطرفية، ومدير الملفات الافتراضي" : "Default browser, terminal, file manager",
             "icon": "applications-other-symbolic",
-            "isAppIcon": false,
-            "keywords": ["apps", "default", "browser", "terminal", "editor", "files"]
+            "keywords": ["apps", "default", "browser", "terminal", "تطبيقات", "افتراضية", "متصفح", "طرفية"]
         },
         {
             "id": "about",
             "type": "setting",
             "badge": "SETTING",
-            "name": "About DeloOS",
-            "desc": "System info, kernel version, Wayland engine",
+            "name": I18n.isRTL ? "حول DeloWay" : "About DeloWay",
+            "desc": I18n.isRTL ? "معلومات النظام، النواة، ومحرك Wayland" : "System info, kernel version, Wayland engine",
             "icon": "dialog-information-symbolic",
-            "isAppIcon": false,
-            "keywords": ["about", "deloos", "system", "kernel", "specs"]
+            "keywords": ["about", "deloos", "deloway", "system", "kernel", "حول", "نظام", "نواة"]
         }
     ]
 
+    // ─────────────────────────────────────────────────────────────────────
+    // System actions
+    // ─────────────────────────────────────────────────────────────────────
     readonly property var systemActions: [
         {
             "id": "lock",
             "type": "action",
             "badge": "SYSTEM",
-            "name": "Lock Screen",
-            "desc": "Lock current Wayland session",
+            "name": I18n.isRTL ? "قفل الشاشة" : "Lock Screen",
+            "desc": I18n.isRTL ? "قفل جلسة Wayland الحالية" : "Lock current Wayland session",
             "icon": "changes-prevent-symbolic",
-            "isAppIcon": false,
-            "keywords": ["lock", "screen", "session", "sleep"]
+            "keywords": ["lock", "screen", "session", "sleep", "قفل", "شاشة", "جلسة"]
         },
         {
             "id": "logout",
             "type": "action",
             "badge": "SYSTEM",
-            "name": "Log Out",
-            "desc": "Exit desktop session to display manager",
+            "name": I18n.isRTL ? "تسجيل الخروج" : "Log Out",
+            "desc": I18n.isRTL ? "إنهاء الجلسة والعودة لمدير الدخول" : "Exit desktop session to display manager",
             "icon": "system-log-out-symbolic",
-            "isAppIcon": false,
-            "keywords": ["logout", "log out", "exit", "quit"]
+            "keywords": ["logout", "log out", "exit", "quit", "خروج", "تسجيل", "انهاء"]
         },
         {
             "id": "restart",
             "type": "action",
             "badge": "SYSTEM",
-            "name": "Restart System",
-            "desc": "Reboot the computer safely",
+            "name": I18n.isRTL ? "إعادة تشغيل النظام" : "Restart System",
+            "desc": I18n.isRTL ? "إعادة تشغيل الحاسوب بأمان" : "Reboot the computer safely",
             "icon": "system-reboot-symbolic",
-            "isAppIcon": false,
-            "keywords": ["restart", "reboot"]
+            "keywords": ["restart", "reboot", "اعادة", "تشغيل", "ريستارت"]
         },
         {
             "id": "shutdown",
             "type": "action",
             "badge": "SYSTEM",
-            "name": "Shut Down",
-            "desc": "Power off the computer",
+            "name": I18n.isRTL ? "إيقاف التشغيل" : "Shut Down",
+            "desc": I18n.isRTL ? "إطفاء الحاسوب بالكامل" : "Power off the computer",
             "icon": "system-shutdown-symbolic",
-            "isAppIcon": false,
-            "keywords": ["shutdown", "power off", "turn off", "halt"]
+            "keywords": ["shutdown", "power off", "turn off", "halt", "ايقاف", "اطفاء", "اغلاق"]
         }
     ]
 
     // ─────────────────────────────────────────────────────────────────────
-    // Computed lists
+    // Computed lists & Search results
     // ─────────────────────────────────────────────────────────────────────
     readonly property var universalResults: {
-        const q = filterQuery.trim().toLowerCase();
+        const q = filterQuery.trim();
         if (!q) return [];
-
+        const normQ = normalizeText(q);
         const results = [];
 
+        // 1. Safe Calculator evaluation
+        const mathRes = evaluateMath(q);
+        if (mathRes !== null) {
+            results.push({
+                "id": "calc-result",
+                "type": "calc",
+                "badge": "CALC",
+                "name": "= " + mathRes,
+                "desc": q + " • " + (I18n.isRTL ? "اضغط Enter للنسخ إلى الحافظة" : "Press Enter to copy to clipboard"),
+                "icon": "accessories-calculator-symbolic",
+                "isAppIcon": false,
+                "data": { "value": mathRes }
+            });
+        }
+
+        // 2. Applications
         for (let i = 0; i < allApps.length; i++) {
             const app = allApps[i];
-            const matches =
-                app.name.toLowerCase().includes(q) ||
-                (app.comment && app.comment.toLowerCase().includes(q));
+            const normName = normalizeText(app.name);
+            const normComment = normalizeText(app.comment || "");
+            const normId = normalizeText(app.id || "");
 
-            if (matches) {
+            if (normName.includes(normQ) || normComment.includes(normQ) || normId.includes(normQ)) {
                 results.push({
                     "id": app.id,
                     "type": "app",
                     "badge": "APP",
                     "name": app.name,
-                    "desc": app.comment || "Application",
+                    "desc": app.comment || (I18n.isRTL ? "تطبيق" : "Application"),
                     "icon": app.icon,
                     "isAppIcon": true,
                     "data": app
@@ -265,14 +434,14 @@ PanelWindow {
             }
         }
 
+        // 3. Settings
         for (let i = 0; i < settingsIndex.length; i++) {
             const s = settingsIndex[i];
-            const matches =
-                s.name.toLowerCase().includes(q) ||
-                s.desc.toLowerCase().includes(q) ||
-                s.keywords.some(k => k.includes(q));
+            const normName = normalizeText(s.name);
+            const normDesc = normalizeText(s.desc);
+            const matchesKw = s.keywords.some(k => normalizeText(k).includes(normQ));
 
-            if (matches) {
+            if (normName.includes(normQ) || normDesc.includes(normQ) || matchesKw) {
                 results.push({
                     "id": s.id,
                     "type": "setting",
@@ -286,14 +455,14 @@ PanelWindow {
             }
         }
 
+        // 4. System actions
         for (let i = 0; i < systemActions.length; i++) {
             const a = systemActions[i];
-            const matches =
-                a.name.toLowerCase().includes(q) ||
-                a.desc.toLowerCase().includes(q) ||
-                a.keywords.some(k => k.includes(q));
+            const normName = normalizeText(a.name);
+            const normDesc = normalizeText(a.desc);
+            const matchesKw = a.keywords.some(k => normalizeText(k).includes(normQ));
 
-            if (matches) {
+            if (normName.includes(normQ) || normDesc.includes(normQ) || matchesKw) {
                 results.push({
                     "id": a.id,
                     "type": "action",
@@ -307,27 +476,29 @@ PanelWindow {
             }
         }
 
+        // 5. Store search
         results.push({
             "id": "store-search",
             "type": "store",
             "badge": "STORE",
-            "name": "Search for \"" + filterQuery.trim() + "\" in Delo Store",
-            "desc": "Find and install packages, flatpaks, and developer tools",
+            "name": (I18n.isRTL ? "البحث عن \"" : "Search for \"") + q + (I18n.isRTL ? "\" في متجر التطبيقات" : "\" in Delo Store"),
+            "desc": I18n.isRTL ? "البحث عن حزم وتطبيقات لتثبيتها" : "Find and install packages, flatpaks, and developer tools",
             "icon": "software-store",
             "isAppIcon": true,
-            "data": { "query": filterQuery.trim() }
+            "data": { "query": q }
         });
 
         return results;
     }
 
     readonly property var filteredApps: {
-        const q = filterQuery.trim().toLowerCase();
+        const q = filterQuery.trim();
+        const normQ = normalizeText(q);
         return allApps.filter(app => {
             const matchesQuery =
-                !q ||
-                app.name.toLowerCase().includes(q) ||
-                (app.comment && app.comment.toLowerCase().includes(q));
+                !normQ ||
+                normalizeText(app.name).includes(normQ) ||
+                (app.comment && normalizeText(app.comment).includes(normQ));
 
             if (!matchesQuery) return false;
             if (selectedCategory === "All") return true;
@@ -351,8 +522,8 @@ PanelWindow {
         return list;
     }
 
-    readonly property var recentList: {
-        if (selectedCategory !== "All") return [];
+    readonly property var allAppsWithoutPinned: {
+        if (selectedCategory !== "All") return root.filteredApps;
 
         const pinnedSet = new Set(
             ApplicationManager.pinnedAppIds.map(id =>
@@ -360,29 +531,42 @@ PanelWindow {
             )
         );
 
-        return root.allApps
-            .filter(app =>
-                !pinnedSet.has(app.id.toLowerCase().replace(/\.desktop$/, ""))
-            )
-            .slice(0, 12);
+        return root.allApps.filter(app =>
+            !pinnedSet.has(app.id.toLowerCase().replace(/\.desktop$/, ""))
+        );
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Helpers
+    // Helpers & Execution
     // ─────────────────────────────────────────────────────────────────────
+    function cycleCategory(dir) {
+        const cats = ["All", "System", "Development", "Network", "AudioVideo", "Office", "Graphics", "Game", "Utility"];
+        let idx = cats.indexOf(selectedCategory);
+        if (idx === -1) idx = 0;
+        idx = (idx + dir + cats.length) % cats.length;
+        selectedCategory = cats[idx];
+    }
+
     function executeItem(item) {
         if (!item) return;
 
         drawerContextMenu.hide();
         ShellState.closeAppDrawer();
 
-        if (item.type === "app") {
+        if (item.type === "calc") {
+            if (item.data && item.data.value) {
+                wlCopyProcess.exec(["wl-copy", String(item.data.value)]);
+            }
+        } else if (item.type === "app") {
             if (item.data && typeof item.data.execute === "function")
                 item.data.execute();
             else if (item.data)
                 ApplicationManager.launchApp(item.data);
         } else if (item.type === "setting") {
-            ShellState.openSettingsTab(item.id);
+            if (item.id === "settings-main")
+                ShellState.toggleSettingsApp();
+            else
+                ShellState.openSettingsTab(item.id);
         } else if (item.type === "store") {
             ShellState.openAppStore("all", item.data.query);
         } else if (item.type === "action") {
@@ -410,38 +594,73 @@ PanelWindow {
             ApplicationManager.launchApp(app);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Shell animations
-    // ─────────────────────────────────────────────────────────────────────
-    Item {
-        id: drawerHost
-        anchors.fill: parent
+    // Debounce timer for smooth typing (60ms)
+    Timer {
+        id: searchDebounceTimer
+        interval: 60
+        repeat: false
+        onTriggered: {
+            root.filterQuery = searchInput.text;
+            root.selectedIndex = 0;
+        }
+    }
 
-        readonly property bool isOpen: ShellState.appDrawerOpen
-        opacity: isOpen ? 1.0 : 0.0
-        scale: isOpen ? 1.0 : 0.97
-        transformOrigin: Item.Bottom
+    // ─────────────────────────────────────────────────────────────────────
+    // Visual Presentation (Backdrop + Centered OLED Launcher)
+    // ─────────────────────────────────────────────────────────────────────
+
+    // Dimmed backdrop
+    Rectangle {
+        id: backdrop
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.50)
+        opacity: drawerHost.opacity
 
         Behavior on opacity {
             NumberAnimation {
-                duration: drawerHost.isOpen ? 200 : 150
+                duration: drawerHost.isOpen ? 180 : 130
+                easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: ShellState.closeAppDrawer()
+        }
+    }
+
+    // Centered Launcher Card (~640px)
+    Item {
+        id: drawerHost
+        anchors.centerIn: parent
+        width: Math.min(640, root.width - 32)
+        height: Math.min(540, root.height - 80)
+
+        readonly property bool isOpen: ShellState.appDrawerOpen
+        opacity: isOpen ? 1.0 : 0.0
+        scale: isOpen ? 1.0 : 0.96
+        transformOrigin: Item.Center
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: drawerHost.isOpen ? 180 : 130
                 easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
             }
         }
         Behavior on scale {
             NumberAnimation {
-                duration: drawerHost.isOpen ? 200 : 150
+                duration: drawerHost.isOpen ? 180 : 130
                 easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
             }
         }
 
-        // Ambient Drop Shadow matching Notch card depth
+        // Ambient Drop Shadow
         Rectangle {
             anchors.fill: drawerCard
-            anchors.topMargin: 8
-            anchors.bottomMargin: -8
-            anchors.leftMargin: -2
-            anchors.rightMargin: -2
+            anchors.topMargin: 10
+            anchors.bottomMargin: -10
+            anchors.leftMargin: -4
+            anchors.rightMargin: -4
             radius: root.radiusCard + 4
             color: Theme.notchShadow
             z: 0
@@ -452,7 +671,7 @@ PanelWindow {
             anchors.fill: parent
             radius: root.radiusCard
             color: root.colorBackground
-            border.color: Theme.notchBorderSubtle
+            border.color: root.colorBorder
             border.width: 1
             z: 1
 
@@ -461,11 +680,11 @@ PanelWindow {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: Theme.spacing.panel
-                spacing: Theme.spacing.gutter
+                anchors.margins: Theme.space16
+                spacing: Theme.space8
 
                 // ─────────────────────────────────────────────────────────
-                // Search bar (DeloTextField)
+                // 1. Search Bar & Keyboard shortcuts hint
                 // ─────────────────────────────────────────────────────────
                 RowLayout {
                     Layout.fillWidth: true
@@ -478,27 +697,34 @@ PanelWindow {
                         radius: root.radiusPill
                         customBackground: root.colorSurface
                         customBorderColor: root.colorBorder
-                        customFocusBorderColor: Theme.notchBorderHighlight
+                        customFocusBorderColor: root.colorBorderStrong
                         showSearchIcon: true
-                        placeholderText: I18n.tr("search_apps")
+                        placeholderText: I18n.isRTL ? "ابحث في التطبيقات، احسب، أو نفّذ أوامر النظام..." : "Search apps, calculate, run system actions..."
 
                         onTextChanged: {
-                            root.filterQuery = text;
-                            root.selectedIndex = 0;
+                            if (text === "") {
+                                searchDebounceTimer.stop();
+                                root.filterQuery = "";
+                                root.selectedIndex = 0;
+                            } else {
+                                searchDebounceTimer.restart();
+                            }
                         }
 
                         textInput.Keys.onEscapePressed: ShellState.closeAppDrawer()
 
                         textInput.Keys.onDownPressed: {
-                            if (root.universalResults.length > 0)
-                                root.selectedIndex =
-                                    (root.selectedIndex + 1) % root.universalResults.length;
+                            if (root.filterQuery.trim() !== "") {
+                                if (root.universalResults.length > 0)
+                                    root.selectedIndex = (root.selectedIndex + 1) % root.universalResults.length;
+                            }
                         }
 
                         textInput.Keys.onUpPressed: {
-                            if (root.universalResults.length > 0)
-                                root.selectedIndex =
-                                    (root.selectedIndex - 1 + root.universalResults.length) % root.universalResults.length;
+                            if (root.filterQuery.trim() !== "") {
+                                if (root.universalResults.length > 0)
+                                    root.selectedIndex = (root.selectedIndex - 1 + root.universalResults.length) % root.universalResults.length;
+                            }
                         }
 
                         textInput.Keys.onReturnPressed: {
@@ -512,23 +738,38 @@ PanelWindow {
                                 root.launchApp(root.filteredApps[0]);
                             }
                         }
+
+                        textInput.Keys.onTabPressed: {
+                            if (root.filterQuery.trim() === "") {
+                                root.cycleCategory(1);
+                            } else if (root.universalResults.length > 0) {
+                                root.selectedIndex = (root.selectedIndex + 1) % root.universalResults.length;
+                            }
+                        }
+
+                        textInput.Keys.onBacktabPressed: {
+                            if (root.filterQuery.trim() === "") {
+                                root.cycleCategory(-1);
+                            } else if (root.universalResults.length > 0) {
+                                root.selectedIndex = (root.selectedIndex - 1 + root.universalResults.length) % root.universalResults.length;
+                            }
+                        }
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: 56
+                        Layout.preferredWidth: 44
                         Layout.preferredHeight: 28
                         radius: Theme.radiusSmall
                         color: "transparent"
-                        border.color: root.colorBorder
+                        border.color: root.colorBorderSoft
                         border.width: 1
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Ctrl + K"
+                            text: "ESC"
                             font.family: Theme.typography.fontFamily
-                            font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: Theme.fontSize(11)
-                            font.weight: Font.Medium
+                            font.pixelSize: Theme.fontSize(10)
+                            font.weight: Font.DemiBold
                             renderType: Theme.renderType
                             color: root.colorTextTertiary
                         }
@@ -536,344 +777,218 @@ PanelWindow {
                 }
 
                 // ─────────────────────────────────────────────────────────
-                // Main content
+                // 2. Horizontal Category Bar (when search is empty)
+                // ─────────────────────────────────────────────────────────
+                RowLayout {
+                    Layout.fillWidth: true
+                    visible: root.filterQuery.trim() === ""
+                    spacing: Theme.space8
+
+                    ListView {
+                        id: categoryBar
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 30
+                        orientation: ListView.Horizontal
+                        spacing: Theme.space4
+                        clip: true
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        model: [
+                            { "id": "All", "label": I18n.tr("all_apps"), "icon": "applications-all-symbolic" },
+                            { "id": "System", "label": I18n.tr("category_system"), "icon": "preferences-system-symbolic" },
+                            { "id": "Development", "label": I18n.tr("category_development"), "icon": "applications-development-symbolic" },
+                            { "id": "Network", "label": I18n.tr("category_internet"), "icon": "applications-internet-symbolic" },
+                            { "id": "AudioVideo", "label": I18n.tr("category_multimedia"), "icon": "applications-multimedia-symbolic" },
+                            { "id": "Office", "label": I18n.tr("category_office"), "icon": "applications-office-symbolic" },
+                            { "id": "Graphics", "label": I18n.tr("category_graphics"), "icon": "applications-graphics-symbolic" },
+                            { "id": "Game", "label": I18n.tr("category_games"), "icon": "applications-games-symbolic" },
+                            { "id": "Utility", "label": I18n.tr("category_utilities"), "icon": "applications-utilities-symbolic" }
+                        ]
+
+                        delegate: Rectangle {
+                            id: catPill
+                            required property var modelData
+                            readonly property bool isSelected: root.selectedCategory === catPill.modelData.id
+
+                            height: 28
+                            implicitWidth: catRow.implicitWidth + Theme.space16
+                            radius: Theme.radiusSmall
+                            color: catPill.isSelected ? root.colorSelected : (catMa.containsMouse ? root.colorHover : "transparent")
+                            border.color: catPill.isSelected ? root.colorBorderStrong : (catMa.containsMouse ? root.colorBorder : root.colorBorderSoft)
+                            border.width: 1
+
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            RowLayout {
+                                id: catRow
+                                anchors.centerIn: parent
+                                spacing: Theme.space4
+
+                                SymbolicIcon {
+                                    iconSize: 13
+                                    source: catPill.modelData.icon
+                                    iconColor: catPill.isSelected ? root.colorText : root.colorTextSecondary
+                                    Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
+                                }
+
+                                Text {
+                                    text: catPill.modelData.label
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(11)
+                                    font.weight: catPill.isSelected ? Font.DemiBold : Font.Normal
+                                    color: catPill.isSelected ? root.colorText : root.colorTextSecondary
+                                    renderType: Theme.renderType
+                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                }
+                            }
+
+                            MouseArea {
+                                id: catMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.selectedCategory = catPill.modelData.id
+                            }
+                        }
+                    }
+
+                    // Grid / List View Toggle Button
+                    Rectangle {
+                        Layout.preferredWidth: 28
+                        Layout.preferredHeight: 28
+                        radius: Theme.radiusSmall
+                        color: viewToggleMa.containsMouse ? root.colorHover : "transparent"
+                        border.color: root.colorBorderSoft
+                        border.width: 1
+
+                        SymbolicIcon {
+                            anchors.centerIn: parent
+                            iconSize: 13
+                            source: root.isGridView ? "view-list-symbolic" : "view-grid-symbolic"
+                            iconColor: root.colorTextSecondary
+                        }
+
+                        MouseArea {
+                            id: viewToggleMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.isGridView = !root.isGridView
+                        }
+                    }
+                }
+
+                // ─────────────────────────────────────────────────────────
+                // 3. Main Content: App Grid vs. Search Results
                 // ─────────────────────────────────────────────────────────
                 StackLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     currentIndex: root.filterQuery.trim() === "" ? 0 : 1
 
-                    // ─────────────────────────────────────────────────────
-                    // Normal app drawer
-                    // ─────────────────────────────────────────────────────
-                    RowLayout {
-                        spacing: Theme.spacing.gutter
+                    // ── 3A. Applications View (Grid / List) ──────────────
+                    ScrollView {
+                        id: appScroll
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        contentWidth: availableWidth
+                        ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                        Rectangle {
-                            Layout.preferredWidth: Math.max(164, Math.round(168 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
-                            Layout.fillHeight: true
-                            radius: root.radiusPanel
-                            color: root.colorSurface
-                            border.color: root.colorBorderSoft
-                            border.width: 1
+                        ColumnLayout {
+                            width: appScroll.availableWidth
+                            spacing: Theme.space8
 
-                            ListView {
-                                id: categoryList
-                                anchors.fill: parent
-                                anchors.margins: 6
-                                spacing: Theme.spacing.tiny
-                                clip: true
-
-                                model: [
-                                    { "id": "All", "label": I18n.tr("all_apps"), "icon": "applications-all-symbolic" },
-                                    { "id": "System", "label": I18n.tr("category_system"), "icon": "preferences-system-symbolic" },
-                                    { "id": "Development", "label": I18n.tr("category_development"), "icon": "applications-development-symbolic" },
-                                    { "id": "Network", "label": I18n.tr("category_internet"), "icon": "applications-internet-symbolic" },
-                                    { "id": "AudioVideo", "label": I18n.tr("category_multimedia"), "icon": "applications-multimedia-symbolic" },
-                                    { "id": "Office", "label": I18n.tr("category_office"), "icon": "applications-office-symbolic" },
-                                    { "id": "Graphics", "label": I18n.tr("category_graphics"), "icon": "applications-graphics-symbolic" },
-                                    { "id": "Game", "label": I18n.tr("category_games"), "icon": "applications-games-symbolic" },
-                                    { "id": "Utility", "label": I18n.tr("category_utilities"), "icon": "applications-utilities-symbolic" }
-                                ]
-
-                                delegate: Rectangle {
-                                    id: categoryItem
-                                    required property var modelData
-
-                                    readonly property bool isSelected:
-                                        root.selectedCategory === categoryItem.modelData.id
-
-                                    width: categoryList.width
-                                    height: Math.max(36, Math.round(36 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
-                                    radius: root.radiusItem
-                                    color: categoryMouse.pressed
-                                           ? root.colorHoverStrong
-                                           : ((categoryMouse.containsMouse || isSelected)
-                                              ? root.colorHover
-                                              : "transparent")
-                                    border.color: "transparent"
-                                    border.width: 1
-
-                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: Theme.spacing.medium
-                                        anchors.rightMargin: Theme.spacing.tight
-                                        spacing: Theme.spacing.tight
-
-                                        SymbolicIcon {
-                                            iconSize: 15
-                                            source: categoryItem.modelData.icon
-                                            iconColor: (categoryItem.isSelected || categoryMouse.containsMouse)
-                                                       ? root.colorText
-                                                       : root.colorTextSecondary
-                                            Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
-                                        }
-
-                                        Text {
-                                            Layout.fillWidth: true
-                                            text: categoryItem.modelData.label
-                                            font.family: Theme.typography.fontFamily
-                                            font.hintingPreference: Theme.hintingPreference
-                                            font.pixelSize: Theme.fontSize(12)
-                                            font.weight: Font.Medium
-                                            renderType: Theme.renderType
-                                            color: (categoryItem.isSelected || categoryMouse.containsMouse)
-                                                   ? root.colorText
-                                                   : root.colorTextSecondary
-                                            elide: Text.ElideRight
-                                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: categoryMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.selectedCategory = categoryItem.modelData.id
-                                    }
-                                }
-                            }
-                        }
-
-                        Rectangle {
-                            Layout.fillHeight: true
-                            Layout.preferredWidth: 1
-                            color: root.colorBorderSoft
-                        }
-
-                        ScrollView {
-                            id: appScrollView
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            clip: true
-                            contentWidth: availableWidth
-                            ScrollBar.vertical.policy: ScrollBar.AsNeeded
-
+                            // ── Pinned Section (if in 'All' category) ────
                             ColumnLayout {
-                                width: appScrollView.availableWidth
-                                spacing: Theme.spacing.tight
+                                Layout.fillWidth: true
+                                visible: root.selectedCategory === "All" && root.pinnedList.length > 0
+                                spacing: Theme.space8
 
                                 Text {
                                     text: I18n.tr("pinned")
                                     font.family: Theme.typography.fontFamily
-                                    font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.fontSize(13)
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: Font.DemiBold
+                                    color: root.colorTextSecondary
                                     renderType: Theme.renderType
-                                    color: root.colorText
                                 }
 
                                 GridLayout {
                                     Layout.fillWidth: true
-                                    columns: 5
-                                    rowSpacing: Theme.spacing.small
-                                    columnSpacing: Theme.spacing.fine
+                                    columns: root.isGridView ? 5 : 1
+                                    rowSpacing: Theme.space8
+                                    columnSpacing: Theme.space8
 
                                     Repeater {
                                         model: root.pinnedList
-
-                                        delegate: Rectangle {
-                                            id: pinnedCell
-                                            required property var modelData
-
-                                            Layout.preferredWidth: Math.max(98, Math.round(98 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
-                                            Layout.preferredHeight: Math.max(78, Math.round(80 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
-                                            radius: root.radiusItem
-                                            color: pinnedMouse.pressed
-                                                   ? root.colorHoverStrong
-                                                   : (pinnedMouse.containsMouse
-                                                      ? root.colorHover
-                                                      : root.colorSurface)
-                                            border.color: pinnedMouse.pressed
-                                                          ? root.colorBorderStrong
-                                                          : (pinnedMouse.containsMouse
-                                                             ? root.colorBorderStrong
-                                                             : root.colorBorderSoft)
-                                            border.width: 1
-
-                                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                                            ColumnLayout {
-                                                anchors.fill: parent
-                                                anchors.margins: Theme.spacing.inset
-                                                spacing: Theme.spacing.xsmall
-
-                                                AppIcon {
-                                                    Layout.alignment: Qt.AlignHCenter
-                                                    iconSize: 36
-                                                    source: pinnedCell.modelData.icon
-                                                }
-
-                                                Text {
-                                                    Layout.fillWidth: true
-                                                    text: pinnedCell.modelData.name
-                                                    font.family: Theme.typography.fontFamily
-                                                    font.hintingPreference: Theme.hintingPreference
-                                                    font.pixelSize: Theme.fontSize(11)
-                                                    font.weight: pinnedMouse.containsMouse ? Font.DemiBold : Font.Medium
-                                                    renderType: Theme.renderType
-                                                    color: pinnedMouse.containsMouse
-                                                           ? root.colorText
-                                                           : root.colorTextSecondary
-                                                    horizontalAlignment: Text.AlignHCenter
-                                                    elide: Text.ElideRight
-                                                    maximumLineCount: 1
-                                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                                }
-                                            }
-
-                                            MouseArea {
-                                                id: pinnedMouse
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                                cursorShape: Qt.PointingHandCursor
-
-                                                onClicked: mouse => {
-                                                    if (mouse.button === Qt.RightButton) {
-                                                        var pos = mapToItem(drawerCard, mouse.x, mouse.y);
-                                                        drawerContextMenu.show(pinnedCell.modelData, pos.x, pos.y);
-                                                    } else {
-                                                        root.launchApp(pinnedCell.modelData);
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        delegate: root.isGridView ? gridCardComponent : listCardComponent
                                     }
                                 }
+                            }
+
+                            // ── All Apps / Category Section ──────────────
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: Theme.space8
 
                                 Text {
-                                    text: I18n.tr("more_apps")
+                                    text: root.selectedCategory === "All"
+                                          ? (I18n.isRTL ? "جميع التطبيقات" : "All Applications")
+                                          : root.selectedCategory
                                     font.family: Theme.typography.fontFamily
-                                    font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.fontSize(13)
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: Font.DemiBold
+                                    color: root.colorTextSecondary
                                     renderType: Theme.renderType
-                                    color: root.colorText
-                                    Layout.topMargin: 4
-                                    visible: root.recentList.length > 0
                                 }
 
                                 GridLayout {
                                     Layout.fillWidth: true
-                                    columns: 5
-                                    rowSpacing: Theme.spacing.small
-                                    columnSpacing: Theme.spacing.fine
-                                    visible: root.recentList.length > 0
+                                    columns: root.isGridView ? 5 : 1
+                                    rowSpacing: Theme.space8
+                                    columnSpacing: Theme.space8
 
                                     Repeater {
-                                        model: root.recentList
-
-                                        delegate: Rectangle {
-                                            id: recentCell
-                                            required property var modelData
-
-                                            Layout.preferredWidth: Math.max(98, Math.round(98 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
-                                            Layout.preferredHeight: Math.max(78, Math.round(80 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
-                                            radius: root.radiusItem
-                                            color: recentMouse.pressed
-                                                   ? root.colorHoverStrong
-                                                   : (recentMouse.containsMouse
-                                                      ? root.colorHover
-                                                      : root.colorSurface)
-                                            border.color: recentMouse.pressed
-                                                          ? root.colorBorderStrong
-                                                          : (recentMouse.containsMouse
-                                                             ? root.colorBorderStrong
-                                                             : root.colorBorderSoft)
-                                            border.width: 1
-
-                                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                                            ColumnLayout {
-                                                anchors.fill: parent
-                                                anchors.margins: Theme.spacing.inset
-                                                spacing: Theme.spacing.xsmall
-
-                                                AppIcon {
-                                                    Layout.alignment: Qt.AlignHCenter
-                                                    iconSize: 36
-                                                    source: recentCell.modelData.icon
-                                                }
-
-                                                Text {
-                                                    Layout.fillWidth: true
-                                                    text: recentCell.modelData.name
-                                                    font.family: Theme.typography.fontFamily
-                                                    font.hintingPreference: Theme.hintingPreference
-                                                    font.pixelSize: Theme.fontSize(11)
-                                                    font.weight: recentMouse.containsMouse ? Font.DemiBold : Font.Medium
-                                                    renderType: Theme.renderType
-                                                    color: recentMouse.containsMouse
-                                                           ? root.colorText
-                                                           : root.colorTextSecondary
-                                                    horizontalAlignment: Text.AlignHCenter
-                                                    elide: Text.ElideRight
-                                                    maximumLineCount: 1
-                                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                                                }
-                                            }
-
-                                            MouseArea {
-                                                id: recentMouse
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                                                cursorShape: Qt.PointingHandCursor
-
-                                                onClicked: mouse => {
-                                                    if (mouse.button === Qt.RightButton) {
-                                                        var pos = mapToItem(drawerCard, mouse.x, mouse.y);
-                                                        drawerContextMenu.show(recentCell.modelData, pos.x, pos.y);
-                                                    } else {
-                                                        root.launchApp(recentCell.modelData);
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        model: root.selectedCategory === "All"
+                                               ? root.allAppsWithoutPinned
+                                               : root.filteredApps
+                                        delegate: root.isGridView ? gridCardComponent : listCardComponent
                                     }
                                 }
                             }
                         }
                     }
 
-                    // ─────────────────────────────────────────────────────
-                    // Search results
-                    // ─────────────────────────────────────────────────────
+                    // ── 3B. Universal Search Results ─────────────────────
                     ColumnLayout {
-                        spacing: Theme.spacing.small
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        spacing: Theme.space8
 
+                        // Results count and navigation legend
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.topMargin: Theme.spacing.xsmall
-                            Layout.bottomMargin: Theme.spacing.xsmall
 
                             Text {
-                                text: "Results (" + root.universalResults.length + ")"
+                                text: (I18n.isRTL ? "النتائج (" : "Results (") + root.universalResults.length + ")"
                                 font.family: Theme.typography.fontFamily
-                                font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.fontSize(14)
+                                font.pixelSize: Theme.fontSize(12)
                                 font.weight: Font.DemiBold
-                                renderType: Theme.renderType
                                 color: root.colorTextSecondary
+                                renderType: Theme.renderType
                             }
 
                             Item { Layout.fillWidth: true }
 
                             Text {
-                                text: "↑ / ↓ navigate • ↵ select • Esc close"
+                                text: I18n.isRTL ? "↑ / ↓ للتنقل • ↵ للاختيار • Esc للإغلاق" : "↑ / ↓ navigate • ↵ select • Esc close"
                                 font.family: Theme.typography.fontFamily
-                                font.hintingPreference: Theme.hintingPreference
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Normal
-                                renderType: Theme.renderType
                                 color: root.colorTextTertiary
+                                renderType: Theme.renderType
                             }
                         }
 
@@ -885,7 +1000,7 @@ PanelWindow {
                                 id: resultsList
                                 anchors.fill: parent
                                 clip: true
-                                spacing: Theme.spacing.xsmall
+                                spacing: Theme.space4
                                 model: root.universalResults
                                 currentIndex: root.selectedIndex
 
@@ -894,20 +1009,17 @@ PanelWindow {
                                     required property var modelData
                                     required property int index
 
-                                    readonly property bool isSelected:
-                                        root.selectedIndex === resultItem.index
+                                    readonly property bool isSelected: root.selectedIndex === resultItem.index
 
                                     width: resultsList.width
-                                    height: 52
+                                    height: 48
                                     radius: root.radiusItem
                                     color: resultMouse.pressed
                                            ? root.colorHoverStrong
                                            : (resultMouse.containsMouse
                                               ? root.colorHover
                                               : (isSelected ? root.colorSelected : "transparent"))
-                                    border.color: isSelected && !resultMouse.containsMouse
-                                                  ? Theme.notchBorderHighlight
-                                                  : "transparent"
+                                    border.color: isSelected ? root.colorBorderStrong : "transparent"
                                     border.width: 1
 
                                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -915,104 +1027,89 @@ PanelWindow {
 
                                     RowLayout {
                                         anchors.fill: parent
-                                        anchors.leftMargin: Theme.spacing.medium
-                                        anchors.rightMargin: Theme.spacing.medium
-                                        spacing: Theme.spacing.medium
+                                        anchors.leftMargin: Theme.space8
+                                        anchors.rightMargin: Theme.space8
+                                        spacing: Theme.space8
 
+                                        // Icon representation
                                         Item {
-                                            width: 32
-                                            height: 32
+                                            width: 28
+                                            height: 28
 
-                                             AppIcon {
+                                            AppIcon {
                                                 anchors.centerIn: parent
-                                                visible: resultItem.modelData.type === "app"
-                                                iconSize: 30
+                                                visible: resultItem.modelData.isAppIcon
+                                                iconSize: 26
                                                 source: resultItem.modelData.icon
                                             }
 
                                             Rectangle {
                                                 anchors.centerIn: parent
-                                                visible: resultItem.modelData.type !== "app"
-                                                width: 28
-                                                height: 28
-                                                radius: Theme.radius.tooltip
-                                                color: resultItem.modelData.id === "shutdown" ||
-                                                       resultItem.modelData.id === "restart"
+                                                visible: !resultItem.modelData.isAppIcon
+                                                width: 26
+                                                height: 26
+                                                radius: Theme.radiusSmall
+                                                color: resultItem.modelData.id === "shutdown" || resultItem.modelData.id === "restart"
                                                        ? Qt.rgba(root.colorUrgent.r, root.colorUrgent.g, root.colorUrgent.b, 0.14)
                                                        : root.colorHover
 
                                                 SymbolicIcon {
                                                     anchors.centerIn: parent
-                                                    iconSize: 16
+                                                    iconSize: 15
                                                     source: resultItem.modelData.icon
-                                                    iconColor: resultItem.modelData.id === "shutdown" ||
-                                                               resultItem.modelData.id === "restart"
+                                                    iconColor: resultItem.modelData.id === "shutdown" || resultItem.modelData.id === "restart"
                                                                ? root.colorUrgent
-                                                               : (resultItem.isSelected
-                                                                  ? root.colorAccent
-                                                                  : root.colorTextSecondary)
-                                                    Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
+                                                               : (resultItem.isSelected ? root.colorText : root.colorTextSecondary)
                                                 }
                                             }
                                         }
 
+                                        // Titles & description
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            spacing: Theme.spacing.xsmall
+                                            spacing: 1
 
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: resultItem.modelData.name || resultItem.modelData.title || ""
+                                                text: resultItem.modelData.name || ""
                                                 font.family: Theme.typography.fontFamily
-                                                font.hintingPreference: Theme.hintingPreference
                                                 font.pixelSize: Theme.fontSize(13)
-                                                font.weight: Font.DemiBold
+                                                font.weight: resultItem.isSelected ? Font.DemiBold : Font.Medium
+                                                color: root.colorText
                                                 renderType: Theme.renderType
-                                                color: resultItem.isSelected
-                                                       ? root.colorText
-                                                       : root.colorText
                                                 elide: Text.ElideRight
                                             }
 
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: resultItem.modelData.desc
+                                                text: resultItem.modelData.desc || ""
                                                 font.family: Theme.typography.fontFamily
-                                                font.hintingPreference: Theme.hintingPreference
-                                                font.pixelSize: Theme.fontSize(11)
+                                                font.pixelSize: Theme.fontSize(10)
                                                 font.weight: Font.Normal
-                                                renderType: Theme.renderType
                                                 color: root.colorTextTertiary
+                                                renderType: Theme.renderType
                                                 elide: Text.ElideRight
                                             }
                                         }
 
+                                        // Badge pill
                                         Rectangle {
-                                            Layout.preferredHeight: 22
-                                            Layout.preferredWidth: badgeLabel.implicitWidth + 14
-                                            radius: Theme.radius.small
+                                            Layout.preferredHeight: 20
+                                            Layout.preferredWidth: badgeText.implicitWidth + 12
+                                            radius: Theme.radiusSmall
                                             color: "transparent"
-                                            border.color: root.colorBorder
+                                            border.color: root.colorBorderSoft
                                             border.width: 1
 
                                             Text {
-                                                id: badgeLabel
+                                                id: badgeText
                                                 anchors.centerIn: parent
-                                                text: resultItem.modelData.type === "app"
-                                                      ? "App"
-                                                      : (resultItem.modelData.type === "setting"
-                                                         ? "Settings"
-                                                         : (resultItem.modelData.type === "store"
-                                                            ? "Store"
-                                                            : "System"))
+                                                text: resultItem.modelData.badge || ""
                                                 font.family: Theme.typography.fontFamily
-                                                font.hintingPreference: Theme.hintingPreference
-                                                font.pixelSize: Theme.fontSize(10)
-                                                font.weight: Font.Medium
+                                                font.pixelSize: Theme.fontSize(9)
+                                                font.weight: Font.DemiBold
                                                 renderType: Theme.renderType
-                                                color: resultItem.modelData.type === "app"
-                                                       ? root.colorAccent
-                                                       : root.colorTextTertiary
+                                                color: root.colorTextTertiary
                                             }
                                         }
                                     }
@@ -1040,38 +1137,27 @@ PanelWindow {
                                 }
                             }
 
+                            // Empty state
                             ColumnLayout {
                                 anchors.centerIn: parent
                                 visible: root.universalResults.length === 0
-                                spacing: Theme.spacing.small
+                                spacing: Theme.space8
 
                                 SymbolicIcon {
                                     Layout.alignment: Qt.AlignHCenter
-                                    iconSize: 36
+                                    iconSize: 32
                                     source: "edit-find-symbolic"
                                     iconColor: root.colorTextTertiary
                                 }
 
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
-                                    text: "No matches found for \"" + root.filterQuery + "\""
+                                    text: I18n.isRTL ? ("لا توجد نتائج تطابق \"" + root.filterQuery + "\"") : ("No matches found for \"" + root.filterQuery + "\"")
                                     font.family: Theme.typography.fontFamily
-                                    font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.fontSize(14)
+                                    font.pixelSize: Theme.fontSize(13)
                                     font.weight: Font.DemiBold
-                                    renderType: Theme.renderType
                                     color: root.colorTextSecondary
-                                }
-
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: "Try searching for apps, settings panels, or system actions."
-                                    font.family: Theme.typography.fontFamily
-                                    font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.Normal
                                     renderType: Theme.renderType
-                                    color: root.colorTextTertiary
                                 }
                             }
                         }
@@ -1079,11 +1165,11 @@ PanelWindow {
                 }
 
                 // ─────────────────────────────────────────────────────────
-                // Footer
+                // 4. Compact Monochrome Footer
                 // ─────────────────────────────────────────────────────────
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Math.max(48, Math.round(48 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
+                    Layout.preferredHeight: 38
                     radius: root.radiusPanel
                     color: root.colorSurface
                     border.color: root.colorBorderSoft
@@ -1091,118 +1177,108 @@ PanelWindow {
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: Theme.spacing.gutter
-                        anchors.rightMargin: Theme.spacing.gutter
-                        spacing: Theme.spacing.tight
+                        anchors.leftMargin: Theme.space8
+                        anchors.rightMargin: Theme.space8
+                        spacing: Theme.space8
 
-                        Rectangle {
-                            width: 30
-                            height: 30
-                            radius: Theme.radius.pill
-                            color: root.colorElevated
-                            border.color: root.colorBorder
-                            border.width: 1
-
-                            SymbolicIcon {
-                                anchors.centerIn: parent
-                                iconSize: 15
-                                source: "avatar-default-symbolic"
-                                iconColor: root.colorTextSecondary
-                            }
+                        SymbolicIcon {
+                            iconSize: 14
+                            source: "deloway-symbolic"
+                            iconColor: root.colorTextSecondary
                         }
 
-                        ColumnLayout {
-                            spacing: Theme.spacing.none
-
-                            Text {
-                                text: "DeloOS"
-                                font.family: Theme.typography.fontFamily
-                                font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.fontSize(13)
-                                font.weight: Font.DemiBold
-                                renderType: Theme.renderType
-                                color: root.colorText
-                            }
-
-                            Text {
-                                text: "Your workspace, your rules"
-                                font.family: Theme.typography.fontFamily
-                                font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: Theme.fontSize(10)
-                                font.weight: Font.Normal
-                                renderType: Theme.renderType
-                                color: root.colorTextTertiary
-                            }
+                        Text {
+                            text: I18n.isRTL ? "مشغّل DeloWay" : "DeloWay Launcher"
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(11)
+                            font.weight: Font.DemiBold
+                            color: root.colorText
+                            renderType: Theme.renderType
                         }
 
                         Item { Layout.fillWidth: true }
 
-                        component FooterButton: Rectangle {
-                            id: footerButton
-                            property string iconSource: ""
-                            property color normalColor: root.colorTextSecondary
-                            property color hoverColor: root.colorText
-                            property color hoverBackground: root.colorHover
-                            signal activated()
-
-                            Layout.preferredWidth: 32
-                            Layout.preferredHeight: 32
-                            Layout.alignment: Qt.AlignVCenter
-                            radius: root.radiusItem
-                            color: footerMouse.pressed
-                                   ? root.colorHoverStrong
-                                   : (footerMouse.containsMouse ? hoverBackground : "transparent")
-                            border.color: footerMouse.pressed
-                                          ? root.colorBorderStrong
-                                          : (footerMouse.containsMouse ? root.colorBorder : "transparent")
+                        // Store button
+                        Rectangle {
+                            width: 26
+                            height: 26
+                            radius: Theme.radiusSmall
+                            color: storeBtnMa.containsMouse ? root.colorHover : "transparent"
+                            border.color: root.colorBorderSoft
                             border.width: 1
-
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             SymbolicIcon {
                                 anchors.centerIn: parent
-                                iconSize: 17
-                                source: footerButton.iconSource
-                                iconColor: footerMouse.containsMouse
-                                           ? footerButton.hoverColor
-                                           : footerButton.normalColor
-                                Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
+                                iconSize: 13
+                                source: "store-symbolic"
+                                iconColor: root.colorTextSecondary
                             }
 
                             MouseArea {
-                                id: footerMouse
+                                id: storeBtnMa
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: footerButton.activated()
+                                onClicked: {
+                                    ShellState.closeAppDrawer();
+                                    ShellState.openAppStore();
+                                }
                             }
                         }
 
-                        FooterButton {
-                            iconSource: "store-symbolic"
-                            hoverColor: root.colorAccent
-                            onActivated: {
-                                ShellState.closeAppDrawer();
-                                ShellState.openAppStore();
+                        // Settings button
+                        Rectangle {
+                            width: 26
+                            height: 26
+                            radius: Theme.radiusSmall
+                            color: settBtnMa.containsMouse ? root.colorHover : "transparent"
+                            border.color: root.colorBorderSoft
+                            border.width: 1
+
+                            SymbolicIcon {
+                                anchors.centerIn: parent
+                                iconSize: 13
+                                source: "settings-symbolic"
+                                iconColor: root.colorTextSecondary
+                            }
+
+                            MouseArea {
+                                id: settBtnMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    ShellState.closeAppDrawer();
+                                    ShellState.toggleSettingsApp();
+                                }
                             }
                         }
 
-                        FooterButton {
-                            iconSource: "settings-symbolic"
-                            onActivated: {
-                                ShellState.closeAppDrawer();
-                                ShellState.toggleSettingsApp();
-                            }
-                        }
+                        // Power button
+                        Rectangle {
+                            width: 26
+                            height: 26
+                            radius: Theme.radiusSmall
+                            color: pwrBtnMa.containsMouse ? Qt.rgba(root.colorUrgent.r, root.colorUrgent.g, root.colorUrgent.b, 0.12) : "transparent"
+                            border.color: root.colorBorderSoft
+                            border.width: 1
 
-                        FooterButton {
-                            iconSource: "power-symbolic"
-                            hoverColor: root.colorUrgent
-                            hoverBackground: Qt.rgba(root.colorUrgent.r, root.colorUrgent.g, root.colorUrgent.b, 0.12)
-                            onActivated: {
-                                ShellState.closeAppDrawer();
-                                Hyprland.dispatch("exec systemctl poweroff");
+                            SymbolicIcon {
+                                anchors.centerIn: parent
+                                iconSize: 13
+                                source: "system-shutdown-symbolic"
+                                iconColor: pwrBtnMa.containsMouse ? root.colorUrgent : root.colorTextSecondary
+                            }
+
+                            MouseArea {
+                                id: pwrBtnMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    ShellState.closeAppDrawer();
+                                    ShellState.toggleSessionMenu();
+                                }
                             }
                         }
                     }
@@ -1210,7 +1286,166 @@ PanelWindow {
             }
 
             // ─────────────────────────────────────────────────────────────
-            // Context menu backdrop
+            // App Delegate Component: Grid Card
+            // ─────────────────────────────────────────────────────────────
+            Component {
+                id: gridCardComponent
+
+                Rectangle {
+                    id: gridCell
+                    required property var modelData
+
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 76
+                    radius: root.radiusItem
+                    color: gridMa.pressed
+                           ? root.colorHoverStrong
+                           : (gridMa.containsMouse ? root.colorHover : root.colorSurface)
+                    border.color: gridMa.containsMouse ? root.colorBorderStrong : root.colorBorderSoft
+                    border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: Theme.space8
+                        spacing: Theme.space4
+
+                        AppIcon {
+                            Layout.alignment: Qt.AlignHCenter
+                            iconSize: 34
+                            source: gridCell.modelData.icon
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: gridCell.modelData.name || ""
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(11)
+                            font.weight: gridMa.containsMouse ? Font.DemiBold : Font.Medium
+                            color: gridMa.containsMouse ? root.colorText : root.colorTextSecondary
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            renderType: Theme.renderType
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                        }
+                    }
+
+                    MouseArea {
+                        id: gridMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        cursorShape: Qt.PointingHandCursor
+
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton) {
+                                var pos = mapToItem(drawerCard, mouse.x, mouse.y);
+                                drawerContextMenu.show(gridCell.modelData, pos.x, pos.y);
+                            } else {
+                                root.launchApp(gridCell.modelData);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ─────────────────────────────────────────────────────────────
+            // App Delegate Component: List Card
+            // ─────────────────────────────────────────────────────────────
+            Component {
+                id: listCardComponent
+
+                Rectangle {
+                    id: listCell
+                    required property var modelData
+
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 46
+                    radius: root.radiusItem
+                    color: listMa.pressed
+                           ? root.colorHoverStrong
+                           : (listMa.containsMouse ? root.colorHover : "transparent")
+                    border.color: listMa.containsMouse ? root.colorBorderStrong : root.colorBorderSoft
+                    border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: Theme.space8
+                        anchors.rightMargin: Theme.space8
+                        spacing: Theme.space8
+
+                        AppIcon {
+                            iconSize: 28
+                            source: listCell.modelData.icon
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 1
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: listCell.modelData.name || ""
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(12)
+                                font.weight: listMa.containsMouse ? Font.DemiBold : Font.Medium
+                                color: root.colorText
+                                elide: Text.ElideRight
+                                renderType: Theme.renderType
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                text: listCell.modelData.comment || ""
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(10)
+                                font.weight: Font.Normal
+                                color: root.colorTextTertiary
+                                elide: Text.ElideRight
+                                renderType: Theme.renderType
+                                visible: (listCell.modelData.comment || "") !== ""
+                            }
+                        }
+
+                        Rectangle {
+                            visible: {
+                                if (!listCell.modelData) return false;
+                                return ApplicationManager.getWindowsForApp(listCell.modelData.id).length > 0;
+                            }
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: root.colorSuccess
+                        }
+                    }
+
+                    MouseArea {
+                        id: listMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        cursorShape: Qt.PointingHandCursor
+
+                        onClicked: mouse => {
+                            if (mouse.button === Qt.RightButton) {
+                                var pos = mapToItem(drawerCard, mouse.x, mouse.y);
+                                drawerContextMenu.show(listCell.modelData, pos.x, pos.y);
+                            } else {
+                                root.launchApp(listCell.modelData);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ─────────────────────────────────────────────────────────────
+            // Context menu backdrop & component
             // ─────────────────────────────────────────────────────────────
             MouseArea {
                 id: drawerContextMenuBackdrop
@@ -1221,9 +1456,6 @@ PanelWindow {
                 onClicked: drawerContextMenu.hide()
             }
 
-            // ─────────────────────────────────────────────────────────────
-            // Context menu
-            // ─────────────────────────────────────────────────────────────
             Item {
                 id: drawerContextMenu
                 z: 620
@@ -1314,55 +1546,43 @@ PanelWindow {
                     anchors.top: parent.top
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.margins: Theme.spacing.small
-                    spacing: Theme.spacing.xsmall
+                    anchors.margins: Theme.space8
+                    spacing: Theme.space4
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.leftMargin: Theme.spacing.fine
-                        Layout.rightMargin: Theme.spacing.fine
-                        Layout.topMargin: Theme.spacing.inset
-                        Layout.bottomMargin: Theme.spacing.xsmall
-                        spacing: Theme.spacing.small
+                        spacing: Theme.space8
 
                         AppIcon {
                             iconSize: 22
-                            source: drawerContextMenu.targetApp
-                                    ? drawerContextMenu.targetApp.icon
-                                    : ""
-                            visible: Boolean(
-                                drawerContextMenu.targetApp &&
-                                drawerContextMenu.targetApp.icon
-                            )
+                            source: drawerContextMenu.targetApp ? drawerContextMenu.targetApp.icon : ""
+                            visible: Boolean(drawerContextMenu.targetApp && drawerContextMenu.targetApp.icon)
                             Layout.alignment: Qt.AlignVCenter
                         }
 
                         Text {
                             Layout.fillWidth: true
                             text: drawerContextMenu.targetApp
-                                  ? (drawerContextMenu.targetApp.name ||
-                                     drawerContextMenu.targetApp.id ||
-                                     "")
+                                  ? (drawerContextMenu.targetApp.name || drawerContextMenu.targetApp.id || "")
                                   : ""
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(13)
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: root.colorText
                             elide: Text.ElideRight
                             maximumLineCount: 1
+                            renderType: Theme.renderType
                         }
 
                         Rectangle {
                             visible: {
                                 if (!drawerContextMenu.targetApp) return false;
-                                return ApplicationManager.getWindowsForApp(
-                                    drawerContextMenu.targetApp.id
-                                ).length > 0;
+                                return ApplicationManager.getWindowsForApp(drawerContextMenu.targetApp.id).length > 0;
                             }
-                            width: 7
-                            height: 7
-                            radius: Theme.radius.pill
-                            color: Theme.colors.success
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: root.colorSuccess
                             Layout.alignment: Qt.AlignVCenter
                         }
                     }
@@ -1370,8 +1590,6 @@ PanelWindow {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 1
-                        Layout.leftMargin: 2
-                        Layout.rightMargin: 2
                         color: Theme.notchBorderSubtle
                     }
 
@@ -1383,44 +1601,41 @@ PanelWindow {
                         property color hoverIconColor: root.colorText
                         property color normalTextColor: root.colorText
                         property color hoverTextColor: root.colorText
-                        property color hoverBackground: Theme.notchSurfaceHover
+                        property color hoverBackground: root.colorHover
                         signal activated()
 
                         Layout.fillWidth: true
-                        Layout.preferredHeight: Math.max(34, Math.round(34 * (typeof Theme !== "undefined" ? Theme.fontScale : 1.0)))
+                        Layout.preferredHeight: 32
                         radius: root.radiusItem
                         color: menuMouse.pressed
-                               ? Theme.notchSurfaceActive
+                               ? root.colorHoverStrong
                                : (menuMouse.containsMouse ? hoverBackground : "transparent")
 
-                        Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         RowLayout {
                             anchors.fill: parent
-                            anchors.leftMargin: Theme.spacing.tight
-                            anchors.rightMargin: Theme.spacing.tight
-                            spacing: Theme.spacing.tight
+                            anchors.leftMargin: Theme.space8
+                            anchors.rightMargin: Theme.space8
+                            spacing: Theme.space8
 
                             SymbolicIcon {
                                 source: menuRow.iconSource
-                                iconSize: 15
-                                iconColor: menuMouse.containsMouse
-                                           ? menuRow.hoverIconColor
-                                           : menuRow.normalIconColor
-                                Behavior on iconColor { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                iconSize: 14
+                                iconColor: menuMouse.containsMouse ? menuRow.hoverIconColor : menuRow.normalIconColor
+                                Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
                             }
 
                             Text {
                                 Layout.fillWidth: true
                                 text: menuRow.label
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(12)
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: menuMouse.containsMouse ? Font.DemiBold : Font.Normal
-                                color: menuMouse.containsMouse
-                                       ? menuRow.hoverTextColor
-                                       : menuRow.normalTextColor
+                                color: menuMouse.containsMouse ? menuRow.hoverTextColor : menuRow.normalTextColor
                                 elide: Text.ElideRight
-                                Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                renderType: Theme.renderType
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                             }
                         }
 
@@ -1462,9 +1677,7 @@ PanelWindow {
                     MenuRow {
                         visible: {
                             if (!drawerContextMenu.targetApp) return false;
-                            return ApplicationManager.getWindowsForApp(
-                                drawerContextMenu.targetApp.id
-                            ).length > 0;
+                            return ApplicationManager.getWindowsForApp(drawerContextMenu.targetApp.id).length > 0;
                         }
 
                         iconSource: "window-close"
@@ -1491,15 +1704,13 @@ PanelWindow {
                             drawerContextMenu.hide();
                         }
                     }
-
-                    Item { Layout.preferredHeight: 2 }
                 }
             }
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Shell state sync
+    // Shell State synchronization
     // ─────────────────────────────────────────────────────────────────────
     Connections {
         target: ShellState
