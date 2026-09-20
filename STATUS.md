@@ -148,16 +148,30 @@
 
 ---
 
+12. **`shell/components/TimeCapsule.qml` (1020 سطراً)**:
+    - **الغرض**: كبسولة الوقت والتاريخ التفاعلية في أقصى يسار الشريط العلوي، بنمط DeloWay OLED وتصميم النوتش الديناميكي.
+    - **الوضع المصغر (Compact)**: ساعة عريضة مع تاريخ مختصر، مدفوعة بـ `SystemClock` بدقة الدقيقة، باستهلاك معالج 0% في الخمول، مع حواف ناعمة وزوايا 26px.
+    - **الوضع الموسع (Expanded)**: تلتصق بأعلى الشاشة عبر `NotchFrame` بآذان مقعرة (18px) وظلال عميقة، وتضم:
+      - ترويسة متكاملة: ساعة رقمية كبيرة مع ثوانٍ تفاعلية، وتاريخ ميلادي كامل، وتاريخ هجري دقيق بحسابات تقويم أم القرى.
+      - تقويم شهري 6x7: تنقل سلس بين الشهور، إبراز اليوم الحالي، إمكانية تخصيص بداية الأسبوع (السبت/الأحد/الاثنين)، ودعم الأرقام المشرقية (٠١٢).
+      - قسم الهاردوير الحي: 3 بطاقات متساوية (CPU, RAM, GPU) مع نسب استهلاك، درجات حرارة، واستهلاك VRAM، ومخططات بيانية حية (Canvas Sparklines) لآخر 60 ثانية، مع انكماش تلقائي ذكي للارتفاع عند تعطيل الهاردوير.
+    - **الاعتماديات**: `Quickshell`, `Quickshell.Wayland`, `Quickshell.Hyprland`, `Theme`, `ConfigManager`, `HardwareService`, `I18n`.
+
+---
+
 ### ج) الخدمات السنجلتون والبيانات (Singletons & Services)
-11. **`shell/services/NotificationManager.qml` (124 سطراً)**:
+13. **`shell/services/NotificationManager.qml` (124 سطراً)**:
     - **الغرض**: سنجلتون استقبال وإدارة الإشعارات من النظام عبر `NotificationServer`.
     - **الوظائف**: تتبع آخر 50 إشعاراً، إرسال تنبيه `toastRequested` للنافذة العائمة، ومزامنة الإشعارات مع النوتش.
-12. **`shell/services/ConfigManager.qml` (711 سطراً)**:
+14. **`shell/services/ConfigManager.qml` (717 سطراً)**:
     - **الغرض**: سنجلتون إدارة إعدادات وتفضيلات المستخدم، وحفظها وقراءتها من ملف JSON على القرص.
-    - **الوظائف**: مقياس الخط (`fontSizeScale`: 0.85, 1.0, 1.15)، الثيم، خلفية الشاشة، إعدادات الدوك والنوتش.
-13. **`shell/services/ShellState.qml` (271 سطراً)**:
-    - **الغرض**: سنجلتون إدارة الحالات اللحظية للشاشات (الحالة المفتوحة/المغلقة للنوتش، الكبسولة، الدرج، والإعدادات).
-14. **`shell/services/DesktopManager.qml` (496 سطراً)**:
+    - **الوظائف**: مقياس الخط، الثيم، إعدادات مساحات العمل، وكافة تفضيلات كبسولة الوقت (بداية الأسبوع، الثواني، الهجري، الهاردوير، الأرقام المشرقية).
+15. **`shell/services/ShellState.qml` (285 سطراً)**:
+    - **الغرض**: سنجلتون إدارة الحالات اللحظية للشاشات (النوتش، كبسولة الوقت، كبسولة الإعدادات، الدرج، والإعدادات).
+16. **`shell/services/HardwareService.qml` (145 سطراً)**:
+    - **الغرض**: سنجلتون مراقبة موارد النظام اللحظية (CPU, RAM, GPU, Temperatures) وتغذية كبسولة الوقت.
+    - **الوظائف**: تشغيل عملية بايثون تدفقية واحدة خفيفة (`scripts/deloway-hardware.py`) دون أي تشعيب (subshell) كل ثانيتين، مع الاحتفاظ بذاكرة دائرية من 30 عينة (60 ثانية) لرسم الـ Sparklines. تُنشط حصراً عند فتح الكبسولة وتتوقف كلياً عند إغلاقها لضمان 0% استهلاك في الخمول.
+17. **`shell/services/DesktopManager.qml` (496 سطراً)**:
     - **الغرض**: إدارة ملفات سطح المكتب، الأيقونات، وحالة القائمة المنبثقة لسطح المكتب.
 
 ---
@@ -178,7 +192,8 @@
 | `Theme.notchBorder` | `rgba(255, 255, 255, 0.12)` | الحدود الخارجية للنوافذ والبطاقات (1px) |
 | `Theme.notchBorderSubtle` | `rgba(255, 255, 255, 0.06)` | الفواصل الداخلية الخافتة بين العناصر |
 | `Theme.notchShadow` | `rgba(0, 0, 0, 0.50)` | ظلال العمق تحت الأسطح العائمة |
-| `Theme.colors.urgent` / `danger` | `#ef4444` | أزرار الإغلاق، الحذف، والعمليات الخطرة |
+| `Theme.colors.urgent` / `danger` | `#ef4444` | أزرار الإغلاق، الحذف، والعمليات الخطرة، ومؤشرات الخطر (>90% / >85°C) |
+| `Theme.colors.warning` | `#f59e0b` | مؤشرات التحذير للهاردوير (>70% / >75°C) |
 | `Theme.colors.success` | `#10b981` | نقطة تشغيل التطبيق وحالات النجاح |
 | `Theme.colors.accent` | `#0ea5e9` | مؤشرات مساحات العمل والأزرار المؤكدة |
 
@@ -186,7 +201,7 @@
 - `Theme.notchRadiusWindow`: **26px** (الزوايا الخارجية الكبرى للنوافذ العائمة).
 - `Theme.notchRadius`: **22px** (الزوايا القياسية للكبسولة والنوتش).
 - `Theme.notchRadiusPanel`: **16px** (حاويات الأقسام والبطاقات الداخلية الكبيرة).
-- `Theme.notchRadiusCard`: **12px** (بطاقات الخدمات مثل Wi-Fi, Bluetooth).
+- `Theme.notchRadiusCard`: **12px** (بطاقات الخدمات مثل Wi-Fi, Bluetooth، بطاقات الهاردوير).
 - `Theme.notchRadiusPill`: **8px** (أغلفة الألبومات والأزرار النحيفة).
 - `Theme.radiusSmall`: **6px** (خيارات قوائم الكلك يمين وعناصر القوائم المدمجة).
 
@@ -226,40 +241,40 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي)*:
+* `bb0e170` - fix(timecapsule): define explicit expandedWidth to prevent undefined assignment in currentWidth (2026-09-20)
+* `cb25cd9` - feat(timecapsule): phase4 — add comprehensive TimeCapsule settings tab in SettingsAppV2 (2026-09-20)
+* `00dfda4` - feat(timecapsule): phase3 — add HardwareService telemetry layer and sparklines (2026-09-20)
+* `e78bad1` - feat(timecapsule): phase2 — expanded monthly calendar and hardware cards UI (2026-09-20)
+* `a2c68c6` - feat(timecapsule): phase1 — add compact TimeCapsule in top-left with SystemClock and NotchFrame (2026-09-20)
+* `f540f18` - docs(status): update STATUS.md sections 6-9 for phase 2 workspace icons refinement & ADR-003/004 (2026-09-20)
 * `d493fe8` - feat(workspace): phase2 icons mode refinement, Hyprland.toplevels integration & TopBarTab settings (2026-09-20)
 * `1ca4cce` - feat(workspace): phase2 refinement — dual overlapping icons, hover number, +N badge, dynamic pill width (2026-09-20)
 * `4991cbc` - docs(status): update sections 6-9 for WorkspaceIndicator completion (phases 1-5) (2026-09-20)
 * `478837b` - feat(workspace): phase3+4 — wheel scroll (throttled, no propagation), animate behaviors already in WorkspaceItem (2026-09-20)
 * `0b75c80` - feat(workspace): phase1+2 — WorkspaceIndicator with dots/circles/pill states, AppIcon, OLED tokens (2026-09-20)
 * `6f55691` - fix(qs): phase2 state truthfulness — wifiAvailable from hardware, wifi/hotspot unavailable states (2026-09-20)
-* `39f5558` - fix(quicksettings): phase1 — remove hardcoded colors; QSSliderCard, power button, notchSliderFill tokens (2026-09-20)
-* `aabcd19` - feat(quicksettings): redesign main capsule page with modern pill tiles, header & slider cards (phase 1) (2026-09-20)
-* `084d30c` - fix(notch): fix settings icon placement, remove black line artifacts, enhance hover states, and reduce window spacing (2026-09-20)
-* `2999f02` - fix(shell): configure exclusive zones, margins, and top layer for Notch, Capsule, and Dock (2026-09-20)
 
 ---
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
 - **المهام المنجزة والمثبتة في HEAD**:
-  - **مؤشر مساحات العمل الديناميكي المطور (WorkspaceIndicator) — مكتمل بنسبة 100% (Commits 0b75c80, 478837b, 1ca4cce, d493fe8)**:
-    - **نمط الأيقونات (الافتراضي)**:
-      - **المساحة النشطة**: كبسولة بارزة بيضاء/داكنة (Pill) متغيرة العرض ديناميكياً تضم رقم المساحة + أيقونات تطبيقاتها (حتى نافذتين بحجم 12px مع حلقة عازلة متراكبة، وشارة "+N" للعدد الإضافي).
-      - **المساحات غير النشطة التي تحوي نوافذ**: دائرة داكنة ناعمة (28px) تعرض أيقونات التطبيقات المتراكبة دون رقم، وعند التحويم (Hover) تظهر طبقة دائرية ناعمة برقم المساحة.
-      - **المساحات الفارغة**: نقاط دائرية صغيرة (6px) بلون خافت (`Theme.wsEmptyBg`) ثابتة الترتيب من 1 إلى 5 لا تختفي أبداً، وعند التحويم تتمدد بسلاسة إلى 22px لعرض رقم المساحة.
-    - **الأنماط الأخرى في الإعدادات**:
-      - **نمط الأرقام (Numbers Only)**: يعرض أرقاماً ثابتة لجميع المساحات 1 إلى 5 بأسلوب كبسولي OLED داكن.
-      - **نمط النقاط (Dots Only)**: يعرض نقاطاً صغيرة وكبسولة ملساء دون أرقام أو أيقونات.
+  - **كبسولة الوقت والتاريخ والتقويم والهاردوير (TimeCapsule) — مكتملة بنسبة 100% (المراحل 0-5)**:
+    - **الوضع المصغر (Compact)**:
+      - تموضع مثالي في أقصى يسار الشريط العلوي بأبعاد 44px ارتفاعاً و132px عرضاً (مع هوامش 10px العلوية واليسرى).
+      - وقت عريض وتاريخ مختصر محلي، مدفوعة بـ `SystemClock` بدقة الدقيقة، باستهلاك معالج 0.0% في الخمول.
+      - كبسولة OLED داكنة مع تأثير تحويم وتفاعل نقر سلس للتوسع والانكماش.
+    - **الوضع الموسع (Expanded)**:
+      - التصاق انسيابي بأعلى الشاشة عبر `NotchFrame` بآذان مقعرة (18px) وظلال واقعية وانتقال بيزير سلس.
+      - **الترويسة**: ساعة رقمية كبيرة مع ثوانٍ تفاعلية قابلة للتعطيل، تاريخ ميلادي كامل مع اليوم، وتاريخ هجري دقيق بأسلوب تقويم أم القرى.
+      - **التقويم الشهري (6x7)**: شبكة كاملة بأيام الأسبوع وأرقام الشهور، إبراز ناعم لليوم الحالي (`Theme.colors.accent`)، أزرار تنقل للشهر السابق والتالي، ونقر على اسم الشهر لإعادته لحظياً للشهر الحالي. يدعم بداية الأسبوع القابلة للتخصيص (السبت، الأحد، الاثنين) والأرقام المشرقية في الواجهة العربية.
+      - **بطاقات الهاردوير والمخططات البيانية (Canvas Sparklines)**: 3 بطاقات متساوية (CPU, RAM, GPU) مع استهلاك الذاكرة وحرارة المعالج وكرت الشاشة وVRAM، ومخططات بيانية لحظية لآخر 60 ثانية، مع تنبيهات لونية ديناميكية (>70% تحذير، >90% خطر)، وانكماش تلقائي ذكي لارتفاع الكبسولة عند إخفاء قسم الهاردوير أو المقاييس الفردية.
+    - **خدمة الهاردوير التدفقية (`HardwareService.qml` & `deloway-hardware.py`)**:
+      - تشغيل تدفق مستمر كل ثانيتين عبر القراءة المباشرة من نواة لينكس ومكتبة NVML دون أي استدعاءات فرعية (0 forked subshells).
+      - ربط تام للتشغيل بحالة التوسع: تتوقف العملية كلياً فور إغلاق الكبسولة (0% استهلاك معالج في الخمول).
     - **تكامل تطبيق الإعدادات (Settings App V2 - TopBarTab)**:
-      - إنشاء تبويب كامل ومستقل للشريط العلوي (`shell/components/settings/tabs/TopBarTab.qml`) مرتبط بـ `ConfigManager`.
-      - خيار تفاعلي لاختيار نمط مؤشر مساحات العمل (`icons` | `numbers` | `dots`).
-      - خيار لاختيار عدد المساحات الثابتة (`3`, `5`, `8`, `10`).
-      - مفاتيح تبديل لإظهار/إخفاء مؤشر مساحات العمل وشعار DeloWay، وتنسيق الوقت (12h/24h).
-    - **المعمارية وربط النوافذ (Hyprland.toplevels)**:
-      - ربط مباشر ولحظي مع `Hyprland.toplevels.values` بالاعتماد على `lastIpcObject.class` و `wayland.appId` للتعرف على التطبيقات، و `workspace.id` لتحديد المساحة دون أي استطلاع دوري (Event-driven).
-    - **التفاعل والأداء**:
-      - عجلة الفأرة محدودة بمعدل 300ms ومستهلكة كلياً داخل المؤشر دون التأثير على النوتش.
-      - استقرار تام للأداء واجتياز فحوصات `qmllint` وخلو السجلات تماماً من الأخطاء.
+      - قسم مخصص بالكامل لكبسولة الوقت والتقويم مع مفاتيح تبديل bilingual (عربي وإنجليزي) لجميع الخيارات (إظهار الكبسولة، بداية الأسبوع، إظهار الثواني، التاريخ المختصر، التاريخ الهجري، الأرقام المشرقية، إظهار الهاردوير، واختيار المقاييس النشطة CPU/RAM/GPU وإظهار درجات الحرارة).
+    - **مؤشر مساحات العمل الديناميكي المطور (WorkspaceIndicator) — مكتمل بنسبة 100% (Commits 0b75c80, 478837b, 1ca4cce, d493fe8)**.
 - **ملفات قيد التطوير / بانتظار commit مستقل**:
   - `shell/components/SystemTrayIndicators.qml`: مكوّن أيقونات شريط النظام بدون tooltips مكسورة.
   - `shell/components/NotchLocalSend.qml` وملحقاته: تكامل LocalSend.
@@ -282,9 +297,21 @@
 - **السياق**: كانت خاصية `wsEmptyBg` مضبوطة سابقاً على `"transparent"`، مما جعل النقاط الفارغة غير مرئية كلياً بالعين المجردة.
 - **القرار**: ضبط `wsEmptyBg` إلى `isDark ? Qt.rgba(1, 1, 1, 0.28) : Qt.rgba(0, 0, 0, 0.22)`، مما يوفر نقاطاً دائرية خافتة واضحة وأنيقة مطابقة لمواصفات التصميم.
 
+### هـ) ADR-005: خوارزمية أم القرى الفلكية في JavaScript النقي بدون كائن `Intl`
+- **السياق**: محرك Qt6 V4 JS Engine في Quickshell لا يعرّف كائن `Intl` القياسي (`ReferenceError: Intl is not defined`)، مما منع استخدام دوال التحويل القياسية.
+- **القرار المعماري**: بناء خوارزمية فلكية خالصة بالاعتماد على مصفوفة أقنعة بتات (Bitmask lookup) لأطوال الشهور لسنوات 1440-1455 هـ، تطابق تقويم أم القرى الرسمي في المملكة العربية السعودية باليوم، بأداء فوري (0ms) ودون استدعاء أي عمليات خارجية.
+
+### و) ADR-006: خدمة الهاردوير التدفقية وإلغاء الاستهلاك الخامل (`HardwareService` & `deloway-hardware.py`)
+- **السياق**: تشغيل أوامر فرعية متعددة (`top`, `free`, `sensors`, `nvidia-smi`) كل ثانيتين يسبب ارتفاعاً في استهلاك المعالج وتشتيتاً لموارد النظام في حالة الخمول.
+- **القرار المعماري**: بناء سكربت بايثون تدفقي خفيف (`scripts/deloway-hardware.py`) يقرأ مباشرة من `/proc/stat`, `/proc/meminfo`, وحساسات `hwmon` ومكتبة NVML، ويبث سطر JSON واحداً كل ثانيتين. ترتبط دورة حياة هذه العملية حصراً بخاصية `HardwareService.active` (التي تساوي `isExpanded && showHardware`)؛ حيث تُغلق العملية تماماً عند طي الكبسولة مما يضمن 0% CPU في الخمول.
+
+### ز) ADR-007: عزل كبسولة الوقت في نافذة `PanelWindow` بهندسة الـ `NotchFrame`
+- **السياق**: شريط TopBar العلوي يتطلب تفاعلاً معزولاً لا يؤثر على مساحات النوافذ وتطبيقات النظام، مع إمكانية التوسع الكامل من الزاوية العلوية اليسرى للشاشة مع آذان نوتش مقعرة.
+- **القرار المعماري**: إنشاء `TimeCapsule` كنافذة `PanelWindow` مستقلة بنطاق طبقة `Top` وتحديد `exclusionMode: ExclusionMode.Ignore` مع ربط تركيز الإغلاق التلقائي عبر `HyprlandFocusGrab`، واستخدام مكوّن `NotchFrame` المشترك لحساب منحنيات الزوايا والآذان المقعرة بأبعاد ديناميكية (`expandedWidth: 350`) وانتقالات ناعمة تعتمد توكنز `Theme`.
+
 ---
 
 ## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
-1. **كبسولة الإعدادات السريعة (QuickSettingsCapsule) — قسم الإشعارات**: بناء قسم الإشعارات أسفل مزالج الصوت والسطوع.
+1. **كبسولة الإعدادات السريعة (QuickSettingsCapsule) — قسم الإشعارات**: بناء قسم الإشعارات أسفل مزالح الصوت والسطوع.
 2. **صفحات التفاصيل (Drill-down Overlay Sheets)**: تحويل صفحات الشبكة والبلوتوث ونقطة الاتصال إلى ألواح منبثقة تنزلق للأعلى.
 3. **تثبيت مهمة أيقونات التراي وتكامل LocalSend**.
