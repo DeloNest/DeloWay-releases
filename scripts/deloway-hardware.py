@@ -56,7 +56,8 @@ def sample_gpu():
         smi = subprocess.check_output(
             ["nvidia-smi", "--query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"],
             text=True,
-            timeout=1
+            timeout=1,
+            env=dict(os.environ, LC_ALL="C")
         ).strip()
         parts = [p.strip() for p in smi.split(",")]
         if len(parts) >= 4:

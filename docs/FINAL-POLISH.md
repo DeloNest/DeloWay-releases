@@ -1,4 +1,4 @@
-# NEXT ACTION: Phase P8 (Capsule Behavior) — Independent Expand/Collapse, TimeCapsule Hover Removal, and QS Icons Unification
+# NEXT ACTION: All Phases (P1 to P9) Completed Successfully. Ready for Review.
 
 # DeloWay Shell — خارطة اللمسات النهائية (Final Polish Roadmap)
 
@@ -303,7 +303,7 @@
 
 ---
 
-- [ ] **P8: سلوك الكبسولات (Capsule Behavior: Independent Expand/Collapse, TimeCapsule Hover Removal, QS Icons)**
+- [x] **P8: سلوك الكبسولات (Capsule Behavior: Independent Expand/Collapse, TimeCapsule Hover Removal, QS Icons)**
   - **الهدف**:
     1. تمكين التوسيع والتصغير الحر والمستقل لكل كبسولة (Notch, QuickSettings, TimeCapsule) بحيث يمكن فتح أكثر من كبسولة معاً وإغلاق أي واحدة منفردة بأي ترتيب، مع تمرير النقرات للنوافذ تحت المناطق الشفافة ودون سرقة التركيز من التطبيقات.
     2. إزالة كافة تأثيرات الـ Hover من كبسولة الوقت (`TimeCapsule.qml`) وجعل التفاعل مبنياً على النقر فقط.
@@ -345,7 +345,7 @@
 
 ---
 
-- [ ] **P9: اللغة على مستوى النظام (System-wide Language & Application Localization)**
+- [x] **P9: اللغة على مستوى النظام (System-wide Language & Application Localization)**
   - **الهدف**: عند اختيار اللغة العربية في DeloWay (سواء من معالج الإعداد أو الإعدادات > عام) تُطبَّق على النظام وأكبر عدد ممكن من التطبيقات (المتصفح، مدير الملفات Thunar، تطبيقات GTK3/4، Qt، Electron، و Flatpak) تلقائياً ودون كسر سكربتات ومعالجات الشل الداخلية، وفق نهج Best-Effort مع تقرير تدقيق شامل للحزم والتغطية.
   - **معايير القبول**:
     - سكربت تطبيقي مستقل وآمن `scripts/deloway-locale-apply.py` يدعم `--dry-run` و `--revert` ويكتب ملفات المستخدم حصراً (بدون sudo) مع وسم `# managed by deloway` ونسخة احتياطية بطابع زمني.
@@ -400,5 +400,18 @@ env = QT_QPA_PLATFORMTHEME,qt6ct
 # تثبيت papirus-folders ثم تشغيل:
 # papirus-folders -C grey
 # أو استخدام سمة أيقونات محايدة مثل Fluent-dark من إعدادات النظام
+
+# --- P9: توليد locale النظام في Arch Linux ---
+# sudo sed -i '/^#ar_SA.UTF-8 UTF-8/s/^#//' /etc/locale.gen
+# sudo locale-gen
+
+# --- P9: حزم التعريب والتدقيق الإملائي ---
+# sudo pacman -S --needed hunspell-ar firefox-i18n-ar libreoffice-fresh-ar
+
+# --- P9: إعدادات لوحة المفاتيح والتبديل (hyprland.conf) ---
+# input {
+#     kb_layout = us,ar
+#     kb_options = grp:alt_shift_toggle
+# }
 ```
 

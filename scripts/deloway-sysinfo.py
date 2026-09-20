@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import json, glob, subprocess, time, sys
+import json, glob, subprocess, time, sys, os
 
 def get_cpu():
     with open("/proc/stat") as f:
@@ -48,7 +48,7 @@ if has_bat:
 
 # Network
 try:
-    net_out = subprocess.check_output(["ip", "-j", "route", "get", "1.1.1.1"], text=True)
+    net_out = subprocess.check_output(["ip", "-j", "route", "get", "1.1.1.1"], text=True, env=dict(os.environ, LC_ALL="C"))
     net_data = json.loads(net_out)[0]
     dev = net_data.get("dev", "eno1")
     ip = net_data.get("prefsrc", "")
@@ -60,7 +60,7 @@ is_wifi = dev.startswith("wl")
 
 # Bluetooth
 try:
-    rf_out = subprocess.check_output(["rfkill", "list", "bluetooth"], text=True)
+    rf_out = subprocess.check_output(["rfkill", "list", "bluetooth"], text=True, env=dict(os.environ, LC_ALL="C"))
     bt_blocked = "Soft blocked: yes" in rf_out or "Hard blocked: yes" in rf_out
     bt_on = not bt_blocked
 except Exception:

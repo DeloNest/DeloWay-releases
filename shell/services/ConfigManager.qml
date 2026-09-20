@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import "."
 import "../theme"
 
 Item {
@@ -576,9 +577,19 @@ Item {
         const langVal = (lang === "ar") ? "ar" : "en_US:en";
         saveProcess.exec(["hyprctl", "keyword", "env", "LANGUAGE," + langVal]);
         saveProcess.exec(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + langVal]);
+        localeApplyProcess.exec(["python3", root.projectDir + "/scripts/deloway-locale-apply.py", "--lang", lang]);
         if (root.applySystemTheme) {
             updateGtkThemes();
         }
+        const notifMsg = (lang === "ar" || I18n.isRTL)
+            ? "تُطبَّق اللغة على البرامج بعد إعادة تسجيل الدخول، والمفتوحة منها بعد إعادة تشغيلها"
+            : "Language will be applied to applications after re-login, and to running apps after restarting them";
+        NotificationManager.postNotification(
+            lang === "ar" ? "إعدادات اللغة" : "Language Settings",
+            lang === "ar" ? "تم تغيير لغة النظام" : "System Language Changed",
+            notifMsg,
+            "preferences-desktop-locale"
+        );
     }
 
     function setKeyboardLayouts(layouts) {
@@ -684,6 +695,10 @@ Item {
 
     Process {
         id: gtkThemeProcess
+    }
+
+    Process {
+        id: localeApplyProcess
     }
 
     Process {

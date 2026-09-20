@@ -692,7 +692,7 @@ Item {
         }
 
         // Pamac provider (handles native Arch repos + AUR seamlessly with Polkit)
-        installProc.command = ["pamac", "install", "--no-confirm", item.pkg];
+        installProc.command = ["env", "LC_ALL=C", "pamac", "install", "--no-confirm", item.pkg];
         installProc.running = true;
     }
 
