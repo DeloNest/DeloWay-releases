@@ -343,13 +343,12 @@ PanelWindow {
         bottomRadius: root.bottomRadius
 
         // ═══════════════════════════════════════════════════════════════════
-        // COMPACT VIEW: Time & Date side-by-side
+        // COMPACT VIEW: Time & Date side-by-side (Zero hover effects)
         // ═══════════════════════════════════════════════════════════════════
         Rectangle {
             anchors.fill: parent
             radius: root.bottomRadius
-            color: compactMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-            Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+            color: "transparent"
             visible: !root.isExpanded
 
             RowLayout {
@@ -396,7 +395,7 @@ PanelWindow {
             MouseArea {
                 id: compactMa
                 anchors.fill: parent
-                hoverEnabled: true
+                hoverEnabled: false
                 cursorShape: Qt.PointingHandCursor
                 acceptedButtons: Qt.LeftButton
                 onClicked: ShellState.toggleTimeCapsule()
