@@ -352,15 +352,48 @@ Item {
                     Layout.maximumWidth: 190
                 }
 
-                // Mini Controls
+                // Mini Controls: Previous, Play/Pause, Next
                 RowLayout {
                     spacing: 4
+                    LayoutMirroring.enabled: false
+                    LayoutMirroring.childrenInherit: false
 
+                    // Previous
                     Rectangle {
                         implicitWidth: 24
                         implicitHeight: 24
                         radius: 12
+                        color: prevHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                        SymbolicIcon {
+                            anchors.centerIn: parent
+                            iconSize: 13
+                            source: "media-skip-backward-symbolic"
+                            iconColor: prevHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                        }
+
+                        MouseArea {
+                            id: prevHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton && root.activePlayer) {
+                                    root.activePlayer.previous();
+                                }
+                            }
+                        }
+                    }
+
+                    // Play / Pause
+                    Rectangle {
+                        implicitWidth: 26
+                        implicitHeight: 26
+                        radius: 13
                         color: playPauseHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         SymbolicIcon {
                             anchors.centerIn: parent
@@ -384,15 +417,17 @@ Item {
                         }
                     }
 
+                    // Next
                     Rectangle {
                         implicitWidth: 24
                         implicitHeight: 24
                         radius: 12
                         color: nextHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         SymbolicIcon {
                             anchors.centerIn: parent
-                            iconSize: 14
+                            iconSize: 13
                             source: "media-skip-forward-symbolic"
                             iconColor: nextHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                         }
@@ -610,20 +645,25 @@ Item {
                         // Playback Controls Row: Previous, Play/Pause, Next
                         RowLayout {
                             spacing: 8
-                            Layout.topMargin: 4
+                            Layout.topMargin: 6
+                            LayoutMirroring.enabled: false
+                            LayoutMirroring.childrenInherit: false
 
                             // Previous
                             Rectangle {
-                                implicitWidth: 26
-                                implicitHeight: 26
-                                radius: 13
+                                implicitWidth: 32
+                                implicitHeight: 32
+                                radius: 16
                                 color: prevExpHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                border.color: prevExpHover.containsMouse ? Theme.notchBorderHighlight : "transparent"
+                                border.width: 1
                                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                                 SymbolicIcon {
                                     anchors.centerIn: parent
                                     source: "media-skip-backward-symbolic"
-                                    iconSize: 13
+                                    iconSize: 15
                                     iconColor: prevExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                                 }
 
@@ -632,23 +672,27 @@ Item {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton
                                     onClicked: if (root.activePlayer) root.activePlayer.previous()
                                 }
                             }
 
-                            // Play / Pause
+                            // Play / Pause (Prominent central control)
                             Rectangle {
-                                implicitWidth: 28
-                                implicitHeight: 28
-                                radius: 14
-                                color: playExpHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                implicitWidth: 36
+                                implicitHeight: 36
+                                radius: 18
+                                color: playExpHover.containsMouse ? Theme.notchSurfaceElevated : Theme.notchSurface
+                                border.color: playExpHover.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                                border.width: 1
                                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                                 SymbolicIcon {
                                     anchors.centerIn: parent
                                     source: (root.activePlayer && root.activePlayer.isPlaying) ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
-                                    iconSize: 15
-                                    iconColor: playExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                    iconSize: 16
+                                    iconColor: Theme.notchText
                                 }
 
                                 MouseArea {
@@ -656,6 +700,7 @@ Item {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton
                                     onClicked: {
                                         if (root.activePlayer) {
                                             if (root.activePlayer.isPlaying) root.activePlayer.pause();
@@ -667,16 +712,19 @@ Item {
 
                             // Next
                             Rectangle {
-                                implicitWidth: 26
-                                implicitHeight: 26
-                                radius: 13
+                                implicitWidth: 32
+                                implicitHeight: 32
+                                radius: 16
                                 color: nextExpHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                border.color: nextExpHover.containsMouse ? Theme.notchBorderHighlight : "transparent"
+                                border.width: 1
                                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                                 SymbolicIcon {
                                     anchors.centerIn: parent
                                     source: "media-skip-forward-symbolic"
-                                    iconSize: 13
+                                    iconSize: 15
                                     iconColor: nextExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                                 }
 
@@ -685,6 +733,7 @@ Item {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
+                                    acceptedButtons: Qt.LeftButton
                                     onClicked: if (root.activePlayer) root.activePlayer.next()
                                 }
                             }

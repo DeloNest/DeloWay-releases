@@ -195,7 +195,7 @@ Item {
         if (!source) return false;
         const s = source.toLowerCase();
         return s.includes("go-previous") || s.includes("go-next") ||
-               s.includes("arrow") || s.includes("media-skip") ||
+               s.includes("arrow") ||
                s.includes("pan-start") || s.includes("pan-end");
     }
 
