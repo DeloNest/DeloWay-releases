@@ -283,13 +283,14 @@ Item {
 
     // Exclusion & Strut Geometry Tokens (Reserved Space)
     readonly property int topBarHeight: 44
-    readonly property int topBarMarginTop: 10
-    readonly property int topBarGap: 0
-    // In layer-shell, Hyprland calculates total reserved space as (exclusiveZone + margin).
-    // To achieve total reserved = topBarHeight + topBarMarginTop + topBarGap (54px),
-    // the exclusiveZone is set to (topBarHeight + topBarGap) = 44px.
-    readonly property int topBarExclusiveZone: topBarHeight + topBarGap // 44px
-    readonly property int topBarReserved: topBarHeight + topBarMarginTop + topBarGap // 54px
+    readonly property int topBarMarginTop: 8
+    readonly property int topBarGap: 8
+    // In layer-shell on Hyprland, windows are placed at (exclusiveZone + gaps_out).
+    // With gaps_out = 6, setting exclusiveZone = 54 results in window top at 60px.
+    // Since capsules sit from y = topBarMarginTop (8px) to 8 + 44 = 52px,
+    // this leaves exactly an 8px gap above (from screen top) and an 8px gap below (to window border).
+    readonly property int topBarExclusiveZone: 54 // 54px
+    readonly property int topBarReserved: 54 // 54px
 
     readonly property int dockMarginBottom: 10
     readonly property int dockGap: 8

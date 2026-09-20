@@ -73,7 +73,7 @@ PanelWindow {
 
     readonly property real currentWidth: Math.round(root.compactWidth + (root.expandedWidth - root.compactWidth) * root.expandProgress)
     readonly property real currentHeight: Math.round(root.compactHeight + (root.expandedHeight - root.compactHeight) * root.expandProgress)
-    readonly property real currentY: Math.round(10 * (1.0 - root.expandProgress))
+    readonly property real currentY: Math.round(Theme.topBarMarginTop * (1.0 - root.expandProgress))
 
 
     // ── SystemClock: minute precision in compact, seconds in expanded ─────
