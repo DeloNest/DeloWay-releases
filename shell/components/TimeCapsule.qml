@@ -59,7 +59,7 @@ PanelWindow {
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(132, compactContentRow.implicitWidth + 36)
     readonly property real expandedWidth: 350
-    readonly property real expandedHeight: root.hasVisibleHardware ? 504 : 374
+    readonly property real expandedHeight: root.hasVisibleHardware ? 284 : 172
     readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
 
     // Single unified motion driver (220ms, OutCubic)
@@ -204,119 +204,39 @@ PanelWindow {
         return (enDays[dayIdx] || "") + ", " + (enMonths[monthIdx] || "") + " " + dateNum + ", " + yearNum;
     }
 
-    // ── Calendar Navigation State ─────────────────────────────────────────
-    property int viewYear: sysClock.date ? sysClock.date.getFullYear() : 2026
-    property int viewMonth: sysClock.date ? sysClock.date.getMonth() : 8
-
     onIsExpandedChanged: {
         if (root.isExpanded) {
             // Check collision on narrow screens (< 1400px)
             if (targetScreen.width < 1400 && ShellState.smartNotchExpanded) {
                 ShellState.closeSmartNotch();
             }
-            root.resetToCurrentMonth();
         }
     }
 
-    readonly property bool isViewingDifferentMonth: {
-        const d = sysClock.date;
-        if (!d) return false;
-        return (root.viewYear !== d.getFullYear() || root.viewMonth !== d.getMonth());
-    }
-
-    function resetToCurrentMonth() {
+    // ── Calendar Strip Helper Functions (100% NotchHome / Smart Notch matching) ──
+    function getMonthName() {
         const d = sysClock.date || new Date();
-        root.viewYear = d.getFullYear();
-        root.viewMonth = d.getMonth();
+        return I18n.isRTL ? arMonths[d.getMonth()] : enMonths[d.getMonth()];
     }
 
-    function prevMonth() {
-        if (root.viewMonth === 0) {
-            root.viewMonth = 11;
-            root.viewYear--;
-        } else {
-            root.viewMonth--;
-        }
-    }
-
-    function nextMonth() {
-        if (root.viewMonth === 11) {
-            root.viewMonth = 0;
-            root.viewYear++;
-        } else {
-            root.viewMonth++;
-        }
-    }
-
-    readonly property string calendarMonthYearTitle: {
-        const useAr = I18n.isRTL && ConfigManager.timeCapsuleArabicDigits;
-        const yStr = useAr ? root.toArabicDigits(root.viewYear) : root.viewYear;
-        if (I18n.isRTL) {
-            return (arMonths[root.viewMonth] || "") + " " + yStr;
-        }
-        return (enMonths[root.viewMonth] || "") + " " + root.viewYear;
-    }
-
-    readonly property var weekdayHeaders: {
-        const ws = ConfigManager.timeCapsuleWeekStart;
-        if (I18n.isRTL) {
-            if (ws === "sunday") {
-                return ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
-            } else if (ws === "monday") {
-                return ["اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت", "أحد"];
-            }
-            return ["سبت", "أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة"];
-        } else {
-            if (ws === "sunday") {
-                return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            } else if (ws === "monday") {
-                return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-            }
-            return ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"];
-        }
-    }
-
-    readonly property var calendarCells: {
+    function getDaysStrip() {
+        const days = [];
+        const dayNamesEn = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+        const dayNamesAr = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
+        const dayAbbrAr = ["أح", "إث", "ثل", "أر", "خم", "جم", "سب"];
         const now = sysClock.date || new Date();
-        const nowY = now.getFullYear();
-        const nowM = now.getMonth();
-        const nowD = now.getDate();
-
-        const curDays = new Date(root.viewYear, root.viewMonth + 1, 0).getDate();
-        const prevDays = new Date(root.viewYear, root.viewMonth, 0).getDate();
-        const firstDay = new Date(root.viewYear, root.viewMonth, 1).getDay(); // 0=Sun..6=Sat
-
-        const ws = ConfigManager.timeCapsuleWeekStart;
-        let offset = 0;
-        if (ws === "saturday") offset = (firstDay + 1) % 7;
-        else if (ws === "monday") offset = (firstDay + 6) % 7;
-        else offset = firstDay; // sunday
-
-        const cells = [];
-        for (let i = 0; i < 42; i++) {
-            if (i < offset) {
-                cells.push({
-                    day: prevDays - offset + i + 1,
-                    current: false,
-                    today: false
-                });
-            } else if (i < offset + curDays) {
-                const d = i - offset + 1;
-                const isToday = (root.viewYear === nowY && root.viewMonth === nowM && d === nowD);
-                cells.push({
-                    day: d,
-                    current: true,
-                    today: isToday
-                });
-            } else {
-                cells.push({
-                    day: i - (offset + curDays) + 1,
-                    current: false,
-                    today: false
-                });
-            }
+        for (let offset = -3; offset <= 3; offset++) {
+            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+            const dayIdx = d.getDay();
+            days.push({
+                dayOffset: offset,
+                dayNumber: d.getDate(),
+                dayName: I18n.isRTL ? dayNamesAr[dayIdx] : dayNamesEn[dayIdx],
+                dayAbbr: I18n.isRTL ? dayAbbrAr[dayIdx] : dayNamesEn[dayIdx].substring(0, 1),
+                isToday: offset === 0
+            });
         }
-        return cells;
+        return days;
     }
 
     // ── Load Color Helper ─────────────────────────────────────────────────
@@ -536,173 +456,88 @@ PanelWindow {
             }
 
             // ─────────────────────────────────────────────────────────────
-            // 2. MONTHLY CALENDAR
+            // 2. CALENDAR STRIP (Matches Smart Notch / NotchHome reference)
             // ─────────────────────────────────────────────────────────────
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: Theme.space8
+                spacing: 6
                 LayoutMirroring.enabled: I18n.isRTL
                 LayoutMirroring.childrenInherit: true
 
-                // Month Nav Bar: [<] [ الشهر والسنة ] [>]
+                // Top: Month name + Horizontal Days Strip
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: Theme.space8
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
+                    spacing: 12
 
-                    // Prev Month
-                    Rectangle {
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
-                        radius: Theme.radiusSmall
-                        color: prevMonthMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: I18n.isRTL ? "›" : "‹"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(16)
-                            font.weight: Font.Bold
-                            color: Theme.notchText
-                            renderType: Theme.renderType
-                        }
-
-                        MouseArea {
-                            id: prevMonthMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.prevMonth()
-                        }
+                    // Large Month Label (e.g. Jul / سبتمبر)
+                    Text {
+                        text: root.getMonthName()
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(22)
+                        font.weight: Font.Bold
+                        renderType: Theme.renderType
+                        color: Theme.notchText
+                        Layout.alignment: Qt.AlignVCenter
                     }
 
-                    // Month & Year title (clickable to reset to today's month)
-                    Rectangle {
+                    // 7-Day Horizontal Strip
+                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        radius: Theme.radiusSmall
-                        color: monthTitleMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                        spacing: 6
 
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: Theme.space4
+                        Repeater {
+                            model: root.getDaysStrip()
 
-                            Text {
-                                text: root.calendarMonthYearTitle
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(13)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchText
-                                renderType: Theme.renderType
+                            delegate: ColumnLayout {
+                                id: dayCol
+                                required property var modelData
+                                spacing: 2
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.fillWidth: true
+
+                                // Day of week abbreviation
+                                Text {
+                                    text: dayCol.modelData.isToday ? dayCol.modelData.dayName.toUpperCase() : dayCol.modelData.dayAbbr.toUpperCase()
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 9 : 8)
+                                    font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
+                                    color: dayCol.modelData.isToday ? Theme.notchText : Theme.notchTextTertiary
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+
+                                // Day Number
+                                Text {
+                                    text: (I18n.isRTL && ConfigManager.timeCapsuleArabicDigits) ? root.toArabicDigits(dayCol.modelData.dayNumber) : dayCol.modelData.dayNumber.toString()
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 20 : 14)
+                                    font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
+                                    color: dayCol.modelData.isToday
+                                           ? Theme.notchText
+                                           : (dayCol.modelData.dayOffset === -2 ? Theme.calendarPast : (dayCol.modelData.dayOffset === 2 ? Theme.calendarFuture : Theme.notchTextTertiary))
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
                             }
-
-                            Rectangle {
-                                visible: root.isViewingDifferentMonth
-                                Layout.preferredWidth: 6
-                                Layout.preferredHeight: 6
-                                radius: 3
-                                color: Theme.notchText
-                            }
-                        }
-
-                        MouseArea {
-                            id: monthTitleMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.resetToCurrentMonth()
-                        }
-                    }
-
-                    // Next Month
-                    Rectangle {
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
-                        radius: Theme.radiusSmall
-                        color: nextMonthMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: I18n.isRTL ? "‹" : "›"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(16)
-                            font.weight: Font.Bold
-                            color: Theme.notchText
-                            renderType: Theme.renderType
-                        }
-
-                        MouseArea {
-                            id: nextMonthMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.nextMonth()
                         }
                     }
                 }
 
-                // Weekday Headers
+                // Bottom: Calendar Icon + "Nothing for today" status
                 RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
+                    spacing: 6
+                    Layout.alignment: Qt.AlignHCenter
 
-                    Repeater {
-                        model: root.weekdayHeaders
-                        Item {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 20
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchTextTertiary
-                                renderType: Theme.renderType
-                            }
-                        }
+                    SymbolicIcon {
+                        iconSize: 13
+                        source: "x-office-calendar-symbolic"
+                        iconColor: Theme.notchTextTertiary
                     }
-                }
 
-                // 6x7 Day Cells Grid
-                GridLayout {
-                    Layout.fillWidth: true
-                    columns: 7
-                    columnSpacing: 2
-                    rowSpacing: 2
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: root.calendarCells
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 24
-                            radius: Theme.radiusSmall
-                            color: modelData.today ? (Theme.isDark ? "#ffffff" : "#0f172a") : (cellMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: (I18n.isRTL && ConfigManager.timeCapsuleArabicDigits) ? root.toArabicDigits(modelData.day) : modelData.day
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: modelData.today ? Font.Bold : (modelData.current ? Font.Normal : Font.Light)
-                                color: modelData.today ? (Theme.isDark ? "#000000" : "#ffffff") : (modelData.current ? Theme.notchText : Theme.notchTextTertiary)
-                                opacity: modelData.today ? 1.0 : (modelData.current ? 1.0 : 0.35)
-                                renderType: Theme.renderType
-                            }
-
-                            MouseArea {
-                                id: cellMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                            }
-                        }
+                    Text {
+                        text: I18n.tr("notch_today_events")
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(11)
+                        renderType: Theme.renderType
+                        color: Theme.notchTextTertiary
                     }
                 }
             }
