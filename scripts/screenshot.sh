@@ -1,44 +1,116 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# DeloWay Screenshot Utility (end-4 / Fluent standard)
-# Supports: area (interactive snip with window snap), active window, full screen
+# DeloWay Screenshot Utility
+# Supports: area (freeze + interactive snip), window, fullscreen, gui
+# Features:
+#   - Single-instance / Toggle: Repeating the shortcut cancels the active snip
+#   - Screen Freeze: Visually freezes the display during selection via hyprpicker
+#   - Strict Monochrome Identity: Neutral slurp selection colors
+#   - Bilingual notifications (Arabic / English)
 # ==============================================================================
 
 MODE="${1:-area}"
 SAVE_DIR="$HOME/Pictures/Screenshots"
 mkdir -p "$SAVE_DIR"
 
+LOCK_FILE="/tmp/deloway-screenshot.lock"
+
+# ── 1. Single-Instance & Toggle Logic ──
+# If a capture is already in progress, cancel it and exit cleanly (toggle behavior)
+if [ -f "$LOCK_FILE" ]; then
+    OLD_PID=$(cat "$LOCK_FILE" 2>/dev/null)
+    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+        pkill -x slurp 2>/dev/null
+        pkill -x hyprpicker 2>/dev/null
+        rm -f "$LOCK_FILE"
+        exit 0
+    else
+        rm -f "$LOCK_FILE"
+    fi
+fi
+
+if pgrep -x slurp >/dev/null 2>&1; then
+    pkill -x slurp 2>/dev/null
+    pkill -x hyprpicker 2>/dev/null
+    rm -f "$LOCK_FILE"
+    exit 0
+fi
+
+echo $$ > "$LOCK_FILE"
+
+# ── 2. Screen Freeze Management ──
+HYPRPICKER_PID=""
+
+freeze_screen() {
+    if command -v hyprpicker >/dev/null 2>&1; then
+        hyprpicker -r -z >/dev/null 2>&1 &
+        HYPRPICKER_PID=$!
+        sleep 0.12
+    fi
+}
+
+unfreeze_screen() {
+    if [ -n "$HYPRPICKER_PID" ]; then
+        kill "$HYPRPICKER_PID" 2>/dev/null
+        wait "$HYPRPICKER_PID" 2>/dev/null
+        HYPRPICKER_PID=""
+    fi
+    pkill -x hyprpicker 2>/dev/null
+}
+
+cleanup() {
+    unfreeze_screen
+    rm -f "$LOCK_FILE"
+}
+trap cleanup EXIT INT TERM HUP
+
+# ── 3. Monochrome Styling for Slurp ──
+SLURP_BORDER="ffffffee"
+SLURP_BG="00000088"
+SLURP_SELECTION="ffffff22"
+
 TIMESTAMP="$(date +'%Y-%m-%d_%H-%M-%S')"
 FILE_PATH="$SAVE_DIR/Screenshot_${TIMESTAMP}.png"
-
-# Fluent DeloWay accent colors for slurp
-SLURP_BORDER="60cdffee"
-SLURP_BG="10131888"
-SLURP_SELECTION="2f7cf633"
 
 notify_success() {
     local path="$1"
     if command -v notify-send >/dev/null 2>&1; then
+        local is_ar=0
+        if [[ "${LANGUAGE:-$LANG}" == ar* ]]; then
+            is_ar=1
+        fi
+
+        local title="Screenshot Captured"
+        local body="Saved to ${path##*/}\nCopied to clipboard"
+        if [ $is_ar -eq 1 ]; then
+            title="تم التقاط لقطة الشاشة"
+            body="تم الحفظ في ${path##*/}\nونُسخت إلى الحافظة"
+        fi
+
         notify-send -a "DeloWay" \
             -i "$path" \
             -h string:x-canonical-private-synchronous:screenshot \
-            "Screenshot Captured" \
-            "Saved to ${path##*/}\nCopied to clipboard"
+            "$title" \
+            "$body"
     fi
 }
 
+# ── 4. Execution Modes ──
 case "$MODE" in
     gui|menu)
+        rm -f "$LOCK_FILE"
         # Toggle Quickshell on-screen Screenshot Toolbar
         if command -v qs >/dev/null 2>&1; then
             qs ipc call deloway toggleScreenshot 2>/dev/null && exit 0
         fi
-        # Fallback to interactive area if Quickshell IPC fails
         exec "$0" area
         ;;
 
     area|snip|region)
-        # Snap to window on hover, or drag arbitrary region (end-4 standard)
+        # Freeze screen for precise snip
+        freeze_screen
+
+        # Window snapping support on active workspace
         WS_ID=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty')
         if [ -n "$WS_ID" ]; then
             BOXES=$(hyprctl clients -j 2>/dev/null | jq -r --arg ws "$WS_ID" '.[] | select(.workspace.id == ($ws | tonumber)) | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
@@ -52,35 +124,41 @@ case "$MODE" in
             GEOM=$(slurp -d -c "$SLURP_BORDER" -b "$SLURP_BG" -B "$SLURP_SELECTION" 2>/dev/null)
         fi
 
-        [ -z "$GEOM" ] && exit 0 # User cancelled with Esc
+        # If user cancelled with Esc
+        [ -z "$GEOM" ] && exit 0
 
-        sleep 0.05
+        # Capture from the screen while frozen
         grim -g "$GEOM" "$FILE_PATH" || exit 1
-        wl-copy --type image/png < "$FILE_PATH"
+
+        # Unfreeze display immediately after capture
+        unfreeze_screen
+
+        wl-copy --type image/png < "$FILE_PATH" 2>/dev/null
         notify_success "$FILE_PATH"
         echo "$FILE_PATH"
         ;;
 
     window|active)
-        # Capture the currently focused window
+        freeze_screen
+
         GEOM=$(hyprctl activewindow -j 2>/dev/null | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
         if [ -z "$GEOM" ] || [ "$GEOM" = "null,null nullxnull" ] || [ "$GEOM" = "0,0 0x0" ]; then
-            # Fallback to interactive area selection
+            unfreeze_screen
             exec "$0" area
         fi
 
-        sleep 0.05
         grim -g "$GEOM" "$FILE_PATH" || exit 1
-        wl-copy --type image/png < "$FILE_PATH"
+        unfreeze_screen
+
+        wl-copy --type image/png < "$FILE_PATH" 2>/dev/null
         notify_success "$FILE_PATH"
         echo "$FILE_PATH"
         ;;
 
     full|screen|fullscreen)
-        # Capture the entire screen
         sleep 0.05
         grim "$FILE_PATH" || exit 1
-        wl-copy --type image/png < "$FILE_PATH"
+        wl-copy --type image/png < "$FILE_PATH" 2>/dev/null
         notify_success "$FILE_PATH"
         echo "$FILE_PATH"
         ;;
