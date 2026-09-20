@@ -43,7 +43,26 @@ Item {
             return;
         }
 
-        // 1. Priority 1: Check if any player is actively playing
+        const pref = ConfigManager.musicPreferredPlayer || "auto";
+
+        // 1. Priority 0: Preferred player if specified and currently active
+        if (pref !== "auto") {
+            const prefClean = pref.toLowerCase().replace(/\.desktop$/, "");
+            for (let i = 0; i < values.length; i++) {
+                const p = values[i];
+                if (!p) continue;
+                const dEntry = (p.desktopEntry || "").toLowerCase().replace(/\.desktop$/, "");
+                const ident = (p.identity || "").toLowerCase();
+                if (dEntry === prefClean || ident === prefClean || (dEntry && prefClean.includes(dEntry))) {
+                    if (activePlayer !== p) {
+                        activePlayer = p;
+                    }
+                    return;
+                }
+            }
+        }
+
+        // 2. Priority 1 (Auto): Check if any player is actively playing
         for (let i = 0; i < values.length; i++) {
             if (values[i] && values[i].isPlaying) {
                 if (activePlayer !== values[i]) {
@@ -53,7 +72,7 @@ Item {
             }
         }
 
-        // 2. Priority 2: If current activePlayer is still in values, keep it (prevent jumping upon pause)
+        // 3. Priority 2: If current activePlayer is still in values, keep it (prevent jumping upon pause)
         if (activePlayer) {
             for (let i = 0; i < values.length; i++) {
                 if (values[i] === activePlayer) {
@@ -62,8 +81,15 @@ Item {
             }
         }
 
-        // 3. Fallback: Previous activePlayer was closed or not set; pick first available player
+        // 4. Fallback: Previous activePlayer was closed or not set; pick first available player
         activePlayer = values[0] || null;
+    }
+
+    Connections {
+        target: ConfigManager
+        function onMusicPreferredPlayerChanged() {
+            root.updateActivePlayer();
+        }
     }
 
     Instantiator {
@@ -260,6 +286,48 @@ Item {
                 Layout.preferredHeight: 20
                 Layout.alignment: Qt.AlignVCenter
                 color: Theme.notchBorder
+            }
+
+            // ── SECTION B2: Subtle Divider & Compact Music Launcher (When idle) ─
+            Rectangle {
+                visible: !root.hasPlayer
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 16
+                Layout.alignment: Qt.AlignVCenter
+                color: Theme.notchBorderSubtle
+            }
+
+            Rectangle {
+                id: compactMusicBtn
+                visible: !root.hasPlayer
+                implicitWidth: 26
+                implicitHeight: 26
+                radius: 13
+                color: compactMusicMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                border.color: compactMusicMa.containsMouse ? Theme.notchBorderHighlight : "transparent"
+                border.width: 1
+                Layout.alignment: Qt.AlignVCenter
+                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                SymbolicIcon {
+                    anchors.centerIn: parent
+                    iconSize: 13
+                    source: "media-playback-start-symbolic"
+                    iconColor: compactMusicMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
+                }
+
+                MouseArea {
+                    id: compactMusicMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.LeftButton) {
+                            ConfigManager.launchMusic();
+                        }
+                    }
+                }
             }
 
             // ── SECTION C: Mini Music Player ──────────────────────────────
@@ -689,6 +757,52 @@ Item {
                         font.pixelSize: Theme.fontSize(12)
                         renderType: Theme.renderType
                         color: Theme.notchTextSecondary
+                    }
+
+                    // Quick Music Launcher button
+                    Rectangle {
+                        height: 28
+                        implicitWidth: playMusicRow.implicitWidth + Theme.space24
+                        radius: 14
+                        color: playMusicMa.pressed ? Theme.notchSurfaceActive : (playMusicMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
+                        border.color: playMusicMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                        border.width: 1
+                        Layout.topMargin: 4
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                        RowLayout {
+                            id: playMusicRow
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            SymbolicIcon {
+                                iconSize: 12
+                                source: "media-playback-start-symbolic"
+                                iconColor: Theme.notchText
+                            }
+
+                            Text {
+                                text: I18n.isRTL ? "تشغيل الموسيقى" : "Play Music"
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: Font.DemiBold
+                                color: Theme.notchText
+                            }
+                        }
+
+                        MouseArea {
+                            id: playMusicMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton
+                            onClicked: (mouse) => {
+                                if (mouse.button === Qt.LeftButton) {
+                                    ConfigManager.launchMusic();
+                                }
+                            }
+                        }
                     }
                 }
             }

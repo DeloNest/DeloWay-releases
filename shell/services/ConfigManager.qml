@@ -93,6 +93,10 @@ Item {
     property string defaultFileManager: "thunar"
     property string defaultEditor: "org.gnome.TextEditor"
 
+    // Music Settings (P10)
+    property string musicPreferredPlayer: "auto"
+    property var musicLaunchTarget: ({ "type": "app", "value": "spotify", "webApp": false })
+
     // System & Localization Settings
     property string uiLanguage: "en"
     property var keyboardLayouts: ["us", "ara"]
@@ -238,6 +242,10 @@ Item {
                 if (cfg.defaultApps.terminal) root.defaultTerminal = cfg.defaultApps.terminal;
                 if (cfg.defaultApps.fileManager) root.defaultFileManager = cfg.defaultApps.fileManager;
                 if (cfg.defaultApps.editor) root.defaultEditor = cfg.defaultApps.editor;
+            }
+            if (cfg.music) {
+                if (cfg.music.preferredPlayer !== undefined) root.musicPreferredPlayer = cfg.music.preferredPlayer;
+                if (cfg.music.launchTarget !== undefined) root.musicLaunchTarget = cfg.music.launchTarget;
             }
             if (cfg.system) {
                 if (cfg.system.uiLanguage) root.uiLanguage = cfg.system.uiLanguage;
@@ -570,6 +578,49 @@ Item {
         saveConfig();
     }
 
+    function setMusicPreferredPlayer(player) {
+        root.musicPreferredPlayer = player || "auto";
+        saveConfig();
+    }
+
+    function setMusicLaunchTarget(target) {
+        if (!target) return;
+        root.musicLaunchTarget = target;
+        saveConfig();
+    }
+
+    property bool _musicLaunching: false
+    Timer {
+        id: musicLaunchDebounce
+        interval: 3000
+        repeat: false
+        onTriggered: root._musicLaunching = false
+    }
+
+    function launchMusic() {
+        if (root._musicLaunching) return;
+        root._musicLaunching = true;
+        musicLaunchDebounce.restart();
+
+        const target = root.musicLaunchTarget || ({ "type": "app", "value": "spotify", "webApp": false });
+        if (target.type === "url" && target.value) {
+            const url = target.value.trim();
+            if (target.webApp) {
+                saveProcess.exec(["bash", "-c", "for b in brave chromium google-chrome google-chrome-stable thorium-browser; do if command -v $b >/dev/null 2>&1; then exec $b --app=" + url + "; exit 0; fi; done; xdg-open " + url]);
+            } else {
+                saveProcess.exec(["xdg-open", url]);
+            }
+        } else if (target.type === "app" && target.value) {
+            const val = target.value.trim();
+            const app = ApplicationManager.findApp(val);
+            if (app && typeof app.execute === "function") {
+                app.execute();
+            } else {
+                saveProcess.exec(["bash", "-c", "gtk-launch " + val + " 2>/dev/null || hyprctl dispatch exec " + val]);
+            }
+        }
+    }
+
     function setUiLanguage(lang) {
         if (lang !== "en" && lang !== "ar") return;
         root.uiLanguage = lang;
@@ -667,6 +718,10 @@ Item {
                 terminal: root.defaultTerminal,
                 fileManager: root.defaultFileManager,
                 editor: root.defaultEditor
+            },
+            music: {
+                preferredPlayer: root.musicPreferredPlayer,
+                launchTarget: root.musicLaunchTarget
             },
             system: {
                 uiLanguage: root.uiLanguage,

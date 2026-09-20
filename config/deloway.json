@@ -80,5 +80,13 @@
       "ara"
     ]
   },
+  "music": {
+    "preferredPlayer": "auto",
+    "launchTarget": {
+      "type": "app",
+      "value": "spotify",
+      "webApp": false
+    }
+  },
   "setupCompleted": true
 }
