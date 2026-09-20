@@ -58,6 +58,12 @@ Item {
     property string timeCapsuleWeekStart: "saturday" // "saturday" | "sunday" | "monday"
     property bool timeCapsuleShowHardware: true
     property bool timeCapsuleShowSeconds: true
+    property bool timeCapsuleShowShortDate: true
+    property bool timeCapsuleArabicDigits: true
+    property bool timeCapsuleShowCpu: true
+    property bool timeCapsuleShowRam: true
+    property bool timeCapsuleShowGpu: true
+    property bool timeCapsuleShowTemps: true
 
     // Windows & Hyprland Settings
     property color activeBorder: "#0084ff"
@@ -190,6 +196,12 @@ Item {
                 if (cfg.topBar.timeCapsuleWeekStart) root.timeCapsuleWeekStart = cfg.topBar.timeCapsuleWeekStart;
                 if (cfg.topBar.timeCapsuleShowHardware !== undefined) root.timeCapsuleShowHardware = cfg.topBar.timeCapsuleShowHardware;
                 if (cfg.topBar.timeCapsuleShowSeconds !== undefined) root.timeCapsuleShowSeconds = cfg.topBar.timeCapsuleShowSeconds;
+                if (cfg.topBar.timeCapsuleShowShortDate !== undefined) root.timeCapsuleShowShortDate = cfg.topBar.timeCapsuleShowShortDate;
+                if (cfg.topBar.timeCapsuleArabicDigits !== undefined) root.timeCapsuleArabicDigits = cfg.topBar.timeCapsuleArabicDigits;
+                if (cfg.topBar.timeCapsuleShowCpu !== undefined) root.timeCapsuleShowCpu = cfg.topBar.timeCapsuleShowCpu;
+                if (cfg.topBar.timeCapsuleShowRam !== undefined) root.timeCapsuleShowRam = cfg.topBar.timeCapsuleShowRam;
+                if (cfg.topBar.timeCapsuleShowGpu !== undefined) root.timeCapsuleShowGpu = cfg.topBar.timeCapsuleShowGpu;
+                if (cfg.topBar.timeCapsuleShowTemps !== undefined) root.timeCapsuleShowTemps = cfg.topBar.timeCapsuleShowTemps;
             }
             if (cfg.windows) {
                 if (cfg.windows.activeBorder) root.activeBorder = cfg.windows.activeBorder;
@@ -473,6 +485,36 @@ Item {
         saveConfig();
     }
 
+    function setTimeCapsuleShowShortDate(val) {
+        root.timeCapsuleShowShortDate = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleArabicDigits(val) {
+        root.timeCapsuleArabicDigits = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleShowCpu(val) {
+        root.timeCapsuleShowCpu = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleShowRam(val) {
+        root.timeCapsuleShowRam = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleShowGpu(val) {
+        root.timeCapsuleShowGpu = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleShowTemps(val) {
+        root.timeCapsuleShowTemps = !!val;
+        saveConfig();
+    }
+
     function setDockPosition(pos) {
         if (pos !== "bottom" && pos !== "left" && pos !== "right") return;
         root.dockPosition = pos;
@@ -560,7 +602,13 @@ Item {
                 timeCapsuleShowHijri: root.timeCapsuleShowHijri,
                 timeCapsuleWeekStart: root.timeCapsuleWeekStart,
                 timeCapsuleShowHardware: root.timeCapsuleShowHardware,
-                timeCapsuleShowSeconds: root.timeCapsuleShowSeconds
+                timeCapsuleShowSeconds: root.timeCapsuleShowSeconds,
+                timeCapsuleShowShortDate: root.timeCapsuleShowShortDate,
+                timeCapsuleArabicDigits: root.timeCapsuleArabicDigits,
+                timeCapsuleShowCpu: root.timeCapsuleShowCpu,
+                timeCapsuleShowRam: root.timeCapsuleShowRam,
+                timeCapsuleShowGpu: root.timeCapsuleShowGpu,
+                timeCapsuleShowTemps: root.timeCapsuleShowTemps
             },
             windows: {
                 activeBorder: root.activeBorder.toString(),

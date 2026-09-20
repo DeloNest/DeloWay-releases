@@ -54,8 +54,8 @@ PanelWindow {
     readonly property bool isExpanded: ShellState.timeCapsuleExpanded
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(132, compactContentRow.implicitWidth + 36)
-    readonly property real expandedWidth: 440
-    readonly property real expandedHeight: ConfigManager.timeCapsuleShowHardware ? 504 : 374
+    readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
+    readonly property real expandedHeight: root.hasVisibleHardware ? 504 : 374
 
     property real currentWidth: root.isExpanded ? root.expandedWidth : root.compactWidth
     property real currentHeight: root.isExpanded ? root.expandedHeight : root.compactHeight
@@ -168,9 +168,11 @@ PanelWindow {
         const dayIdx = d.getDay();
         const monthIdx = d.getMonth();
         const dateNum = d.getDate();
+        const useAr = I18n.isRTL && ConfigManager.timeCapsuleArabicDigits;
+        const dNum = useAr ? root.toArabicDigits(dateNum) : dateNum;
 
         if (I18n.isRTL) {
-            return (arDays[dayIdx] || "") + "، " + dateNum + " " + (arMonths[monthIdx] || "");
+            return (arDays[dayIdx] || "") + "، " + dNum + " " + (arMonths[monthIdx] || "");
         }
         return (enDays[dayIdx] || "").slice(0, 3) + ", " + (enMonths[monthIdx] || "").slice(0, 3) + " " + dateNum;
     }
@@ -182,9 +184,12 @@ PanelWindow {
         const monthIdx = d.getMonth();
         const dateNum = d.getDate();
         const yearNum = d.getFullYear();
+        const useAr = I18n.isRTL && ConfigManager.timeCapsuleArabicDigits;
+        const dNum = useAr ? root.toArabicDigits(dateNum) : dateNum;
+        const yNum = useAr ? root.toArabicDigits(yearNum) : yearNum;
 
         if (I18n.isRTL) {
-            return (arDays[dayIdx] || "") + "، " + dateNum + " " + (arMonths[monthIdx] || "") + " " + yearNum;
+            return (arDays[dayIdx] || "") + "، " + dNum + " " + (arMonths[monthIdx] || "") + " " + yNum;
         }
         return (enDays[dayIdx] || "") + ", " + (enMonths[monthIdx] || "") + " " + dateNum + ", " + yearNum;
     }
@@ -230,8 +235,10 @@ PanelWindow {
     }
 
     readonly property string calendarMonthYearTitle: {
+        const useAr = I18n.isRTL && ConfigManager.timeCapsuleArabicDigits;
+        const yStr = useAr ? root.toArabicDigits(root.viewYear) : root.viewYear;
         if (I18n.isRTL) {
-            return (arMonths[root.viewMonth] || "") + " " + root.viewYear;
+            return (arMonths[root.viewMonth] || "") + " " + yStr;
         }
         return (enMonths[root.viewMonth] || "") + " " + root.viewYear;
     }
@@ -354,6 +361,7 @@ PanelWindow {
                     Layout.alignment: Qt.AlignVCenter
                     color: Theme.notchBorder
                     opacity: 0.55
+                    visible: ConfigManager.timeCapsuleShowShortDate
                 }
 
                 // Short Date
@@ -365,6 +373,7 @@ PanelWindow {
                     color: Theme.notchTextSecondary
                     renderType: Theme.renderType
                     Layout.alignment: Qt.AlignVCenter
+                    visible: ConfigManager.timeCapsuleShowShortDate
                 }
             }
 
@@ -636,7 +645,7 @@ PanelWindow {
 
                             Text {
                                 anchors.centerIn: parent
-                                text: modelData.day
+                                text: (I18n.isRTL && ConfigManager.timeCapsuleArabicDigits) ? root.toArabicDigits(modelData.day) : modelData.day
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: modelData.today ? Font.Bold : (modelData.current ? Font.Normal : Font.Light)
@@ -657,7 +666,7 @@ PanelWindow {
 
             // Divider (between Calendar & Hardware)
             Rectangle {
-                visible: ConfigManager.timeCapsuleShowHardware
+                visible: root.hasVisibleHardware
                 Layout.fillWidth: true
                 Layout.preferredHeight: 1
                 color: Theme.notchBorder
@@ -668,7 +677,7 @@ PanelWindow {
             // 3. HARDWARE TELEMETRY CARDS (CPU, RAM, GPU)
             // ─────────────────────────────────────────────────────────────
             RowLayout {
-                visible: ConfigManager.timeCapsuleShowHardware
+                visible: root.hasVisibleHardware
                 Layout.fillWidth: true
                 spacing: Theme.space8
                 LayoutMirroring.enabled: I18n.isRTL
@@ -676,6 +685,7 @@ PanelWindow {
 
                 // ── CPU Card ──
                 Rectangle {
+                    visible: ConfigManager.timeCapsuleShowCpu
                     Layout.fillWidth: true
                     Layout.preferredHeight: 96
                     radius: Theme.radiusMedium
@@ -719,6 +729,7 @@ PanelWindow {
                             font.weight: Font.Normal
                             color: Theme.notchTextTertiary
                             renderType: Theme.renderType
+                            visible: ConfigManager.timeCapsuleShowTemps
                         }
 
                         // Sparkline Canvas (~60s history)
@@ -781,6 +792,7 @@ PanelWindow {
 
                 // ── RAM Card ──
                 Rectangle {
+                    visible: ConfigManager.timeCapsuleShowRam
                     Layout.fillWidth: true
                     Layout.preferredHeight: 96
                     radius: Theme.radiusMedium
@@ -888,6 +900,7 @@ PanelWindow {
 
                 // ── GPU Card ──
                 Rectangle {
+                    visible: ConfigManager.timeCapsuleShowGpu
                     Layout.fillWidth: true
                     Layout.preferredHeight: 96
                     radius: Theme.radiusMedium
@@ -925,7 +938,13 @@ PanelWindow {
 
                         // GPU subtext (temp or VRAM)
                         Text {
-                            text: HardwareService.hasGpu ? (HardwareService.gpuTempText + " • " + HardwareService.gpuVramText) : "—"
+                            text: {
+                                if (!HardwareService.hasGpu) return "—";
+                                if (ConfigManager.timeCapsuleShowTemps) {
+                                    return HardwareService.gpuTempText + " • " + HardwareService.gpuVramText;
+                                }
+                                return HardwareService.gpuVramText;
+                            }
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(10)
                             font.weight: Font.Normal
