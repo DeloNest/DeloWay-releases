@@ -45,6 +45,12 @@ ShellRoot {
         onPressed: ShellState.toggleAppStore()
     }
 
+    GlobalShortcut {
+        name: "clipboardToggle"
+        description: "Toggles the Deloway Clipboard Manager (Super + V)"
+        onPressed: ShellState.toggleClipboard()
+    }
+
     // ── Session ─────────────────────────────────────────────────────────────
     GlobalShortcut {
         name: "lockToggle"
@@ -121,6 +127,11 @@ ShellRoot {
         function toggleLauncher()             { ShellState.toggleAppDrawer(); }
         function openLauncher()               { ShellState.openAppDrawer(); }
         function closeLauncher()              { ShellState.closeAppDrawer(); }
+
+        // ── Clipboard Manager ───────────────────────────────────────────────
+        function toggleClipboard()            { ShellState.toggleClipboard(); }
+        function openClipboard()              { ShellState.openClipboard(); }
+        function closeClipboard()             { ShellState.closeClipboard(); }
 
         // ── App Drawer ──────────────────────────────────────────────────────
         function toggleDrawer()        { ShellState.toggleAppDrawer(); }
@@ -206,6 +217,7 @@ ShellRoot {
         // Returns true if something was closed, false otherwise.
         function handleClose(): bool {
             if (ShellState.settingsAppOpen)   { ShellState.closeSettingsApp();   return true; }
+            if (ShellState.clipboardOpen)     { ShellState.closeClipboard();     return true; }
             if (ShellState.appDrawerOpen)     { ShellState.closeAppDrawer();     return true; }
             if (ShellState.cheatSheetOpen)    { ShellState.closeCheatSheet();    return true; }
             if (ShellState.quickSettingsCapsuleExpanded) { ShellState.closeQuickSettingsCapsule(); return true; }
@@ -278,6 +290,7 @@ ShellRoot {
 
             // ── On-demand overlays ──────────────────────────────────────────
             AppDrawer        { targetScreen: screenScope.modelData }
+            ClipboardManager { targetScreen: screenScope.modelData }
             NotificationToast{ targetScreen: screenScope.modelData }
 
             // NOTE: previously missing. GlobalShortcut "sessionMenuToggle" and

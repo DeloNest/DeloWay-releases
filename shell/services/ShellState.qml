@@ -143,6 +143,29 @@ QtObject {
         searchQuery = "";
     }
 
+    // ── Clipboard Manager ───────────────────────────────────────────────
+    property bool clipboardOpen: false
+
+    function openClipboard() {
+        quickSettingsCapsuleExpanded = false;
+        appDrawerOpen = false;
+        appStoreOpen = false;
+        clipboardOpen = true;
+    }
+
+    function toggleClipboard() {
+        if (!clipboardOpen) {
+            quickSettingsCapsuleExpanded = false;
+            appDrawerOpen = false;
+            appStoreOpen = false;
+        }
+        clipboardOpen = !clipboardOpen;
+    }
+
+    function closeClipboard() {
+        clipboardOpen = false;
+    }
+
     property string activeSettingsTab: "appearance"
     property bool settingsFullScreen: false
 
