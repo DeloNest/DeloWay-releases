@@ -503,54 +503,30 @@ Item {
                     spacing: 14
                     visible: root.viewMode === "music"
 
-                    // Album Artwork with Music Badge
-                    Item {
+                    // Album Artwork
+                    Rectangle {
                         implicitWidth: 72
                         implicitHeight: 72
+                        radius: 16
+                        clip: true
+                        color: Theme.notchSurfaceElevated
+                        border.color: Theme.notchBorderSubtle
+                        border.width: 1
                         Layout.alignment: Qt.AlignVCenter
 
-                        Rectangle {
+                        Image {
                             anchors.fill: parent
-                            radius: 16
-                            clip: true
-                            color: Theme.notchSurfaceElevated
-
-                            Image {
-                                anchors.fill: parent
-                                source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
-                                fillMode: Image.PreserveAspectCrop
-                                visible: status === Image.Ready
-                            }
-
-                            SymbolicIcon {
-                                anchors.centerIn: parent
-                                iconSize: 32
-                                source: "applications-multimedia"
-                                iconColor: Theme.notchTextTertiary
-                                visible: !root.activePlayer || !root.activePlayer.trackArtUrl
-                            }
+                            source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
+                            fillMode: Image.PreserveAspectCrop
+                            visible: status === Image.Ready
                         }
 
-                        // Red/Music badge at bottom-right corner
-                        Rectangle {
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            anchors.rightMargin: -2
-                            anchors.bottomMargin: -2
-                            width: 22
-                            height: 22
-                            radius: 6
-                            color: Theme.musicBadge
-                            border.color: Theme.notchBackground
-                            border.width: 1.5
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "♫"
-                                font.pixelSize: Theme.fontSize(11)
-                                font.bold: true
-                                color: Theme.textOnPrimary
-                            }
+                        SymbolicIcon {
+                            anchors.centerIn: parent
+                            iconSize: 32
+                            source: "applications-multimedia"
+                            iconColor: Theme.notchTextTertiary
+                            visible: !root.activePlayer || !root.activePlayer.trackArtUrl
                         }
                     }
 

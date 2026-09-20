@@ -224,7 +224,6 @@ Item {
     readonly property color dockTooltipBorder: notchBorder
 
     // Semantic Component Tokens (Dark / Light adaptive)
-    readonly property color musicBadge: isDark ? "#ffffff" : "#0f172a"
     readonly property color calendarPast: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
     readonly property color calendarFuture: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
     readonly property color sliderTrack: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
