@@ -36,18 +36,17 @@ Item {
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
 
-            // Category 1: SYSTEM
             SidebarSectionHeader {
-                text: I18n.isRTL ? "النظام" : "SYSTEM"
+                text: I18n.isRTL ? "أقسام الإعدادات" : "SETTINGS"
             }
+
             Repeater {
                 model: [
-                    { id: "appearance", icon: "applications-graphics-symbolic" },
-                    { id: "language",   icon: "preferences-desktop-locale-symbolic" },
-                    { id: "desktop",    icon: "user-home-symbolic" },
-                    { id: "dock",       icon: "view-app-grid-symbolic" },
-                    { id: "topbar",     icon: "preferences-system-symbolic" },
-                    { id: "windows",    icon: "view-fullscreen-symbolic" }
+                    { id: "appearance",   icon: "applications-graphics-symbolic" },
+                    { id: "dock",         icon: "view-app-grid-symbolic" },
+                    { id: "windows",      icon: "view-fullscreen-symbolic" },
+                    { id: "connectivity", icon: "network-wireless-symbolic" },
+                    { id: "system",       icon: "preferences-system-symbolic" }
                 ]
                 delegate: SidebarItem {
                     tabId: modelData.id
@@ -56,62 +55,6 @@ Item {
                     isActive: root.activeTab === modelData.id
                     onActivated: root.tabSelected(modelData.id)
                 }
-            }
-
-            Item { Layout.preferredHeight: Theme.space8 }
-
-            // Category 2: CONNECTIVITY
-            SidebarSectionHeader {
-                text: I18n.isRTL ? "الاتصالات" : "CONNECTIVITY"
-            }
-            Repeater {
-                model: [
-                    { id: "network",   icon: "network-wireless-symbolic" },
-                    { id: "bluetooth", icon: "bluetooth-active-symbolic" },
-                    { id: "power",     icon: "power-profile-balanced-symbolic" }
-                ]
-                delegate: SidebarItem {
-                    tabId: modelData.id
-                    iconSource: modelData.icon
-                    label: I18n.tr("tab_" + modelData.id)
-                    isActive: root.activeTab === modelData.id
-                    onActivated: root.tabSelected(modelData.id)
-                }
-            }
-
-            Item { Layout.preferredHeight: Theme.space8 }
-
-            // Category 3: PREFERENCES
-            SidebarSectionHeader {
-                text: I18n.isRTL ? "التفضيلات" : "PREFERENCES"
-            }
-            Repeater {
-                model: [
-                    { id: "notifications", icon: "preferences-system-notifications-symbolic" },
-                    { id: "shortcuts",     icon: "preferences-desktop-keyboard-shortcuts-symbolic" },
-                    { id: "applications",  icon: "applications-other-symbolic" }
-                ]
-                delegate: SidebarItem {
-                    tabId: modelData.id
-                    iconSource: modelData.icon
-                    label: I18n.tr("tab_" + modelData.id)
-                    isActive: root.activeTab === modelData.id
-                    onActivated: root.tabSelected(modelData.id)
-                }
-            }
-
-            Item { Layout.preferredHeight: Theme.space8 }
-
-            // Category 4: ABOUT
-            SidebarSectionHeader {
-                text: I18n.isRTL ? "حول" : "ABOUT"
-            }
-            SidebarItem {
-                tabId: "about"
-                iconSource: "dialog-information-symbolic"
-                label: I18n.tr("tab_about")
-                isActive: root.activeTab === "about"
-                onActivated: root.tabSelected("about")
             }
         }
     }
@@ -132,7 +75,7 @@ Item {
             anchors.leftMargin: Theme.space16
             anchors.rightMargin: Theme.space16
             font.family: Theme.typography.fontFamily
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize(11)
             font.weight: Font.DemiBold
             font.letterSpacing: 0.8
             color: Theme.notchTextTertiary
@@ -191,7 +134,7 @@ Item {
                 Text {
                     text: itemRoot.label
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 13
+                    font.pixelSize: Theme.fontSize(13)
                     font.weight: (itemRoot.isActive || itemMa.containsMouse) ? Font.DemiBold : Font.Normal
                     color: (itemRoot.isActive || itemMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                     Layout.fillWidth: true

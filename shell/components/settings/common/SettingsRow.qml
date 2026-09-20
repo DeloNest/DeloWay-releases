@@ -10,6 +10,7 @@ Rectangle {
     property string title: ""
     property string subtitle: ""
     property string icon: ""
+    property string appIcon: ""
     property color iconColor: Theme.notchTextSecondary
     property bool showDivider: true
     property bool clickable: false
@@ -51,9 +52,17 @@ Rectangle {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        // Optional Leading Icon
+        // Optional Leading App Icon
+        AppIcon {
+            visible: root.appIcon.length > 0
+            source: root.appIcon
+            iconSize: 24
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        // Optional Leading Symbolic Icon
         SymbolicIcon {
-            visible: root.icon.length > 0
+            visible: root.icon.length > 0 && root.appIcon.length === 0
             source: root.icon
             iconSize: 16
             iconColor: (root.clickable && rowMa.containsMouse) ? Theme.notchText : root.iconColor
@@ -74,7 +83,7 @@ Rectangle {
             Text {
                 text: root.title
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize(13)
                 font.weight: Font.DemiBold
                 color: Theme.notchText
                 Layout.fillWidth: true
@@ -86,7 +95,7 @@ Rectangle {
                 visible: root.subtitle.length > 0
                 text: root.subtitle
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize(11)
                 color: Theme.notchTextSecondary
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap

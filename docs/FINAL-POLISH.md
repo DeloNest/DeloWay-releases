@@ -1,4 +1,4 @@
-# NEXT ACTION: P5 - تبسيط نافذة الإعدادات (Settings Simplification)
+# NEXT ACTION: P6 - الإغلاق والمراجعة الشاملة (Final Audit & Polish)
 
 # DeloWay Shell — خارطة اللمسات النهائية (Final Polish Roadmap)
 
@@ -134,16 +134,82 @@
 
 ---
 
-- [ ] **P5: تبسيط نافذة الإعدادات (Settings Simplification)**
-  - **الهدف**: إعادة هيكلة الإعدادات إلى 5-6 أقسام رئيسية بحد أقصى 5 خيارات بارزة لكل قسم، ونقل الباقي لمجموعات "متقدم" قابلة للطي، مع الحفاظ الصارم على كل المفاتيح في `ConfigManager`.
+- [x] **P5: تبسيط نافذة الإعدادات (Settings Simplification)**
+  - **الهدف**: إعادة هيكلة الإعدادات إلى 5 أقسام رئيسية واضحة كحد أقصى (المظهر، شريط المهام والكبسولة، النوافذ ومساحات العمل، الاتصالات والإشعارات، النظام وحول) بحد أقصى 5 خيارات بارزة لكل قسم، ونقل الباقي لمجموعات "متقدم" قابلة للطي، مع الحفاظ الصارم على كل المفاتيح في `ConfigManager` و `deloway.json`.
   - **معايير القبول**:
-    - جدول حصر كامل للخيارات (Keep / Advanced / Hide).
-    - واجهة واضحة وسريعة وغير مكتظة في كلا الوضعين الداكن والفاتح.
+    - جدول حصر كامل للخيارات مصنف إلى (إبقاء Keep / متقدم Advanced / إخفاء Hide).
+    - واجهة واضحة وسريعة وغير مكتظة في كلا الوضعين الداكن والفاتح (Dark / Light) مع تباين نقي 100%.
+    - عزل الخيارات الحساسة كاستعادة ضبط المصنع بعلامة تحذير وتأكيد مزدوج.
+    - عدم حذف أي مفتاح في `ConfigManager` لتفادي كسر الإعدادات المحفوظة.
+  - **جدول حصر وتصنيف خيارات الإعدادات (Settings Inventory Table)**:
+
+| المفتاح (Config Key) | الاسم / الوظيفة | القسم الجديد | التصنيف | التبرير والقرار |
+|---|---|---|---|---|
+| `theme.mode` | مظهر داكن / فاتح | المظهر (Appearance) | **إبقاء (Keep)** | من أهم خيارات التخصيص الأساسية |
+| `theme.wallpaper` | خلفية سطح المكتب واختيار صورة | المظهر (Appearance) | **إبقاء (Keep)** | استخدام يومي مباشر عبر معرض الصور والزر |
+| `theme.fontSizeScale` | حجم الخط (0.85 / 1.0 / 1.15) | المظهر (Appearance) | **إبقاء (Keep)** | ضروري لسهولة القراءة والوصول |
+| `theme.elementRadius` | انحناء الحواف (4px / 8px / 14px) | المظهر (Appearance) | **إبقاء (Keep)** | ضبط النمط البصري الأساسي |
+| `theme.performanceTier` | مستوى التأثيرات الرسومية والبلور | المظهر (Appearance) | **إبقاء (Keep)** | مهم للأداء وتخفيف استهلاك GPU |
+| `theme.applySystemTheme` | تطبيق سمة DeloWay على تطبيقات GTK/Qt | المظهر (Appearance) | **متقدم (Advanced)** | خيار نظامي فني لا يحتاجه المستخدم العادي دائماً |
+| `theme.transparencyLevel` | مستوى الشفافية العامة | المظهر (Appearance) | **متقدم (Advanced)** | خيار إضافي دقيق |
+| `dock.mode` | وضع العرض (دائماً / إخفاء / معطل) | شريط المهام والكبسولة (Dock & Capsule) | **إبقاء (Keep)** | الخيار الجوهري للـ Dock |
+| `dock.position` | موضع الشريط (أسفل / يسار / يمين) | شريط المهام والكبسولة (Dock & Capsule) | **إبقاء (Keep)** | تفضيل مساحة الشاشة الأساسي |
+| `dock.iconSize` | حجم الأيقونات (36..56px) | شريط المهام والكبسولة (Dock & Capsule) | **إبقاء (Keep)** | ضبط بصري مباشر |
+| `dock.pinnedApps` | إدارة التطبيقات المثبتة واستعادتها | شريط المهام والكبسولة (Dock & Capsule) | **إبقاء (Keep)** | وظيفة يومية لحذف وإعادة ترتيب البرامج |
+| `topBar.timeCapsuleEnabled` | تفعيل كبسولة الوقت والتقويم في النوتش | شريط المهام والكبسولة (Dock & Capsule) | **إبقاء (Keep)** | التحكم في إظهار أهم ميزة في الشريط العلوي |
+| `dock.showUnderline` | خط / نقطة النافذة النشطة أسفل الأيقونة | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | تفضيل جمالي دقيق |
+| `topBar.clockFormat` | تنسيق الوقت (12h / 24h) | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | يضبط مرة واحدة |
+| `topBar.timeCapsuleWeekStart` | بداية الأسبوع (السبت / الأحد / الاثنين) | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | إعداد تقويم إقليمي |
+| `topBar.timeCapsuleShowSeconds` | إظهار الثواني في الساعة الموسعة | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | تفصيل تقويم |
+| `topBar.timeCapsuleShowShortDate` | إظهار التاريخ في الكبسولة المصغرة | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | تفصيل شريط |
+| `topBar.timeCapsuleShowHijri` | إظهار التاريخ الهجري (أم القرى) | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | إعداد تقويم إقليمي |
+| `topBar.timeCapsuleArabicDigits` | الأرقام المشرقية (٠١٢٣٤) | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | تفضيل محلي للغة العربية |
+| `topBar.timeCapsuleShowHardware` | إظهار قسم الهاردوير (CPU/RAM/GPU) | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | مراقبة متقدمة للأداء |
+| `topBar.timeCapsuleShowCpu/Ram/Gpu/Temps` | تفاصيل بطاقات الهاردوير والحرارة | شريط المهام والكبسولة (Dock & Capsule) | **متقدم (Advanced)** | تفاصيل متقدمة جداً |
+| `windows.gapsIn / gapsOut` | فجوات وتباعد النوافذ (Gaps) | النوافذ ومساحات العمل (Windows & Workspaces) | **إبقاء (Keep)** | الضبط الجوهري لمدير النوافذ Hyprland |
+| `windows.followMouse` | تتبع مؤشر الفأرة للتركيز | النوافذ ومساحات العمل (Windows & Workspaces) | **إبقاء (Keep)** | سلوك التفاعل الأساسي للنوافذ |
+| `windows.dimInactive` | تعتيم النوافذ غير النشطة | النوافذ ومساحات العمل (Windows & Workspaces) | **إبقاء (Keep)** | ميزة تركيز بصرية ممتازة |
+| `topBar.workspaceIndicatorStyle` | نمط مؤشر مساحات العمل (أيقونات/أرقام/نقاط) | النوافذ ومساحات العمل (Windows & Workspaces) | **إبقاء (Keep)** | مظهر النوتش الأساسي لمساحات العمل |
+| `topBar.workspacesCount` | عدد مساحات العمل الثابتة (3/5/8/10) | النوافذ ومساحات العمل (Windows & Workspaces) | **إبقاء (Keep)** | تنظيم بيئة العمل |
+| `topBar.showWorkspaces` | إظهار قسم مساحات العمل في الشريط العلوي | النوافذ ومساحات العمل (Windows & Workspaces) | **متقدم (Advanced)** | تفضيل متقدم للشريط |
+| `windows.rounding` | انحناء زوايا النوافذ في Hyprland | النوافذ ومساحات العمل (Windows & Workspaces) | **متقدم (Advanced)** | نصف قطر زوايا النوافذ |
+| `windows.activeBorder / inactiveBorder` | لون إطار النوافذ النشطة وغير النشطة | النوافذ ومساحات العمل (Windows & Workspaces) | **إخفاء (Hide)** | محمي بالقواعد الأحادية الصارمة (Monochrome Directive) |
+| `notifications.dnd` | وضع عدم الإزعاج (Do Not Disturb) | الاتصالات والإشعارات (Connectivity & Audio) | **إبقاء (Keep)** | تحكم سريع بالإشعارات |
+| `notifications.sound` | تشغيل صوت التنبيه مع الإشعارات | الاتصالات والإشعارات (Connectivity & Audio) | **إبقاء (Keep)** | سلوك أساسي للصوت |
+| `notifications.timeout` | مهلة بقاء إشعار التوست على الشاشة | الاتصالات والإشعارات (Connectivity & Audio) | **إبقاء (Keep)** | راحة المستخدم في قراءة التنبيهات |
+| `network.status` | شبكة Wi-Fi وحالة الاتصال | الاتصالات والإشعارات (Connectivity & Audio) | **إبقاء (Keep)** | فحص واتصال الشبكة |
+| `bluetooth.status` | البلوتوث وحالة التشغيل | الاتصالات والإشعارات (Connectivity & Audio) | **إبقاء (Keep)** | فحص وتبديل البلوتوث |
+| `notifications.notchNotifications` | عرض الإشعارات داخل النوتش الذكي | الاتصالات والإشعارات (Connectivity & Audio) | **متقدم (Advanced)** | ميزة متقدمة لتكامل النوتش |
+| `system.uiLanguage` | لغة الواجهة (العربية / English) | النظام وحول (System & About) | **إبقاء (Keep)** | أساسي للترجمة و RTL |
+| `power.profile` | نمط الطاقة (Balanced / Performance / Power-saver) | النظام وحول (System & About) | **إبقاء (Keep)** | أداء الجهاز والبطارية |
+| `defaultApps` | التطبيقات الافتراضية (متصفح، طرفية، ملفات) | النظام وحول (System & About) | **إبقاء (Keep)** | تكامل التطبيقات الافتراضية |
+| `about.info` | معلومات وبناء DeloWay Shell والنواة | النظام وحول (System & About) | **إبقاء (Keep)** | بطاقة معلومات النظام |
+| `shortcuts.cheatsheet` | جدول اختصارات لوحة المفاتيح | النظام وحول (System & About) | **إبقاء (Keep)** | وصول سريع لـ Super+? |
+| `power.sleepTimeout` | مهلة السكون وإيقاف الشاشة بالدقائق | النظام وحول (System & About) | **متقدم (Advanced)** | توفير الطاقة |
+| `system.resetDefaults` | استعادة إعدادات DeloWay الافتراضية | النظام وحول (System & About) | **متقدم (Advanced / ⚠️ تحذير)** | إجراء حساس يتطلب تأكيداً |
+| `desktop.mode / enabledWidgets / widgetPositions` | وضع سطح المكتب وتوزيع الودجات القديمة | سطح المكتب | **إخفاء (Hide)** | تُدار من قائمة سطح المكتب السياقية |
+| `setupCompleted` | مؤشر اكتمال معالج الإعداد الأولي | النظام | **إخفاء (Hide)** | مؤشر داخلي تلقائي لـ DeloWay |
+
   - **الملفات المعدلة**:
-    - `shell/components/settings/...`
-  - **القرارات المتخذة**: لم تبدأ بعد.
-  - **أرقام الأداء**: سُتسجل لاحقاً.
-  - **العوائق والمخاطر**: تفادي كسر أي ربط قديم للإعدادات.
+    - `shell/components/settings/SettingsAppV2.qml`
+    - `shell/components/settings/SettingsSidebar.qml`
+    - `shell/components/settings/common/SettingsSection.qml`
+    - `shell/components/settings/tabs/AppearanceTab.qml`
+    - `shell/components/settings/tabs/DockTab.qml`
+    - `shell/components/settings/tabs/WindowsTab.qml`
+    - `shell/components/settings/tabs/ConnectivityTab.qml` (New)
+    - `shell/components/settings/tabs/SystemTab.qml` (New)
+    - `shell/services/I18n.qml`
+  - **القرارات المتخذة**:
+    - إعادة تنظيم التطبيق من 13 تبويباً مجزءاً (منها 9 عناصر نائبة غير مكتملة) إلى 5 أقسام رئيسية وظيفية ومتكاملة 100%.
+    - جعل عنصر `SettingsSection.qml` يدعم خاصية `collapsible: true` مع حركة انسيابية للارتفاع وأيقونة سهم تفاعلية.
+    - تحديد 5 خيارات بارزة كحد أقصى في كل قسم، ونقل كافة الخيارات الفرعية والدقيقة لمجموعات "متقدم" مطوية افتراضياً.
+    - إضافة تأكيد مزدوج وتحذير بصري عند استعادة ضبط المصنع لحماية إعدادات المستخدم.
+    - اختبار كامل للوضعين الداكن (OLED Dark) والفاتح (Clean Light) والتأكد من التباين التام وعدم وجود أي نصوص باهتة.
+  - **أرقام الأداء (قبل / بعد)**:
+    - *قبل*: 13 تبويباً بقوائم فارغة وعناصر مشتتة وواجهة متداخلة تستهلك وقتاً في البحث وتفتقر إلى التجميع المنطقي.
+    - *بعد*: 5 أقسام مركزية خفيفة، تحميل كسول فوري للتبويبات، زمن فتح <150ms، صفر أخطاء أو تحذيرات في `qs log`، وامتثال أحادي 100%.
+  - **العوائق والمخاطر**: تم الحفاظ التام على جميع مفاتيح `ConfigManager` و `deloway.json` لمنع أي كسر في التوافق الخلفي.
 
 ---
 

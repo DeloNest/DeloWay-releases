@@ -69,27 +69,13 @@ Item {
                           ? (I18n.isRTL ? "مفعّل — أسطح داكنة نقية لتقليل استهلاك الطاقة وإراحة العين" : "Enabled — Deep dark surfaces for low eye strain")
                           : (I18n.isRTL ? "معطّل — أسطح فاتحة ناصعة (Light Mode)" : "Disabled — Clean light surfaces (Light Mode)")
                 icon: ConfigManager.themeMode === "dark" ? "weather-clear-night-symbolic" : "weather-sunny-symbolic"
-                showDivider: true
+                showDivider: false
                 clickable: true
                 onClicked: ConfigManager.setThemeMode(ConfigManager.themeMode === "dark" ? "light" : "dark")
 
                 SettingsToggle {
                     checked: ConfigManager.themeMode === "dark"
                     onToggled: ch => ConfigManager.setThemeMode(ch ? "dark" : "light")
-                }
-            }
-
-            SettingsRow {
-                title: I18n.tr("apply_system_theme")
-                subtitle: I18n.tr("apply_system_theme_desc")
-                icon: "preferences-desktop-theme-symbolic"
-                showDivider: false
-                clickable: true
-                onClicked: ConfigManager.setApplySystemTheme(!ConfigManager.applySystemTheme)
-
-                SettingsToggle {
-                    checked: ConfigManager.applySystemTheme
-                    onToggled: ch => ConfigManager.setApplySystemTheme(ch)
                 }
             }
         }
@@ -430,6 +416,27 @@ Item {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // ── 4. Advanced Settings (Collapsible) ─────────────────────
+        SettingsSection {
+            title: I18n.isRTL ? "إعدادات متقدمة (Advanced)" : "Advanced Settings"
+            collapsible: true
+            isExpanded: false
+
+            SettingsRow {
+                title: I18n.tr("apply_system_theme")
+                subtitle: I18n.tr("apply_system_theme_desc")
+                icon: "preferences-desktop-theme-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setApplySystemTheme(!ConfigManager.applySystemTheme)
+
+                SettingsToggle {
+                    checked: ConfigManager.applySystemTheme
+                    onToggled: ch => ConfigManager.setApplySystemTheme(ch)
                 }
             }
         }

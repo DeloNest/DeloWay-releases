@@ -46,21 +46,13 @@ PanelWindow {
     readonly property real clampedX: Math.max(10, Math.min(root.width - windowCard.width - 10, (root.customX >= 0) ? root.customX : defaultX))
     readonly property real clampedY: Math.max(10, Math.min(root.height - windowCard.height - 10, (root.customY >= 0) ? root.customY : defaultY))
 
-    // Tab definitions
+    // Tab definitions (5 Core Sections)
     readonly property var tabList: [
-        { id: "appearance",    category: "system",       icon: "applications-graphics-symbolic" },
-        { id: "language",      category: "system",       icon: "preferences-desktop-locale-symbolic" },
-        { id: "desktop",       category: "system",       icon: "user-home-symbolic" },
-        { id: "dock",          category: "system",       icon: "view-app-grid-symbolic" },
-        { id: "topbar",        category: "system",       icon: "preferences-system-symbolic" },
-        { id: "windows",       category: "system",       icon: "view-fullscreen-symbolic" },
-        { id: "network",       category: "connectivity", icon: "network-wireless-symbolic" },
-        { id: "bluetooth",     category: "connectivity", icon: "bluetooth-active-symbolic" },
-        { id: "power",         category: "connectivity", icon: "power-profile-balanced-symbolic" },
-        { id: "notifications", category: "preferences",  icon: "preferences-system-notifications-symbolic" },
-        { id: "shortcuts",     category: "preferences",  icon: "preferences-desktop-keyboard-shortcuts-symbolic" },
-        { id: "applications",  category: "preferences",  icon: "applications-other-symbolic" },
-        { id: "about",         category: "about",        icon: "dialog-information-symbolic" }
+        { id: "appearance",   icon: "applications-graphics-symbolic" },
+        { id: "dock",         icon: "view-app-grid-symbolic" },
+        { id: "windows",      icon: "view-fullscreen-symbolic" },
+        { id: "connectivity", icon: "network-wireless-symbolic" },
+        { id: "system",       icon: "preferences-system-symbolic" }
     ]
 
     // Lazy loading registry: maps tabId -> boolean (has been visited)
@@ -507,7 +499,16 @@ PanelWindow {
                                             onItemChanged: updateCurrent()
                                             Component.onCompleted: updateCurrent()
 
-                                            sourceComponent: (modelData.id === "appearance") ? appearanceComponent : (modelData.id === "dock" ? dockComponent : (modelData.id === "windows" ? windowsComponent : (modelData.id === "topbar" ? topbarComponent : placeholderComponent)))
+                                            sourceComponent: {
+                                                switch (modelData.id) {
+                                                case "appearance": return appearanceComponent;
+                                                case "dock": return dockComponent;
+                                                case "windows": return windowsComponent;
+                                                case "connectivity": return connectivityComponent;
+                                                case "system": return systemComponent;
+                                                default: return appearanceComponent;
+                                                }
+                                            }
 
                                             Component {
                                                 id: appearanceComponent
@@ -525,55 +526,13 @@ PanelWindow {
                                             }
 
                                             Component {
-                                                id: topbarComponent
-                                                TopBarTab {}
+                                                id: connectivityComponent
+                                                ConnectivityTab {}
                                             }
 
                                             Component {
-                                                id: placeholderComponent
-                                                Item {
-                                                    id: placeholderRoot
-                                                    width: tabLoader.width
-                                                    implicitHeight: 340
-
-                                                    Rectangle {
-                                                        anchors.fill: parent
-                                                        anchors.margins: Theme.space24
-                                                        radius: Theme.notchRadiusCard
-                                                        color: Theme.notchSurfaceElevated
-                                                        border.color: Theme.notchBorderSubtle
-                                                        border.width: 1
-
-                                                        ColumnLayout {
-                                                            anchors.centerIn: parent
-                                                            spacing: Theme.space16
-
-                                                            SymbolicIcon {
-                                                                source: modelData.icon
-                                                                iconSize: 32
-                                                                iconColor: Theme.notchText
-                                                                Layout.alignment: Qt.AlignHCenter
-                                                            }
-
-                                                            Text {
-                                                                text: I18n.tr("tab_" + modelData.id)
-                                                                font.family: Theme.typography.fontFamily
-                                                                font.pixelSize: Theme.fontSize(18)
-                                                                font.weight: Font.DemiBold
-                                                                color: Theme.notchText
-                                                                Layout.alignment: Qt.AlignHCenter
-                                                            }
-
-                                                            Text {
-                                                                text: (I18n.isRTL ? "مساحة التبويب (Placeholder) — " : "Tab Placeholder — ") + modelData.id
-                                                                font.family: Theme.typography.fontFamily
-                                                                font.pixelSize: Theme.fontSize(13)
-                                                                color: Theme.notchTextTertiary
-                                                                Layout.alignment: Qt.AlignHCenter
-                                                            }
-                                                        }
-                                                    }
-                                                }
+                                                id: systemComponent
+                                                SystemTab {}
                                             }
                                         }
                                     }
