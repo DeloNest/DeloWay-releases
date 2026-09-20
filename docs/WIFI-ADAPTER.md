@@ -63,7 +63,7 @@
    - **المستودع الموصى به 1**: `aircrack-ng/rtl8188eus`
      - الرابط: `https://github.com/aircrack-ng/rtl8188eus`
      - الصيانة: نشط ومحدث باستمرار ليتوافق مع أحدث أنوية لينكس (6.x و 7.x)، ويدعم وضع AP و Monitor.
-     - متوفر في AUR باسم: `rtl8188eus-aircrack-dkms-git`
+     - متوفر في AUR باسم: `8188eu-aircrack-dkms-git`
    - **المستودع الموصى به 2**: `morrownr/8188eu`
      - الرابط: `https://github.com/morrownr/8188eu`
      - الصيانة: مستودع مخصص لأجهزة USB Wi-Fi على لينكس مع سكريبت تثبيت DKMS ممتاز ودعم كامل لـ Hostapd و NetworkManager.
@@ -86,7 +86,7 @@ sudo dkms remove 8188eu/5.2.2.4.r838.f42fc9c --all
 ### الخطوة ب: تثبيت التعريف الحديث المتوافق مع نواة 7.x (يدعم AP)
 ```bash
 # الخيار الأسهل عبر AUR (باستخدام yay):
-yay -S rtl8188eus-aircrack-dkms-git
+yay -S 8188eu-aircrack-dkms-git
 
 # أو البناء والتثبيت يدوياً عبر DKMS من مستودع aircrack-ng:
 git clone https://github.com/aircrack-ng/rtl8188eus.git /tmp/rtl8188eus
