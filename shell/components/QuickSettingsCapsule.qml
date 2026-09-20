@@ -815,7 +815,7 @@ PanelWindow {
                             spacing: 3
 
                             SymbolicIcon {
-                                iconSize: 14
+                                iconSize: 16
                                 source: {
                                     const p = SystemMonitor.batteryPercent;
                                     if (SystemMonitor.batteryStatusText === "Charging") return "battery-good-charging-symbolic";
@@ -834,7 +834,7 @@ PanelWindow {
                             Text {
                                 text: SystemMonitor.batteryPercent + "%"
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(10)
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Medium
                                 color: {
                                     if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
@@ -862,12 +862,12 @@ PanelWindow {
 
                     // ── Volume icon (mutable, clickable to mute) ──
                     Item {
-                        implicitWidth: 22; implicitHeight: 22
+                        implicitWidth: 28; implicitHeight: 28
                         Layout.alignment: Qt.AlignVCenter
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 6
+                            radius: Theme.notchRadiusPill
                             color: volumeCompactMa.containsMouse
                                    ? Theme.notchSurfaceHover
                                    : "transparent"
@@ -876,7 +876,7 @@ PanelWindow {
 
                         SymbolicIcon {
                             anchors.centerIn: parent
-                            iconSize: 14
+                            iconSize: 16
                             source: root.volumeIconName + "-symbolic"
                             iconColor: root.isMuted ? Theme.colors.danger : Theme.notchText
                         }
@@ -893,16 +893,26 @@ PanelWindow {
                     // ── Network icon + SSID ──
                     Item {
                         id: networkCompactSection
-                        implicitWidth: netRow.implicitWidth
-                        implicitHeight: netRow.implicitHeight
+                        implicitWidth: (SystemMonitor.isWifi && ssidLabel.visible) ? (netRow.implicitWidth + 14) : 28
+                        implicitHeight: 28
                         Layout.alignment: Qt.AlignVCenter
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Theme.notchRadiusPill
+                            color: networkCompactMa.containsMouse
+                                   ? Theme.notchSurfaceHover
+                                   : "transparent"
+                            Behavior on color { ColorAnimation { duration: 80 } }
+                        }
 
                         RowLayout {
                             id: netRow
-                            spacing: 4
+                            anchors.centerIn: parent
+                            spacing: 5
 
                             SymbolicIcon {
-                                iconSize: 14
+                                iconSize: 16
                                 source: SystemMonitor.isWifi
                                         ? "network-wireless-symbolic"
                                         : "network-wired-symbolic"
@@ -926,6 +936,7 @@ PanelWindow {
                         }
 
                         MouseArea {
+                            id: networkCompactMa
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             hoverEnabled: true
@@ -939,32 +950,46 @@ PanelWindow {
 
                     // ── Language badge capsule ──
                     Rectangle {
-                        implicitWidth: langBadgeText.implicitWidth + 10
-                        implicitHeight: 18
-                        radius: 5
-                        color: Theme.notchSurfaceElevated
+                        implicitWidth: langBadgeText.implicitWidth + 12
+                        implicitHeight: 22
+                        radius: 6
+                        color: langBadgeMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                        border.color: Theme.notchBorderSubtle
+                        border.width: 1
                         Layout.alignment: Qt.AlignVCenter
+
+                        Behavior on color { ColorAnimation { duration: 80 } }
 
                         Text {
                             id: langBadgeText
                             anchors.centerIn: parent
                             text: root.activeKeyboardCode
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(10)
-                            font.weight: Font.Medium
+                            font.pixelSize: Theme.fontSize(11)
+                            font.weight: Font.DemiBold
                             color: Theme.notchText
                             renderType: Theme.renderType
+                        }
+
+                        MouseArea {
+                            id: langBadgeMa
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            hoverEnabled: true
+                            onClicked: {
+                                Hyprland.dispatch("switchxkblayout all next");
+                            }
                         }
                     }
 
                     // ── Gear icon (settings trigger) ──
                     Item {
-                        implicitWidth: 22; implicitHeight: 22
+                        implicitWidth: 28; implicitHeight: 28
                         Layout.alignment: Qt.AlignVCenter
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 6
+                            radius: Theme.notchRadiusPill
                             color: settingsIconMa.containsMouse
                                    ? Theme.notchSurfaceHover
                                    : "transparent"
@@ -973,7 +998,7 @@ PanelWindow {
 
                         SymbolicIcon {
                             anchors.centerIn: parent
-                            iconSize: 14
+                            iconSize: 16
                             source: "settings-symbolic"
                             iconColor: Theme.notchText
                         }
