@@ -54,6 +54,10 @@ Item {
     property int workspacesCount: 5
     property string workspaceIndicatorStyle: "icons" // "icons" | "numbers" | "dots"
     property bool timeCapsuleEnabled: true
+    property bool timeCapsuleShowHijri: true
+    property string timeCapsuleWeekStart: "saturday" // "saturday" | "sunday" | "monday"
+    property bool timeCapsuleShowHardware: true
+    property bool timeCapsuleShowSeconds: true
 
     // Windows & Hyprland Settings
     property color activeBorder: "#0084ff"
@@ -182,6 +186,10 @@ Item {
                 if (cfg.topBar.workspacesCount) root.workspacesCount = cfg.topBar.workspacesCount;
                 if (cfg.topBar.workspaceIndicatorStyle) root.workspaceIndicatorStyle = cfg.topBar.workspaceIndicatorStyle;
                 if (cfg.topBar.timeCapsuleEnabled !== undefined) root.timeCapsuleEnabled = cfg.topBar.timeCapsuleEnabled;
+                if (cfg.topBar.timeCapsuleShowHijri !== undefined) root.timeCapsuleShowHijri = cfg.topBar.timeCapsuleShowHijri;
+                if (cfg.topBar.timeCapsuleWeekStart) root.timeCapsuleWeekStart = cfg.topBar.timeCapsuleWeekStart;
+                if (cfg.topBar.timeCapsuleShowHardware !== undefined) root.timeCapsuleShowHardware = cfg.topBar.timeCapsuleShowHardware;
+                if (cfg.topBar.timeCapsuleShowSeconds !== undefined) root.timeCapsuleShowSeconds = cfg.topBar.timeCapsuleShowSeconds;
             }
             if (cfg.windows) {
                 if (cfg.windows.activeBorder) root.activeBorder = cfg.windows.activeBorder;
@@ -444,6 +452,27 @@ Item {
         saveConfig();
     }
 
+    function setTimeCapsuleShowHijri(val) {
+        root.timeCapsuleShowHijri = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleWeekStart(val) {
+        if (val !== "saturday" && val !== "sunday" && val !== "monday") return;
+        root.timeCapsuleWeekStart = val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleShowHardware(val) {
+        root.timeCapsuleShowHardware = !!val;
+        saveConfig();
+    }
+
+    function setTimeCapsuleShowSeconds(val) {
+        root.timeCapsuleShowSeconds = !!val;
+        saveConfig();
+    }
+
     function setDockPosition(pos) {
         if (pos !== "bottom" && pos !== "left" && pos !== "right") return;
         root.dockPosition = pos;
@@ -527,7 +556,11 @@ Item {
                 clockFormat: root.clockFormat,
                 workspacesCount: root.workspacesCount,
                 workspaceIndicatorStyle: root.workspaceIndicatorStyle,
-                timeCapsuleEnabled: root.timeCapsuleEnabled
+                timeCapsuleEnabled: root.timeCapsuleEnabled,
+                timeCapsuleShowHijri: root.timeCapsuleShowHijri,
+                timeCapsuleWeekStart: root.timeCapsuleWeekStart,
+                timeCapsuleShowHardware: root.timeCapsuleShowHardware,
+                timeCapsuleShowSeconds: root.timeCapsuleShowSeconds
             },
             windows: {
                 activeBorder: root.activeBorder.toString(),
