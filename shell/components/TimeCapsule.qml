@@ -17,7 +17,7 @@ PanelWindow {
 
     anchors {
         top: true
-        left: true
+        right: true
     }
 
     readonly property real earRadius: 18
@@ -26,7 +26,7 @@ PanelWindow {
 
     margins {
         top: root.isExpanded ? 0 : 10
-        left: root.isExpanded ? 0 : 10
+        right: Math.round(targetScreen.width / 2 + ShellState.smartNotchCurrentWidth / 2 + capsuleGap - (root.isExpanded ? root.earRadius : 0))
     }
 
     color: "transparent"
@@ -320,7 +320,8 @@ PanelWindow {
     // ── Outer Shape & Notch Framing ───────────────────────────────────────
     NotchFrame {
         id: notchFrame
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth
         currentHeight: root.currentHeight
