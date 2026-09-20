@@ -115,7 +115,7 @@ ShellRoot {
         function closeSmartNotch()     { ShellState.closeSmartNotch(); }
         function setSmartNotchTab(tab: string) { ShellState.setSmartNotchTab(tab); }
         function stageLocalSend(path: string) {
-            ShellState.setSmartNotchTab(1);
+            ShellState.setSmartNotchTab(2);
             ShellState.openSmartNotch();
             LocalSendService.stageFiles([path || "/tmp/deloway_test.txt"]);
         }
