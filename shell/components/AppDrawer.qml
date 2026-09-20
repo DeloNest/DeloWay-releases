@@ -68,7 +68,7 @@ PanelWindow {
     property int selectedIndex: 0
     property bool isGridView: true
 
-    readonly property var allApps: ApplicationManager.allApps
+    readonly property var allApps: LauncherIndex.allApps
 
     // ─────────────────────────────────────────────────────────────────────
     // Clipboard helper process for calculator
@@ -392,123 +392,9 @@ PanelWindow {
     // ─────────────────────────────────────────────────────────────────────
     // Computed lists & Search results
     // ─────────────────────────────────────────────────────────────────────
-    readonly property var universalResults: {
-        const q = filterQuery.trim();
-        if (!q) return [];
-        const normQ = normalizeText(q);
-        const results = [];
+    readonly property var universalResults: LauncherIndex.search(filterQuery)
 
-        // 1. Safe Calculator evaluation
-        const mathRes = evaluateMath(q);
-        if (mathRes !== null) {
-            results.push({
-                "id": "calc-result",
-                "type": "calc",
-                "badge": "CALC",
-                "name": "= " + mathRes,
-                "desc": q + " • " + (I18n.isRTL ? "اضغط Enter للنسخ إلى الحافظة" : "Press Enter to copy to clipboard"),
-                "icon": "accessories-calculator-symbolic",
-                "isAppIcon": false,
-                "data": { "value": mathRes }
-            });
-        }
-
-        // 2. Applications
-        for (let i = 0; i < allApps.length; i++) {
-            const app = allApps[i];
-            const normName = normalizeText(app.name);
-            const normComment = normalizeText(app.comment || "");
-            const normId = normalizeText(app.id || "");
-
-            if (normName.includes(normQ) || normComment.includes(normQ) || normId.includes(normQ)) {
-                results.push({
-                    "id": app.id,
-                    "type": "app",
-                    "badge": "APP",
-                    "name": app.name,
-                    "desc": app.comment || (I18n.isRTL ? "تطبيق" : "Application"),
-                    "icon": app.icon,
-                    "isAppIcon": true,
-                    "data": app
-                });
-            }
-        }
-
-        // 3. Settings
-        for (let i = 0; i < settingsIndex.length; i++) {
-            const s = settingsIndex[i];
-            const normName = normalizeText(s.name);
-            const normDesc = normalizeText(s.desc);
-            const matchesKw = s.keywords.some(k => normalizeText(k).includes(normQ));
-
-            if (normName.includes(normQ) || normDesc.includes(normQ) || matchesKw) {
-                results.push({
-                    "id": s.id,
-                    "type": "setting",
-                    "badge": "SETTING",
-                    "name": s.name,
-                    "desc": s.desc,
-                    "icon": s.icon,
-                    "isAppIcon": false,
-                    "data": s
-                });
-            }
-        }
-
-        // 4. System actions
-        for (let i = 0; i < systemActions.length; i++) {
-            const a = systemActions[i];
-            const normName = normalizeText(a.name);
-            const normDesc = normalizeText(a.desc);
-            const matchesKw = a.keywords.some(k => normalizeText(k).includes(normQ));
-
-            if (normName.includes(normQ) || normDesc.includes(normQ) || matchesKw) {
-                results.push({
-                    "id": a.id,
-                    "type": "action",
-                    "badge": "SYSTEM",
-                    "name": a.name,
-                    "desc": a.desc,
-                    "icon": a.icon,
-                    "isAppIcon": false,
-                    "data": a
-                });
-            }
-        }
-
-        // 5. Store search
-        results.push({
-            "id": "store-search",
-            "type": "store",
-            "badge": "STORE",
-            "name": (I18n.isRTL ? "البحث عن \"" : "Search for \"") + q + (I18n.isRTL ? "\" في متجر التطبيقات" : "\" in Delo Store"),
-            "desc": I18n.isRTL ? "البحث عن حزم وتطبيقات لتثبيتها" : "Find and install packages, flatpaks, and developer tools",
-            "icon": "software-store",
-            "isAppIcon": true,
-            "data": { "query": q }
-        });
-
-        return results;
-    }
-
-    readonly property var filteredApps: {
-        const q = filterQuery.trim();
-        const normQ = normalizeText(q);
-        return allApps.filter(app => {
-            const matchesQuery =
-                !normQ ||
-                normalizeText(app.name).includes(normQ) ||
-                (app.comment && normalizeText(app.comment).includes(normQ));
-
-            if (!matchesQuery) return false;
-            if (selectedCategory === "All") return true;
-            if (!app.categories) return false;
-
-            return app.categories.some(c =>
-                c.toLowerCase().includes(selectedCategory.toLowerCase())
-            );
-        });
-    }
+    readonly property var filteredApps: LauncherIndex.getFilteredApps(selectedCategory, filterQuery)
 
     readonly property var pinnedList: {
         if (selectedCategory !== "All") return root.filteredApps;
@@ -588,6 +474,10 @@ PanelWindow {
         drawerContextMenu.hide();
         ShellState.closeAppDrawer();
 
+        if (app.id) {
+            LauncherIndex.recordLaunch(app.id);
+        }
+
         if (typeof app.execute === "function")
             app.execute();
         else
@@ -654,17 +544,6 @@ PanelWindow {
             }
         }
 
-        // Ambient Drop Shadow
-        Rectangle {
-            anchors.fill: drawerCard
-            anchors.topMargin: 10
-            anchors.bottomMargin: -10
-            anchors.leftMargin: -4
-            anchors.rightMargin: -4
-            radius: root.radiusCard + 4
-            color: Theme.notchShadow
-            z: 0
-        }
 
         Rectangle {
             id: drawerCard
@@ -1092,25 +971,15 @@ PanelWindow {
                                             }
                                         }
 
-                                        // Badge pill
-                                        Rectangle {
-                                            Layout.preferredHeight: 20
-                                            Layout.preferredWidth: badgeText.implicitWidth + 12
-                                            radius: Theme.radiusSmall
-                                            color: "transparent"
-                                            border.color: root.colorBorderSoft
-                                            border.width: 1
-
-                                            Text {
-                                                id: badgeText
-                                                anchors.centerIn: parent
-                                                text: resultItem.modelData.badge || ""
-                                                font.family: Theme.typography.fontFamily
-                                                font.pixelSize: Theme.fontSize(9)
-                                                font.weight: Font.DemiBold
-                                                renderType: Theme.renderType
-                                                color: root.colorTextTertiary
-                                            }
+                                        // Selection Enter hint (↵) visible only when selected
+                                        Text {
+                                            visible: resultItem.isSelected
+                                            text: "↵"
+                                            font.family: Theme.typography.fontFamily
+                                            font.pixelSize: Theme.fontSize(14)
+                                            font.weight: Font.DemiBold
+                                            color: root.colorTextTertiary
+                                            renderType: Theme.renderType
                                         }
                                     }
 
