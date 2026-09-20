@@ -241,6 +241,8 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي)*:
+* `069911c` - feat(timecapsule): position TimeCapsule directly adjacent to left of center Notch (2026-09-20)
+* `cf0fd9b` - docs(status): update STATUS.md sections 3, 6-9 for TimeCapsule completion (phases 1-5) (2026-09-20)
 * `bb0e170` - fix(timecapsule): define explicit expandedWidth to prevent undefined assignment in currentWidth (2026-09-20)
 * `cb25cd9` - feat(timecapsule): phase4 — add comprehensive TimeCapsule settings tab in SettingsAppV2 (2026-09-20)
 * `00dfda4` - feat(timecapsule): phase3 — add HardwareService telemetry layer and sparklines (2026-09-20)
@@ -249,10 +251,6 @@
 * `f540f18` - docs(status): update STATUS.md sections 6-9 for phase 2 workspace icons refinement & ADR-003/004 (2026-09-20)
 * `d493fe8` - feat(workspace): phase2 icons mode refinement, Hyprland.toplevels integration & TopBarTab settings (2026-09-20)
 * `1ca4cce` - feat(workspace): phase2 refinement — dual overlapping icons, hover number, +N badge, dynamic pill width (2026-09-20)
-* `4991cbc` - docs(status): update sections 6-9 for WorkspaceIndicator completion (phases 1-5) (2026-09-20)
-* `478837b` - feat(workspace): phase3+4 — wheel scroll (throttled, no propagation), animate behaviors already in WorkspaceItem (2026-09-20)
-* `0b75c80` - feat(workspace): phase1+2 — WorkspaceIndicator with dots/circles/pill states, AppIcon, OLED tokens (2026-09-20)
-* `6f55691` - fix(qs): phase2 state truthfulness — wifiAvailable from hardware, wifi/hotspot unavailable states (2026-09-20)
 
 ---
 
@@ -261,11 +259,11 @@
 - **المهام المنجزة والمثبتة في HEAD**:
   - **كبسولة الوقت والتاريخ والتقويم والهاردوير (TimeCapsule) — مكتملة بنسبة 100% (المراحل 0-5)**:
     - **الوضع المصغر (Compact)**:
-      - تموضع مثالي في أقصى يسار الشريط العلوي بأبعاد 44px ارتفاعاً و132px عرضاً (مع هوامش 10px العلوية واليسرى).
+      - تموضع متناسق ككبسولة يسارية ملاصقة للنوتش الأوسط بفارق 10px (`capsuleGap`)، لتشكل مع النوتش وكبسولة الإعدادات السريعة ثلاث كبسولات متوازنة تتوسط أعلى الشاشة (`[ TimeCapsule ] [ Smart Notch ] [ QuickSettingsCapsule ]`).
       - وقت عريض وتاريخ مختصر محلي، مدفوعة بـ `SystemClock` بدقة الدقيقة، باستهلاك معالج 0.0% في الخمول.
       - كبسولة OLED داكنة مع تأثير تحويم وتفاعل نقر سلس للتوسع والانكماش.
     - **الوضع الموسع (Expanded)**:
-      - التصاق انسيابي بأعلى الشاشة عبر `NotchFrame` بآذان مقعرة (18px) وظلال واقعية وانتقال بيزير سلس.
+      - التصاق انسيابي بأعلى الشاشة عبر `NotchFrame` بآذان مقعرة (18px) تتجه يميناً ويساراً مع تمدد انسيابي لليسار بعيداً عن النوتش، مع ظلال واقعية وانتقال بيزير سلس.
       - **الترويسة**: ساعة رقمية كبيرة مع ثوانٍ تفاعلية قابلة للتعطيل، تاريخ ميلادي كامل مع اليوم، وتاريخ هجري دقيق بأسلوب تقويم أم القرى.
       - **التقويم الشهري (6x7)**: شبكة كاملة بأيام الأسبوع وأرقام الشهور، إبراز ناعم لليوم الحالي (`Theme.colors.accent`)، أزرار تنقل للشهر السابق والتالي، ونقر على اسم الشهر لإعادته لحظياً للشهر الحالي. يدعم بداية الأسبوع القابلة للتخصيص (السبت، الأحد، الاثنين) والأرقام المشرقية في الواجهة العربية.
       - **بطاقات الهاردوير والمخططات البيانية (Canvas Sparklines)**: 3 بطاقات متساوية (CPU, RAM, GPU) مع استهلاك الذاكرة وحرارة المعالج وكرت الشاشة وVRAM، ومخططات بيانية لحظية لآخر 60 ثانية، مع تنبيهات لونية ديناميكية (>70% تحذير، >90% خطر)، وانكماش تلقائي ذكي لارتفاع الكبسولة عند إخفاء قسم الهاردوير أو المقاييس الفردية.
