@@ -23,13 +23,19 @@ ShellRoot {
     // ── Launchers ───────────────────────────────────────────────────────────
     GlobalShortcut {
         name: "launcherToggle"
-        description: "Toggles the Deloway Unified Launcher (Super + Space)"
-        onPressed: ShellState.toggleAppDrawer()
+        description: "Toggles the Deloway Search Launcher (Super alone / Super + Space)"
+        onPressed: ShellState.toggleLauncher()
     }
 
     GlobalShortcut {
         name: "drawerToggle"
-        description: "Toggles the Deloway App Drawer (Super + D / Super + Space)"
+        description: "Toggles the Deloway Search Launcher (Super alone / Super + Space)"
+        onPressed: ShellState.toggleLauncher()
+    }
+
+    GlobalShortcut {
+        name: "appDrawerToggle"
+        description: "Toggles the Deloway App Drawer (Super + A)"
         onPressed: ShellState.toggleAppDrawer()
     }
 
@@ -123,10 +129,10 @@ ShellRoot {
             LocalSendService.resetStage();
         }
 
-        // ── Unified Launcher ────────────────────────────────────────────────
-        function toggleLauncher()             { ShellState.toggleAppDrawer(); }
-        function openLauncher()               { ShellState.openAppDrawer(); }
-        function closeLauncher()              { ShellState.closeAppDrawer(); }
+        // ── Search Launcher (Spotlight) ─────────────────────────────────────
+        function toggleLauncher()             { ShellState.toggleLauncher(); }
+        function openLauncher(query: string)  { ShellState.openLauncher(query || ""); }
+        function closeLauncher()              { ShellState.closeLauncher(); }
 
         // ── Clipboard Manager ───────────────────────────────────────────────
         function toggleClipboard()            { ShellState.toggleClipboard(); }
@@ -216,6 +222,7 @@ ShellRoot {
         // ── Global "close topmost" — used by bindings & hotkeys ─────────────
         // Returns true if something was closed, false otherwise.
         function handleClose(): bool {
+            if (ShellState.launcherOpen)      { ShellState.closeLauncher();      return true; }
             if (ShellState.settingsAppOpen)   { ShellState.closeSettingsApp();   return true; }
             if (ShellState.clipboardOpen)     { ShellState.closeClipboard();     return true; }
             if (ShellState.appDrawerOpen)     { ShellState.closeAppDrawer();     return true; }
@@ -289,6 +296,7 @@ ShellRoot {
             TimeCapsule  { targetScreen: screenScope.modelData }
 
             // ── On-demand overlays ──────────────────────────────────────────
+            SearchLauncher   { targetScreen: screenScope.modelData }
             AppDrawer        { targetScreen: screenScope.modelData }
             ClipboardManager { targetScreen: screenScope.modelData }
             NotificationToast{ targetScreen: screenScope.modelData }

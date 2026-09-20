@@ -15,6 +15,7 @@ Rectangle {
     signal hovered()
 
     height: 52
+    width: ListView.view ? ListView.view.width : (parent ? parent.width : 616)
     radius: Theme.notchRadiusCard
 
     color: isSelected
@@ -54,7 +55,7 @@ Rectangle {
 
                 SymbolicIcon {
                     anchors.centerIn: parent
-                    size: 18
+                    iconSize: 18
                     source: (root.resultData && root.resultData.icon) ? root.resultData.icon : ""
                     iconColor: (root.resultData && (root.resultData.id === "shutdown" || root.resultData.id === "restart"))
                                ? Theme.colors.urgent

@@ -5,6 +5,8 @@ QtObject {
     id: root
 
     property bool appDrawerOpen: false
+    property bool launcherOpen: false
+    property string launcherQuery: ""
     property bool settingsAppOpen: false
     property bool sessionMenuOpen: false
     property bool lockScreenActive: false
@@ -37,6 +39,7 @@ QtObject {
     property bool timeCapsuleExpanded: false
 
     function openTimeCapsule() {
+        launcherOpen = false;
         appDrawerOpen = false;
         appStoreOpen = false;
         cheatSheetOpen = false;
@@ -60,6 +63,7 @@ QtObject {
     property string quickSettingsCapsuleView: "main"
 
     function openQuickSettingsCapsule(viewName) {
+        launcherOpen = false;
         appDrawerOpen = false;
         appStoreOpen = false;
         cheatSheetOpen = false;
@@ -74,6 +78,7 @@ QtObject {
 
     function toggleQuickSettingsCapsule(viewName) {
         if (!quickSettingsCapsuleExpanded) {
+            launcherOpen = false;
             appDrawerOpen = false;
             appStoreOpen = false;
             cheatSheetOpen = false;
@@ -118,7 +123,35 @@ QtObject {
         setupWizardOpen = false;
     }
 
+    // ── Search Launcher (Spotlight / Raycast) ───────────────────────────
+    function openLauncher(initialQuery) {
+        appDrawerOpen = false;
+        quickSettingsCapsuleExpanded = false;
+        timeCapsuleExpanded = false;
+        appStoreOpen = false;
+        cheatSheetOpen = false;
+        sessionMenuOpen = false;
+        clipboardOpen = false;
+        launcherQuery = (typeof initialQuery === "string") ? initialQuery : "";
+        launcherOpen = true;
+    }
+
+    function closeLauncher() {
+        launcherOpen = false;
+        launcherQuery = "";
+    }
+
+    function toggleLauncher() {
+        if (!launcherOpen) {
+            openLauncher();
+        } else {
+            closeLauncher();
+        }
+    }
+
+    // ── App Drawer ───────────────────────────────────────────────────────
     function openAppDrawer(initialQuery) {
+        launcherOpen = false;
         quickSettingsCapsuleExpanded = false;
         appStoreOpen = false;
         searchQuery = (typeof initialQuery === "string") ? initialQuery : "";
@@ -127,6 +160,7 @@ QtObject {
 
     function toggleAppDrawer() {
         if (!appDrawerOpen) {
+            launcherOpen = false;
             quickSettingsCapsuleExpanded = false;
             appStoreOpen = false;
             searchQuery = "";
@@ -143,6 +177,7 @@ QtObject {
     property bool clipboardOpen: false
 
     function openClipboard() {
+        launcherOpen = false;
         quickSettingsCapsuleExpanded = false;
         appDrawerOpen = false;
         appStoreOpen = false;
@@ -151,6 +186,7 @@ QtObject {
 
     function toggleClipboard() {
         if (!clipboardOpen) {
+            launcherOpen = false;
             quickSettingsCapsuleExpanded = false;
             appDrawerOpen = false;
             appStoreOpen = false;
@@ -305,6 +341,7 @@ QtObject {
     }
 
     function closeAll() {
+        launcherOpen = false;
         appDrawerOpen = false;
         quickSettingsCapsuleExpanded = false;
         sessionMenuOpen = false;
