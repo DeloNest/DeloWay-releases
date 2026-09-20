@@ -245,6 +245,9 @@ Item {
             if (cfg.setupCompleted !== undefined) {
                 root.setupCompleted = cfg.setupCompleted;
             }
+            const initialLang = (root.uiLanguage === "ar") ? "ar" : "en_US:en";
+            saveProcess.exec(["hyprctl", "keyword", "env", "LANGUAGE," + initialLang]);
+            saveProcess.exec(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + initialLang]);
             updateGtkThemes();
         } catch (err) {
             console.warn("[Deloway] Failed to parse config JSON: " + err);
@@ -570,6 +573,12 @@ Item {
         if (lang !== "en" && lang !== "ar") return;
         root.uiLanguage = lang;
         saveConfig();
+        const langVal = (lang === "ar") ? "ar" : "en_US:en";
+        saveProcess.exec(["hyprctl", "keyword", "env", "LANGUAGE," + langVal]);
+        saveProcess.exec(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + langVal]);
+        if (root.applySystemTheme) {
+            updateGtkThemes();
+        }
     }
 
     function setKeyboardLayouts(layouts) {
