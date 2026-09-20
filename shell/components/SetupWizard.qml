@@ -83,7 +83,9 @@ PanelWindow {
                     width: 44
                     height: 44
                     radius: Theme.radiusMedium
-                    color: Theme.colors.primary
+                    color: Theme.colors.surfaceElevated
+                    border.color: Theme.colors.borderHighlight
+                    border.width: 1
 
                     Grid {
                         anchors.centerIn: parent
@@ -93,7 +95,7 @@ PanelWindow {
 
                         Repeater {
                             model: 4
-                            Rectangle { width: 8; height: 8; radius: 1.5; color: Theme.textOnPrimary }
+                            Rectangle { width: 8; height: 8; radius: 1.5; color: Theme.colors.text }
                         }
                     }
                 }
@@ -131,7 +133,7 @@ PanelWindow {
                             width: (index === root.currentStep) ? 22 : 8
                             height: 8
                             radius: 4
-                            color: (index === root.currentStep) ? Theme.colors.accent : (index < root.currentStep ? Theme.colors.primary : Theme.colors.surfaceHover)
+                            color: (index === root.currentStep) ? (Theme.isDark ? "#ffffff" : "#0f172a") : (index < root.currentStep ? Theme.colors.borderHighlight : Theme.colors.surfaceHover)
                             Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                             Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                         }
@@ -199,7 +201,7 @@ PanelWindow {
                                     width: 38
                                     height: 28
                                     radius: Theme.radiusSmall
-                                    color: ConfigManager.uiLanguage === "en" ? Theme.colors.accent : Theme.colors.surfaceElevated
+                                    color: ConfigManager.uiLanguage === "en" ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceElevated
 
                                     Text {
                                         anchors.centerIn: parent
@@ -207,7 +209,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 12
                                         font.weight: Font.Bold
-                                        color: ConfigManager.uiLanguage === "en" ? Theme.textOnAccent : Theme.colors.text
+                                        color: ConfigManager.uiLanguage === "en" ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
                                     }
                                 }
 
@@ -250,7 +252,7 @@ PanelWindow {
                                     width: 38
                                     height: 28
                                     radius: Theme.radiusSmall
-                                    color: ConfigManager.uiLanguage === "ar" ? Theme.colors.accent : Theme.colors.surfaceElevated
+                                    color: ConfigManager.uiLanguage === "ar" ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceElevated
 
                                     Text {
                                         anchors.centerIn: parent
@@ -258,7 +260,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 14
                                         font.weight: Font.Bold
-                                        color: ConfigManager.uiLanguage === "ar" ? Theme.textOnAccent : Theme.colors.text
+                                        color: ConfigManager.uiLanguage === "ar" ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
                                     }
                                 }
 
@@ -331,7 +333,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     iconSize: 26
                                     source: "weather-clear-night-symbolic"
-                                    iconColor: ConfigManager.themeMode === "dark" ? Theme.colors.accent : Theme.colors.textSecondary
+                                    iconColor: ConfigManager.themeMode === "dark" ? Theme.colors.text : Theme.colors.textSecondary
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
@@ -361,7 +363,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     iconSize: 26
                                     source: "weather-sunny"
-                                    iconColor: ConfigManager.themeMode === "light" ? Theme.colors.accent : Theme.colors.textSecondary
+                                    iconColor: ConfigManager.themeMode === "light" ? Theme.colors.text : Theme.colors.textSecondary
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
@@ -371,47 +373,6 @@ PanelWindow {
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: Theme.colors.text
-                                }
-                            }
-                        }
-                    }
-
-                    Item { Layout.preferredHeight: Theme.space4 }
-
-                    Text {
-                        text: "Accent Color Palette"
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.typography.scaleBody.size
-                        font.weight: Font.DemiBold
-                        renderType: Theme.renderType
-                        color: Theme.colors.text
-                    }
-
-                    RowLayout {
-                        spacing: 12
-                        Repeater {
-                            model: Theme.accentPaletteOptions
-
-                            delegate: Rectangle {
-                                id: colorChip
-                                required property var modelData
-                                readonly property bool isSelected: ConfigManager.accentColor.toString().toLowerCase() === colorChip.modelData.color.toLowerCase()
-
-                                width: 38
-                                height: 38
-                                radius: 19
-                                color: colorChip.modelData.color
-                                border.color: isSelected ? Theme.textOnAccent : "transparent"
-                                border.width: isSelected ? 3 : 0
-                                scale: chipMouse.containsMouse ? 1.12 : 1.0
-                                Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-
-                                MouseArea {
-                                    id: chipMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: ConfigManager.setAccentColor(colorChip.modelData.color)
                                 }
                             }
                         }
@@ -476,7 +437,7 @@ PanelWindow {
                                     SymbolicIcon {
                                         iconSize: 28
                                         source: dCard.modelData.icon
-                                        iconColor: dCard.isSelected ? Theme.colors.accent : Theme.colors.textSecondary
+                                        iconColor: dCard.isSelected ? Theme.colors.text : Theme.colors.textSecondary
                                     }
 
                                     Text {
@@ -485,7 +446,7 @@ PanelWindow {
                                         font.pixelSize: 13
                                         font.weight: Font.DemiBold
                                         renderType: Theme.renderType
-                                        color: dCard.isSelected ? Theme.colors.accent : Theme.colors.text
+                                        color: dCard.isSelected ? Theme.colors.text : Theme.colors.textSecondary
                                     }
 
                                     Text {
@@ -569,7 +530,7 @@ PanelWindow {
                                     width: 44
                                     height: 24
                                     radius: 12
-                                    color: ConfigManager.dockAutoHide ? Theme.colors.primary : Theme.colors.surfaceHover
+                                    color: ConfigManager.dockAutoHide ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceHover
 
                                     Rectangle {
                                         x: ConfigManager.dockAutoHide ? 22 : 2
@@ -577,7 +538,7 @@ PanelWindow {
                                         width: 20
                                         height: 20
                                         radius: 10
-                                        color: Theme.textOnPrimary
+                                        color: ConfigManager.dockAutoHide ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
                                         Behavior on x { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                                     }
 
@@ -706,7 +667,7 @@ PanelWindow {
                                 Layout.preferredHeight: 96
                                 cardRadius: Theme.radiusMedium
                                 selected: appCard.isInstalling
-                                selectedBorderColor: Theme.colors.accent
+                                selectedBorderColor: Theme.isDark ? "#ffffff" : "#0f172a"
 
                                 ColumnLayout {
                                     anchors.fill: parent
@@ -795,7 +756,7 @@ PanelWindow {
                                             anchors.bottom: parent.bottom
                                             width: parent.width * Math.max(0.05, Math.min(1.0, appCard.progress))
                                             radius: 1.5
-                                            color: Theme.colors.accent
+                                            color: Theme.isDark ? "#ffffff" : "#0f172a"
                                             Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                                         }
                                     }
@@ -869,14 +830,14 @@ PanelWindow {
                                         font.pixelSize: 13
                                         font.weight: Font.DemiBold
                                         renderType: Theme.renderType
-                                        color: styleCard.isSelected ? Theme.colors.accent : Theme.colors.text
+                                        color: styleCard.isSelected ? Theme.colors.text : Theme.colors.textSecondary
                                     }
 
                                     Text {
                                         text: "Gaps: " + styleCard.modelData.gapsIn + "px / " + styleCard.modelData.gapsOut + "px  •  Corner: " + styleCard.modelData.rounding + "px"
                                         font.family: Theme.typography.terminalFont
                                         font.pixelSize: 10
-                                        color: Theme.colors.accent
+                                        color: Theme.colors.textSecondary
                                     }
 
                                     Text {
@@ -966,7 +927,7 @@ PanelWindow {
                                             font.family: Theme.typography.terminalFont
                                             font.pixelSize: Theme.typography.scaleCaption.size
                                             font.weight: Font.DemiBold
-                                            color: Theme.colors.accent
+                                            color: Theme.colors.text
                                         }
                                     }
 

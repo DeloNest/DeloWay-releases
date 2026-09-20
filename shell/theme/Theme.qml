@@ -28,9 +28,6 @@ Item {
                 root.setMode(ConfigManager.themeMode);
             }
         }
-        function onAccentColorChanged() {
-            root.setMode(root.mode);
-        }
     }
 
     // -------------------------------------------------------------------------
@@ -75,18 +72,6 @@ Item {
     readonly property int space32: 32
     readonly property int space48: 48
 
-    // -------------------------------------------------------------------------
-    // Canonical Accent Palette Options
-    // -------------------------------------------------------------------------
-    readonly property var accentPaletteOptions: [
-        { "name": "Slate Cyan", "color": "#0ea5e9" },
-        { "name": "DeloOS Blue", "color": "#0284c7" },
-        { "name": "Emerald Green", "color": "#10b981" },
-        { "name": "Violet", "color": "#8b5cf6" },
-        { "name": "Coral Pink", "color": "#f43f5e" },
-        { "name": "Amber Gold", "color": "#f59e0b" }
-    ]
-
     readonly property var darkPalette: ({
         "background": "#101318",
         "backgroundAlt": "#151922",
@@ -101,18 +86,18 @@ Item {
         "border": "#2a3142",
         "borderSubtle": "#202533",
         "borderHighlight": "#3d465c",
-        "primary": "#0ea5e9",
-        "primaryHover": "#38bdf8",
-        "primaryActive": "#0284c7",
-        "accent": "#0ea5e9",
-        "accentSecondary": "#38bdf8",
-        "accentText": "#ffffff",
+        "primary": "#ffffff",
+        "primaryHover": "#e2e8f0",
+        "primaryActive": "#cbd5e1",
+        "accent": "#ffffff",
+        "accentSecondary": "#94a3b8",
+        "accentText": "#000000",
         "text": "#ffffff",
         "textPrimary": "#ffffff",
         "textSecondary": "#9da7be",
         "textTertiary": "#626c82",
         "textMuted": "#626c82",
-        "activeIndicator": "#0ea5e9",
+        "activeIndicator": "#ffffff",
         "urgent": "#ef4444",
         "danger": "#ef4444",
         "warning": "#f59e0b",
@@ -137,18 +122,18 @@ Item {
         "border": "#d5dbe6",
         "borderSubtle": "#e5e9f0",
         "borderHighlight": "#b8c3d6",
-        "primary": "#0ea5e9",
-        "primaryHover": "#38bdf8",
-        "primaryActive": "#0284c7",
-        "accent": "#0ea5e9",
-        "accentSecondary": "#38bdf8",
+        "primary": "#0f172a",
+        "primaryHover": "#1e293b",
+        "primaryActive": "#334155",
+        "accent": "#0f172a",
+        "accentSecondary": "#475569",
         "accentText": "#ffffff",
         "text": "#111827",
         "textPrimary": "#111827",
         "textSecondary": "#4b5563",
         "textTertiary": "#9ca3af",
         "textMuted": "#9ca3af",
-        "activeIndicator": "#0ea5e9",
+        "activeIndicator": "#0f172a",
         "urgent": "#ef4444",
         "danger": "#ef4444",
         "warning": "#d97706",
@@ -174,11 +159,11 @@ Item {
     readonly property color border: colors.border || "#2a3142"
     readonly property color borderSubtle: colors.borderSubtle || "#202533"
     readonly property color borderHighlight: colors.borderHighlight || "#3d465c"
-    readonly property color accent: colors.accent || "#0ea5e9"
-    readonly property color primary: colors.primary || "#0ea5e9"
-    readonly property color textOnAccent: "#ffffff"
-    readonly property color textOnPrimary: "#ffffff"
-    readonly property color text: colors.text || "#ffffff"
+    readonly property color accent: colors.accent || (isDark ? "#ffffff" : "#0f172a")
+    readonly property color primary: colors.primary || (isDark ? "#ffffff" : "#0f172a")
+    readonly property color textOnAccent: isDark ? "#000000" : "#ffffff"
+    readonly property color textOnPrimary: isDark ? "#000000" : "#ffffff"
+    readonly property color text: colors.text || (isDark ? "#ffffff" : "#111827")
     readonly property color textPrimary: colors.textPrimary || text
     readonly property color textSecondary: colors.textSecondary || "#9da7be"
     readonly property color textTertiary: colors.textTertiary || "#626c82"
@@ -239,9 +224,9 @@ Item {
     readonly property color dockTooltipBorder: notchBorder
 
     // Semantic Component Tokens (Dark / Light adaptive)
-    readonly property color musicBadge: isDark ? "#fa243c" : "#e11d48"
-    readonly property color calendarPast: isDark ? "#3b82f6" : "#2563eb"
-    readonly property color calendarFuture: isDark ? "#ef5350" : "#dc2626"
+    readonly property color musicBadge: isDark ? "#ffffff" : "#0f172a"
+    readonly property color calendarPast: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
+    readonly property color calendarFuture: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
     readonly property color sliderTrack: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
     readonly property color sliderFill: isDark ? "#ffffff" : colors.textPrimary
     readonly property color sliderThumb: isDark ? "#ffffff" : colors.textPrimary
@@ -320,16 +305,8 @@ Item {
     function setMode(newMode) {
         if (newMode !== "dark" && newMode !== "light") return;
         root.mode = newMode;
-        const currentAccent = (root.colors && root.colors.accent) ? root.colors.accent : "#0ea5e9";
-        const currentPrimary = (root.colors && root.colors.primary) ? root.colors.primary : "#0ea5e9";
         const targetPalette = (newMode === "light") ? root.lightPalette : root.darkPalette;
-        const updated = Object.assign({}, targetPalette);
-        if (currentAccent) {
-            updated.accent = currentAccent;
-            updated.primary = currentPrimary;
-            updated.activeIndicator = currentAccent;
-        }
-        root.colors = updated;
+        root.colors = Object.assign({}, targetPalette);
     }
 
     property var radius: ({

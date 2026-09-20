@@ -240,7 +240,7 @@ PanelWindow {
                     height: parent.height
                     width: parent.width * root.progress
                     radius: 1
-                    color: Theme.colors.accent
+                    color: Theme.notchText
                 }
             }
         }

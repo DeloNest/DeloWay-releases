@@ -314,7 +314,7 @@ PanelWindow {
         if (usageFraction >= 0.70 || (tempC !== null && tempC !== undefined && tempC >= 75)) {
             return Theme.colors.warning;
         }
-        return Theme.colors.accent;
+        return Theme.notchText;
     }
 
     // ── Outer Shape & Notch Framing ───────────────────────────────────────
@@ -480,7 +480,7 @@ PanelWindow {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(11)
                         font.weight: Font.Medium
-                        color: Theme.colors.accent
+                        color: Theme.notchTextSecondary
                         renderType: Theme.renderType
                     }
                 }
@@ -561,7 +561,7 @@ PanelWindow {
                                 Layout.preferredWidth: 6
                                 Layout.preferredHeight: 6
                                 radius: 3
-                                color: Theme.colors.accent
+                                color: Theme.notchText
                             }
                         }
 
@@ -643,7 +643,7 @@ PanelWindow {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 24
                             radius: Theme.radiusSmall
-                            color: modelData.today ? Theme.colors.accent : (cellMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            color: modelData.today ? (Theme.isDark ? "#ffffff" : "#0f172a") : (cellMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
 
                             Text {
                                 anchors.centerIn: parent
@@ -651,7 +651,7 @@ PanelWindow {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: modelData.today ? Font.Bold : (modelData.current ? Font.Normal : Font.Light)
-                                color: modelData.today ? "#ffffff" : (modelData.current ? Theme.notchText : Theme.notchTextTertiary)
+                                color: modelData.today ? (Theme.isDark ? "#000000" : "#ffffff") : (modelData.current ? Theme.notchText : Theme.notchTextTertiary)
                                 opacity: modelData.today ? 1.0 : (modelData.current ? 1.0 : 0.35)
                                 renderType: Theme.renderType
                             }

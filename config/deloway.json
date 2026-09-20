@@ -1,7 +1,6 @@
 {
   "theme": {
     "mode": "dark",
-    "accentColor": "#0ea5e9",
     "wallpaper": "/home/waleed/Wallpapers/_ (1)_upscayl_4x_upscayl-standard-4x.png",
     "fontSizeScale": 1.25,
     "transparencyLevel": 3,
@@ -53,7 +52,7 @@
     "workspacesCount": 5
   },
   "windows": {
-    "activeBorder": "#0084ff",
+    "activeBorder": "#ffffff",
     "inactiveBorder": "#2a3142",
     "gapsIn": 6,
     "gapsOut": 10,

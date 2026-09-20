@@ -38,8 +38,8 @@ Rectangle {
            ? (input.activeFocus ? Theme.notchSurfaceActive : (mouseArea.containsMouse ? Theme.notchSurfaceHover : customBackground))
            : (input.activeFocus ? Theme.colors.surface : Theme.colors.surfaceElevated)
     border.color: customBorderColor !== null
-           ? (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Theme.notchBorderHighlight : customBorderColor))
-           : (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.accent) : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
+           ? (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.notchBorderHighlight) : (mouseArea.containsMouse ? Theme.notchBorderHighlight : customBorderColor))
+           : (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.borderHighlight) : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
     border.width: input.activeFocus ? 1.5 : 1
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -63,9 +63,7 @@ Rectangle {
             visible: root.showSearchIcon
             source: "edit-find-symbolic"
             iconSize: 14
-            iconColor: input.activeFocus
-                       ? (customFocusBorderColor !== null ? Theme.notchText : Theme.colors.accent)
-                       : Theme.notchTextTertiary
+            iconColor: input.activeFocus ? Theme.notchText : Theme.notchTextTertiary
             Layout.alignment: Qt.AlignVCenter
             Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
         }
@@ -79,8 +77,8 @@ Rectangle {
                 anchors.fill: parent
                 verticalAlignment: TextInput.AlignVCenter
                 color: Theme.colors.text
-                selectionColor: Theme.colors.accent
-                selectedTextColor: Theme.colors.accentText
+                selectionColor: Theme.isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.20)
+                selectedTextColor: Theme.colors.text
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference
                 font.pixelSize: root.fontPixelSize

@@ -102,13 +102,15 @@ WlSessionLock {
                                 width: 64
                                 height: 64
                                 radius: 32
-                                color: Theme.colors.accent
+                                color: Theme.colors.surfaceElevated
+                                border.color: Theme.colors.borderSubtle
+                                border.width: 1
 
                                 SymbolicIcon {
                                     anchors.centerIn: parent
                                     iconSize: 32
                                     source: "avatar-default-symbolic"
-                                    iconColor: Theme.textOnAccent
+                                    iconColor: Theme.colors.text
                                 }
                             }
                         }
@@ -132,7 +134,7 @@ WlSessionLock {
                         Layout.preferredHeight: 44
                         radius: Theme.radiusMedium
                         color: Theme.colors.surface
-                        border.color: pwdInput.activeFocus ? Theme.colors.accent : (errorMsg.text ? Theme.colors.urgent : Theme.hairline)
+                        border.color: pwdInput.activeFocus ? Theme.colors.borderHighlight : (errorMsg.text ? Theme.colors.urgent : Theme.hairline)
                         border.width: 1
 
                         RowLayout {

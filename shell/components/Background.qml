@@ -75,59 +75,6 @@ PanelWindow {
     }
 
     // ----------------------------------------------------
-    // 4. BOTTOM-LEFT DESKTOP PILL [⊞ Desktop]
-    // ----------------------------------------------------
-    Rectangle {
-        anchors.bottom: parent.bottom
-        anchors.left: I18n.isRTL ? undefined : parent.left
-        anchors.right: I18n.isRTL ? parent.right : undefined
-        anchors.margins: Theme.space16
-        implicitHeight: 28
-        implicitWidth: deskRow.implicitWidth + 18
-        radius: Theme.radiusSmall
-        color: deskPillMouse.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceElevated
-        border.color: deskPillMouse.containsMouse ? Theme.colors.accent : Theme.hairline
-        border.width: 1
-        z: 80
-
-        RowLayout {
-            id: deskRow
-            anchors.centerIn: parent
-            spacing: 6
-
-            SymbolicIcon {
-                iconSize: 13
-                source: "view-app-grid-symbolic"
-                iconColor: deskPillMouse.containsMouse ? Theme.colors.accent : Theme.colors.textSecondary
-            }
-
-            Text {
-                text: I18n.tr("desktop")
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
-                color: deskPillMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
-            }
-        }
-
-        MouseArea {
-            id: deskPillMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                // Quick cycle desktop modes: clean -> widgets -> traditional -> clean
-                if (ConfigManager.desktopMode === "clean") {
-                    ConfigManager.setDesktopMode("widgets");
-                } else if (ConfigManager.desktopMode === "widgets") {
-                    ConfigManager.setDesktopMode("traditional");
-                } else {
-                    ConfigManager.setDesktopMode("clean");
-                }
-            }
-        }
-    }
-
-    // ----------------------------------------------------
     // 5. BOTTOM-RIGHT BATTERY PILL [🔋 100% ⌄]
     // ----------------------------------------------------
     Rectangle {
@@ -141,7 +88,7 @@ PanelWindow {
         implicitWidth: battRow.implicitWidth + 18
         radius: Theme.radiusSmall
         color: battPillMouse.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceElevated
-        border.color: battPillMouse.containsMouse ? Theme.colors.accent : Theme.hairline
+        border.color: battPillMouse.containsMouse ? Theme.colors.borderHighlight : Theme.hairline
         border.width: 1
         z: 80
 
@@ -177,7 +124,7 @@ PanelWindow {
             anchors.fill: parent
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: ShellState.toggleQuickSettings()
+            onClicked: ShellState.toggleQuickSettingsCapsule("main")
         }
     }
 }

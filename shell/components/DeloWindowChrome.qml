@@ -50,7 +50,7 @@ Rectangle {
                     visible: root.iconSource !== ""
                     source: root.iconSource
                     iconSize: 16
-                    iconColor: Theme.colors.accent
+                    iconColor: Theme.colors.text
                     Layout.alignment: Qt.AlignVCenter
                 }
 

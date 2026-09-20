@@ -246,7 +246,7 @@ PanelWindow {
             font.pixelSize: Theme.typography.scaleTitle.size
             font.weight: Font.DemiBold
             renderType: Theme.renderType
-            color: Theme.colors.accent
+            color: Theme.colors.text
         }
 
         Repeater {

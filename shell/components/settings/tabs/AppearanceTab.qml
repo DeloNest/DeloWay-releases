@@ -193,7 +193,7 @@ Item {
                             height: 88
                             radius: Theme.notchRadiusCard
                             color: Theme.notchSurfaceElevated
-                            border.color: wpCard.isSelected ? Theme.colors.accent : (wpMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
+                            border.color: wpCard.isSelected ? (Theme.isDark ? "#ffffff" : "#0f172a") : (wpMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
                             border.width: wpCard.isSelected ? 2 : 1
                             clip: true
                             LayoutMirroring.enabled: I18n.isRTL
@@ -219,7 +219,7 @@ Item {
                                 width: 20
                                 height: 20
                                 radius: 10
-                                color: Theme.colors.accent
+                                color: Theme.isDark ? "#ffffff" : "#0f172a"
 
                                 Text {
                                     anchors.centerIn: parent
@@ -227,7 +227,7 @@ Item {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.Bold
-                                    color: "#ffffff"
+                                    color: Theme.isDark ? "#000000" : "#ffffff"
                                 }
                             }
 

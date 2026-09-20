@@ -225,7 +225,7 @@ Item {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: deskItemWrapper.isSelected ? Font.DemiBold : Font.Medium
-                                color: deskItemWrapper.isSelected ? Theme.accentText : Theme.text
+                                color: "#ffffff"
                                 renderType: Theme.renderType
                             }
                         }

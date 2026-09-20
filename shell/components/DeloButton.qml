@@ -49,9 +49,9 @@ Rectangle {
     // Text color
     readonly property color textColor: {
         if (root.variant === "primary") {
-            return Theme.colors.accentText;
+            return Theme.textOnPrimary;
         } else if (root.variant === "danger") {
-            return (mouseArea.containsMouse || root.variant === "danger") ? (mouseArea.containsMouse ? Theme.textOnPrimary : Theme.colors.urgent) : Theme.colors.urgent;
+            return mouseArea.containsMouse ? "#ffffff" : Theme.colors.urgent;
         } else {
             return mouseArea.containsMouse ? Theme.colors.text : Theme.colors.textSecondary;
         }

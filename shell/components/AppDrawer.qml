@@ -49,13 +49,13 @@ PanelWindow {
 
     readonly property color colorHover: Theme.notchSurfaceHover
     readonly property color colorHoverStrong: Theme.notchSurfaceActive
-    readonly property color colorSelected: Qt.rgba(Theme.colors.accent.r, Theme.colors.accent.g, Theme.colors.accent.b, 0.28)
+    readonly property color colorSelected: Theme.notchSurfaceActive
 
     readonly property color colorText: Theme.notchText
     readonly property color colorTextSecondary: Theme.notchTextSecondary
     readonly property color colorTextTertiary: Theme.notchTextTertiary
 
-    readonly property color colorAccent: Theme.colors.accent
+    readonly property color colorAccent: Theme.notchText
     readonly property color colorUrgent: Theme.colors.urgent
 
     // ─────────────────────────────────────────────────────────────────────
@@ -906,7 +906,7 @@ PanelWindow {
                                               ? root.colorHover
                                               : (isSelected ? root.colorSelected : "transparent"))
                                     border.color: isSelected && !resultMouse.containsMouse
-                                                  ? Qt.rgba(root.colorAccent.r, root.colorAccent.g, root.colorAccent.b, 0.16)
+                                                  ? Theme.notchBorderHighlight
                                                   : "transparent"
                                     border.width: 1
 

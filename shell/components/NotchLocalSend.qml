@@ -82,7 +82,7 @@ Item {
         SymbolicIcon {
             iconSize: 15
             source: "network-wireless-symbolic"
-            iconColor: LocalSendService.isRunning ? Theme.colors.success : Theme.colors.accent
+            iconColor: LocalSendService.isRunning ? Theme.colors.success : Theme.notchText
         }
 
         Text {
@@ -126,7 +126,7 @@ Item {
             implicitHeight: 8
             radius: 4
             color: root.stage === "sending"
-                   ? Theme.colors.accent
+                   ? Theme.notchText
                    : (root.stage === "sent" ? Theme.colors.success : (LocalSendService.isRunning ? Theme.colors.success : Theme.colors.textTertiary))
 
             SequentialAnimation on opacity {
@@ -179,7 +179,7 @@ Item {
                 anchors.fill: parent
                 ShapePath {
                     fillColor: dropArea.containsDrag ? Theme.notchSurfaceHover : "transparent"
-                    strokeColor: dropArea.containsDrag ? Theme.colors.accent : Theme.notchBorder
+                    strokeColor: dropArea.containsDrag ? Theme.notchBorderHighlight : Theme.notchBorder
                     strokeWidth: 1.5
                     strokeStyle: ShapePath.DashLine
                     dashPattern: [6, 4]
@@ -312,7 +312,7 @@ Item {
                                         text: "PDF"
                                         font.pixelSize: 7
                                         font.bold: true
-                                        color: Theme.accentText
+                                        color: Theme.textOnPrimary
                                     }
                                 }
                             }
@@ -413,7 +413,7 @@ Item {
                         implicitWidth: countTxt.implicitWidth + 10
                         implicitHeight: 16
                         radius: 8
-                        color: Qt.alpha(Theme.colors.accent, 0.15)
+                        color: Theme.notchSurfaceElevated
 
                         Text {
                             id: countTxt
@@ -422,7 +422,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 8
                             font.weight: Font.DemiBold
-                            color: Theme.colors.accent
+                            color: Theme.notchText
                         }
                     }
 
@@ -443,7 +443,7 @@ Item {
                             text: LocalSendService.isScanning ? I18n.tr("notch_scanning") : "🔄 " + I18n.tr("notch_scan_network")
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 8
-                            color: Theme.colors.accent
+                            color: Theme.colors.text
                         }
 
                         MouseArea {
@@ -477,7 +477,7 @@ Item {
                                 Layout.fillHeight: true
                                 radius: 8
                                 color: rdevHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                                border.color: rdevHover.containsMouse ? Theme.colors.accent : Theme.colors.borderSubtle
+                                border.color: rdevHover.containsMouse ? Theme.notchBorderHighlight : Theme.colors.borderSubtle
                                 border.width: 1
 
                                 ColumnLayout {
@@ -489,7 +489,7 @@ Item {
                                         source: (realDeviceCard.modelData.deviceType === "mobile" || realDeviceCard.modelData.deviceType === "phone")
                                                 ? "phone-symbolic"
                                                 : "computer-symbolic"
-                                        iconColor: rdevHover.containsMouse ? Theme.colors.accent : Theme.colors.text
+                                        iconColor: rdevHover.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
                                         Layout.alignment: Qt.AlignHCenter
                                     }
 
@@ -543,13 +543,13 @@ Item {
                                 implicitWidth: 36
                                 implicitHeight: 36
                                 radius: 18
-                                color: Qt.alpha(Theme.colors.accent, 0.12)
+                                color: Theme.notchSurfaceElevated
 
                                 SymbolicIcon {
                                     anchors.centerIn: parent
                                     iconSize: 18
                                     source: "network-wireless-symbolic"
-                                    iconColor: Theme.colors.accent
+                                    iconColor: Theme.notchText
                                 }
 
                                 SequentialAnimation on opacity {
@@ -631,7 +631,7 @@ Item {
                     SymbolicIcon {
                         iconSize: 18
                         source: "network-wireless-symbolic"
-                        iconColor: Theme.colors.accent
+                        iconColor: Theme.notchText
                     }
 
                     Text {
@@ -656,7 +656,7 @@ Item {
                         anchors.bottom: parent.bottom
                         width: parent.width * root.sendProgress
                         radius: 3
-                        color: Theme.colors.accent
+                        color: Theme.notchText
 
                         Behavior on width { NumberAnimation { duration: 60 } }
                     }
@@ -667,7 +667,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
-                    color: Theme.colors.accent
+                    color: Theme.notchText
                     Layout.alignment: Qt.AlignHCenter
                 }
             }

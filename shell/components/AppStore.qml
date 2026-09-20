@@ -203,7 +203,7 @@ PanelWindow {
                                             source: modelData.icon
                                             iconSize: 16
                                             iconColor: (storeCard.activeNav === modelData.id && !storeCard.selectedApp)
-                                                       ? Theme.colors.primary
+                                                       ? Theme.colors.text
                                                        : Theme.colors.textSecondary
                                         }
 
@@ -260,7 +260,7 @@ PanelWindow {
                                     SymbolicIcon {
                                         source: "user-home-symbolic"
                                         iconSize: 15
-                                        iconColor: (storeCard.activeNav === "installed") ? Theme.colors.primary : Theme.colors.textSecondary
+                                        iconColor: (storeCard.activeNav === "installed") ? Theme.colors.text : Theme.colors.textSecondary
                                     }
 
                                     Text {
@@ -322,7 +322,7 @@ PanelWindow {
                                     SymbolicIcon {
                                         source: "system-reboot-symbolic"
                                         iconSize: 15
-                                        iconColor: (storeCard.activeNav === "updates") ? Theme.colors.primary : Theme.colors.textSecondary
+                                        iconColor: (storeCard.activeNav === "updates") ? Theme.colors.text : Theme.colors.textSecondary
                                     }
 
                                     Text {
@@ -439,7 +439,7 @@ PanelWindow {
                                             text: storeCard.selectedApp ? storeCard.selectedApp.category : ""
                                             font.family: Theme.typography.fontFamily
                                             font.pixelSize: Theme.typography.scaleCaption.size
-                                            color: Theme.colors.primary
+                                            color: Theme.colors.textSecondary
                                             font.weight: Font.DemiBold
                                         }
                                         Text { text: "•"; color: Theme.colors.textSecondary }
@@ -730,7 +730,7 @@ PanelWindow {
                                         surfaceColor: Theme.colors.surface
                                         surfaceHoverColor: Theme.colors.surfaceVariant
                                         borderColor: Theme.colors.border
-                                        borderHoverColor: Theme.colors.primary
+                                        borderHoverColor: Theme.colors.borderHighlight
                                         hoverable: true
                                         onClicked: storeCard.selectedApp = modelData
 
@@ -782,7 +782,7 @@ PanelWindow {
                                                     Text {
                                                         text: modelData.category
                                                         font.pixelSize: 11
-                                                        color: Theme.colors.primary
+                                                        color: Theme.colors.textSecondary
                                                         font.weight: Font.DemiBold
                                                     }
                                                 }
@@ -809,7 +809,7 @@ PanelWindow {
                                                     anchors.centerIn: parent
                                                     source: ApplicationManager.isPinned(modelData.id) ? "apps-symbolic" : "view-app-grid-symbolic"
                                                     iconSize: 16
-                                                    iconColor: ApplicationManager.isPinned(modelData.id) ? Theme.colors.primary : Theme.colors.textSecondary
+                                                    iconColor: ApplicationManager.isPinned(modelData.id) ? Theme.colors.text : Theme.colors.textSecondary
                                                 }
 
                                                 MouseArea {

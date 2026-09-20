@@ -315,7 +315,7 @@ PanelWindow {
                 source: tileRoot.icon
                 iconColor: tileRoot.isDanger
                            ? Theme.colors.urgent
-                           : (tileMouse.containsMouse ? Theme.colors.primary : Theme.colors.text)
+                           : Theme.colors.text
             }
 
             Text {

@@ -457,7 +457,7 @@ PanelWindow {
                                     contentItem: Rectangle {
                                         implicitWidth: 6
                                         radius: 3
-                                        color: vBar.pressed ? Theme.colors.accent : (vBar.hovered ? Theme.notchBorderHighlight : Theme.notchBorder)
+                                        color: vBar.pressed ? Theme.notchText : (vBar.hovered ? Theme.notchBorderHighlight : Theme.notchBorder)
                                         opacity: (vBar.active || vBar.hovered) ? 0.8 : 0.4
                                         Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }

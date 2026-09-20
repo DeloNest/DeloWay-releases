@@ -72,7 +72,7 @@ Item {
                 SymbolicIcon {
                     source: "preferences-system-symbolic"
                     iconSize: 13
-                    iconColor: Theme.colors.primary
+                    iconColor: Theme.colors.textSecondary
                 }
 
                 Text {
@@ -80,7 +80,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
-                    color: Theme.colors.primary
+                    color: Theme.colors.textSecondary
                 }
 
                 Item { Layout.fillWidth: true }
@@ -287,7 +287,7 @@ Item {
                 SymbolicIcon {
                     source: "utilities-system-monitor-symbolic"
                     iconSize: 13
-                    iconColor: Theme.colors.accent
+                    iconColor: Theme.colors.textSecondary
                 }
 
                 Text {
@@ -295,7 +295,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
-                    color: Theme.colors.accent
+                    color: Theme.colors.textSecondary
                 }
 
                 Item { Layout.fillWidth: true }
@@ -329,7 +329,7 @@ Item {
                         width: parent.width * SystemMonitor.cpuUsage
                         height: parent.height
                         radius: 3
-                        color: Theme.colors.accent
+                        color: Theme.colors.text
                     }
                 }
             }
@@ -454,7 +454,7 @@ Item {
                 Layout.fillHeight: true
                 radius: Theme.radiusSmall
                 color: Theme.colors.surfaceVariant
-                border.color: noteArea.activeFocus ? Theme.colors.primary : Theme.colors.borderSubtle
+                border.color: noteArea.activeFocus ? Theme.colors.borderHighlight : Theme.colors.borderSubtle
                 border.width: 1
 
                 ScrollView {

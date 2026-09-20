@@ -19,9 +19,9 @@ Item {
         return userConfigDir + "/deloway.json";
     }
 
-    // Theme Settings
+    // Theme Settings (Strict Monochrome)
     property string themeMode: "dark"
-    property color accentColor: "#0ea5e9"
+    readonly property color accentColor: Theme.colors.accent
     property string wallpaper: projectDir + "/assets/wallpaper.jpg"
     property real fontSizeScale: 1.0
     property int transparencyLevel: 85
@@ -66,7 +66,7 @@ Item {
     property bool timeCapsuleShowTemps: true
 
     // Windows & Hyprland Settings
-    property color activeBorder: "#0084ff"
+    property color activeBorder: "#ffffff"
     property color inactiveBorder: "#2a3142"
     property int windowGapsIn: 5
     property int windowGapsOut: 10
@@ -160,11 +160,7 @@ Item {
                     root.themeMode = cfg.theme.mode;
                     Theme.setMode(cfg.theme.mode);
                 }
-                if (cfg.theme.accentColor) {
-                    root.accentColor = cfg.theme.accentColor;
-                    Theme.colors.accent = cfg.theme.accentColor;
-                    Theme.colors.primary = cfg.theme.accentColor;
-                }
+                // Legacy accentColor compatibility: safely ignored in strict monochrome identity
                 if (cfg.theme.wallpaper !== undefined) root.wallpaper = cfg.theme.wallpaper;
                 if (cfg.theme.fontSizeScale !== undefined) root.fontSizeScale = cfg.theme.fontSizeScale;
                 if (cfg.theme.transparencyLevel !== undefined) root.transparencyLevel = cfg.theme.transparencyLevel;
@@ -204,7 +200,14 @@ Item {
                 if (cfg.topBar.timeCapsuleShowTemps !== undefined) root.timeCapsuleShowTemps = cfg.topBar.timeCapsuleShowTemps;
             }
             if (cfg.windows) {
-                if (cfg.windows.activeBorder) root.activeBorder = cfg.windows.activeBorder;
+                if (cfg.windows.activeBorder) {
+                    const ab = cfg.windows.activeBorder.toString().toLowerCase();
+                    if (ab === "#0084ff" || ab === "#0ea5e9" || ab === "#8b5cf6") {
+                        root.activeBorder = "#ffffff";
+                    } else {
+                        root.activeBorder = cfg.windows.activeBorder;
+                    }
+                }
                 if (cfg.windows.inactiveBorder) root.inactiveBorder = cfg.windows.inactiveBorder;
                 if (cfg.windows.gapsIn !== undefined) root.windowGapsIn = cfg.windows.gapsIn;
                 if (cfg.windows.gapsOut !== undefined) root.windowGapsOut = cfg.windows.gapsOut;
@@ -243,16 +246,12 @@ Item {
 
     function writeThemeJson() {
         const themeJsonPath = root.projectDir + "/shell/theme/theme.json";
-        const accentStr = root.accentColor.toString();
-        const darkPal = Object.assign({}, Theme.darkPalette, { "accent": accentStr, "primary": accentStr });
-        const lightPal = Object.assign({}, Theme.lightPalette, { "accent": accentStr, "primary": accentStr });
         const themeJsonContent = JSON.stringify({
             "theme": root.themeMode === "dark" ? "deloos-dark" : "deloos-light",
             "mode": root.themeMode,
-            "accent": accentStr,
             "colors": Theme.colors,
-            "dark": darkPal,
-            "light": lightPal,
+            "dark": Theme.darkPalette,
+            "light": Theme.lightPalette,
             "radius": Theme.radius,
             "spacing": Theme.spacing,
             "typography": Theme.typography
@@ -273,17 +272,7 @@ Item {
     }
 
     function setAccentColor(col) {
-        root.accentColor = col;
-        Theme.colors.accent = col;
-        Theme.colors.primary = col;
-        saveConfig();
-        // Update active border in Hyprland
-        const hex = col.toString().replace("#", "");
-        Hyprland.dispatch("exec hyprctl keyword general:col.active_border 'rgb(" + hex + ")'");
-        writeThemeJson();
-        if (root.applySystemTheme) {
-            updateGtkThemes();
-        }
+        // Deprecated: DeloWay is strictly monochrome (Dark/Light only)
     }
 
     function setApplySystemTheme(val) {
@@ -571,7 +560,6 @@ Item {
         const configData = {
             theme: {
                 mode: root.themeMode,
-                accentColor: root.accentColor.toString(),
                 wallpaper: root.wallpaper,
                 fontSizeScale: root.fontSizeScale,
                 transparencyLevel: root.transparencyLevel,

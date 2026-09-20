@@ -178,7 +178,7 @@ Item {
             SymbolicIcon {
                 iconSize: 15
                 source: root.activeNotification && root.activeNotification.appIcon ? root.activeNotification.appIcon : "dialog-information"
-                iconColor: Theme.colors.accent
+                iconColor: Theme.notchText
             }
 
             Text {
@@ -375,7 +375,7 @@ Item {
             anchors.left: parent.left
             width: parent.width * root.notifRemainingRatio
             height: 1.5
-            color: Theme.colors.accent
+            color: Theme.notchText
             visible: root.viewMode === "notification"
         }
     }
@@ -398,15 +398,15 @@ Item {
                 implicitWidth: 46
                 implicitHeight: 46
                 radius: 12
-                color: Qt.alpha(Theme.colors.accent, 0.15)
-                border.color: Qt.alpha(Theme.colors.accent, 0.4)
+                color: Theme.notchSurfaceElevated
+                border.color: Theme.notchBorderHighlight
                 border.width: 1
 
                 SymbolicIcon {
                     anchors.centerIn: parent
                     iconSize: 24
                     source: root.activeNotification && root.activeNotification.appIcon ? root.activeNotification.appIcon : "dialog-information"
-                    iconColor: Theme.colors.accent
+                    iconColor: Theme.notchText
                 }
             }
 
@@ -421,7 +421,7 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(11)
                         font.weight: Font.DemiBold
-                        color: Theme.colors.accent
+                        color: Theme.notchText
                     }
                     Text {
                         text: "• " + (root.activeNotification ? root.activeNotification.timeStr : "")
@@ -549,7 +549,7 @@ Item {
                                 text: "♫"
                                 font.pixelSize: Theme.fontSize(11)
                                 font.bold: true
-                                color: Theme.accentText
+                                color: Theme.textOnPrimary
                             }
                         }
                     }
@@ -706,7 +706,7 @@ Item {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Bold
-                                color: Theme.colors.accent
+                                color: Theme.notchText
                             }
                             Text {
                                 text: Qt.formatTime(root.currentTime, ":ss")
@@ -818,7 +818,7 @@ Item {
             anchors.left: parent.left
             width: parent.width * root.notifRemainingRatio
             height: 2
-            color: Theme.colors.accent
+            color: Theme.notchText
             visible: root.viewMode === "notification"
         }
     }

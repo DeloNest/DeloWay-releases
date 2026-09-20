@@ -178,7 +178,7 @@ Item {
                                         anchors.centerIn: parent
                                         iconSize: Math.round(miniDock.previewIconSz * 0.55)
                                         source: "view-app-grid"
-                                        iconColor: Theme.colors.accent
+                                        iconColor: Theme.notchText
                                     }
                                 }
                             }

@@ -6,9 +6,9 @@ Item {
     id: root
 
     property bool checked: false
-    property color onColor: Theme.colors.accent
+    property color onColor: Theme.isDark ? "#ffffff" : "#0f172a"
     property color offColor: Theme.notchSurfaceElevated
-    property color knobColor: "#ffffff"
+    property color knobColor: root.checked ? (Theme.isDark ? "#000000" : "#ffffff") : (Theme.isDark ? "#ffffff" : "#64748b")
     signal toggled(bool checked)
 
     implicitWidth: 44
@@ -67,8 +67,7 @@ Item {
             enabled: root.enabled
             cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
             onClicked: {
-                root.checked = !root.checked;
-                root.toggled(root.checked);
+                root.toggled(!root.checked);
             }
         }
     }

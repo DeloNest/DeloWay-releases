@@ -109,7 +109,7 @@ PanelWindow {
                             text: "󰆞"
                             font.pixelSize: 17
                             font.family: Theme.typography.fontFamily
-                            color: Theme.colors.accent
+                            color: Theme.colors.text
                             renderType: Theme.renderType
                         }
 
@@ -155,7 +155,7 @@ PanelWindow {
                             text: "󰖲"
                             font.pixelSize: 17
                             font.family: Theme.typography.fontFamily
-                            color: Theme.colors.accent
+                            color: Theme.colors.text
                             renderType: Theme.renderType
                         }
 
@@ -201,7 +201,7 @@ PanelWindow {
                             text: "󰍹"
                             font.pixelSize: 17
                             font.family: Theme.typography.fontFamily
-                            color: Theme.colors.accent
+                            color: Theme.colors.text
                             renderType: Theme.renderType
                         }
 
