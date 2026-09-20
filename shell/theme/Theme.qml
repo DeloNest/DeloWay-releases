@@ -230,19 +230,19 @@ Item {
     readonly property color sliderFill: isDark ? "#ffffff" : colors.textPrimary
     readonly property color sliderThumb: isDark ? "#ffffff" : colors.textPrimary
 
-    // Quick Settings Capsule Tokens
-    readonly property int qsTileHeight: 64
-    readonly property int qsTileRadius: 32
-    readonly property int qsIconCircleSize: 40
-    readonly property int qsIconCircleRadius: 20
-    readonly property int qsRoundButtonSize: 64
-    readonly property int qsRoundButtonRadius: 32
-    readonly property int qsSliderCardHeight: 84
-    readonly property int qsSliderTrackHeight: 32
-    readonly property int qsSliderTrackRadius: 16
-    readonly property int qsCardRadius: 20
-    readonly property int qsSpacing: 10
-    readonly property int qsPadding: 16
+    // Quick Settings Capsule Tokens (4px unit grid, refined scale)
+    readonly property int qsTileHeight: 52
+    readonly property int qsTileRadius: 16
+    readonly property int qsIconCircleSize: 36
+    readonly property int qsIconCircleRadius: 18
+    readonly property int qsRoundButtonSize: 36
+    readonly property int qsRoundButtonRadius: 18
+    readonly property int qsSliderCardHeight: 68
+    readonly property int qsSliderTrackHeight: 28
+    readonly property int qsSliderTrackRadius: 14
+    readonly property int qsCardRadius: 16
+    readonly property int qsSpacing: 8
+    readonly property int qsPadding: 12
 
     readonly property color qsTileBackground: isDark ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.04)
     readonly property color qsTileBackgroundHover: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
@@ -250,6 +250,7 @@ Item {
     readonly property color qsTileBorder: isDark ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color qsTileIconCircleInactive: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
     readonly property color qsTileIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.60)
+    readonly property color qsTileActive: isDark ? "#ffffff" : colors.textPrimary
     readonly property color qsTileIconActive: isDark ? "#000000" : "#ffffff"
     readonly property color qsSliderTrack: notchSurfaceElevated
     readonly property color qsSliderTrackHover: notchSurfaceHover

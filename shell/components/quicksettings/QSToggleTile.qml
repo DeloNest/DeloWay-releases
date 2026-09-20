@@ -13,7 +13,7 @@ Rectangle {
     property bool active: false
     property bool connected: false
     property bool hasChevron: false
-    property color activeColor: Theme.accent
+    property color activeColor: Theme.qsTileActive
     property color activeIconColor: Theme.qsTileIconActive
     property bool toggleEnabled: true
 

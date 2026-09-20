@@ -12,7 +12,7 @@ Rectangle {
     property string text: ""
     property real iconSize: 20
     property bool active: false
-    property color activeColor: Theme.accent
+    property color activeColor: Theme.qsTileActive
     property color activeIconColor: Theme.qsTileIconActive
     property color normalColor: Theme.qsTileBackground
     property color hoverColor: Theme.qsTileBackgroundHover

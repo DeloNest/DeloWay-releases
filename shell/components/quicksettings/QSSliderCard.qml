@@ -12,7 +12,7 @@ Rectangle {
     property bool iconClickable: false
     property real value: 0.0
     property bool isMuted: false
-    property bool hasSubpage: true
+    property bool hasSubpage: false
 
     signal sliderMoved(real newValue)
     signal sliderReleased()
@@ -75,7 +75,7 @@ Rectangle {
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(11)
                 font.weight: Font.DemiBold
-                color: root.isMuted ? Theme.colors.danger : Theme.accent
+                color: root.isMuted ? Theme.colors.danger : Theme.notchText
                 opacity: (sliderMa.pressed || sliderMa.containsMouse) ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                 renderType: Theme.renderType
