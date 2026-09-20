@@ -1,4 +1,4 @@
-# NEXT ACTION: None - All Final Polish Phases Completed (P1..P7)
+# NEXT ACTION: Phase P8 (Capsule Behavior) — Independent Expand/Collapse, TimeCapsule Hover Removal, and QS Icons Unification
 
 # DeloWay Shell — خارطة اللمسات النهائية (Final Polish Roadmap)
 
@@ -299,6 +299,82 @@
     - *قبل*: Thunar بخلفية رمادية `#101318` مع عناصر زرقاء متباينة، وتحديد أزرق، وعدم استجابة لتغيير مقياس الخط أو المظهر الفاتح إلا بعد إعادة تسجيل الدخول اليدوي.
     - *بعد*: استجابة فورية (<150ms) لتوليد CSS، وتطبيق مظهر OLED أسود نقي 100% بدون أي accents ملونة، مع اجتياز فحص `check-theme.py` لـ 64 ملفاً بنجاح وامتثال 100%.
   - **العوائق والمخاطر**: سلوك D-Bus daemon الخاص بـ Thunar؛ تم حله بالتحقق من النوافذ النشطة وإعادة تشغيله بأمان عند عدم وجود نوافذ مفتوحة.
+
+
+---
+
+- [ ] **P8: سلوك الكبسولات (Capsule Behavior: Independent Expand/Collapse, TimeCapsule Hover Removal, QS Icons)**
+  - **الهدف**:
+    1. تمكين التوسيع والتصغير الحر والمستقل لكل كبسولة (Notch, QuickSettings, TimeCapsule) بحيث يمكن فتح أكثر من كبسولة معاً وإغلاق أي واحدة منفردة بأي ترتيب، مع تمرير النقرات للنوافذ تحت المناطق الشفافة ودون سرقة التركيز من التطبيقات.
+    2. إزالة كافة تأثيرات الـ Hover من كبسولة الوقت (`TimeCapsule.qml`) وجعل التفاعل مبنياً على النقر فقط.
+    3. مراجعة وتوحيد أيقونات كبسولة الإعدادات السريعة (عائلة موحدة، مقاسات 20/24px، محاذاة 4px، مناطق لمس >= 40px، وانعكاس RTL للأيقونات الاتجاهية، ووضوح على المقاييس الكسرية).
+  - **معايير القبول**:
+    - إمكانية فتح الكبسولات الثلاث معاً وإغلاقها بأي ترتيب.
+    - عدم وجود أي طبقة شفافة تعترض أو تلتقط النقرات خارج مستطيلات الكبسولات (Input Mask يغطي مستطيل الكبسولة فقط).
+    - عدم الإغلاق التلقائي عند النقر خارج الكبسولة؛ الإغلاق بزر/ترس الكبسولة وبمفتاح `Escape` للكبسولة التي تمتلك التركيز.
+    - تركيز لوحة المفاتيح `OnDemand` حصراً؛ لا `HyprlandFocusGrab` حصري يسرق التركيز من التطبيقات.
+    - حركة فيزيائية مستقلة لكل كبسولة بمحرك P1 الموحد (`expandProgress` من 0 إلى 1 خلال 200-250ms بـ `OutCubic`) بدون تعليق أو تعطيل للكبسولات الأخرى.
+    - خلو كبسولة الساعة تماماً من تأثيرات الـ Hover.
+    - هوية أيقونات متسقة 100% في الإعدادات السريعة وانعكاس دقيق في RTL.
+  - **نتائج التشخيص الفني (Empirical Diagnosis)**:
+    1. *الحالة المشتركة في ShellState*: دوال `openTimeCapsule` و `openQuickSettingsCapsule` و `openSmartNotch` كانت تقوم بإغلاق الكبسولات الأخرى قسرياً (`timeCapsuleExpanded = false`, `quickSettingsCapsuleExpanded = false`, `smartNotchExpanded = false`).
+    2. *التقاط النقرات والتركيز الحصري*: `QuickSettingsCapsule.qml` و `TimeCapsule.qml` كانتا تستخدمان `HyprlandFocusGrab` الذي يستحوذ على كامل إدخال المؤشر ولوحة المفاتيح، مما يغلق الكبسولة فوراً عند النقر على أي كبسولة أخرى أو نافذة تطبيق، ويسرق التركيز من تطبيقات المستخدم.
+    3. *قناع الإدخال Input Mask*: `TimeCapsule.qml` و `Notch.qml` كانتا تفتقران إلى `mask: Region` مع نافذة ثابتة، مما يتسبب في إعادة تخصيص أسطح Wayland وقفزات في هوامش `margins.top`.
+    4. *تأثيرات الـ Hover في TimeCapsule*: وجود `hoverEnabled: true` و `containsMouse` في `compactMa` يغير لون الخلفية إلى `notchSurfaceHover`.
+    5. *الأيقونات في QuickSettings*: جرد كافة الأيقونات والتأكد من استخدام `SymbolicIcon` بنمط الخط/التعبئة الموحد، ومراجعة انعكاس الأسهم في RTL وتحديد المقاسات بـ 20/24px ومنطقة اللمس >= 40px.
+  - **الملفات المعنية**:
+    - `shell/services/ShellState.qml`
+    - `shell/components/QuickSettingsCapsule.qml`
+    - `shell/components/TimeCapsule.qml`
+    - `shell/components/Notch.qml`
+    - `shell/components/SymbolicIcon.qml`
+    - `shell/components/quicksettings/QSToggleTile.qml`
+    - `shell/components/quicksettings/QSRoundButton.qml`
+    - `shell/components/quicksettings/QSSliderCard.qml`
+    - `shell/components/quicksettings/QSPageHeader.qml`
+  - **القرارات المتخذة**:
+    - فصل حالات التوسيع بالكامل في `ShellState.qml`: إزالة سطور الإغلاق التبادلي بين الكبسولات، لتصبح كل كبسولة مستقلة تماماً.
+    - إزالة `HyprlandFocusGrab` بالكامل من كافة الكبسولات لمنع سرقة التركيز ومنع الإغلاق القسري عند النقر خارجاً، والاعتماد على `WlrKeyboardFocus.OnDemand` مع `Shortcut { sequence: "Escape" }` وأزرار التبديل/الترس للإغلاق.
+    - تطبيق محرك الحركة الفيزيائي الموحد P1 (`expandProgress` من 0 إلى 1 بـ `OutCubic` و 220ms) على `TimeCapsule.qml` و `Notch.qml` مع قناع إدخال `mask: Region` دقيق يمرر كافة النقرات الخارجية للنوافذ تحتها.
+    - إزالة كافة خصائص وتأثيرات الـ Hover من وضع الطي في `TimeCapsule.qml`.
+    - توحيد أيقونات الإعدادات السريعة على شبكة 4px بمقاسات 18/20/24px ومناطق لمس >= 40px، وضمان انعكاس الأيقونات الاتجاهية تلقائياً في RTL عبر `SymbolicIcon.qml` و `QSPageHeader.qml`.
+  - **أرقام الأداء (قبل / بعد)**:
+    - *قبل*: استحواذ حصري يمنع فتح كبسولتين معاً، وإغلاق فوري عند النقر بالخارج، وإعادة تخصيص أسطح Wayland لـ TimeCapsule و Notch أثناء الحركة.
+    - *بعد*: فتح الكبسولات الثلاث معاً بكل حرية، صفر تأثير على تركيز النوافذ النشطة، نقرات تمر بسلاسة تحت المناطق الشفافة، وحركة ناعمة 220ms على 165Hz.
+  - **العوائق والمخاطر**: إدارة المساحة وتفادي تداخل الكبسولات على الشاشات ذات الدقة المنخفضة؛ تم ضبط العرض الأقصى وحدود الهوامش لضمان عدم التصادم.
+
+---
+
+- [ ] **P9: اللغة على مستوى النظام (System-wide Language & Application Localization)**
+  - **الهدف**: عند اختيار اللغة العربية في DeloWay (سواء من معالج الإعداد أو الإعدادات > عام) تُطبَّق على النظام وأكبر عدد ممكن من التطبيقات (المتصفح، مدير الملفات Thunar، تطبيقات GTK3/4، Qt، Electron، و Flatpak) تلقائياً ودون كسر سكربتات ومعالجات الشل الداخلية، وفق نهج Best-Effort مع تقرير تدقيق شامل للحزم والتغطية.
+  - **معايير القبول**:
+    - سكربت تطبيقي مستقل وآمن `scripts/deloway-locale-apply.py` يدعم `--dry-run` و `--revert` ويكتب ملفات المستخدم حصراً (بدون sudo) مع وسم `# managed by deloway` ونسخة احتياطية بطابع زمني.
+    - كتابة متغيرات البيئة في `~/.config/environment.d/90-deloway-locale.conf` (`LANG` و `LANGUAGE=ar:en`) دون فرض `LC_ALL` لحماية البرامج من الانهيار، مع الحفاظ على الأرقام الغربية (0-9) افتراضياً.
+    - ضبط لغة Firefox عبر `user.js` في الملف الشخصي المستخرج من `profiles.ini` (`intl.locale.requested` و `intl.accept_languages`) دون لمس `prefs.js`.
+    - ضبط لغة Flatpak عبر `flatpak config --user --set languages "ar;en"` في حال توفره.
+    - حماية كافة معالجات الشل الداخلية (`Process` في QML وسكربتات بايثون) التي تقرأ مخرجات نصية (`nmcli`, `upower`, `df` وغيرها) بفرض `LC_ALL=C` صراحة لمنع انكسار التحليل النصي.
+    - إنشاء سكربت فحص وتغطية `scripts/deloway-lang-audit.sh` يولد تقريراً تفصيلياً للتطبيقات وحزم الترجمة في `docs/LANGUAGE-COVERAGE.md`.
+    - إظهار إشعار توجيهي للمستخدم عند تغيير اللغة في الشل ينبهه إلى الحاجة لإعادة تسجيل الدخول لتطبيق اللغة على التطبيقات الخارجية.
+    - توثيق كافة الخطوات اليدوية (توليد الـ locale في `/etc/locale.gen`، وضبط لوحة المفاتيح `us,ar` في `hyprland.conf`).
+  - **نتائج التشخيص الفني (Empirical Diagnosis)**:
+    1. *التوزيعة والبيئة*: فحص `/etc/os-release` و `systemctl --user show-environment` لمعرفة آلية تحميل المتغيرات.
+    2. *اللغة الحالية والـ Locales*: فحص `localectl status` و `locale -a | grep -i ar_`.
+    3. *الخطوط العربية*: فحص توفر خطوط مثل Noto Sans Arabic أو Cairo عبر `fc-list :lang=ar`.
+    4. *التطبيقات وحزم اللغات*: فحص `/usr/share/locale/ar/LC_MESSAGES/` وحزم `firefox-i18n-ar` إلخ.
+    5. *معالجات الشل المعرضة للانكسار*: جرد كافة استدعاءات `Process` التي تحلل مخرجات أوامر وتأمينها بـ `LC_ALL=C`.
+  - **الملفات المعنية**:
+    - `scripts/deloway-locale-apply.py` (New)
+    - `scripts/deloway-lang-audit.sh` (New)
+    - `docs/LANGUAGE-COVERAGE.md` (New)
+    - `shell/services/ConfigManager.qml`
+    - `shell/services/I18n.qml`
+    - `docs/FINAL-POLISH.md`
+    - `STATUS.md`
+  - **القرارات المتخذة**:
+    - اعتماد `environment.d` كآلية قياسية لمتغيرات بيئة المستخدم في جلسات systemd/Wayland.
+    - عزل سكربتات التحليل بـ `LC_ALL=C` للحفاظ على استقرار استخراج بيانات Wi-Fi، الصوت، والبطارية.
+    - إبقاء الأرقام الغربية (0-9) كخيار افتراضي لمنع المشاكل في أسماء الملفات والحقول الرقمية.
+  - **العوائق والمخاطر**: بعض التطبيقات تتطلب توليد locale النظام عبر `sudo locale-gen`؛ يتم تدوين ذلك كخطوة يدوية واضحة للمستخدم دون تنفيذ أي أوامر بصلاحيات الجذر.
 
 ---
 

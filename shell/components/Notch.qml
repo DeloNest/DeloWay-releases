@@ -18,7 +18,7 @@ PanelWindow {
     }
 
     margins {
-        top: root.isExpanded ? 0 : 10
+        top: 0
     }
 
     // Dynamic width & height with smooth physics animations
@@ -36,28 +36,58 @@ PanelWindow {
     readonly property real expandedHeight: 176
     readonly property real earRadius: 18
 
-    property real currentWidth: isExpanded ? expandedWidth : compactWidth
-    property real currentHeight: isExpanded ? expandedHeight : compactHeight
+    // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
+    readonly property real fixedWindowWidth: 640
+    readonly property real fixedWindowHeight: 200
 
-    onCurrentWidthChanged: ShellState.smartNotchCurrentWidth = currentWidth
-    Component.onCompleted: ShellState.smartNotchCurrentWidth = currentWidth
-
-    Behavior on currentWidth { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-    Behavior on currentHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-
-    implicitWidth: Math.round(currentWidth + (isExpanded ? earRadius * 2 : 0))
-    implicitHeight: Math.round(currentHeight + 8) // subtle shadow margin
+    implicitWidth: fixedWindowWidth
+    implicitHeight: fixedWindowHeight
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:smart-notch"
     WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: root.isExpanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: root.isExpanded ? Theme.topBarReserved : Theme.topBarExclusiveZone
 
+    mask: Region {
+        item: notchFrame
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        enabled: root.isExpanded
+        onActivated: ShellState.closeSmartNotch()
+    }
+
+    // Single unified motion driver (220ms, OutCubic)
+    property real expandProgress: root.isExpanded ? 1.0 : 0.0
+    Behavior on expandProgress {
+        NumberAnimation {
+            duration: 220
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    readonly property real currentWidth: Math.round(root.compactWidth + (root.expandedWidth - root.compactWidth) * root.expandProgress)
+    readonly property real currentHeight: Math.round(root.compactHeight + (root.expandedHeight - root.compactHeight) * root.expandProgress)
+    readonly property real currentY: Math.round(10 * (1.0 - root.expandProgress))
+
+    onCurrentWidthChanged: ShellState.smartNotchCurrentWidth = currentWidth
+    Component.onCompleted: ShellState.smartNotchCurrentWidth = currentWidth
+
+    onIsExpandedChanged: {
+        if (root.isExpanded) {
+            // Check collision on narrow screens (< 1500px)
+            if (targetScreen.width < 1500 && ShellState.quickSettingsCapsuleExpanded) {
+                ShellState.closeQuickSettingsCapsule();
+            }
+        }
+    }
+
     NotchFrame {
         id: notchFrame
-        anchors.top: parent.top
+        y: root.currentY
         anchors.horizontalCenter: parent.horizontalCenter
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth
@@ -167,6 +197,37 @@ PanelWindow {
                                     wheel.accepted = true;
                                     ShellState.closeSmartNotch();
                                 }
+                            }
+                        }
+
+                        // Collapse Button on leading edge
+                        Rectangle {
+                            anchors.left: I18n.isRTL ? undefined : parent.left
+                            anchors.right: I18n.isRTL ? parent.right : undefined
+                            anchors.leftMargin: I18n.isRTL ? 0 : 4
+                            anchors.rightMargin: I18n.isRTL ? 4 : 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            implicitWidth: 24
+                            implicitHeight: 24
+                            radius: 12
+                            color: collapseMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "⌃"
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(14)
+                                font.weight: Font.Bold
+                                color: collapseMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            }
+
+                            MouseArea {
+                                id: collapseMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ShellState.closeSmartNotch()
                             }
                         }
 

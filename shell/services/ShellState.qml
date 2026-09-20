@@ -18,7 +18,6 @@ QtObject {
         if (tab !== undefined && tab !== null && tab !== "") {
             smartNotchTab = parseInt(tab) || 0;
         }
-        timeCapsuleExpanded = false;
         smartNotchExpanded = true;
     }
 
@@ -42,8 +41,6 @@ QtObject {
         appStoreOpen = false;
         cheatSheetOpen = false;
         sessionMenuOpen = false;
-        quickSettingsCapsuleExpanded = false;
-        smartNotchExpanded = false;
         timeCapsuleExpanded = true;
     }
 
@@ -67,7 +64,6 @@ QtObject {
         appStoreOpen = false;
         cheatSheetOpen = false;
         sessionMenuOpen = false;
-        timeCapsuleExpanded = false;
         quickSettingsCapsuleView = viewName || "main";
         quickSettingsCapsuleExpanded = true;
     }

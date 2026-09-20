@@ -50,13 +50,7 @@ PanelWindow {
         item: capsuleContainer
     }
 
-    // Outside click & escape dismissal
-    HyprlandFocusGrab {
-        windows: [ root ]
-        active: root.isExpanded
-        onCleared: ShellState.closeQuickSettingsCapsule()
-    }
-
+    // Escape dismissal (active when capsule has focus)
     Shortcut {
         sequence: "Escape"
         enabled: root.isExpanded
@@ -92,6 +86,7 @@ PanelWindow {
     readonly property real currentWidth: Math.round(root.compactWidth + (root.expandedWidth - root.compactWidth) * root.expandProgress)
     readonly property real currentHeight: Math.round(root.compactHeight + (root.expandedHeight - root.compactHeight) * root.expandProgress)
     readonly property real currentY: Math.round(10 * (1.0 - root.expandProgress))
+
 
     onCurrentViewChanged: {
         if (root.currentView === "hotspot" || root.currentView === "wifi") {
@@ -412,6 +407,10 @@ PanelWindow {
     // 1. Instant fetch upon expanding
     onIsExpandedChanged: {
         if (isExpanded) {
+            // Narrow screen (< 1500px): collapse colliding expanded neighbor (Notch)
+            if (targetScreen.width < 1500 && ShellState.smartNotchExpanded) {
+                ShellState.closeSmartNotch();
+            }
             networkStatusProcess.running = true;
             root.bluetoothError = "";
             bluetoothStatusProcess.running = true;

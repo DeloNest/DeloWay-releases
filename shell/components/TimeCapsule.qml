@@ -24,9 +24,16 @@ PanelWindow {
     readonly property real bottomRadius: 26
     readonly property real capsuleGap: 10
 
+    // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
+    readonly property real fixedWindowWidth: 420
+    readonly property real fixedWindowHeight: 530
+
+    implicitWidth: fixedWindowWidth
+    implicitHeight: fixedWindowHeight
+
     margins {
-        top: root.isExpanded ? 0 : 10
-        right: Math.round(targetScreen.width / 2 + ShellState.smartNotchCurrentWidth / 2 + capsuleGap - (root.isExpanded ? root.earRadius : 0))
+        top: 0
+        right: Math.round(targetScreen.width / 2 + ShellState.smartNotchCurrentWidth / 2 + capsuleGap - earRadius)
     }
 
     color: "transparent"
@@ -37,11 +44,8 @@ PanelWindow {
     WlrLayershell.keyboardFocus: root.isExpanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
 
-    // ── Outside Click & Escape Dismissal ──────────────────────────────────
-    HyprlandFocusGrab {
-        windows: [ root ]
-        active: root.isExpanded
-        onCleared: ShellState.closeTimeCapsule()
+    mask: Region {
+        item: notchFrame
     }
 
     Shortcut {
@@ -58,14 +62,19 @@ PanelWindow {
     readonly property real expandedHeight: root.hasVisibleHardware ? 504 : 374
     readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
 
-    property real currentWidth: root.isExpanded ? root.expandedWidth : root.compactWidth
-    property real currentHeight: root.isExpanded ? root.expandedHeight : root.compactHeight
+    // Single unified motion driver (220ms, OutCubic)
+    property real expandProgress: root.isExpanded ? 1.0 : 0.0
+    Behavior on expandProgress {
+        NumberAnimation {
+            duration: 220
+            easing.type: Easing.OutCubic
+        }
+    }
 
-    Behavior on currentWidth  { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-    Behavior on currentHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+    readonly property real currentWidth: Math.round(root.compactWidth + (root.expandedWidth - root.compactWidth) * root.expandProgress)
+    readonly property real currentHeight: Math.round(root.compactHeight + (root.expandedHeight - root.compactHeight) * root.expandProgress)
+    readonly property real currentY: Math.round(10 * (1.0 - root.expandProgress))
 
-    implicitWidth:  Math.round(root.currentWidth + (root.isExpanded ? root.earRadius * 2 : 0))
-    implicitHeight: Math.round(root.currentHeight + 8)
 
     // ── SystemClock: minute precision in compact, seconds in expanded ─────
     SystemClock {
@@ -201,6 +210,10 @@ PanelWindow {
 
     onIsExpandedChanged: {
         if (root.isExpanded) {
+            // Check collision on narrow screens (< 1400px)
+            if (targetScreen.width < 1400 && ShellState.smartNotchExpanded) {
+                ShellState.closeSmartNotch();
+            }
             root.resetToCurrentMonth();
         }
     }
@@ -320,8 +333,9 @@ PanelWindow {
     // ── Outer Shape & Notch Framing ───────────────────────────────────────
     NotchFrame {
         id: notchFrame
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.right: parent.right
+        anchors.rightMargin: Math.round(root.earRadius * (1.0 - root.expandProgress))
+        y: root.currentY
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth
         currentHeight: root.currentHeight
@@ -482,6 +496,34 @@ PanelWindow {
                         font.weight: Font.Medium
                         color: Theme.notchTextSecondary
                         renderType: Theme.renderType
+                    }
+                }
+
+                // Collapse Button
+                Rectangle {
+                    Layout.alignment: Qt.AlignVCenter
+                    implicitWidth: 26
+                    implicitHeight: 26
+                    radius: 13
+                    color: timeCollapseMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                    border.color: Theme.notchBorderSubtle
+                    border.width: 1
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "⌃"
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(14)
+                        font.weight: Font.Bold
+                        color: timeCollapseMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                    }
+
+                    MouseArea {
+                        id: timeCollapseMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: ShellState.closeTimeCapsule()
                     }
                 }
             }
