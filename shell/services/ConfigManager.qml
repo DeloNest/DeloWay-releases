@@ -443,6 +443,9 @@ Item {
     function setFontSizeScale(scale) {
         root.fontSizeScale = Math.max(0.7, Math.min(1.5, scale));
         saveConfig();
+        if (root.applySystemTheme) {
+            updateGtkThemes();
+        }
     }
 
     function setTransparencyLevel(level) {

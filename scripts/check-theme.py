@@ -18,6 +18,7 @@ Forbidden:
 """
 
 import sys
+import os
 import re
 from pathlib import Path
 
@@ -131,6 +132,14 @@ def main():
     js_files = sorted(SHELL_DIR.glob("**/*.js"))
     target_files = qml_files + js_files
 
+    # Include generated GTK CSS files for system-wide monochrome validation
+    config_home = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    gtk3_css = config_home / "gtk-3.0" / "gtk.css"
+    gtk4_css = config_home / "gtk-4.0" / "gtk.css"
+    for css_file in [gtk3_css, gtk4_css]:
+        if css_file.exists():
+            target_files.append(css_file)
+
     for f in target_files:
         if f in EXEMPT_FILES:
             continue
@@ -139,7 +148,10 @@ def main():
         if violations:
             files_with_issues += 1
             total_violations += len(violations)
-            rel_path = f.relative_to(PROJECT_ROOT)
+            try:
+                rel_path = f.relative_to(PROJECT_ROOT)
+            except ValueError:
+                rel_path = f
             print(f"\n❌ \033[1;31m{rel_path}\033[0m ({len(violations)} violation{'s' if len(violations)>1 else ''}):")
             for line_no, msg in violations:
                 print(f"   Line {line_no:4d}: {msg}")

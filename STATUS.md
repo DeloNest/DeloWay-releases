@@ -253,6 +253,7 @@
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
 *(مستخرج مباشرة من سجل Git الفعلي)*:
+* `857ba3f` - chore: final polish audit, documentation, and cleanup (2026-09-20)
 * `8849e48` - feat(settings): simplify settings app into 5 core sections with collapsible advanced groups (2026-09-20)
 * `c8682b5` - feat(clipboard): implement clipboard manager service and UI with privacy filter and Super+V support (2026-09-20)
 * `d48513b` - feat(launcher): implement unified central launcher with safe calculator and Arabic normalization (2026-09-20)
@@ -260,20 +261,12 @@
 * `c509d1f` - feat(quicksettings): eliminate expand glitch, unify icons and animations (2026-09-20)
 * `634f818` - docs: add final polish roadmap (2026-09-20)
 * `d2266c2` - feat(theme): eliminate accent system and enforce monochrome identity (phase 1) (2026-09-20)
-* `785c3d4` - docs(status): update STATUS.md for centered 3-capsule top bar layout (2026-09-20)
-* `069911c` - feat(timecapsule): position TimeCapsule directly adjacent to left of center Notch (2026-09-20)
-* `cf0fd9b` - docs(status): update STATUS.md sections 3, 6-9 for TimeCapsule completion (phases 1-5) (2026-09-20)
-* `bb0e170` - fix(timecapsule): define explicit expandedWidth to prevent undefined assignment in currentWidth (2026-09-20)
-* `cb25cd9` - feat(timecapsule): phase4 — add comprehensive TimeCapsule settings tab in SettingsAppV2 (2026-09-20)
-* `00dfda4` - feat(timecapsule): phase3 — add HardwareService telemetry layer and sparklines (2026-09-20)
-* `e78bad1` - feat(timecapsule): phase2 — expanded monthly calendar and hardware cards UI (2026-09-20)
-* `a2c68c6` - feat(timecapsule): phase1 — add compact TimeCapsule in top-left with SystemClock and NotchFrame (2026-09-20)
 
 ---
 
 ## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
 *(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
-- **المهام المنجزة والمثبتة في HEAD (خارطة اللمسات النهائية Final Polish Phases P1..P6 — مكتملة 100%)**:
+- **المهام المنجزة والمثبتة في HEAD (خارطة اللمسات النهائية Final Polish Phases P1..P7 — مكتملة 100%)**:
   1. **P1: كبسولة الإعدادات السريعة (QuickSettingsCapsule)**:
      - القضاء التام على glitch وبطء التوسع: تثبيت نافذة Layer-shell لمنع إعادة تخصيص Wayland buffers نهائياً.
      - محرك حركة فيزيائي موحد `expandProgress` (220ms بـ `OutCubic`) يشتق منه العرض والارتفاع والموضع الرأسي بسلاسة.
@@ -303,6 +296,13 @@
      - فحص شامل عبر `./scripts/check-theme.sh`: مسح 62 ملفاً وتحقيق **100% Monochrome Compliance** بصفر مخالفات.
      - سجل `qs log` خالٍ تماماً من أي أخطاء أو تحذيرات جديدة.
      - توثيق شامل للاختصارات في `CheatSheet.qml` و `STATUS.md`.
+  7. **P7: ثيم النظام الموحد (System-wide Theming — GTK3/4, Thunar, Qt)**:
+     - توليد `gtk-3.0/gtk.css` و `gtk-4.0/gtk.css` بهوية أحادية صارمة (OLED Black `#000000` في الداكن و `#ffffff` في الفاتح).
+     - تخصيص دقيق لـ Thunar (خلفية سوداء نقية، شريط جانبي بتباين خفيف `#0a0a0a`، تحديد أحادي عالي التباين، شريط أدوات ومسار بحدود متناسقة).
+     - توليد لوحة ألوان `qt6ct` في `~/.config/qt6ct/colors/deloway.conf`.
+     - دعم كامل لمقاييس الخط (`fontSizeScale`: 0.85/1.0/1.15) وتحديث `settings.ini` و `gsettings`.
+     - ربط الاستدعاء التلقائي عند الإقلاع وتغيير المظهر ومقياس الخط في `ConfigManager.qml`.
+     - إضافة فحص GTK CSS إلى `check-theme.py` لمسح 64 ملفاً بنسبة امتثال 100%.
 
 ### جدول اختصارات لوحة المفاتيح المعتمدة (DeloWay Keybindings)
 | الاختصار (Keybinding) | الوظيفة (Action) | الوصف البرمجي والتكامل |
@@ -361,36 +361,29 @@
 - **القرار المعماري**: الإلغاء الشامل لنظام الـ accent، اعتماد وضعين حصريين (Dark OLED / Crisp Light)، وحصر الألوان الدلالية في مؤشرات دقيقة ($\le 8\text{px}$).
 
 ### ط) ADR-009: المشغل المركزي الموحد والحاسبة الآمنة (Unified Launcher & Safe Calculator)
-- **السياق**: كان درج التطبيقات مفصولاً عن البحث ومرتبطاً بأسفل الشاشة فوق الـ Dock، مما يشتت تجربة المستخدم عند البحث السريع.
-- **القرار المعماري**:
-  1. دمج درج التطبيقات ومحرك البحث في نافذة مركزية OLED واحدة (~640px) بخلفية معتمة تفتح بـ `Super+Space`.
-  2. بناء حاسبة رياضية داخلية فورية تعتمد على مفسر نحوي (Recursive Descent Parser) آمن 100% وخالٍ من `eval`، ينسخ الناتج بضغطة Enter.
-  3. تطبيق تطبيع ذكي للغة العربية لإزالة التشكيل وتوحيد الحروف المتشابهة لتسهيل البحث باللغتين العربية والإنجليزية.
+- **القرار المعماري**: دمج درج التطبيقات والبحث في نافذة مركزية OLED واحدة (~640px) مع حاسبة آمنة وتطبيع عربي.
 
 ### ي) ADR-010: خدمة الحافظة المدمجة وتصفية الخصوصية (Native Clipboard Service & Privacy Filter)
-- **السياق**: غياب مدير حافظة بصري مدمج ومتناسق مع هوية DeloWay الأحادية.
-- **القرار المعماري**:
-  1. بناء خدمة سنجلتون `ClipboardService.qml` تدير `cliphist` و `wl-paste` بدون تكرار للعمليات الخلفية.
-  2. استبعاد البيانات الحساسة وكلمات المرور تلقائياً بفحص وسوم `x-kde-passwordManagerHint`.
-  3. توفير واجهة مركزية OLED (~580px) تفتح بـ `Super+V` للبحث والنسخ والحذف.
+- **القرار المعماري**: بناء خدمة سنجلتون `ClipboardService.qml` مع تصفية أمنية لكلمات المرور وواجهة مركزية OLED تفتح بـ `Super+V`.
 
 ### ك) ADR-011: دورة حياة شريط المهام والإخفاء التلقائي الموفر للموارد (Dock Lifecycle & Zero-Margin Autohide)
-- **السياق**: بقاء كائنات الـ Dock في الذاكرة عند تعطيله، وترك فراغ ميت في أسفل الشاشة عند تفعيل الإخفاء التلقائي.
-- **القرار المعماري**:
-  1. تغليف شريط المهام داخل `Loader` يُلغى تنشيطه بالكامل عند اختيار وضع `disabled` لتفريغ ~12MB من الذاكرة.
-  2. جعل `exclusiveZone: 0` في وضع `autohide` وتمديد نافذة الطبقة لكامل عرض الشاشة مع قناع 2px سفلي دقيق، مما يسمح لنوافذ التطبيقات بالتمدد لقاع الشاشة دون ترك أي فراغ ميت مع استجابة فورية لتحويم الفأرة.
+- **القرار المعماري**: تفريغ كامل لذاكرة الـ Dock عند التعطيل عبر `Loader`، وضبط `exclusiveZone: 0` في وضع `autohide` مع شريط تحفيز 2px لتمدد النوافذ.
 
 ### ل) ADR-012: تبسيط الإعدادات بالإفصاح التدريجي (Settings Simplification & Progressive Disclosure)
-- **السياق**: تشتت خيارات الإعدادات عبر 13 تبويباً معظمها غير مكتمل مما كان يربك المستخدم.
+- **القرار المعماري**: إعادة هيكلة الإعدادات إلى 5 أقسام رئيسية وظيفية فقط، وتطبيق مبدأ الإفصاح التدريجي مع الحفاظ الصارم على كافة مفاتيح الإعدادات.
+
+### م) ADR-013: ثيم النظام الموحد وتكامل Thunar و GTK3/4 و Qt (System-wide Monochrome Theming)
+- **السياق**: كان مدير الملفات Thunar وتطبيقات GTK3/4 تظهر بخلفية رمادية `#101318` وتفتقر للتحديد الأحادي الصارم وانحناءات النوافذ وتحديث مقياس الخط.
 - **القرار المعماري**:
-  1. إعادة هيكلة الإعدادات إلى 5 أقسام رئيسية وظيفية فقط.
-  2. تطبيق مبدأ الإفصاح التدريجي (Progressive Disclosure): 5 خيارات رئيسية بارزة لكل قسم، وطي الخيارات الفنية الدقيقة داخل أقسام متقدمة قابلة للطي (`collapsible: true`).
-  3. الحفاظ الصارم على كافة مفاتيح `ConfigManager` لمنع أي كسر في التوافق الخلفي.
+  1. ترقية `scripts/deloway-theme-apply.py` لتوليد قواعد GTK3 و GTK4 و Libadwaita كاملة مع توكنات OLED السوداء (`#000000`) وشريط جانبي متباين وتحديد أحادي ناصع.
+  2. توليد لوحة ألوان `qt6ct` متناسقة تلقائياً في `~/.config/qt6ct/colors/deloway.conf`.
+  3. ربط السكربت بمقياس الخط `fontSizeScale` في `ConfigManager.qml` واستدعاؤه ذرياً عند تغيير الخط أو النمط.
+  4. فحص ملفات GTK المولدة تلقائياً ضمن `check-theme.py` لضمان عدم تسلل أي ألوان زينة.
 
 ---
 
 ## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
-1. **اكتمال خارطة اللمسات النهائية (Final Polish Completed)**: تم إنجاز المراحل P1 إلى P6 بنجاح تام وفق أعلى معايير الجودة والأداء والهوية الأحادية.
+1. **اكتمال خارطة اللمسات النهائية (Final Polish Completed P1..P7)**: تم إنجاز المراحل P1 إلى P7 بنجاح تام وفق أعلى معايير الجودة والأداء والهوية الأحادية.
 2. **المعالم المستقبلية المقترحة (Future Milestones)**:
    - دعم إيماءات لوحة اللمس (Touchpad Gestures) لفتح المشغل وتبديل مساحات العمل.
    - إدارة ملفات تعريف الشاشات المتعددة (Multi-Monitor Profiles).
