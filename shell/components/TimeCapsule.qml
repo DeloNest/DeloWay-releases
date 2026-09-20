@@ -54,8 +54,9 @@ PanelWindow {
     readonly property bool isExpanded: ShellState.timeCapsuleExpanded
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(132, compactContentRow.implicitWidth + 36)
-    readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
+    readonly property real expandedWidth: 350
     readonly property real expandedHeight: root.hasVisibleHardware ? 504 : 374
+    readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
 
     property real currentWidth: root.isExpanded ? root.expandedWidth : root.compactWidth
     property real currentHeight: root.isExpanded ? root.expandedHeight : root.compactHeight
