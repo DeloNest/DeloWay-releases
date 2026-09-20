@@ -10,13 +10,14 @@ import "../services"
 PopupWindow {
     id: root
 
-    property var anchorWindow: null
-    property Item anchorItem: null
+    required property var menuHandle
     property string trayItemId: ""
     property bool _animVisible: false
 
+    signal menuClosed()
+
     color: "transparent"
-    visible: false
+    visible: true
 
     HyprlandFocusGrab {
         windows: [ root ]
@@ -24,48 +25,28 @@ PopupWindow {
         onCleared: root.close()
     }
 
-    anchor {
-        window: root.anchorWindow
-        item: root.anchorItem
-        edges: Edges.Bottom
-        gravity: Edges.Bottom
-        adjustment: PopupAdjustment.Slide | PopupAdjustment.Flip
-    }
-
     implicitWidth: menuCard.width + 24
     implicitHeight: menuCard.height + menuCard.anchors.topMargin + 12
 
-    function open(item, menu, itemId) {
-        if (!item || !menu) return;
-        root.anchorItem = item;
-        root.trayItemId = itemId || "";
-        root.anchor.updateAnchor();
-
+    function open() {
         stackView.clear();
         stackView.push(subMenuComponent.createObject(null, {
-            handle: menu,
+            handle: root.menuHandle,
             isSubMenu: false,
             title: ""
         }));
-
-        root.visible = true;
-        root._animVisible = true;
+        _animVisible = true;
         menuCard.forceActiveFocus();
     }
 
     function close() {
-        root._animVisible = false;
+        _animVisible = false;
         root.visible = false;
-        stackView.clear();
-        root.anchorItem = null;
+        root.menuClosed();
     }
 
-    onVisibleChanged: {
-        if (!visible) {
-            root._animVisible = false;
-            stackView.clear();
-            root.anchorItem = null;
-        }
+    Component.onCompleted: {
+        root.open();
     }
 
     // Escape dismissal (returns from submenus first, then dismisses)
@@ -105,7 +86,7 @@ PopupWindow {
         anchors.top: parent.top
         anchors.topMargin: 14
         width: Math.max(180, Math.min(320, (stackView.currentItem ? stackView.currentItem.implicitWidth : 180) + 16))
-        height: Math.max(38, (stackView.currentItem ? stackView.currentItem.implicitHeight : 38) + 16)
+        height: Math.max(38, Math.min(600, (stackView.currentItem ? stackView.currentItem.implicitHeight : 38) + 16))
         radius: Theme.radiusMedium
         color: Theme.notchBackground
         border.color: Theme.notchBorder

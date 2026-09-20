@@ -33,6 +33,7 @@ Item {
             delegate: MouseArea {
                 id: itemArea
                 required property SystemTrayItem modelData
+                property alias menuActive: menuLoader.active
 
                 visible: modelData.status !== Status.Passive
                 implicitWidth: visible ? 28 : 0
@@ -66,18 +67,14 @@ Item {
 
                 onPressed: (mouse) => {
                     if (mouse.button === Qt.LeftButton) {
-                        if (trayContextMenu.visible) trayContextMenu.close();
+                        if (menuLoader.active) menuLoader.active = false;
                         modelData.activate();
                     } else if (mouse.button === Qt.MiddleButton) {
-                        if (trayContextMenu.visible) trayContextMenu.close();
+                        if (menuLoader.active) menuLoader.active = false;
                         modelData.secondaryActivate();
                     } else if (mouse.button === Qt.RightButton) {
                         if (modelData.hasMenu && modelData.menu) {
-                            if (trayContextMenu.visible && trayContextMenu.anchorItem === itemArea) {
-                                trayContextMenu.close();
-                            } else {
-                                trayContextMenu.open(itemArea, modelData.menu, modelData.id);
-                            }
+                            menuLoader.active = !menuLoader.active;
                         } else {
                             modelData.activate();
                         }
@@ -94,9 +91,22 @@ Item {
                     }
                 }
 
-                Component.onDestruction: {
-                    if (trayContextMenu.visible && trayContextMenu.anchorItem === itemArea) {
-                        trayContextMenu.close();
+                Loader {
+                    id: menuLoader
+                    active: false
+                    sourceComponent: TrayContextMenu {
+                        menuHandle: modelData.menu
+                        trayItemId: modelData.id
+                        anchor {
+                            window: itemArea.QsWindow.window
+                            item: itemArea
+                            edges: Edges.Bottom
+                            gravity: Edges.Bottom
+                            adjustment: PopupAdjustment.Slide | PopupAdjustment.Flip
+                        }
+                        onMenuClosed: {
+                            menuLoader.active = false;
+                        }
                     }
                 }
             }
@@ -113,16 +123,5 @@ Item {
             Layout.leftMargin: 4
             Layout.rightMargin: 4
         }
-    }
-
-    onHasVisibleItemsChanged: {
-        if (!hasVisibleItems && trayContextMenu.visible) {
-            trayContextMenu.close();
-        }
-    }
-
-    TrayContextMenu {
-        id: trayContextMenu
-        anchorWindow: root.QsWindow.window
     }
 }
