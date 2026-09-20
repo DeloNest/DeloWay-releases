@@ -124,6 +124,17 @@ nmcli connection modify Deloway-Hotspot 802-11-wireless-security.pmf disable 802
 nmcli connection up Deloway-Hotspot
 ```
 
+### الخطوة هـ: حل مشكلة "الاتصال دون إنترنت" (تعارض جدار حماية Docker)
+> **السبب**: خدمة Docker تعمل في النظام وتقوم تلقائياً بضبط سياسة التوجيه `iptables -P FORWARD DROP`، مما يؤدي لإسقاط حزم الإنترنت القادمة من الهوتسبوت (`wlp0s20f0u2`) المتجهة إلى منفذ الإنترنت (`eno1`).
+
+نفّذ الأوامر التالية للسماح بتمرير الإنترنت عبر جدار الحماية (في سلسلة `DOCKER-USER` المخصصة من Docker):
+```bash
+# السماح بتمرير الحزم بين الهوتسبوت ومنفذ الإنترنت السلكي
+sudo iptables -I DOCKER-USER 1 -i wlp0s20f0u2 -o eno1 -j ACCEPT
+sudo iptables -I DOCKER-USER 2 -i eno1 -o wlp0s20f0u2 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -t nat -A POSTROUTING -o eno1 -j MASQUERADE
+```
+
 ---
 
 ## 4. خطة الاستدامة وتحديثات النواة (Kernel Upgrade Persistence)
@@ -136,9 +147,6 @@ nmcli connection up Deloway-Hotspot
 
 ## 5. حالة الإنجاز (Status)
 
-- **الحالة**: تم حل المشكلة بالكامل بنجاح.
-  1. التعريف `8188eu/pr275` مفعّل ويعمل بكفاءة على النواة `7.2.6-arch2-1`.
-  2. تم حظر `rtl8xxxu` المدمج غير المستقر.
-  3. نقطة الاتصال (Hotspot) **قيد التشغيل والبث حالياً** على الواجهة `wlp0s20f0u2` بوضع `type AP` وعنوان IP `10.42.0.1/24`، والإنترنت يُشارك بسلاسة من الواجهة السلكية `eno1`.
+- **الحالة**: تم تشخيص سبب انقطاع الإنترنت عن الجوال بدقة: خدمة Docker نشطة وتمنع التوجيه عبر `FORWARD DROP`. تم توفير الأوامر اللازمة للسماح بالتمرير عبر `DOCKER-USER`.
 
-NEXT ACTION: تم تشغيل وبث نقطة الاتصال بنجاح. المهمة مكتملة وجاهزة للاستخدام.
+NEXT ACTION: ينتظر تنفيذ أوامر الخطوة (هـ) من قبل المستخدم للتحقق من وصول الإنترنت إلى الجوال المتصل.
