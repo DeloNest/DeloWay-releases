@@ -27,6 +27,7 @@ Item {
         spacing: 4
 
         Repeater {
+            id: trayRepeater
             model: SystemTray.items
 
             delegate: MouseArea {
@@ -65,12 +66,18 @@ Item {
 
                 onPressed: (mouse) => {
                     if (mouse.button === Qt.LeftButton) {
+                        if (trayContextMenu.visible) trayContextMenu.close();
                         modelData.activate();
                     } else if (mouse.button === Qt.MiddleButton) {
+                        if (trayContextMenu.visible) trayContextMenu.close();
                         modelData.secondaryActivate();
                     } else if (mouse.button === Qt.RightButton) {
-                        if (modelData.hasMenu) {
-                            menuAnchor.open();
+                        if (modelData.hasMenu && modelData.menu) {
+                            if (trayContextMenu.visible && trayContextMenu.anchorItem === itemArea) {
+                                trayContextMenu.close();
+                            } else {
+                                trayContextMenu.open(itemArea, modelData.menu, modelData.id);
+                            }
                         } else {
                             modelData.activate();
                         }
@@ -87,14 +94,11 @@ Item {
                     }
                 }
 
-                // Native D-Bus context menu anchor
-                QsMenuAnchor {
-                    id: menuAnchor
-                    anchor.window: itemArea.QsWindow.window
-                    anchor.item: itemArea
-                    menu: modelData.menu
+                Component.onDestruction: {
+                    if (trayContextMenu.visible && trayContextMenu.anchorItem === itemArea) {
+                        trayContextMenu.close();
+                    }
                 }
-
             }
         }
 
@@ -109,5 +113,16 @@ Item {
             Layout.leftMargin: 4
             Layout.rightMargin: 4
         }
+    }
+
+    onHasVisibleItemsChanged: {
+        if (!hasVisibleItems && trayContextMenu.visible) {
+            trayContextMenu.close();
+        }
+    }
+
+    TrayContextMenu {
+        id: trayContextMenu
+        anchorWindow: root.QsWindow.window
     }
 }
