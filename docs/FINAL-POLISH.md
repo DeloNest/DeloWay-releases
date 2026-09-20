@@ -1,4 +1,4 @@
-# NEXT ACTION: Phase P10 (Preferred Music Player & Launch Target) Completed. Shell Ready for Review.
+# NEXT ACTION: P11-L1 — بناء LauncherIndex.qml (الفهرس المشترك، الترتيب، المكوّنات المشتركة) جاهز للتنفيذ.
 
 # DeloWay Shell — خارطة اللمسات النهائية (Final Polish Roadmap)
 
@@ -81,7 +81,7 @@
 
 ---
 
-- [x] **P3: المشغّل الموحّد (Unified Launcher: Search + App Drawer)**
+- [x] **P3: المشغّل الموحّد (Unified Launcher: Search + App Drawer)** ⟶ **مستبدلة بـ P11**
   - **الهدف**: دمج شاشة البحث والـ App Drawer في مشغل OLED مركزي واحد (~640px) يفتح بـ `Super+Space` عبر IPC؛ يعرض شبكة التطبيقات عند فراغ حقل البحث، ويعرض نتائج مجمعة من مصادر النظام عند الكتابة مع دعم لوحة المفاتيح وحاسبة آمنة وتطبيع عربي/إنجليزي.
   - **معايير القبول**:
     - نافذة OLED مركزية (~640px) بخلفية سوداء نقية مع خلفية معتمة (Backdrop) قابلة للنقر للإغلاق.
@@ -444,3 +444,149 @@ env = QT_QPA_PLATFORMTHEME,qt6ct
 # }
 ```
 
+---
+
+# P11: إعادة بناء المشغّل إلى واجهتين (Search Launcher + App Drawer)
+
+> تحلّ P11 محل P3 كلياً وتُعيد بناء المشغّل من الصفر على معمارية مشتركة.
+
+---
+
+## L0: نتائج التشخيص (بلا تعديل)
+
+### 1. مصدر الضبابية والهالة
+
+- **Hyprland 0.56.2** — صيغة `layerrule` المعتمدة: `layerrule = blur on, match:namespace <regex>`.
+- في `config/hyprland.conf` السطران 286-287:
+  ```
+  layerrule = blur on, match:namespace deloway:(topbar|dock|appdrawer|quicksettings-capsule|sessionmenu|notification-toast|smart-notch)
+  layerrule = ignore_alpha 0.2, match:namespace deloway:(topbar|dock|appdrawer|quicksettings-capsule|sessionmenu|notification-toast|smart-notch)
+  ```
+  — اسم الـ namespace الحالي للمشغل: **`deloway:launcher`** (سطر 26 من `AppDrawer.qml`). لاحظ أن القاعدة تشمل `appdrawer` ولكن **ليس** `launcher`، فالضبابية تصل للمشغّل عبر قاعدة `blur { enabled = true }` العامة لطبقات Wayland.
+  - **لا يوجد** `MultiEffect` ولا `DropShadow` ولا `GaussianBlur` في أي ملف QML.
+  - الهالة (halo): تأتي من كتلة `Rectangle` في `AppDrawer.qml` السطر 657-666 تُحاكي ظلاً بلون `Theme.notchShadow`.
+  - blur قادم من: hyprland decoration + layerrule (تأثير Hyprland، ليس QML).
+
+### 2. البنية الحالية
+
+| العنصر | القيمة |
+|---|---|
+| ملف المشغل الحالي | `shell/components/AppDrawer.qml` (1746 سطر) — يجمع الواجهتين في ملف واحد |
+| namespace layer-shell | `deloway:launcher` |
+| IPC GlobalShortcut | `drawerToggle` → `ShellState.toggleAppDrawer()` وأيضاً `launcherToggle` → نفس الدالة |
+| IPC IpcHandler | `toggleLauncher`, `openLauncher`, `closeLauncher`, `toggleDrawer`, `openDrawer`, `closeDrawer` — كلها تستدعي `ShellState.toggleAppDrawer()` |
+| ShellState | `appDrawerOpen: bool`، `toggleAppDrawer()`، `openAppDrawer(query?)`، `closeAppDrawer()` |
+| ملف الحالة (state) | **لا يوجد** ملف state للتكرار/الحداثة — كل شيء في الذاكرة |
+| ApplicationManager | يبني `allApps` من `DesktopEntries.applications` + سجلات ديناميكية. **يصفي `noDisplay`** (Q_PROPERTY متاح). |
+| DesktopEntry fields | `id`, `name`, `genericName`, `startupClass`, `noDisplay`, `comment`, `icon`, `execString`, `command`, `workingDirectory`, `runInTerminal`, `categories`, `keywords`, `actions` |
+| توجيه النص | `LayoutMirroring.enabled: I18n.isRTL` على الـ drawerCard — RTL مدعوم |
+| الشارة APP | موجودة في كل صف بحث (`badge: "APP"`, `"SETTING"`, `"SYSTEM"`) — يجب حذفها |
+
+### 3. سبب ظهور WhatsApp Web عند البحث بـ "brave"
+
+في السطر 421-423 من `AppDrawer.qml`:
+```js
+const normId = normalizeText(app.id || "");
+if (normName.includes(normQ) || normComment.includes(normQ) || normId.includes(normQ)) {
+```
+معرّف WhatsApp Web هو `brave-hnpfjngllnobngcgfapefoaidbinmjnm-Default` — يحتوي على "brave" → `normId.includes("brave")` = true.
+**الحل في L1**: حذف `normId` من معايير المطابقة؛ البحث في `name`, `genericName`, `keywords`, `execString` (اسم الأمر فقط لا معامله) وليس في `id` الكامل.
+
+### 4. جرد ملفات .desktop
+
+- الإجمالي: **76 نظام + 32 محلية = 108** ملفات
+- `NoDisplay=true`: **57** ملف (كلها ستُصفى تلقائياً بـ `noDisplay` Q_PROPERTY)
+- `Hidden=true`: **0** (الحقل `hidden` في Quickshell غير مكشوف كـ Q_PROPERTY — نعتمد `noDisplay` فقط)
+- `OnlyShowIn=`: **3** ملفات (تحتاج تصفية يدوية بالاسم)
+- التكرار الفعلي: WhatsApp Web + Brave (نفس الـ exec، اسم مختلف) — سيُعالج بتصفية `--app-id` في exec
+
+### 5. الاختصارات الحالية (hyprland.conf)
+
+| الاختصار | GlobalShortcut | الوظيفة الحالية |
+|---|---|---|
+| `Super + Space` | `drawerToggle` | toggleAppDrawer (= launcher + drawer في ملف واحد) |
+| `Super + Super_L` | `drawerToggle` | نفس الأعلى |
+| `Super + A` | `sidebarLeftToggle` | toggleLeftSidebar → toggleAppDrawer |
+
+**للحل في L4 (خطوات يدوية في hyprland.conf)**:
+- `Super + Space` → `quickshell:launcherToggle` (البحث)
+- `Super + A` → `quickshell:appDrawerToggle` (درج التطبيقات)
+
+---
+
+## المراحل الفرعية لـ P11
+
+### L1: الأساس المشترك
+- **LauncherIndex.qml** — singleton، يُبنى مرة عند الإقلاع من `DesktopEntries.applications`، يتحدث عند `onApplicationsChanged`.
+  - حقوله: `name`, `genericName`, `keywords[]`, `execString` (اسم الأمر فقط)، `startupClass`, `categories[]`, `icon`, `actions[]`, `noDisplay`.
+  - تطبيع عربي/إنجليزي: إزالة التشكيل `\u064B-\u065F\u0670`، توحيد أ إ آ ← ا، ى ← ي، ة ← ه، lowercase.
+  - طبقات الترتيب: exact > prefix(name) > word-prefix > contains > subsequence(≥3 أحرف).
+  - وزن التكرار: ملف state صغير `~/.local/share/deloway/launcher-state.json`، كتابة debounced بـ 2000ms.
+  - مكوّنات مشتركة: `LauncherSurface.qml`، `ResultRow.qml`، `AppTile.qml`، `SectionLabel.qml` — من Theme tokens فقط.
+  - السطح: خلفية `Theme.notchBackground` صلبة `opacity: 1`، حد 1px، `radius: Theme.notchRadiusWindow`، بلا blur ولا ظل.
+- **Commit**: `refactor(launcher): shared index, ranking and surface components`
+- **معيار القبول**: `brave` يضع Brave أولاً ولا يظهر WhatsApp Web. `ff` يجد Firefox. `اعدادات` تجد الإعدادات.
+
+### L2: لوحة البحث (Super+Space، namespace: deloway:launcher)
+- حالة فارغة: حقل بحث فقط، ارتفاع ~56px، بلا قائمة.
+- العرض ~640، موضع ~20% من أعلى الشاشة، يتمدد حتى 8 صفوف.
+- الصف (h=52): أيقونة 32 + اسم 14px Medium + وصف 12px ثانوي + elide. بلا شارة. تلميح ↵ على المحدد فقط. الوصف من `genericName` أو فئة مترجمة؛ `Comment` الإنجليزي الخام لا يُعرض.
+- مجموعات (≤5 لكل): التطبيقات، الإعدادات، النظام، الحاسبة، الملفات.
+- الحاسبة: محلل Recursive Descent آمن (بلا eval)، Enter ينسخ.
+- صفان هادئان في الأسفل: "ابحث في المتجر" + "ابحث في الويب".
+- حركة: fade+scale من 0.98→1 خلال 150ms OutCubic، debounce 40-60ms على الفهرس.
+- **Commit**: `feat(launcher): redesign search launcher`
+
+### L3: درج التطبيقات (Super+A، namespace: deloway:appdrawer)
+- لوحة كبيرة مركزية: `min(1040, 80%) × min(700, 80%)`.
+- رأس: حقل فلترة ~320 + فئات + أزرار أيقونية صغيرة (إعدادات، متجر، طاقة).
+- أقسام: "المثبتة" + "الأخيرة" (صف واحد، يختفي عند الفراغ) + "كل التطبيقات" أبجدياً.
+- فئات: الكل، الإنترنت، الوسائط، التطوير، الرسومات، المكتب، الألعاب، الأدوات، النظام.
+- البلاطة ~120×108: أيقونة 48 + اسم 12-13px بسطرين، بلا اقتطاع في السطر الأول.
+- قائمة سياق (زر أيمن/Menu): فتح، تثبيت/إلغاء، إخفاء، Desktop Actions.
+- **Commit**: `feat(app-drawer): redesign grid, categories, pinned and hidden apps`
+
+### L4: التكامل والإغلاق
+- أسماء IPC: `toggleLauncher` (البحث) + `appDrawerToggle` (الدرج) مع aliases قديمة.
+- فتح أحدهما يغلق الآخر + التركيز يعود للنافذة السابقة عند الإغلاق.
+- CheatSheet + STATUS.md (ADR) + docs/FINAL-POLISH.md.
+- قياسات أداء قبل/بعد + لقطات grim.
+- **Commit**: `chore(launcher): integration, docs and verification`
+
+---
+
+## خطوات يدوية في hyprland.conf (للمستخدم — لا تُنفّذ تلقائياً)
+
+بعد اكتمال L3، نفّذ يدوياً (صيغة Hyprland 0.56.2):
+
+```bash
+# 1. إزالة blur للـ namespace الجديدَين من قاعدة layerrule الحالية (السطر 286-287):
+#    استبدل السطرين الحاليين بما يلي:
+layerrule = blur on, match:namespace deloway:(topbar|dock|quicksettings-capsule|sessionmenu|notification-toast|smart-notch)
+layerrule = ignore_alpha 0.2, match:namespace deloway:(topbar|dock|quicksettings-capsule|sessionmenu|notification-toast|smart-notch)
+# (حذف appdrawer — سيكون namespace جديداً وبلا blur)
+
+# 2. تحديث اختصارات المشغّل (بعد التحقق من عدم تعارض Super+A):
+#    استبدل السطرين 109-110 و112:
+bindr = $mainMod, $mainMod_L, global, quickshell:launcherToggle
+bind = $mainMod, Space, global, quickshell:launcherToggle
+bind = $mainMod, A, global, quickshell:appDrawerToggle
+
+# 3. اختياري — تثبيت fd أو plocate لبحث الملفات:
+#    sudo pacman -S --needed fd
+```
+
+---
+
+## معايير القبول العامة لـ P11
+
+- [ ] لا ضبابية ولا هالة على أي من الواجهتين
+- [ ] لا شارة APP
+- [ ] `brave` → Brave أولاً، لا WhatsApp Web
+- [ ] `ff` → Firefox
+- [ ] `اعدادات` → الإعدادات
+- [ ] `2+2*3` → `= 8` مع نسخ بـ Enter
+- [ ] الاسم ملاصق للأيقونة في الاتجاهَين (LTR + RTL)
+- [ ] Enter على الصف المحدد يفتح التطبيق
+- [ ] زمن تصفية < 16ms لـ ~200 تطبيق
+- [ ] الدرج: "Advanced Network Configuration" يُقرأ كاملاً في البلاطة
