@@ -112,11 +112,16 @@ sudo modprobe 8188eu
 
 ### الخطوة د: ضبط النطاق الجغرافي وإنشاء نقطة الاتصال (Hotspot)
 ```bash
-# ضبط رمز البلد لترددات 2.4 GHz
+# 1. ضبط رمز البلد لترددات 2.4 GHz
 sudo iw reg set SA
 
-# إنشاء وتشغيل نقطة اتصال Hotspot عبر NetworkManager (على الواجهة wlp0s20f0u2):
-nmcli device wifi hotspot ifname wlp0s20f0u2 ssid "Deloway-Hotspot" password "deloway1234" band bg
+# 2. تعطيل حماية الإطارات الإدارية (PMF/802.11w) لأن عتاد RTL8188EUS لا يدعمها
+# (غياب هذا التعطيل يسبب خطأ: nl80211: kernel reports: key setting validation failed)
+nmcli connection modify Hotspot 802-11-wireless-security.pmf disable 802-11-wireless-security.key-mgmt wpa-psk
+nmcli connection modify Deloway-Hotspot 802-11-wireless-security.pmf disable 802-11-wireless-security.key-mgmt wpa-psk
+
+# 3. تشغيل نقطة الاتصال (أو تفعيلها مباشرة من واجهة Deloway):
+nmcli connection up Deloway-Hotspot
 ```
 
 ---
@@ -131,7 +136,9 @@ nmcli device wifi hotspot ifname wlp0s20f0u2 ssid "Deloway-Hotspot" password "de
 
 ## 5. حالة الإنجاز (Status)
 
-- **الحالة**: تم تثبيت وحدة `8188eu/pr275` بنجاح عبر DKMS، وحظر `rtl8xxxu` وتحميل التعريف الجديد. تم التحقق عبر `iw list` من دعم وضع **AP** و **P2P-GO** و **monitor** بنجاح، وظهور الواجهة `wlp0s20f0u2` في NetworkManager.
-- **ملاحظة مشاركة الإنترنت**: الشريحة ذات راديو أحادي 2.4 GHz لا تدعم وضع AP و Managed في نفس الوقت، لذلك يتم سحب الإنترنت من الواجهة السلكية `eno1` وإعادة بثه لاسلكياً عبر `wlp0s20f0u2` بنجاح.
+- **الحالة**: تم حل المشكلة بالكامل بنجاح.
+  1. التعريف `8188eu/pr275` مفعّل ويعمل بكفاءة على النواة `7.2.6-arch2-1`.
+  2. تم حظر `rtl8xxxu` المدمج غير المستقر.
+  3. نقطة الاتصال (Hotspot) **قيد التشغيل والبث حالياً** على الواجهة `wlp0s20f0u2` بوضع `type AP` وعنوان IP `10.42.0.1/24`، والإنترنت يُشارك بسلاسة من الواجهة السلكية `eno1`.
 
-NEXT ACTION: ينتظر تنفيذ الخطوة (د) من قبل المستخدم (`sudo iw reg set SA` ثم أمر `nmcli device wifi hotspot`) للتحقق من الاتصال بالهوتسبوت من هاتف أو جهاز آخر.
+NEXT ACTION: تم تشغيل وبث نقطة الاتصال بنجاح. المهمة مكتملة وجاهزة للاستخدام.
