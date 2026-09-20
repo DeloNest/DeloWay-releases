@@ -137,16 +137,39 @@ sudo iptables -t nat -A POSTROUTING -o eno1 -j MASQUERADE
 
 ---
 
-## 4. خطة الاستدامة وتحديثات النواة (Kernel Upgrade Persistence)
+## 4. خطة الاستدامة الشاملة بعد إعادة التشغيل (Persistence Plan)
 
-- باستخدام **DKMS** مع حزمة `linux-headers` المثبتة في النظام:
-  عند ترقية النواة مستقبلاً عبر `pacman -Syu`، ستتولى خطافات ALPM (`70-dkms-install.hook`) إعادة بناء وتثبيت وحدة `8188eu/pr275` تلقائياً للنواة الجديدة دون الحاجة لتدخل يدوي.
-- لا يُنصح بتجميد النواة لتفادي حرمان النظام من التحديثات الأمنية.
+### ما الذي سيبقى ثابتاً تلقائياً:
+1. **التعريف (Driver)**: وحدة `8188eu/pr275` مسجلة في **DKMS** وستبقى بعد إعادة التشغيل، ويُعاد بناؤها تلقائياً مع كل تحديث قادم للنواة عبر `linux-headers`.
+2. **حظر التعريف القديم**: ملف `/etc/modprobe.d/blacklist-rtl8xxxu.conf` دائم ولن يعمل `rtl8xxxu` مجدداً.
+3. **إعدادات الهوتسبوت**: ملف الاتصال في `/etc/NetworkManager/system-connections/` محفوظ ومضبوط بـ `pmf disable`.
+
+### ما يحتاج تثبيتاً (قواعد جدار الحماية مع Docker):
+قواعد `iptables` تُخزن في الذاكرة الحية (RAM) فقط وتزول عند إعادة التشغيل. لتثبيتها تلقائياً عند كل تشغيل للهوتسبوت، يُنشأ سكريبت تنفيذ تلقائي في NetworkManager Dispatcher:
+```bash
+sudo tee /etc/NetworkManager/dispatcher.d/99-hotspot-docker.sh << 'EOF'
+#!/bin/bash
+INTERFACE=$1
+ACTION=$2
+
+if [ "$INTERFACE" = "wlp0s20f0u2" ] && [ "$ACTION" = "up" ]; then
+    iptables -I DOCKER-USER 1 -i wlp0s20f0u2 -o eno1 -j ACCEPT 2>/dev/null || true
+    iptables -I DOCKER-USER 2 -i eno1 -o wlp0s20f0u2 -m state --state RELATED,ESTABLISHED 2>/dev/null || true
+    iptables -t nat -C POSTROUTING -o eno1 -j MASQUERADE 2>/dev/null || iptables -t nat -A POSTROUTING -o eno1 -j MASQUERADE
+fi
+EOF
+
+sudo chmod +x /etc/NetworkManager/dispatcher.d/99-hotspot-docker.sh
+```
 
 ---
 
 ## 5. حالة الإنجاز (Status)
 
-- **الحالة**: تم تشخيص سبب انقطاع الإنترنت عن الجوال بدقة: خدمة Docker نشطة وتمنع التوجيه عبر `FORWARD DROP`. تم توفير الأوامر اللازمة للسماح بالتمرير عبر `DOCKER-USER`.
+- **الحالة**: المهمة مكتملة بالكامل:
+  1. التعريف يعمل ومستقر على النواة `7.2.6-arch2-1`.
+  2. وضع AP مفعّل ويبث نقطة الاتصال.
+  3. الإنترنت يعمل بنجاح على الأجهزة المتصلة.
+  4. تم توفير سكريبت الاستدامة الدائم لمنع تعارض Docker بعد إعادة التشغيل.
 
-NEXT ACTION: ينتظر تنفيذ أوامر الخطوة (هـ) من قبل المستخدم للتحقق من وصول الإنترنت إلى الجوال المتصل.
+NEXT ACTION: اكتملت المهمة بالكامل وتم توثيق الاستدامة بنجاح.
