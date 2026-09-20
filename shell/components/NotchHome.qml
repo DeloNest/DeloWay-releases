@@ -29,8 +29,15 @@ Item {
 
     // MPRIS Active Player tracking
     property var activePlayer: null
-    readonly property bool hasPlayer: activePlayer !== null
+    readonly property bool hasPlayer: activePlayer !== null && (activePlayer.isPlaying || (activePlayer.trackTitle && activePlayer.trackTitle.trim().length > 0))
     readonly property bool isMusicPlaying: hasPlayer && activePlayer.isPlaying
+
+    function playerHasMedia(p) {
+        if (!p) return false;
+        if (p.isPlaying) return true;
+        if (p.trackTitle && p.trackTitle.trim().length > 0) return true;
+        return false;
+    }
 
     function updateActivePlayer() {
         if (!Mpris.players || !Mpris.players.values) {
@@ -45,7 +52,7 @@ Item {
 
         const pref = ConfigManager.musicPreferredPlayer || "auto";
 
-        // 1. Priority 0: Preferred player if specified and currently active
+        // 1. Priority 0: Preferred player if specified and currently active with media
         if (pref !== "auto") {
             const prefClean = pref.toLowerCase().replace(/\.desktop$/, "");
             for (let i = 0; i < values.length; i++) {
@@ -54,10 +61,10 @@ Item {
                 const dEntry = (p.desktopEntry || "").toLowerCase().replace(/\.desktop$/, "");
                 const ident = (p.identity || "").toLowerCase();
                 if (dEntry === prefClean || ident === prefClean || (dEntry && prefClean.includes(dEntry))) {
-                    if (activePlayer !== p) {
-                        activePlayer = p;
+                    if (root.playerHasMedia(p)) {
+                        if (activePlayer !== p) activePlayer = p;
+                        return;
                     }
-                    return;
                 }
             }
         }
@@ -72,8 +79,8 @@ Item {
             }
         }
 
-        // 3. Priority 2: If current activePlayer is still in values, keep it (prevent jumping upon pause)
-        if (activePlayer) {
+        // 3. Priority 2: If current activePlayer is still in values and has media, keep it (prevent jumping upon pause)
+        if (activePlayer && root.playerHasMedia(activePlayer)) {
             for (let i = 0; i < values.length; i++) {
                 if (values[i] === activePlayer) {
                     return;
@@ -81,8 +88,16 @@ Item {
             }
         }
 
-        // 4. Fallback: Previous activePlayer was closed or not set; pick first available player
-        activePlayer = values[0] || null;
+        // 4. Priority 3: Fallback to any player that has media loaded (e.g. paused music app)
+        for (let i = 0; i < values.length; i++) {
+            if (root.playerHasMedia(values[i])) {
+                activePlayer = values[i];
+                return;
+            }
+        }
+
+        // 5. Default state: No player has active media or playback
+        activePlayer = null;
     }
 
     Connections {
@@ -100,6 +115,9 @@ Item {
                 root.updateActivePlayer();
             }
             function onPlaybackStateChanged() {
+                root.updateActivePlayer();
+            }
+            function onTrackTitleChanged() {
                 root.updateActivePlayer();
             }
         }
@@ -288,47 +306,6 @@ Item {
                 color: Theme.notchBorder
             }
 
-            // ── SECTION B2: Subtle Divider & Compact Music Launcher (When idle) ─
-            Rectangle {
-                visible: !root.hasPlayer
-                Layout.preferredWidth: 1
-                Layout.preferredHeight: 16
-                Layout.alignment: Qt.AlignVCenter
-                color: Theme.notchBorderSubtle
-            }
-
-            Rectangle {
-                id: compactMusicBtn
-                visible: !root.hasPlayer
-                implicitWidth: 26
-                implicitHeight: 26
-                radius: 13
-                color: compactMusicMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
-                border.color: compactMusicMa.containsMouse ? Theme.notchBorderHighlight : "transparent"
-                border.width: 1
-                Layout.alignment: Qt.AlignVCenter
-                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                SymbolicIcon {
-                    anchors.centerIn: parent
-                    iconSize: 13
-                    source: "media-playback-start-symbolic"
-                    iconColor: compactMusicMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
-                }
-
-                MouseArea {
-                    id: compactMusicMa
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton
-                    onClicked: (mouse) => {
-                        if (mouse.button === Qt.LeftButton) {
-                            ConfigManager.launchMusic();
-                        }
-                    }
-                }
-            }
 
             // ── SECTION C: Mini Music Player ──────────────────────────────
             RowLayout {
