@@ -62,6 +62,7 @@ Rectangle {
     MouseArea {
         id: ma
         anchors.fill: parent
+        anchors.margins: root.buttonSize < 40 ? -(40 - root.buttonSize) / 2 : 0
         cursorShape: Qt.PointingHandCursor
         hoverEnabled: true
         onClicked: root.clicked()

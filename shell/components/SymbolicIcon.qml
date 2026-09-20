@@ -188,13 +188,27 @@ Item {
         return "";
     }
 
+    property bool isDirectional: false
+    property bool autoMirror: false
+
+    readonly property bool isDirectionalSource: {
+        if (!source) return false;
+        const s = source.toLowerCase();
+        return s.includes("go-previous") || s.includes("go-next") ||
+               s.includes("arrow") || s.includes("media-skip") ||
+               s.includes("pan-start") || s.includes("pan-end");
+    }
+
     Image {
         id: rawIcon
         anchors.fill: parent
         source: root.resolvedSource
-        sourceSize.width: root.iconSize * 2
-        sourceSize.height: root.iconSize * 2
+        sourceSize.width: Math.round(root.iconSize * 2)
+        sourceSize.height: Math.round(root.iconSize * 2)
         fillMode: Image.PreserveAspectFit
+        smooth: true
+        mipmap: true
+        mirror: (root.isDirectional || root.autoMirror || isDirectionalSource) && I18n.isRTL
         visible: false
         asynchronous: false
     }

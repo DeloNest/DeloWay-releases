@@ -72,7 +72,7 @@ Rectangle {
             SymbolicIcon {
                 anchors.centerIn: parent
                 source: root.icon
-                iconSize: 18
+                iconSize: 20
                 iconColor: root.active
                            ? root.activeIconColor
                            : Theme.qsTileIconInactive

@@ -190,6 +190,7 @@ Rectangle {
                 MouseArea {
                     id: iconMa
                     anchors.fill: parent
+                    anchors.margins: -4
                     enabled: root.iconClickable
                     cursorShape: root.iconClickable ? Qt.PointingHandCursor : Qt.ArrowCursor
                     hoverEnabled: true
