@@ -31,10 +31,10 @@ Item {
         y: root.selectionBoxY
         width: root.selectionBoxW
         height: root.selectionBoxH
-        color: Qt.rgba(1, 1, 1, 0.08)
-        border.color: Qt.rgba(1, 1, 1, 0.35)
+        color: Theme.notchSurfaceElevated
+        border.color: Theme.notchBorderHighlight
         border.width: 1
-        radius: 4
+        radius: 2
         z: 99
     }
 
@@ -142,8 +142,8 @@ Item {
                     deskItemWrapper.y = targetY;
                 }
 
-                width: 88
-                height: 96
+                width: DesktopManager.itemWidth
+                height: DesktopManager.itemHeight
                 z: itemMouse.drag.active ? 1000 : (isSelected ? 20 : 10)
 
                 property real dragStartX: 0
@@ -163,20 +163,18 @@ Item {
                 Rectangle {
                     id: deskItemCard
                     anchors.fill: parent
-                    radius: 10
+                    radius: 6
                     color: deskItemWrapper.isSelected
-                           ? Qt.rgba(255, 255, 255, 0.16)
-                           : (itemMouse.containsMouse ? Qt.rgba(255, 255, 255, 0.08) : "transparent")
+                           ? Theme.notchSurfaceActive
+                           : (itemMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     border.color: deskItemWrapper.isSelected
-                                  ? Qt.rgba(255, 255, 255, 0.35)
-                                  : (itemMouse.containsMouse ? Qt.rgba(255, 255, 255, 0.14) : "transparent")
+                                  ? Theme.notchBorderHighlight
+                                  : (itemMouse.containsMouse ? Theme.notchBorder : "transparent")
                     border.width: 1
-                    scale: itemMouse.drag.active ? 1.05 : (itemMouse.pressed ? 0.97 : (itemMouse.containsMouse ? 1.02 : 1.0))
                     opacity: itemMouse.drag.active ? 0.90 : 1.0
 
                     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                    Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
 
                     ColumnLayout {
@@ -186,48 +184,29 @@ Item {
 
                         AppIcon {
                             Layout.alignment: Qt.AlignHCenter
-                            iconSize: 44
+                            iconSize: 40
                             source: deskItemWrapper.itemData.icon
                         }
 
-                        // Display Name (Normal) with refined frosted pill for crystal-clear readability
-                        Item {
+                        // Display Name (Normal) with subtle text outline for crystal-clear readability
+                        Text {
+                            id: nameText
                             visible: !deskItemWrapper.isEditing
                             Layout.fillWidth: true
-                            Layout.preferredHeight: nameText.implicitHeight + 4
                             Layout.alignment: Qt.AlignHCenter
-
-                            Rectangle {
-                                id: labelBackdrop
-                                anchors.centerIn: parent
-                                width: Math.min(parent.width, nameText.implicitWidth + 10)
-                                height: nameText.implicitHeight + 4
-                                radius: 5
-                                color: deskItemWrapper.isSelected
-                                       ? Qt.rgba(0, 0, 0, 0.72)
-                                       : (itemMouse.containsMouse ? Qt.rgba(0, 0, 0, 0.52) : Qt.rgba(0, 0, 0, 0.35))
-                                border.color: deskItemWrapper.isSelected ? Qt.rgba(255, 255, 255, 0.25) : "transparent"
-                                border.width: 1
-                                Behavior on color { ColorAnimation { duration: 100 } }
-                            }
-
-                            Text {
-                                id: nameText
-                                anchors.fill: parent
-                                anchors.leftMargin: 2
-                                anchors.rightMargin: 2
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                elide: Text.ElideRight
-                                maximumLineCount: 2
-                                wrapMode: Text.Wrap
-                                text: deskItemWrapper.itemData.name
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: deskItemWrapper.isSelected ? Font.DemiBold : Font.Medium
-                                color: "#ffffff"
-                                renderType: Theme.renderType
-                            }
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignTop
+                            elide: Text.ElideRight
+                            maximumLineCount: 2
+                            wrapMode: Text.Wrap
+                            text: deskItemWrapper.itemData.name
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(11)
+                            font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
+                            color: "#ffffff"
+                            style: Text.Outline
+                            styleColor: Qt.rgba(0, 0, 0, 0.65)
+                            renderType: Theme.renderType
                         }
 
                         // Inline Rename TextField

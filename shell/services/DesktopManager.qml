@@ -80,8 +80,10 @@ Item {
     // ----------------------------------------------------
     // GRID METRICS & ICON POSITION PERSISTENCE
     // ----------------------------------------------------
-    readonly property real cellWidth: 96
-    readonly property real cellHeight: 104
+    readonly property real cellWidth: 100
+    readonly property real cellHeight: 100
+    readonly property real itemWidth: 76
+    readonly property real itemHeight: 84
     readonly property real topMargin: 56
     readonly property real sideMargin: 24
 
@@ -228,11 +230,12 @@ Item {
         const availableH = Math.max(200, pH - root.topMargin - 60);
         const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
         const col = Math.floor(index / itemsPerCol);
+        const xOffset = Math.round((root.cellWidth - root.itemWidth) / 2);
 
         if (I18n.isRTL) {
-            return Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth));
+            return Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth) + xOffset);
         } else {
-            return root.sideMargin + (col * root.cellWidth);
+            return root.sideMargin + (col * root.cellWidth) + xOffset;
         }
     }
 
@@ -245,7 +248,8 @@ Item {
         const availableH = Math.max(200, pH - root.topMargin - 60);
         const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
         const row = index % itemsPerCol;
-        return root.topMargin + (row * root.cellHeight);
+        const yOffset = Math.round((root.cellHeight - root.itemHeight) / 2);
+        return root.topMargin + yOffset + (row * root.cellHeight);
     }
 
     function saveItemPosition(id, rawX, rawY, parentW, parentH) {
@@ -254,14 +258,16 @@ Item {
 
         if (root.snapToGrid) {
             const pW = (parentW && parentW > 0) ? parentW : 1920;
-            finalY = root.topMargin + Math.max(0, Math.round((finalY - root.topMargin) / root.cellHeight)) * root.cellHeight;
+            const xOffset = Math.round((root.cellWidth - root.itemWidth) / 2);
+            const yOffset = Math.round((root.cellHeight - root.itemHeight) / 2);
+            finalY = root.topMargin + yOffset + Math.max(0, Math.round((finalY - root.topMargin - yOffset) / root.cellHeight)) * root.cellHeight;
             if (I18n.isRTL) {
                 // RTL columns snap from right
-                const col = Math.max(0, Math.round((pW - root.sideMargin - root.cellWidth - finalX) / root.cellWidth));
-                finalX = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth));
+                const col = Math.max(0, Math.round((pW - root.sideMargin - root.cellWidth - (finalX - xOffset)) / root.cellWidth));
+                finalX = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth) + xOffset);
             } else {
-                const col = Math.max(0, Math.round((finalX - root.sideMargin) / root.cellWidth));
-                finalX = root.sideMargin + (col * root.cellWidth);
+                const col = Math.max(0, Math.round((finalX - root.sideMargin - xOffset) / root.cellWidth));
+                finalX = root.sideMargin + (col * root.cellWidth) + xOffset;
             }
         }
 
@@ -277,18 +283,20 @@ Item {
         const pH = parentH || 1080;
         const availableH = Math.max(200, pH - root.topMargin - 60);
         const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
+        const xOffset = Math.round((root.cellWidth - root.itemWidth) / 2);
+        const yOffset = Math.round((root.cellHeight - root.itemHeight) / 2);
 
         let updated = {};
         for (let i = 0; i < root.allItems.length; i++) {
             const item = root.allItems[i];
             const col = Math.floor(i / itemsPerCol);
             const row = i % itemsPerCol;
-            const y = root.topMargin + (row * root.cellHeight);
+            const y = root.topMargin + yOffset + (row * root.cellHeight);
             let x = 0;
             if (I18n.isRTL) {
-                x = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth));
+                x = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth) + xOffset);
             } else {
-                x = root.sideMargin + (col * root.cellWidth);
+                x = root.sideMargin + (col * root.cellWidth) + xOffset;
             }
             updated[item.id] = { "x": Math.round(x), "y": Math.round(y) };
         }
