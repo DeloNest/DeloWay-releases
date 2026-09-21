@@ -453,8 +453,6 @@ PanelWindow {
                 ShellState.toggleSettingsApp();
             else
                 ShellState.openSettingsTab(item.id);
-        } else if (item.type === "store") {
-            ShellState.openAppStore("all", item.data.query);
         } else if (item.type === "action") {
             if (item.id === "lock") {
                 ShellState.lock();
@@ -498,52 +496,53 @@ PanelWindow {
     // ─────────────────────────────────────────────────────────────────────
     // Visual Presentation (Backdrop + Centered OLED Launcher)
     // ─────────────────────────────────────────────────────────────────────
+    // Visual Presentation (Transparent dismiss area + Spacious Centered Launcher)
+    // ─────────────────────────────────────────────────────────────────────
 
-    // Dimmed backdrop
-    Rectangle {
-        id: backdrop
+    // Transparent dismiss area (NO dark scrim/dimming over desktop)
+    MouseArea {
+        id: backdropDismissArea
         anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.50)
-        opacity: drawerHost.opacity
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: drawerHost.isOpen ? 180 : 130
-                easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
-            }
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: ShellState.closeAppDrawer()
-        }
+        onClicked: ShellState.closeAppDrawer()
     }
 
-    // Centered Launcher Card (~640px)
+    // Centered Spacious Launcher Card (~960px)
     Item {
         id: drawerHost
         anchors.centerIn: parent
-        width: Math.min(640, root.width - 32)
-        height: Math.min(540, root.height - 80)
+        width: Math.min(960, Math.max(760, root.width - 96))
+        height: Math.min(680, Math.max(540, root.height - 120))
 
         readonly property bool isOpen: ShellState.appDrawerOpen
         opacity: isOpen ? 1.0 : 0.0
-        scale: isOpen ? 1.0 : 0.96
+        scale: isOpen ? 1.0 : 0.97
         transformOrigin: Item.Center
 
         Behavior on opacity {
             NumberAnimation {
-                duration: drawerHost.isOpen ? 180 : 130
+                duration: drawerHost.isOpen ? 200 : 140
                 easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
             }
         }
         Behavior on scale {
             NumberAnimation {
-                duration: drawerHost.isOpen ? 180 : 130
+                duration: drawerHost.isOpen ? 200 : 140
                 easing.type: drawerHost.isOpen ? Easing.OutCubic : Easing.InQuad
             }
         }
 
+        // Local floating drop shadow (only beneath the card, not over the entire monitor)
+        Rectangle {
+            anchors.fill: parent
+            anchors.topMargin: 12
+            anchors.bottomMargin: -12
+            anchors.leftMargin: -6
+            anchors.rightMargin: -6
+            radius: root.radiusCard + 6
+            color: Theme.notchShadow
+            opacity: drawerHost.opacity * 0.85
+            z: 0
+        }
 
         Rectangle {
             id: drawerCard
@@ -554,13 +553,26 @@ PanelWindow {
             border.width: 1
             z: 1
 
+            // Subtle top inner highlight line for hardware glass sheen
+            Rectangle {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: root.radiusCard
+                anchors.rightMargin: root.radiusCard
+                height: 1
+                color: Theme.notchBorderHighlight
+                opacity: 0.6
+                z: 2
+            }
+
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: Theme.space16
-                spacing: Theme.space8
+                anchors.margins: Theme.space20
+                spacing: Theme.space12
 
                 // ─────────────────────────────────────────────────────────
                 // 1. Search Bar & Keyboard shortcuts hint
@@ -572,8 +584,8 @@ PanelWindow {
                     DeloTextField {
                         id: searchInput
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 44
-                        radius: root.radiusPill
+                        Layout.preferredHeight: 46
+                        radius: root.radiusPanel
                         customBackground: root.colorSurface
                         customBorderColor: root.colorBorder
                         customFocusBorderColor: root.colorBorderStrong
@@ -636,8 +648,8 @@ PanelWindow {
                     }
 
                     Rectangle {
-                        Layout.preferredWidth: 44
-                        Layout.preferredHeight: 28
+                        Layout.preferredWidth: 48
+                        Layout.preferredHeight: 30
                         radius: Theme.radiusSmall
                         color: "transparent"
                         border.color: root.colorBorderSoft
@@ -666,9 +678,9 @@ PanelWindow {
                     ListView {
                         id: categoryBar
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 30
+                        Layout.preferredHeight: 34
                         orientation: ListView.Horizontal
-                        spacing: Theme.space4
+                        spacing: Theme.space6
                         clip: true
                         boundsBehavior: Flickable.StopAtBounds
 
@@ -689,11 +701,15 @@ PanelWindow {
                             required property var modelData
                             readonly property bool isSelected: root.selectedCategory === catPill.modelData.id
 
-                            height: 28
-                            implicitWidth: catRow.implicitWidth + Theme.space16
-                            radius: Theme.radiusSmall
-                            color: catPill.isSelected ? root.colorSelected : (catMa.containsMouse ? root.colorHover : "transparent")
-                            border.color: catPill.isSelected ? root.colorBorderStrong : (catMa.containsMouse ? root.colorBorder : root.colorBorderSoft)
+                            height: 32
+                            implicitWidth: catRow.implicitWidth + Theme.space20
+                            radius: Theme.radiusSmall + 2
+                            color: catPill.isSelected
+                                   ? (Theme.isDark ? "#ffffff" : "#0f172a")
+                                   : (catMa.containsMouse ? root.colorHover : "transparent")
+                            border.color: catPill.isSelected
+                                          ? (Theme.isDark ? "#ffffff" : "#0f172a")
+                                          : (catMa.containsMouse ? root.colorBorder : root.colorBorderSoft)
                             border.width: 1
 
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -702,21 +718,25 @@ PanelWindow {
                             RowLayout {
                                 id: catRow
                                 anchors.centerIn: parent
-                                spacing: Theme.space4
+                                spacing: Theme.space6
 
                                 SymbolicIcon {
-                                    iconSize: 13
+                                    iconSize: 14
                                     source: catPill.modelData.icon
-                                    iconColor: catPill.isSelected ? root.colorText : root.colorTextSecondary
+                                    iconColor: catPill.isSelected
+                                               ? (Theme.isDark ? "#000000" : "#ffffff")
+                                               : (catMa.containsMouse ? root.colorText : root.colorTextSecondary)
                                     Behavior on iconColor { ColorAnimation { duration: Theme.motionFast } }
                                 }
 
                                 Text {
                                     text: catPill.modelData.label
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
+                                    font.pixelSize: Theme.fontSize(11.5)
                                     font.weight: catPill.isSelected ? Font.DemiBold : Font.Normal
-                                    color: catPill.isSelected ? root.colorText : root.colorTextSecondary
+                                    color: catPill.isSelected
+                                           ? (Theme.isDark ? "#000000" : "#ffffff")
+                                           : (catMa.containsMouse ? root.colorText : root.colorTextSecondary)
                                     renderType: Theme.renderType
                                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                                 }
@@ -734,18 +754,18 @@ PanelWindow {
 
                     // Grid / List View Toggle Button
                     Rectangle {
-                        Layout.preferredWidth: 28
-                        Layout.preferredHeight: 28
-                        radius: Theme.radiusSmall
+                        Layout.preferredWidth: 32
+                        Layout.preferredHeight: 32
+                        radius: Theme.radiusSmall + 2
                         color: viewToggleMa.containsMouse ? root.colorHover : "transparent"
-                        border.color: root.colorBorderSoft
+                        border.color: viewToggleMa.containsMouse ? root.colorBorder : root.colorBorderSoft
                         border.width: 1
 
                         SymbolicIcon {
                             anchors.centerIn: parent
-                            iconSize: 13
+                            iconSize: 14
                             source: root.isGridView ? "view-list-symbolic" : "view-grid-symbolic"
-                            iconColor: root.colorTextSecondary
+                            iconColor: viewToggleMa.containsMouse ? root.colorText : root.colorTextSecondary
                         }
 
                         MouseArea {
@@ -783,20 +803,51 @@ PanelWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 visible: root.selectedCategory === "All" && root.pinnedList.length > 0
-                                spacing: Theme.space8
+                                spacing: Theme.space12
 
-                                Text {
-                                    text: I18n.tr("pinned")
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: Font.DemiBold
-                                    color: root.colorTextSecondary
-                                    renderType: Theme.renderType
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.space8
+
+                                    SymbolicIcon {
+                                        iconSize: 14
+                                        source: "view-pin-symbolic"
+                                        iconColor: root.colorTextSecondary
+                                    }
+
+                                    Text {
+                                        text: I18n.tr("pinned")
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: Font.DemiBold
+                                        color: root.colorText
+                                        renderType: Theme.renderType
+                                    }
+
+                                    Rectangle {
+                                        height: 18
+                                        implicitWidth: pinnedCountText.implicitWidth + 10
+                                        radius: Theme.radiusSmall
+                                        color: root.colorSurface
+                                        border.color: root.colorBorderSoft
+                                        border.width: 1
+
+                                        Text {
+                                            id: pinnedCountText
+                                            anchors.centerIn: parent
+                                            text: root.pinnedList.length
+                                            font.family: Theme.typography.fontFamily
+                                            font.pixelSize: Theme.fontSize(10)
+                                            font.weight: Font.Medium
+                                            color: root.colorTextTertiary
+                                            renderType: Theme.renderType
+                                        }
+                                    }
                                 }
 
                                 GridLayout {
                                     Layout.fillWidth: true
-                                    columns: root.isGridView ? 5 : 1
+                                    columns: root.isGridView ? 6 : 1
                                     rowSpacing: Theme.space8
                                     columnSpacing: Theme.space8
 
@@ -810,22 +861,55 @@ PanelWindow {
                             // ── All Apps / Category Section ──────────────
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: Theme.space8
+                                spacing: Theme.space12
 
-                                Text {
-                                    text: root.selectedCategory === "All"
-                                          ? (I18n.isRTL ? "جميع التطبيقات" : "All Applications")
-                                          : root.selectedCategory
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: Font.DemiBold
-                                    color: root.colorTextSecondary
-                                    renderType: Theme.renderType
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.space8
+
+                                    SymbolicIcon {
+                                        iconSize: 14
+                                        source: "applications-all-symbolic"
+                                        iconColor: root.colorTextSecondary
+                                    }
+
+                                    Text {
+                                        text: root.selectedCategory === "All"
+                                              ? (I18n.isRTL ? "جميع التطبيقات" : "All Applications")
+                                              : root.selectedCategory
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: Font.DemiBold
+                                        color: root.colorText
+                                        renderType: Theme.renderType
+                                    }
+
+                                    Rectangle {
+                                        height: 18
+                                        implicitWidth: allCountText.implicitWidth + 10
+                                        radius: Theme.radiusSmall
+                                        color: root.colorSurface
+                                        border.color: root.colorBorderSoft
+                                        border.width: 1
+
+                                        Text {
+                                            id: allCountText
+                                            anchors.centerIn: parent
+                                            text: root.selectedCategory === "All"
+                                                  ? root.allAppsWithoutPinned.length
+                                                  : root.filteredApps.length
+                                            font.family: Theme.typography.fontFamily
+                                            font.pixelSize: Theme.fontSize(10)
+                                            font.weight: Font.Medium
+                                            color: root.colorTextTertiary
+                                            renderType: Theme.renderType
+                                        }
+                                    }
                                 }
 
                                 GridLayout {
                                     Layout.fillWidth: true
-                                    columns: root.isGridView ? 5 : 1
+                                    columns: root.isGridView ? 6 : 1
                                     rowSpacing: Theme.space8
                                     columnSpacing: Theme.space8
 
@@ -1040,7 +1124,7 @@ PanelWindow {
                 // ─────────────────────────────────────────────────────────
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 38
+                    Layout.preferredHeight: 42
                     radius: root.radiusPanel
                     color: root.colorSurface
                     border.color: root.colorBorderSoft
@@ -1048,12 +1132,12 @@ PanelWindow {
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: Theme.space8
-                        anchors.rightMargin: Theme.space8
+                        anchors.leftMargin: Theme.space12
+                        anchors.rightMargin: Theme.space12
                         spacing: Theme.space8
 
                         SymbolicIcon {
-                            iconSize: 14
+                            iconSize: 15
                             source: "deloway-symbolic"
                             iconColor: root.colorTextSecondary
                         }
@@ -1061,56 +1145,43 @@ PanelWindow {
                         Text {
                             text: I18n.isRTL ? "مشغّل DeloWay" : "DeloWay Launcher"
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(11)
+                            font.pixelSize: Theme.fontSize(11.5)
                             font.weight: Font.DemiBold
                             color: root.colorText
                             renderType: Theme.renderType
                         }
 
-                        Item { Layout.fillWidth: true }
-
-                        // Store button
                         Rectangle {
-                            width: 26
-                            height: 26
-                            radius: Theme.radiusSmall
-                            color: storeBtnMa.containsMouse ? root.colorHover : "transparent"
-                            border.color: root.colorBorderSoft
-                            border.width: 1
-
-                            SymbolicIcon {
-                                anchors.centerIn: parent
-                                iconSize: 13
-                                source: "store-symbolic"
-                                iconColor: root.colorTextSecondary
-                            }
-
-                            MouseArea {
-                                id: storeBtnMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    ShellState.closeAppDrawer();
-                                    ShellState.openAppStore();
-                                }
-                            }
+                            height: 16
+                            width: 1
+                            color: root.colorBorderSoft
                         }
+
+                        Text {
+                            text: (I18n.isRTL ? "إجمالي التطبيقات: " : "Total apps: ") + root.allApps.length
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(10.5)
+                            font.weight: Font.Normal
+                            color: root.colorTextTertiary
+                            renderType: Theme.renderType
+                        }
+
+                        Item { Layout.fillWidth: true }
 
                         // Settings button
                         Rectangle {
-                            width: 26
-                            height: 26
+                            width: 28
+                            height: 28
                             radius: Theme.radiusSmall
                             color: settBtnMa.containsMouse ? root.colorHover : "transparent"
-                            border.color: root.colorBorderSoft
+                            border.color: settBtnMa.containsMouse ? root.colorBorder : root.colorBorderSoft
                             border.width: 1
 
                             SymbolicIcon {
                                 anchors.centerIn: parent
-                                iconSize: 13
+                                iconSize: 14
                                 source: "settings-symbolic"
-                                iconColor: root.colorTextSecondary
+                                iconColor: settBtnMa.containsMouse ? root.colorText : root.colorTextSecondary
                             }
 
                             MouseArea {
@@ -1127,16 +1198,16 @@ PanelWindow {
 
                         // Power button
                         Rectangle {
-                            width: 26
-                            height: 26
+                            width: 28
+                            height: 28
                             radius: Theme.radiusSmall
                             color: pwrBtnMa.containsMouse ? Qt.rgba(root.colorUrgent.r, root.colorUrgent.g, root.colorUrgent.b, 0.12) : "transparent"
-                            border.color: root.colorBorderSoft
+                            border.color: pwrBtnMa.containsMouse ? root.colorUrgent : root.colorBorderSoft
                             border.width: 1
 
                             SymbolicIcon {
                                 anchors.centerIn: parent
-                                iconSize: 13
+                                iconSize: 14
                                 source: "system-shutdown-symbolic"
                                 iconColor: pwrBtnMa.containsMouse ? root.colorUrgent : root.colorTextSecondary
                             }
@@ -1166,8 +1237,13 @@ PanelWindow {
                     id: gridCell
                     required property var modelData
 
+                    readonly property bool isRunning: {
+                        if (!gridCell.modelData) return false;
+                        return ApplicationManager.getWindowsForApp(gridCell.modelData.id).length > 0;
+                    }
+
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 76
+                    Layout.preferredHeight: 92
                     radius: root.radiusItem
                     color: gridMa.pressed
                            ? root.colorHoverStrong
@@ -1175,8 +1251,26 @@ PanelWindow {
                     border.color: gridMa.containsMouse ? root.colorBorderStrong : root.colorBorderSoft
                     border.width: 1
 
+                    transform: Translate {
+                        y: gridMa.containsMouse ? -2 : 0
+                        Behavior on y { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                    }
+
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                     Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                    // Running app indicator dot (<= 6px)
+                    Rectangle {
+                        visible: gridCell.isRunning
+                        anchors.top: parent.top
+                        anchors.right: parent.right
+                        anchors.margins: 6
+                        width: 5
+                        height: 5
+                        radius: 2.5
+                        color: root.colorSuccess
+                        z: 2
+                    }
 
                     ColumnLayout {
                         anchors.fill: parent
@@ -1185,7 +1279,7 @@ PanelWindow {
 
                         AppIcon {
                             Layout.alignment: Qt.AlignHCenter
-                            iconSize: 34
+                            iconSize: 40
                             source: gridCell.modelData.icon
                         }
 
@@ -1193,12 +1287,14 @@ PanelWindow {
                             Layout.fillWidth: true
                             text: gridCell.modelData.name || ""
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(11)
+                            font.pixelSize: Theme.fontSize(11.5)
                             font.weight: gridMa.containsMouse ? Font.DemiBold : Font.Medium
                             color: gridMa.containsMouse ? root.colorText : root.colorTextSecondary
                             horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.Wrap
+                            maximumLineCount: 2
+                            lineHeight: 1.15
                             elide: Text.ElideRight
-                            maximumLineCount: 1
                             renderType: Theme.renderType
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                         }
@@ -1562,8 +1658,6 @@ PanelWindow {
                             if (app) {
                                 if (app.id === "settings") {
                                     ShellState.closeSettingsApp();
-                                } else if (app.id === "store") {
-                                    ShellState.closeAppStore();
                                 } else {
                                     var wins = ApplicationManager.getWindowsForApp(app.id);
                                     for (var i = 0; i < wins.length; i++) {
