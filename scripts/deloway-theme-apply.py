@@ -104,6 +104,12 @@ def build_gtk_css(mode: str) -> str:
         sel_bg = "#ffffff"
         sel_fg = "#000000"
 
+        # Translucent row selection matching Notch/Capsule cards
+        thunar_row_sel_bg = "alpha(#ffffff, 0.16)"
+        thunar_row_sel_fg = "#ffffff"
+        thunar_row_sel_border = "alpha(#ffffff, 0.35)"
+        thunar_row_hover_bg = "alpha(#ffffff, 0.08)"
+
         # Semantic Status Indicators (strictly constrained)
         destructive = "#ef4444"
         warning = "#f59e0b"
@@ -127,6 +133,12 @@ def build_gtk_css(mode: str) -> str:
         # Neutral Contrast Active/Selection
         sel_bg = "#0f172a"
         sel_fg = "#ffffff"
+
+        # Translucent row selection matching Notch/Capsule cards
+        thunar_row_sel_bg = "alpha(#0f172a, 0.12)"
+        thunar_row_sel_fg = "#0f172a"
+        thunar_row_sel_border = "alpha(#0f172a, 0.25)"
+        thunar_row_hover_bg = "alpha(#0f172a, 0.06)"
 
         # Semantic Status Indicators
         destructive = "#ef4444"
@@ -274,14 +286,15 @@ window.thunar .sidebar treeview row,
 
 window.thunar .sidebar row:hover,
 window.thunar .sidebar treeview row:hover {{
-    background-color: alpha(@theme_selected_bg_color, 0.08);
+    background-color: {thunar_row_hover_bg};
 }}
 
 window.thunar .sidebar row:selected,
 window.thunar .sidebar treeview row:selected,
 window.thunar .sidebar treeview:selected {{
-    background-color: @theme_selected_bg_color;
-    color: @theme_selected_fg_color;
+    background-color: {thunar_row_sel_bg};
+    color: {thunar_row_sel_fg};
+    border: 1px solid {thunar_row_sel_border};
     border-radius: 6px;
 }}
 
@@ -300,7 +313,7 @@ window.thunar .standard-view:hover,
 window.thunar .view:hover,
 window.thunar exo-icon-view:hover,
 window.thunar treeview.view:hover {{
-    background-color: alpha(@theme_selected_bg_color, 0.04);
+    background-color: {thunar_row_hover_bg};
 }}
 
 window.thunar .standard-view:selected,
@@ -309,8 +322,9 @@ window.thunar exo-icon-view:selected,
 window.thunar treeview.view:selected,
 .thunar exo-icon-view:selected,
 .thunar treeview.view:selected {{
-    background-color: @theme_selected_bg_color;
-    color: @theme_selected_fg_color;
+    background-color: {thunar_row_sel_bg};
+    color: {thunar_row_sel_fg};
+    border: 1px solid {thunar_row_sel_border};
     border-radius: 6px;
     outline: none;
 }}
@@ -377,6 +391,18 @@ window.thunar toolbar button,
     color: @headerbar_fg_color;
 }}
 
+window.thunar toolbar:dir(rtl) button,
+.thunar toolbar:dir(rtl) button {{
+    margin-left: 2px;
+    margin-right: 0;
+}}
+
+window.thunar toolbar:dir(ltr) button,
+.thunar toolbar:dir(ltr) button {{
+    margin-right: 2px;
+    margin-left: 0;
+}}
+
 window.thunar toolbar button:hover,
 .thunar toolbar button:hover {{
     background-color: alpha(@theme_selected_bg_color, 0.08);
@@ -388,6 +414,21 @@ window.thunar toolbar button:active,
 .thunar toolbar button:checked {{
     background-color: alpha(@theme_selected_bg_color, 0.16);
     color: @headerbar_fg_color;
+}}
+
+/* Treeview column headers in RTL & LTR */
+window.thunar treeview.view:dir(rtl),
+.thunar treeview.view:dir(rtl),
+window.thunar treeview.view header button:dir(rtl),
+.thunar treeview.view header button:dir(rtl) {{
+    text-align: right;
+}}
+
+window.thunar treeview.view:dir(ltr),
+.thunar treeview.view:dir(ltr),
+window.thunar treeview.view header button:dir(ltr),
+.thunar treeview.view header button:dir(ltr) {{
+    text-align: left;
 }}
 
 /* Entries (Search & Path Input) */
@@ -405,6 +446,14 @@ window.thunar entry:dir(rtl),
 .thunar entry:dir(rtl),
 window.thunar .location-bar entry:dir(rtl) {{
     text-align: right;
+    direction: rtl;
+}}
+
+window.thunar entry:dir(ltr),
+.thunar entry:dir(ltr),
+window.thunar .location-bar entry:dir(ltr) {{
+    text-align: left;
+    direction: ltr;
 }}
 
 window.thunar entry:focus,
@@ -454,6 +503,7 @@ window.thunar statusbar,
 
 window.thunar statusbar:dir(rtl),
 .thunar statusbar:dir(rtl) {{
+    direction: rtl;
     padding: 2px 8px;
 }}
 
@@ -748,7 +798,7 @@ def main():
     # 3. Read authoritative system settings from gsettings
     icon_theme = get_gsettings_value("icon-theme") or "Reversal-dark"
     cursor_theme = get_gsettings_value("cursor-theme") or "default"
-    base_font = get_gsettings_value("font-name") or "Google Sans Flex Medium 11 @opsz=11,wght=500"
+    base_font = "Cairo Medium 11"
     font_name = get_font_name_with_scale(font_scale, base_font)
 
     print(f"[deloway-theme] Mode: {mode} | Identity: Monochrome | GTK Theme: {gtk_theme}")
