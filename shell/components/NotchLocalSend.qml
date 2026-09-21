@@ -15,34 +15,21 @@ Item {
     LayoutMirroring.enabled: false
     LayoutMirroring.childrenInherit: true
 
-    // State: "idle" | "selecting" | "sending" | "sent"
+    // State: "idle" | "selecting" | "sending" | "sent" | "failed"
     property string stage: "idle"
     property var droppedUrls: []
     property var selectedDevice: null
-    property real sendProgress: 0.0
+    readonly property real sendProgress: LocalSendService.sendProgress
 
-    // Sending Progress Timer
-    Timer {
-        id: sendTimer
-        interval: 40
-        repeat: true
-        running: root.stage === "sending"
-        property int elapsed: 0
-        readonly property int totalDuration: 1200
-
-        onRunningChanged: {
-            if (running) {
-                elapsed = 0;
-                root.sendProgress = 0.0;
-            }
-        }
-
-        onTriggered: {
-            elapsed += interval;
-            root.sendProgress = Math.min(1.0, elapsed / totalDuration);
-            if (elapsed >= totalDuration) {
-                stop();
+    Connections {
+        target: LocalSendService
+        function onSendStatusChanged() {
+            if (LocalSendService.sendStatus === "sent") {
                 root.stage = "sent";
+            } else if (LocalSendService.sendStatus === "failed") {
+                root.stage = "failed";
+            } else if (LocalSendService.sendStatus === "sending" || LocalSendService.sendStatus === "connecting") {
+                root.stage = "sending";
             }
         }
     }
@@ -50,15 +37,15 @@ Item {
     function startSending(device) {
         root.selectedDevice = device;
         root.stage = "sending";
-        // Trigger real transfer via LocalSendService
-        LocalSendService.sendFiles(root.droppedUrls);
+        // Trigger real transfer via LocalSendService passing the selected device
+        LocalSendService.sendFiles(root.droppedUrls, device);
     }
 
     function resetToIdle() {
         root.stage = "idle";
         root.droppedUrls = [];
         root.selectedDevice = null;
-        root.sendProgress = 0.0;
+        LocalSendService.resetSendState();
     }
 
     // Trigger status & network scan on expanded
@@ -102,10 +89,15 @@ Item {
 
         Text {
             text: {
-                if (root.stage === "sending")
-                    return I18n.tr("notch_sending_to") + " " + (root.selectedDevice ? (root.selectedDevice.alias || root.selectedDevice.ip) : "") + " (" + Math.round(root.sendProgress * 100) + "%)";
+                if (root.stage === "sending") {
+                    const devName = (root.selectedDevice ? (root.selectedDevice.alias || root.selectedDevice.ip) : "");
+                    const pct = Math.round(root.sendProgress * 100);
+                    return I18n.tr("notch_sending_to") + " " + devName + " (" + pct + "%)";
+                }
                 if (root.stage === "sent")
                     return I18n.tr("notch_sent_success");
+                if (root.stage === "failed")
+                    return I18n.tr("notch_sent_failed");
                 if (root.stage === "selecting")
                     return (root.droppedUrls.length || 1) + " " + I18n.tr("notch_files_ready");
                 if (!LocalSendService.isRunning)
@@ -115,7 +107,11 @@ Item {
             font.family: Theme.typography.fontFamily
             font.pixelSize: 10
             renderType: Theme.renderType
-            color: root.stage === "sent" ? Theme.colors.success : (LocalSendService.isRunning ? Theme.colors.textSecondary : Theme.colors.textTertiary)
+            color: root.stage === "failed"
+                   ? Theme.colors.urgent
+                   : (root.stage === "sent"
+                      ? Theme.colors.success
+                      : (LocalSendService.isRunning ? Theme.colors.textSecondary : Theme.colors.textTertiary))
             elide: Text.ElideRight
             Layout.fillWidth: true
         }
@@ -125,9 +121,11 @@ Item {
             implicitWidth: 8
             implicitHeight: 8
             radius: 4
-            color: root.stage === "sending"
-                   ? Theme.notchText
-                   : (root.stage === "sent" ? Theme.colors.success : (LocalSendService.isRunning ? Theme.colors.success : Theme.colors.textTertiary))
+            color: root.stage === "failed"
+                   ? Theme.colors.urgent
+                   : (root.stage === "sending"
+                      ? Theme.notchText
+                      : (root.stage === "sent" ? Theme.colors.success : (LocalSendService.isRunning ? Theme.colors.success : Theme.colors.textTertiary)))
 
             SequentialAnimation on opacity {
                 running: root.stage === "sending" || LocalSendService.isScanning
@@ -728,6 +726,120 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.resetToIdle()
+                    }
+                }
+            }
+
+            // ── STAGE E: TRANSFER FAILED ──
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 6
+                visible: root.stage === "failed"
+                width: parent.width - 40
+
+                Rectangle {
+                    implicitWidth: 32
+                    implicitHeight: 32
+                    radius: 16
+                    color: Theme.notchSurfaceElevated
+                    border.color: Theme.colors.borderSubtle
+                    border.width: 1
+                    Layout.alignment: Qt.AlignHCenter
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        font.pixelSize: 14
+                        font.weight: Font.Bold
+                        color: Theme.colors.urgent
+                    }
+                }
+
+                Text {
+                    text: I18n.tr("notch_sent_failed")
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: 12
+                    font.weight: Font.Bold
+                    color: Theme.colors.text
+                    Layout.alignment: Qt.AlignHCenter
+                }
+
+                Text {
+                    text: LocalSendService.lastSendError || ""
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: 9
+                    color: Theme.colors.textSecondary
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: parent.width
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                RowLayout {
+                    Layout.alignment: Qt.AlignHCenter
+                    spacing: 8
+
+                    // Try again button
+                    Rectangle {
+                        implicitWidth: tryAgainTxt.implicitWidth + 18
+                        implicitHeight: 22
+                        radius: 11
+                        color: tryAgainHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
+                        border.color: Theme.colors.borderSubtle
+                        border.width: 1
+
+                        Text {
+                            id: tryAgainTxt
+                            anchors.centerIn: parent
+                            text: I18n.tr("notch_try_again")
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
+                            color: Theme.colors.text
+                        }
+
+                        MouseArea {
+                            id: tryAgainHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (root.selectedDevice) {
+                                    root.startSending(root.selectedDevice);
+                                } else {
+                                    root.stage = "selecting";
+                                    LocalSendService.scanNetwork();
+                                }
+                            }
+                        }
+                    }
+
+                    // Cancel / Back button
+                    Rectangle {
+                        implicitWidth: cancelTxt.implicitWidth + 18
+                        implicitHeight: 22
+                        radius: 11
+                        color: cancelHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
+                        border.color: Theme.colors.borderSubtle
+                        border.width: 1
+
+                        Text {
+                            id: cancelTxt
+                            anchors.centerIn: parent
+                            text: I18n.tr("common_cancel")
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: 9
+                            font.weight: Font.Medium
+                            color: Theme.colors.textSecondary
+                        }
+
+                        MouseArea {
+                            id: cancelHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.resetToIdle()
+                        }
                     }
                 }
             }

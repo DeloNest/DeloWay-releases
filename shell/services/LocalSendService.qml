@@ -17,11 +17,92 @@ Item {
 
     // Network Discovery State
     property var discoveredDevices: []
+    property var allDevices: []
+    property var selectedDevice: null
     property bool isScanning: false
     property bool isSending: false
+    property real sendProgress: 0.0
+    property string sendStatus: "idle"
     property string lastSendError: ""
+    property string currentSendingFile: ""
 
     readonly property string helperScript: ConfigManager.projectDir + "/scripts/deloway-localsend.py"
+
+    signal filesStaged(var files)
+    signal resetRequested()
+
+    function resetStage() {
+        resetRequested();
+    }
+
+    function stageFiles(files) {
+        if (!files || files.length === 0) return;
+        const clean = [];
+        for (let i = 0; i < files.length; i++) {
+            let p = String(files[i] || "");
+            if (p.startsWith("file://")) {
+                p = decodeURIComponent(p.substring(7));
+            }
+            clean.push(p);
+        }
+        filesStaged(clean);
+    }
+
+    function getDefaultDevice() {
+        if (!allDevices || allDevices.length === 0) return null;
+        for (let i = 0; i < allDevices.length; i++) {
+            if (allDevices[i].isFavorite) return allDevices[i];
+        }
+        return allDevices[0];
+    }
+
+    function selectDevice(device) {
+        root.selectedDevice = device;
+    }
+
+    function updateAllDevices() {
+        const map = {};
+        // 1. Add favorites
+        if (Array.isArray(root.favorites)) {
+            for (let i = 0; i < root.favorites.length; i++) {
+                const fav = root.favorites[i];
+                const key = fav.id || fav.ip || fav.alias;
+                map[key] = Object.assign({}, fav, { isFavorite: true });
+            }
+        }
+        // 2. Merge discovered
+        if (Array.isArray(root.discoveredDevices)) {
+            for (let i = 0; i < root.discoveredDevices.length; i++) {
+                const dev = root.discoveredDevices[i];
+                const key = dev.id || dev.ip || dev.alias;
+                if (map[key]) {
+                    map[key] = Object.assign(map[key], dev, { isFavorite: true });
+                } else {
+                    map[key] = dev;
+                }
+            }
+        }
+        const merged = Object.values(map);
+        merged.sort((a, b) => {
+            if (a.isFavorite && !b.isFavorite) return -1;
+            if (!a.isFavorite && b.isFavorite) return 1;
+            if (a.isOnline && !b.isOnline) return -1;
+            if (!a.isOnline && b.isOnline) return 1;
+            return 0;
+        });
+        root.allDevices = merged;
+
+        // Auto-select if no selection or previous selection is gone
+        if (!root.selectedDevice && merged.length > 0) {
+            root.selectedDevice = root.getDefaultDevice();
+        } else if (root.selectedDevice && merged.length > 0) {
+            const selKey = root.selectedDevice.id || root.selectedDevice.ip;
+            const updated = merged.find(d => (d.id && d.id === selKey) || (d.ip && d.ip === selKey));
+            if (updated) {
+                root.selectedDevice = updated;
+            }
+        }
+    }
 
     // ── Status Inspector Process ─────────────────────────────────────────────
     Process {
@@ -37,7 +118,10 @@ Item {
                     if (info.hostname) root.hostname = info.hostname;
                     if (info.port) root.port = info.port;
                     root.isRunning = !!info.isRunning;
-                    if (info.favorites) root.favorites = info.favorites;
+                    if (info.favorites) {
+                        root.favorites = info.favorites;
+                        root.updateAllDevices();
+                    }
                 } catch (e) {
                     // ignore partial or malformed chunk
                 }
@@ -56,6 +140,7 @@ Item {
                     const list = JSON.parse(data.trim());
                     if (Array.isArray(list)) {
                         root.discoveredDevices = list;
+                        root.updateAllDevices();
                     }
                 } catch (e) {
                     // ignore
@@ -73,7 +158,6 @@ Item {
         id: launchProcess
         command: ["python3", root.helperScript, "launch"]
         onExited: {
-            // refresh status shortly after launch
             statusTimer.restart();
         }
     }
@@ -81,8 +165,45 @@ Item {
     // ── Send Process ────────────────────────────────────────────────────────
     Process {
         id: sendProcess
+
+        stdout: SplitParser {
+            onRead: function(data) {
+                const lines = data.split("\n");
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    try {
+                        const ev = JSON.parse(line);
+                        if (ev.type === "connecting") {
+                            root.sendStatus = "connecting";
+                        } else if (ev.type === "progress") {
+                            root.sendStatus = "sending";
+                            root.sendProgress = ev.progress !== undefined ? ev.progress : 0.0;
+                            if (ev.file) root.currentSendingFile = ev.file;
+                        } else if (ev.type === "sent") {
+                            root.sendStatus = "sent";
+                            root.sendProgress = 1.0;
+                            root.isSending = false;
+                        } else if (ev.type === "failed") {
+                            root.sendStatus = "failed";
+                            root.lastSendError = ev.error || "Transfer failed";
+                            root.isSending = false;
+                        }
+                    } catch (e) {
+                        // ignore malformed chunk
+                    }
+                }
+            }
+        }
+
         onExited: {
             root.isSending = false;
+            if (root.sendStatus === "sending" || root.sendStatus === "connecting") {
+                root.sendStatus = "failed";
+                if (!root.lastSendError) {
+                    root.lastSendError = "Transfer process exited unexpectedly";
+                }
+            }
         }
     }
 
@@ -118,11 +239,29 @@ Item {
         }
     }
 
-    function sendFiles(files) {
+    function resetSendState() {
+        root.isSending = false;
+        root.sendProgress = 0.0;
+        root.sendStatus = "idle";
+        root.lastSendError = "";
+        root.currentSendingFile = "";
+    }
+
+    function sendFiles(files, device) {
         if (!files || files.length === 0) return;
+        const target = device || root.selectedDevice || root.getDefaultDevice();
+        if (!target) {
+            root.sendStatus = "failed";
+            root.lastSendError = "No target device selected";
+            return;
+        }
+
+        const targetIp = target.ip;
+        const targetPort = String(target.port || root.port || 53317);
+
         const cleanPaths = [];
         for (let i = 0; i < files.length; i++) {
-            let p = files[i];
+            let p = String(files[i] || "");
             if (p.startsWith("file://")) {
                 p = decodeURIComponent(p.substring(7));
             }
@@ -130,11 +269,17 @@ Item {
         }
 
         root.isSending = true;
-        const cmd = ["python3", root.helperScript, "send"].concat(cleanPaths);
+        root.sendProgress = 0.0;
+        root.sendStatus = "connecting";
+        root.lastSendError = "";
+        root.currentSendingFile = "";
+
+        const cmd = ["python3", root.helperScript, "send", targetIp, targetPort].concat(cleanPaths);
         sendProcess.exec(cmd);
     }
 
     Component.onCompleted: {
         root.refreshStatus();
+        root.scanNetwork();
     }
 }
