@@ -17,6 +17,12 @@ QtObject {
     property string searchQuery: ""
 
     function openSmartNotch(tab) {
+        timeCapsuleExpanded = false;
+        quickSettingsCapsuleExpanded = false;
+        launcherOpen = false;
+        appDrawerOpen = false;
+        cheatSheetOpen = false;
+        sessionMenuOpen = false;
         if (tab !== undefined && tab !== null && tab !== "") {
             smartNotchTab = parseInt(tab) || 0;
         }
@@ -28,8 +34,11 @@ QtObject {
     }
 
     function toggleSmartNotch() {
-        if (!smartNotchExpanded) smartNotchTab = 0;
-        smartNotchExpanded = !smartNotchExpanded;
+        if (!smartNotchExpanded) {
+            openSmartNotch();
+        } else {
+            closeSmartNotch();
+        }
     }
 
     function setSmartNotchTab(index) {
@@ -39,9 +48,10 @@ QtObject {
     property bool timeCapsuleExpanded: false
 
     function openTimeCapsule() {
+        smartNotchExpanded = false;
+        quickSettingsCapsuleExpanded = false;
         launcherOpen = false;
         appDrawerOpen = false;
-        appStoreOpen = false;
         cheatSheetOpen = false;
         sessionMenuOpen = false;
         timeCapsuleExpanded = true;
@@ -63,9 +73,10 @@ QtObject {
     property string quickSettingsCapsuleView: "main"
 
     function openQuickSettingsCapsule(viewName) {
+        smartNotchExpanded = false;
+        timeCapsuleExpanded = false;
         launcherOpen = false;
         appDrawerOpen = false;
-        appStoreOpen = false;
         cheatSheetOpen = false;
         sessionMenuOpen = false;
         quickSettingsCapsuleView = viewName || "main";
@@ -78,9 +89,10 @@ QtObject {
 
     function toggleQuickSettingsCapsule(viewName) {
         if (!quickSettingsCapsuleExpanded) {
+            smartNotchExpanded = false;
+            timeCapsuleExpanded = false;
             launcherOpen = false;
             appDrawerOpen = false;
-            appStoreOpen = false;
             cheatSheetOpen = false;
             sessionMenuOpen = false;
             quickSettingsCapsuleView = viewName || "main";
@@ -128,7 +140,6 @@ QtObject {
         appDrawerOpen = false;
         quickSettingsCapsuleExpanded = false;
         timeCapsuleExpanded = false;
-        appStoreOpen = false;
         cheatSheetOpen = false;
         sessionMenuOpen = false;
         clipboardOpen = false;
@@ -153,7 +164,6 @@ QtObject {
     function openAppDrawer(initialQuery) {
         launcherOpen = false;
         quickSettingsCapsuleExpanded = false;
-        appStoreOpen = false;
         searchQuery = (typeof initialQuery === "string") ? initialQuery : "";
         appDrawerOpen = true;
     }
@@ -162,7 +172,6 @@ QtObject {
         if (!appDrawerOpen) {
             launcherOpen = false;
             quickSettingsCapsuleExpanded = false;
-            appStoreOpen = false;
             searchQuery = "";
         }
         appDrawerOpen = !appDrawerOpen;
@@ -180,7 +189,6 @@ QtObject {
         launcherOpen = false;
         quickSettingsCapsuleExpanded = false;
         appDrawerOpen = false;
-        appStoreOpen = false;
         clipboardOpen = true;
     }
 
@@ -189,7 +197,6 @@ QtObject {
             launcherOpen = false;
             quickSettingsCapsuleExpanded = false;
             appDrawerOpen = false;
-            appStoreOpen = false;
         }
         clipboardOpen = !clipboardOpen;
     }
@@ -219,6 +226,15 @@ QtObject {
     }
 
     function openSettingsTab(tabId) {
+        if (tabId === "network" || tabId === "bluetooth") {
+            tabId = "connectivity";
+        } else if (tabId === "dock" || tabId === "windows") {
+            tabId = "desktop";
+        } else if (tabId === "topbar" || tabId === "language") {
+            tabId = "time_language";
+        } else if (tabId === "power" || tabId === "applications" || tabId === "about") {
+            tabId = "system";
+        }
         activeSettingsTab = tabId;
         settingsAppOpen = true;
     }
@@ -231,41 +247,6 @@ QtObject {
     signal settingsScrollRequested(real position)
     function scrollSettings(pos) {
         settingsScrollRequested(pos);
-    }
-
-    property bool appStoreOpen: false
-    property string storeCategory: "featured"
-    property string storeSearchQuery: ""
-    property var selectedStoreApp: null
-
-    function openAppStore(category, search) {
-        appDrawerOpen = false;
-        quickSettingsCapsuleExpanded = false;
-        selectedStoreApp = null;
-        if (category) storeCategory = category;
-        if (search !== undefined) storeSearchQuery = search;
-        appStoreOpen = true;
-    }
-
-    function toggleAppStore() {
-        if (!appStoreOpen) {
-            appDrawerOpen = false;
-            quickSettingsCapsuleExpanded = false;
-            selectedStoreApp = null;
-        }
-        appStoreOpen = !appStoreOpen;
-    }
-
-    function closeAppStore() {
-        appStoreOpen = false;
-        selectedStoreApp = null;
-    }
-
-    function openAppDetails(app) {
-        appDrawerOpen = false;
-        quickSettingsCapsuleExpanded = false;
-        selectedStoreApp = app;
-        appStoreOpen = true;
     }
 
     property bool screenshotToolOpen: false
@@ -289,7 +270,6 @@ QtObject {
         if (!cheatSheetOpen) {
             appDrawerOpen = false;
             quickSettingsCapsuleExpanded = false;
-            appStoreOpen = false;
         }
         cheatSheetOpen = !cheatSheetOpen;
     }
@@ -297,7 +277,6 @@ QtObject {
     function openCheatSheet() {
         appDrawerOpen = false;
         quickSettingsCapsuleExpanded = false;
-        appStoreOpen = false;
         cheatSheetOpen = true;
     }
 
@@ -318,7 +297,6 @@ QtObject {
         if (!sessionMenuOpen) {
             appDrawerOpen = false;
             quickSettingsCapsuleExpanded = false;
-            appStoreOpen = false;
         }
         sessionMenuOpen = !sessionMenuOpen;
     }
@@ -326,7 +304,6 @@ QtObject {
     function openSessionMenu() {
         appDrawerOpen = false;
         quickSettingsCapsuleExpanded = false;
-        appStoreOpen = false;
         sessionMenuOpen = true;
     }
 
@@ -345,7 +322,6 @@ QtObject {
         appDrawerOpen = false;
         quickSettingsCapsuleExpanded = false;
         sessionMenuOpen = false;
-        appStoreOpen = false;
         settingsAppOpen = false;
         screenshotToolOpen = false;
         cheatSheetOpen = false;

@@ -62,12 +62,12 @@ PanelWindow {
     readonly property real expandedHeight: root.hasVisibleHardware ? 284 : 172
     readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
 
-    // Single unified motion driver (220ms, OutCubic)
+    // Single unified motion driver (200ms open, 160ms close)
     property real expandProgress: root.isExpanded ? 1.0 : 0.0
     Behavior on expandProgress {
         NumberAnimation {
-            duration: 220
-            easing.type: Easing.OutCubic
+            duration: root.isExpanded ? 200 : 160
+            easing.type: root.isExpanded ? Easing.OutCubic : Easing.OutQuad
         }
     }
 
@@ -153,6 +153,11 @@ PanelWindow {
         if (ConfigManager.clockFormat === "24h") {
             return Qt.formatDateTime(d, "hh:mm");
         }
+        const timeStr = Qt.formatDateTime(d, "h:mm");
+        if (I18n.isRTL) {
+            const ap = d.getHours() < 12 ? "ص" : "م";
+            return timeStr + " " + ap;
+        }
         return Qt.formatDateTime(d, "h:mm ap");
     }
 
@@ -163,12 +168,20 @@ PanelWindow {
         if (ConfigManager.clockFormat === "24h") {
             return Qt.formatDateTime(d, withSec ? "hh:mm:ss" : "hh:mm");
         }
-        return Qt.formatDateTime(d, withSec ? "h:mm:ss" : "h:mm");
+        const timeStr = Qt.formatDateTime(d, withSec ? "h:mm:ss" : "h:mm");
+        if (I18n.isRTL) {
+            const ap = d.getHours() < 12 ? "ص" : "م";
+            return timeStr + " " + ap;
+        }
+        return Qt.formatDateTime(d, withSec ? "h:mm:ss ap" : "h:mm ap");
     }
 
     readonly property string formattedAmPm: {
         const d = sysClock.date;
         if (!d || ConfigManager.clockFormat === "24h") return "";
+        if (I18n.isRTL) {
+            return d.getHours() < 12 ? "ص" : "م";
+        }
         return Qt.formatDateTime(d, "ap");
     }
 
@@ -206,10 +219,8 @@ PanelWindow {
 
     onIsExpandedChanged: {
         if (root.isExpanded) {
-            // Check collision on narrow screens (< 1400px)
-            if (targetScreen.width < 1400 && ShellState.smartNotchExpanded) {
-                ShellState.closeSmartNotch();
-            }
+            ShellState.closeSmartNotch();
+            ShellState.closeQuickSettingsCapsule();
         }
     }
 

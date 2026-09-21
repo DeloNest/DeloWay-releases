@@ -74,12 +74,12 @@ PanelWindow {
     readonly property real expandedWidth: 440
     readonly property real expandedHeight: 436
 
-    // Single unified motion driver (220ms, OutCubic)
+    // Single unified motion driver (200ms open, 160ms close)
     property real expandProgress: root.isExpanded ? 1.0 : 0.0
     Behavior on expandProgress {
         NumberAnimation {
-            duration: 220
-            easing.type: Easing.OutCubic
+            duration: root.isExpanded ? 200 : 160
+            easing.type: root.isExpanded ? Easing.OutCubic : Easing.OutQuad
         }
     }
 
@@ -90,9 +90,9 @@ PanelWindow {
 
     onCurrentViewChanged: {
         if (root.currentView === "hotspot" || root.currentView === "wifi") {
-            networkStatusProcess.running = true;
+            NetworkService.refresh();
         } else if (root.currentView === "bluetooth") {
-            bluetoothStatusProcess.running = true;
+            BluetoothService.refresh();
         }
     }
 
@@ -150,255 +150,68 @@ PanelWindow {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Network Data Logic (deloway-network.py)
+    // Network Data Logic (Unified NetworkService Singleton)
     // ─────────────────────────────────────────────────────────────────────────
-    property var networkData: null
-    property bool wifiAvailable: false   // hardware present
-    property bool wifiEnabled: false
-    property var wifiNetworks: []
-    property string connectingSsid: ""
-    property string networkError: ""
-    readonly property string wifiSsid: (networkData && networkData.wifi && networkData.wifi.ssid) ? networkData.wifi.ssid : ""
+    readonly property var networkData: NetworkService.networkData
+    readonly property bool wifiAvailable: NetworkService.wifiAvailable
+    readonly property bool wifiEnabled: NetworkService.wifiEnabled
+    readonly property var wifiNetworks: NetworkService.wifiNetworks
+    readonly property string connectingSsid: NetworkService.connectingSsid
+    readonly property string networkError: NetworkService.networkError
+    readonly property string wifiSsid: NetworkService.wifiSsid
 
-    property bool hotspotAvailable: false
-    property bool hotspotEnabled: false
-    property string hotspotSsid: ""
-    property string hotspotPassword: ""
-    property string hotspotError: ""
-    property string hotspotSaveSuccess: ""
-    property var hotspotClients: []
-
-    Process {
-        id: networkStatusProcess
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "status"]
-        stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: data => {
-                try {
-                    const parsed = JSON.parse(data.trim());
-                    root.networkData = parsed;
-                    root.networkError = "";
-                    if (parsed.wifi) {
-                        root.wifiAvailable = !!parsed.wifi.available;
-                        root.wifiEnabled = parsed.wifi.enabled;
-                        root.wifiNetworks = parsed.wifi.networks || [];
-                    }
-                    if (parsed.hotspot) {
-                        root.hotspotAvailable = !!parsed.hotspot.available;
-                        root.hotspotEnabled = !!parsed.hotspot.enabled;
-                        if (parsed.hotspot.ssid) root.hotspotSsid = parsed.hotspot.ssid;
-                        if (parsed.hotspot.password) root.hotspotPassword = parsed.hotspot.password;
-                        if (parsed.hotspot.clients !== undefined) root.hotspotClients = parsed.hotspot.clients;
-                    }
-                } catch(e) {
-                    root.networkError = I18n.isRTL ? "تعذر قراءة بيانات الشبكة" : "Failed to parse network data";
-                }
-            }
-        }
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                root.networkError = I18n.isRTL ? "تعذر جلب بيانات الشبكة" : "Failed to fetch network data";
-            }
-        }
-    }
-
-    Process {
-        id: wifiToggleProcess
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "toggle-wifi"]
-        onExited: networkStatusProcess.running = true
-    }
-
-    Process {
-        id: wifiRescanProcess
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "rescan"]
-        onExited: networkStatusProcess.running = true
-    }
-
-    Process {
-        id: wifiConnectProcess
-        onExited: {
-            root.connectingSsid = "";
-            networkStatusProcess.running = true;
-        }
-    }
+    readonly property bool hotspotAvailable: NetworkService.hotspotAvailable
+    readonly property bool hotspotEnabled: NetworkService.hotspotEnabled
+    readonly property string hotspotSsid: NetworkService.hotspotSsid
+    readonly property string hotspotPassword: NetworkService.hotspotPassword
+    readonly property string hotspotError: NetworkService.hotspotError
+    readonly property string hotspotSaveSuccess: NetworkService.hotspotSaveSuccess
+    readonly property var hotspotClients: NetworkService.hotspotClients
 
     function toggleWifi() {
-        const next = !root.wifiEnabled;
-        wifiToggleProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "toggle-wifi"];
-        wifiToggleProcess.running = true;
-        root.wifiEnabled = next;
+        NetworkService.toggleWifi();
     }
 
     function rescanWifi() {
-        wifiRescanProcess.running = true;
+        NetworkService.scanWifi();
     }
 
     function connectWifi(ssid, password) {
-        root.connectingSsid = ssid;
-        let cmd = ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "connect", ssid];
-        if (password && password.length > 0) {
-            cmd.push(password);
-        }
-        wifiConnectProcess.command = cmd;
-        wifiConnectProcess.running = true;
-    }
-
-    Process {
-        id: hotspotActionProcess
-        stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: data => {
-                try {
-                    const res = JSON.parse(data.trim());
-                    if (res.enabled !== undefined) {
-                        root.hotspotEnabled = res.enabled;
-                    }
-                    if (res.error) {
-                        root.hotspotError = res.error;
-                    } else {
-                        root.hotspotError = "";
-                    }
-                } catch(e) {}
-            }
-        }
-        onExited: networkStatusProcess.running = true
-    }
-
-    Process {
-        id: hotspotConfigureProcess
-        stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: data => {
-                try {
-                    const res = JSON.parse(data.trim());
-                    if (res.success) {
-                        root.hotspotError = "";
-                        root.hotspotSaveSuccess = I18n.isRTL ? "تم حفظ إعدادات نقطة الاتصال" : "Hotspot saved successfully";
-                        if (res.ssid) root.hotspotSsid = res.ssid;
-                        if (res.password) root.hotspotPassword = res.password;
-                    } else {
-                        root.hotspotError = res.error || (I18n.isRTL ? "فشل حفظ الإعدادات" : "Failed to save configuration");
-                        root.hotspotSaveSuccess = "";
-                    }
-                } catch(e) {
-                    root.hotspotError = I18n.isRTL ? "خطأ في قراءة النتيجة" : "Error parsing response";
-                }
-            }
-        }
-        onExited: networkStatusProcess.running = true
+        NetworkService.connectWifi(ssid, password);
     }
 
     function toggleHotspot() {
-        root.hotspotError = "";
-        root.hotspotSaveSuccess = "";
-        const action = root.hotspotEnabled ? "hotspot-stop" : "hotspot-start";
-        hotspotActionProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", action];
-        hotspotActionProcess.running = true;
+        NetworkService.toggleHotspot();
     }
 
     function configureHotspot(ssid, password) {
-        root.hotspotError = "";
-        root.hotspotSaveSuccess = "";
-        if (!ssid || ssid.trim().length === 0) {
-            root.hotspotError = I18n.isRTL ? "اسم الشبكة لا يمكن أن يكون فارغاً" : "SSID cannot be empty";
-            return;
-        }
-        if (!password || password.length < 8) {
-            root.hotspotError = I18n.isRTL ? "كلمة المرور يجب ألا تقل عن 8 خانات" : "Password must be at least 8 characters";
-            return;
-        }
-        hotspotConfigureProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "hotspot-configure", ssid.trim(), password];
-        hotspotConfigureProcess.running = true;
+        NetworkService.configureHotspot(ssid, password);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Bluetooth Data Logic (deloway-bluetooth.py)
+    // Bluetooth Data Logic (Unified BluetoothService Singleton)
     // ─────────────────────────────────────────────────────────────────────────
-    property var bluetoothData: null
-    property bool bluetoothEnabled: false
-    property var bluetoothDevices: []
-    property string bluetoothConnectedDevice: ""
-    property string connectingBtAddress: ""
-    property string bluetoothError: ""
-
-    function sortedBluetoothDevices(devs) {
-        if (!devs || !Array.isArray(devs)) return [];
-        return devs.slice().sort((a, b) => {
-            if (a.connected && !b.connected) return -1;
-            if (!a.connected && b.connected) return 1;
-            if (a.paired && !b.paired) return -1;
-            if (!a.paired && b.paired) return 1;
-            return (a.name || "").localeCompare(b.name || "");
-        });
-    }
-
-    Process {
-        id: bluetoothStatusProcess
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "list"]
-        stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: data => {
-                try {
-                    const parsed = JSON.parse(data.trim());
-                    root.bluetoothData = parsed;
-                    root.bluetoothError = "";
-                    root.bluetoothEnabled = !!parsed.powered;
-                    const devs = parsed.devices || [];
-                    root.bluetoothDevices = root.sortedBluetoothDevices(devs);
-                    const connected = devs.find(d => d.connected);
-                    root.bluetoothConnectedDevice = connected ? (connected.name || connected.address) : "";
-                } catch(e) {
-                    root.bluetoothError = I18n.isRTL ? "تعذر قراءة بيانات البلوتوث" : "Failed to parse bluetooth data";
-                }
-            }
-        }
-        onExited: (exitCode, exitStatus) => {
-            if (exitCode !== 0) {
-                root.bluetoothError = I18n.isRTL ? "تعذر جلب بيانات البلوتوث" : "Failed to fetch bluetooth data";
-            }
-        }
-    }
-
-    Process {
-        id: bluetoothToggleProcess
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "toggle"]
-        onExited: bluetoothStatusProcess.running = true
-    }
-
-    Process {
-        id: bluetoothConnectProcess
-        onExited: {
-            root.connectingBtAddress = "";
-            bluetoothStatusProcess.running = true;
-        }
-    }
-
-    Process {
-        id: bluetoothDisconnectProcess
-        onExited: {
-            bluetoothStatusProcess.running = true;
-        }
-    }
+    readonly property var bluetoothData: BluetoothService.bluetoothData
+    readonly property bool bluetoothEnabled: BluetoothService.powered
+    readonly property var bluetoothDevices: BluetoothService.devices
+    readonly property string bluetoothConnectedDevice: BluetoothService.connectedDeviceName
+    readonly property string connectingBtAddress: BluetoothService.connectingAddress
+    readonly property string bluetoothError: BluetoothService.error
 
     function toggleBluetooth() {
-        const next = !root.bluetoothEnabled;
-        bluetoothToggleProcess.running = true;
-        root.bluetoothEnabled = next;
+        BluetoothService.togglePower();
     }
 
     function refreshBluetooth() {
-        bluetoothStatusProcess.running = true;
+        BluetoothService.refresh();
     }
 
     function connectBluetooth(address) {
-        root.connectingBtAddress = address;
-        bluetoothConnectProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "connect", address];
-        bluetoothConnectProcess.running = true;
+        BluetoothService.connectDevice(address);
     }
 
     function disconnectBluetooth(address) {
-        bluetoothDisconnectProcess.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "disconnect", address];
-        bluetoothDisconnectProcess.running = true;
+        BluetoothService.disconnectDevice(address);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -407,13 +220,10 @@ PanelWindow {
     // 1. Instant fetch upon expanding
     onIsExpandedChanged: {
         if (isExpanded) {
-            // Narrow screen (< 1500px): collapse colliding expanded neighbor (Notch)
-            if (targetScreen.width < 1500 && ShellState.smartNotchExpanded) {
-                ShellState.closeSmartNotch();
-            }
-            networkStatusProcess.running = true;
-            root.bluetoothError = "";
-            bluetoothStatusProcess.running = true;
+            ShellState.closeSmartNotch();
+            ShellState.closeTimeCapsule();
+            NetworkService.refresh();
+            BluetoothService.refresh();
             if (root.brightnessBackend === "kernel") {
                 backlightReadProcess.running = true;
             } else if (root.brightnessBackend === "ddc") {
@@ -437,7 +247,7 @@ PanelWindow {
         running: root.isExpanded && root.currentView === "wifi"
         repeat: true
         onTriggered: {
-            networkStatusProcess.running = true;
+            NetworkService.refresh();
         }
     }
 
@@ -448,7 +258,7 @@ PanelWindow {
         running: root.isExpanded && root.currentView === "bluetooth"
         repeat: true
         onTriggered: {
-            bluetoothStatusProcess.running = true;
+            BluetoothService.refresh();
         }
     }
 
@@ -459,7 +269,7 @@ PanelWindow {
         running: root.isExpanded && root.currentView === "hotspot"
         repeat: true
         onTriggered: {
-            networkStatusProcess.running = true;
+            NetworkService.refresh();
         }
     }
 
@@ -777,10 +587,10 @@ PanelWindow {
                     enabled: !root.isExpanded
                     onEntered: {
                         if (SystemMonitor.isWifi) {
-                            networkStatusProcess.running = true;
+                            NetworkService.refresh();
                         }
                         if (root.bluetoothError.length === 0) {
-                            bluetoothStatusProcess.running = true;
+                            BluetoothService.refresh();
                         }
                     }
                     onClicked: (mouse) => {
@@ -1289,7 +1099,7 @@ PanelWindow {
                             active: root.hotspotEnabled
                             connected: root.hotspotEnabled
                             hasChevron: true
-                            toggleEnabled: root.hotspotAvailable && !hotspotActionProcess.running
+                            toggleEnabled: root.hotspotAvailable && !NetworkService.hotspotActionRunning
                             onClicked: {
                                 ShellState.quickSettingsCapsuleView = "hotspot";
                             }
@@ -1384,10 +1194,10 @@ PanelWindow {
                     hotspotError: root.hotspotError
                     hotspotSaveSuccess: root.hotspotSaveSuccess
                     hotspotClients: root.hotspotClients
-                    actionRunning: hotspotActionProcess.running
-                    configureRunning: hotspotConfigureProcess.running
+                    actionRunning: NetworkService.hotspotActionRunning
+                    configureRunning: NetworkService.hotspotConfigureRunning
                     onBackClicked: ShellState.quickSettingsCapsuleView = "main"
-                    onRefreshClicked: networkStatusProcess.running = true
+                    onRefreshClicked: NetworkService.refresh()
                     onToggleClicked: root.toggleHotspot()
                     onSaveClicked: (ssid, pwd) => root.configureHotspot(ssid, pwd)
                 }

@@ -18,6 +18,9 @@ Item {
     LayoutMirroring.enabled: false
     LayoutMirroring.childrenInherit: true
 
+    readonly property real workspaceContentWidth: wsIndicator ? wsIndicator.implicitWidth : 100
+    readonly property real playerContentWidth: (miniMusicPlayer && hasPlayer) ? miniMusicPlayer.implicitWidth : 0
+
     // Time & Date state
     property date currentTime: new Date()
     Timer {
@@ -281,15 +284,14 @@ Item {
 
         // 1.2 Merged Compact Row: Workspaces + Music Player
         RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
+            anchors.centerIn: parent
             spacing: 8
             visible: root.viewMode !== "notification"
             z: 1
 
             // ── SECTION A: Workspaces (Dynamic WorkspaceIndicator) ────────────
             WorkspaceIndicator {
+                id: wsIndicator
                 hyprMonitor:    root.hyprMonitor
                 staticCount:    ConfigManager.workspacesCount
                 indicatorStyle: ConfigManager.workspaceIndicatorStyle || "icons"

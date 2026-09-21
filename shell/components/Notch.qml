@@ -28,17 +28,24 @@ PanelWindow {
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
         if (notchHomeItem.notificationActive) return 420;
-        if (notchHomeItem.hasPlayer) return 490;
-        return 200;
+        if (notchHomeItem.hasPlayer) return Math.min(520, Math.max(320, notchHomeItem.workspaceContentWidth + notchHomeItem.playerContentWidth + 48));
+        return Math.max(110, notchHomeItem.workspaceContentWidth + 24);
     }
     readonly property real compactHeight: 44
     readonly property real expandedWidth: 600
-    readonly property real expandedHeight: 176
+    readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : 176
+    property real expandedHeight: baseExpandedHeight
+    Behavior on expandedHeight {
+        NumberAnimation {
+            duration: root.isExpanded ? 200 : 160
+            easing.type: root.isExpanded ? Easing.OutCubic : Easing.OutQuad
+        }
+    }
     readonly property real earRadius: 18
 
     // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
     readonly property real fixedWindowWidth: 640
-    readonly property real fixedWindowHeight: 200
+    readonly property real fixedWindowHeight: 460
 
     implicitWidth: fixedWindowWidth
     implicitHeight: fixedWindowHeight
@@ -60,12 +67,12 @@ PanelWindow {
         onActivated: ShellState.closeSmartNotch()
     }
 
-    // Single unified motion driver (220ms, OutCubic)
+    // Single unified motion driver (200ms open, 160ms close)
     property real expandProgress: root.isExpanded ? 1.0 : 0.0
     Behavior on expandProgress {
         NumberAnimation {
-            duration: 220
-            easing.type: Easing.OutCubic
+            duration: root.isExpanded ? 200 : 160
+            easing.type: root.isExpanded ? Easing.OutCubic : Easing.OutQuad
         }
     }
 
@@ -78,10 +85,8 @@ PanelWindow {
 
     onIsExpandedChanged: {
         if (root.isExpanded) {
-            // Check collision on narrow screens (< 1500px)
-            if (targetScreen.width < 1500 && ShellState.quickSettingsCapsuleExpanded) {
-                ShellState.closeQuickSettingsCapsule();
-            }
+            ShellState.closeTimeCapsule();
+            ShellState.closeQuickSettingsCapsule();
         }
     }
 
@@ -89,6 +94,8 @@ PanelWindow {
         id: notchFrame
         y: root.currentY
         anchors.horizontalCenter: parent.horizontalCenter
+        width: implicitWidth
+        height: implicitHeight
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth
         currentHeight: root.currentHeight
@@ -144,12 +151,12 @@ PanelWindow {
                     z: 10
 
                     onEntered: function(drag) {
-                        ShellState.setSmartNotchTab(1);
+                        ShellState.setSmartNotchTab(2);
                         ShellState.openSmartNotch();
                     }
 
                     onDropped: function(drop) {
-                        ShellState.setSmartNotchTab(1);
+                        ShellState.setSmartNotchTab(2);
                         ShellState.openSmartNotch();
                         var urls = [];
                         if (drop.hasUrls && drop.urls) {
