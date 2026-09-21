@@ -1,4 +1,4 @@
-NEXT ACTION: اكتملت التجربة بنجاح تام؛ بانتظار قرار المستخدم النهائي (إبقاء Waydroid للاستخدام اليومي أم تنفيذ التراجع الكامل).
+NEXT ACTION: بانتظار موافقة المستخدم على مقترح تنظيف المشغّل (NoDisplay=true) ومقترح شبكة Docker الدائم، أو تشغيل الحاوية للاختبار الواقعي الإضافي.
 
 # تقرير قرار تشغيل تطبيقات أندرويد عبر Waydroid والبدائل
 **تاريخ الفحص:** 21 سبتمبر 2026  
@@ -239,6 +239,103 @@ sudo nft list ruleset
   sudo rm -f /etc/sudoers.d/99-waydroid-trial
   ```
 * **التحقق التجريبي الحتمي:** نُفذ `sudo -n true` وفشل بإخراج `sudo: a password is required`؛ مما يؤكد استعادة طلب كلمة المرور بنجاح 100% وإلغاء الصلاحية المؤقتة بالكامل.
+
+---
+
+## 12. التدقيق الصارم والمهام التكميلية (Follow-up Audits)
+
+### 1) التحقق الصارم من حزمة F-Droid وتوقيعها الرسمي (GPG Signature Verification)
+* **ملف الحزمة والتوقيع:** `/tmp/F-Droid.apk` و `/tmp/F-Droid.apk.asc`.
+* **الأمر المنفذ:** `gpg --recv-keys 7A029E54DD5DCE7A && gpg --verify /tmp/F-Droid.apk.asc /tmp/F-Droid.apk`
+* **الناتج الفعلي:**
+  ```text
+  gpg: Signature made Fri 20 Feb 2026 02:22:41 AM +03
+  gpg:                using RSA key 802A9799016112346E1FEFF47A029E54DD5DCE7A
+  gpg: Good signature from "F-Droid <admin@f-droid.org>" [unknown]
+  Primary key fingerprint: 37D2 C987 89D8 3119 4839  4E3E 41E7 044E 1DBA 2E89
+       Subkey fingerprint: 802A 9799 0161 1234 6E1F  EFF4 7A02 9E54 DD5D CE7A
+  ```
+* **الحكم:** تم التحقق منه بنسبة 100%؛ المفتاح الأساسي والفرعي يطابقان المفتاح المنشور رسمياً على موقع ومستودع `f-droid.org`.
+
+### 2) تدقيق نسبة استهلاك المعالج (6.7%) والمقارنة بالمرجع
+* **توضيح الرقم:** نسبة **6.7%** كانت **إجمالي الاستهلاك اللحظي النشط للنظام ككل** أثناء تشغيل Waydroid و F-Droid في وضع الخمول (المقابل لـ **93.3% idle**)، وليست استهلاكاً إضافياً فوق البرامج القائمة.
+* **المقارنة بنقاط النسبة المئوية:**
+  * القياس المرجعي التقريبي الأولي: **12.2% استهلاك نشط** (87.8% idle).
+  * أثناء تشغيل Waydroid: **6.7% استهلاك نشط** (93.3% idle) — الفارق: **-5.5 نقطة مئوية** (يقع تماماً ضمن هامش تذبذب العمليات الخلفية لمتصفح Brave وبرنامج Antigravity).
+  * القياس الحالي الحصري (والحاوية متوقفة تماماً):
+    * العينات اللحظية (`top -bn2 -d2`): 90.6%، 90.1%، 85.0% (المتوسط: **88.6% idle** — استهلاك نشط **11.4%**).
+    * الذاكرة الحالية: **7.4 GiB** مستخدمة، والمتاح **23 GiB**.
+* **الاستنتاج الواقعي:** وجود Waydroid وتطبيق F-Droid في حالة الخمول يضيف أقل من **1.0 GiB ذاكرة** و **أقل من 1% معالجة حقيقية**.
+
+### 3) الدليل القاطع على التصيير البرمجي (SwiftShader Evidence)
+* **الدليل من ملف الإعدادات:**
+  ناتج `grep -E "gralloc|egl" /var/lib/waydroid/waydroid_base.prop`:
+  ```ini
+  ro.hardware.gralloc=default
+  ro.hardware.egl=swiftshader
+  ```
+* **مصدر السطرين:** تمت إضافتهما **تلقائياً بواسطة أمر `sudo waydroid init -s VANILLA`**؛ حيث يفحص السكربت الرسمي بطاقة الرسوميات وعند اكتشاف كرت NVIDIA تحت Wayland يقوم تلقائياً بحقن `swiftshader` و `default` gralloc في ملف الخصائص دون أي تدخل يدوي منا.
+* **الدليل من داخل نظام أندرويد الحقيقي:**
+  ناتج `sudo waydroid shell getprop`:
+  * `ro.hardware.egl`: `angle` (طبقة توافقية لمعالجة الرسوميات برمجياً).
+  * `ro.hardware.vulkan`: `pastel` (محرك Vulkan البرمجي التابع لـ Google/Android المبني على SwiftShader).
+
+### 4) حصر ملفات الديسكتوب الـ 11 ومقترح تنظيف المشغّل
+أنشأ Waydroid 11 ملف تطبيق في مسار `~/.local/share/applications/`:
+1. `waydroid.org.fdroid.fdroid.desktop` (`Name=F-Droid` | `Exec=waydroid app launch org.fdroid.fdroid`)
+2. `waydroid.com.android.calculator2.desktop` (`Name=Calculator` | `Exec=waydroid app launch com.android.calculator2`)
+3. `waydroid.com.android.deskclock.desktop` (`Name=Clock` | `Exec=waydroid app launch com.android.deskclock`)
+4. `waydroid.org.lineageos.jelly.desktop` (`Name=Browser` | `Exec=waydroid app launch org.lineageos.jelly`)
+5. `waydroid.org.lineageos.eleven.desktop` (`Name=Music` | `Exec=waydroid app launch org.lineageos.eleven`)
+6. `waydroid.com.android.gallery3d.desktop` (`Name=Gallery` | `Exec=waydroid app launch com.android.gallery3d`)
+7. `waydroid.org.lineageos.aperture.desktop` (`Name=Camera` | `Exec=waydroid app launch org.lineageos.aperture`)
+8. `waydroid.com.android.documentsui.desktop` (`Name=Files` | `Exec=waydroid app launch com.android.documentsui`)
+9. `waydroid.com.android.contacts.desktop` (`Name=Contacts` | `Exec=waydroid app launch com.android.contacts`)
+10. `waydroid.com.android.settings.desktop` (`Name=Settings` | `Exec=waydroid app launch com.android.settings`)
+11. `waydroid.org.lineageos.recorder.desktop` (`Name=Recorder` | `Exec=waydroid app launch org.lineageos.recorder`)
+
+* **المقترح الأنيق للتنظيف دون حذف الملفات:**
+  وفقاً لمواصفة FreeDesktop، يمكن إضافة سطر `NoDisplay=true` إلى الملفات المكررة التي تشوش على تطبيقات Deloway الأصلية:
+  * إخفاء: `Settings`, `Files`, `Contacts`, `Camera`, `Clock`.
+  * إبقاء: `F-Droid`, `Browser`, `Music`, `Gallery`, `Calculator`, `Recorder`, بالإضافة إلى `Waydroid.desktop` الرئيسي.
+  *(لا يتم تعديل أي ملف قبل موافقة المستخدم الصريحة).*
+
+### 5) تشخيص شبكة Docker واقتراح الحل الدائم القابل للعكس
+* **الدليل الفعلي على الحجب:**
+  ناتج `iptables -S FORWARD` أثبت وجود:
+  ```text
+  -P FORWARD DROP
+  -A FORWARD -j DOCKER-USER
+  -A FORWARD -j DOCKER-FORWARD
+  ```
+  حيث يقوم Docker افتراضياً بتحويل سياسة التوجيه العامة للنواة إلى `DROP`، ولا يمرر سوى حزم الحاويات التابعة له وشبكة الهوتسبوت المحددة صراحة.
+* **الحل الدائم المقترح بأقل تدخل (وفق توثيق Docker الرسمي):**
+  إنشاء خدمة systemd محلية بسيطة ترتبط بخدمة Docker وتضيف قواعد المرور إلى سلسلة `DOCKER-USER` (التي يخصصها Docker للتدخلات الخارجية دون تعديل إعدادات Docker الأصلية):
+  ملف الخدمة المقترح: `/etc/systemd/system/waydroid-forward.service`
+  ```ini
+  [Unit]
+  Description=Waydroid Docker-compatible Forwarding Rules
+  After=docker.service
+  BindsTo=docker.service
+
+  [Service]
+  Type=oneshot
+  RemainAfterExit=yes
+  ExecStart=/usr/bin/iptables -I DOCKER-USER 1 -i waydroid0 -j ACCEPT
+  ExecStart=/usr/bin/iptables -I DOCKER-USER 2 -o waydroid0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  ExecStop=/usr/bin/iptables -D DOCKER-USER -i waydroid0 -j ACCEPT
+  ExecStop=/usr/bin/iptables -D DOCKER-USER -o waydroid0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+  [Install]
+  WantedBy=multi-user.target
+  ```
+* **أمر التراجع الفوري الكامل:**
+  ```bash
+  sudo systemctl disable --now waydroid-forward.service
+  sudo rm -f /etc/systemd/system/waydroid-forward.service
+  ```
+  *(اقتراح فقط؛ لم يُنفذ ولا يُطبق إلا بعد الموافقة).*
+
 
 
 
