@@ -531,19 +531,6 @@ PanelWindow {
             }
         }
 
-        // Local floating drop shadow (only beneath the card, not over the entire monitor)
-        Rectangle {
-            anchors.fill: parent
-            anchors.topMargin: 12
-            anchors.bottomMargin: -12
-            anchors.leftMargin: -6
-            anchors.rightMargin: -6
-            radius: root.radiusCard + 6
-            color: Theme.notchShadow
-            opacity: drawerHost.opacity * 0.85
-            z: 0
-        }
-
         Rectangle {
             id: drawerCard
             anchors.fill: parent
@@ -552,19 +539,6 @@ PanelWindow {
             border.color: root.colorBorder
             border.width: 1
             z: 1
-
-            // Subtle top inner highlight line for hardware glass sheen
-            Rectangle {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.leftMargin: root.radiusCard
-                anchors.rightMargin: root.radiusCard
-                height: 1
-                color: Theme.notchBorderHighlight
-                opacity: 0.6
-                z: 2
-            }
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -847,7 +821,7 @@ PanelWindow {
 
                                 GridLayout {
                                     Layout.fillWidth: true
-                                    columns: root.isGridView ? 6 : 1
+                                    columns: root.isGridView ? 6 : 2
                                     rowSpacing: Theme.space8
                                     columnSpacing: Theme.space8
 
@@ -909,7 +883,7 @@ PanelWindow {
 
                                 GridLayout {
                                     Layout.fillWidth: true
-                                    columns: root.isGridView ? 6 : 1
+                                    columns: root.isGridView ? 6 : 2
                                     rowSpacing: Theme.space8
                                     columnSpacing: Theme.space8
 
@@ -1343,9 +1317,9 @@ PanelWindow {
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: Theme.space8
-                        anchors.rightMargin: Theme.space8
-                        spacing: Theme.space8
+                        anchors.leftMargin: Theme.space12
+                        anchors.rightMargin: Theme.space12
+                        spacing: Theme.space10
 
                         AppIcon {
                             iconSize: 28
@@ -1359,6 +1333,7 @@ PanelWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: listCell.modelData.name || ""
+                                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(12)
                                 font.weight: listMa.containsMouse ? Font.DemiBold : Font.Medium
@@ -1370,6 +1345,7 @@ PanelWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: listCell.modelData.comment || ""
+                                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(10)
                                 font.weight: Font.Normal
@@ -1478,17 +1454,6 @@ PanelWindow {
                     targetApp = null;
                 }
 
-                // Drop shadow
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.topMargin: 4
-                    anchors.bottomMargin: -4
-                    anchors.leftMargin: -2
-                    anchors.rightMargin: -2
-                    radius: root.radiusItem + 2
-                    color: Theme.notchShadow
-                    z: 0
-                }
 
                 Rectangle {
                     z: 1
@@ -1532,6 +1497,7 @@ PanelWindow {
                             text: drawerContextMenu.targetApp
                                   ? (drawerContextMenu.targetApp.name || drawerContextMenu.targetApp.id || "")
                                   : ""
+                            horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
@@ -1596,6 +1562,7 @@ PanelWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: menuRow.label
+                                horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: menuMouse.containsMouse ? Font.DemiBold : Font.Normal
