@@ -22,7 +22,7 @@ PanelWindow {
 
     readonly property real earRadius: 18
     readonly property real bottomRadius: 26
-    readonly property real capsuleGap: 10
+    readonly property real capsuleGap: Theme.space20
 
     // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
     readonly property real fixedWindowWidth: 420
@@ -332,7 +332,11 @@ PanelWindow {
                 onClicked: ShellState.toggleTimeCapsule()
                 onWheel: (wheel) => {
                     wheel.accepted = true;
-                    ShellState.toggleTimeCapsule();
+                    if (wheel.angleDelta.y < 0) {
+                        ShellState.openTimeCapsule();
+                    } else if (wheel.angleDelta.y > 0) {
+                        ShellState.closeTimeCapsule();
+                    }
                 }
             }
         }

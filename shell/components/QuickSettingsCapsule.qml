@@ -25,7 +25,7 @@ PanelWindow {
 
     readonly property real earRadius: 18
     readonly property real bottomRadius: 26
-    readonly property real capsuleGap: 10
+    readonly property real capsuleGap: Theme.space20
 
     // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
     readonly property real fixedWindowWidth: 500
@@ -850,7 +850,7 @@ PanelWindow {
                     // ── Rich Header: Clock + Date + Session Actions ──
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 40
+                        Layout.preferredHeight: Math.max(52, headerTimeCol.implicitHeight)
 
                         Timer {
                             id: clockTimer
@@ -888,8 +888,10 @@ PanelWindow {
 
                             // Start: Time & Date stack
                             ColumnLayout {
+                                id: headerTimeCol
                                 Layout.fillWidth: true
-                                spacing: 0
+                                Layout.alignment: Qt.AlignVCenter
+                                spacing: 1
 
                                 Text {
                                     id: headerTimeText

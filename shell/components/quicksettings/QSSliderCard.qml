@@ -47,9 +47,9 @@ Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 16
         anchors.rightMargin: 16
-        anchors.topMargin: 10
-        anchors.bottomMargin: 12
-        spacing: 6
+        anchors.topMargin: 8
+        anchors.bottomMargin: 10
+        spacing: 4
 
         // Top Header Row: Title + % (on drag) + Chevron
         RowLayout {
@@ -64,6 +64,7 @@ Rectangle {
                 font.weight: Font.DemiBold
                 color: Theme.notchText
                 renderType: Theme.renderType
+                Layout.alignment: Qt.AlignVCenter
             }
 
             Item { Layout.fillWidth: true }
@@ -79,6 +80,7 @@ Rectangle {
                 opacity: (sliderMa.pressed || sliderMa.containsMouse) ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                 renderType: Theme.renderType
+                Layout.alignment: Qt.AlignVCenter
             }
 
             Item {
