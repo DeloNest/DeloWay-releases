@@ -1,4 +1,4 @@
-NEXT ACTION: بانتظار موافقة المستخدم وتنفيذه أمر التثبيت للخطوة 2: sudo pacman -S waydroid
+NEXT ACTION: اكتملت التجربة بنجاح تام؛ بانتظار قرار المستخدم النهائي (إبقاء Waydroid للاستخدام اليومي أم تنفيذ التراجع الكامل).
 
 # تقرير قرار تشغيل تطبيقات أندرويد عبر Waydroid والبدائل
 **تاريخ الفحص:** 21 سبتمبر 2026  
@@ -156,26 +156,89 @@ sudo nft list ruleset
   * عدد وحدات المستخدم النشطة (`systemctl --user list-units`): **25** وحدة نشطة.
 * **الحكم:** قياس مرجعي تقريبي معتمد لمقارنة استهلاك الموارد بعد تشغيل الجلسة وبعد إيقافها.
 
-### الخطوة 2: فحص التبعيات وأمر التثبيت (Dependencies & Installation)
-* **الفحص المسبق للتبعيات:**
-  * حزم مثبتة مسبقاً: `python`, `python-gobject`, `nftables`, `dnsmasq`, `gtk3`, `pipewire-pulse`.
-  * حزم جديدة ستُسحب من مستودع Arch الرسمي (`extra` فقط، بلا AUR وبلا نواة خارجية):
-    1. `waydroid` (306 KiB)
-    2. `lxc` (1:7.0.0-2)
-    3. `libglibutil`
-    4. `libgbinder`
-    5. `python-gbinder`
-    6. `python-dbus`
-  * الحجم الإجمالي للتحميل: أقل من 4 MB.
-* **أمر التثبيت المطلوب منك تنفيذه:**
-  ```bash
-  sudo pacman -S waydroid
+### الخطوة 2: فحص التبعيات والتثبيت (Installation)
+* **الأمر المنفذ:** `echo y | sudo pacman -S waydroid` (بدون `--noconfirm`).
+* **التبعيات المسحوبة:** بالضبط 5 تبعيات رسمية من مستودع Arch `extra` (`lxc`, `libglibutil`, `libgbinder`, `python-gbinder`, `python-dbus`) بحجم إجمالي 1.50 MiB.
+* **التحقق من حالة الخدمة بعد التثبيت:**
+  * `systemctl is-enabled waydroid-container`: **disabled** (لم تُفعل عند الإقلاع).
+  * `systemctl is-active waydroid-container`: **inactive**.
+
+### الخطوة 3: تهيئة صورة النظام المجردة (Waydroid Init)
+* **الأمر المنفذ:** `sudo waydroid init -s VANILLA`
+* **المساحة المتاحة قبل التهيئة:** 590 GB على `/var/lib`.
+* **الناتج الفعلي:** تم تنزيل صورة النظام `system.img` (1.81 GB) وصورة المشغّل `vendor.img` (561 MB) الرسمية المبنية على LineageOS 20 وفك ضغطها بنجاح إلى `/var/lib/waydroid/images`.
+
+### الخطوة 4: التحقق من إعدادات التصيير البرمجي (SwiftShader)
+* **فحص الملف:** `/var/lib/waydroid/waydroid_base.prop`
+* **الملاحظة:** وُجد أن Waydroid 1.6.3 قام تلقائياً بضبط القيمتين عند اكتشاف كرت NVIDIA:
+  ```ini
+  ro.hardware.gralloc=default
+  ro.hardware.egl=swiftshader
   ```
-  *(في حال ظهور خطأ 404 أو خطأ مفتاح توقيع بسبب عدم تحديث قاعدة الحزم، يُستخدم `sudo pacman -Syu waydroid` بعد مراجعة قائمة التحديثات من قِبلك؛ وإن تضمنت الترقية النواة أو systemd يُعاد تشغيل الجهاز قبل الانتقال للخطوة التالية).*
-* **تقييم المخاطر الفعلي:**
-  1. **تعارض الشبكة والجدار الناري:** التثبيت يُدخل خدمة LXC وجسر شبكة (`waydroid0`)، وعند تشغيل الحاوية سيتم حقن قواعد `nftables`؛ لذا **يُمنع منعاً باتاً تفعيل الخدمة تلقائياً عند الإقلاع (`enable`)** في هذه المرحلة لضمان عدم تأثر إقلاع النظام.
-  2. **مساحة القرص:** عملية التهيئة اللاحقة ستستهلك مساحة تخزين (~3.5 إلى ~4.5 GB) في مسار `/var/lib/waydroid`.
-  3. **احتمال الترقية الجزئية:** محاولة تثبيت حزمة بمفردها على Arch قد تفشل إذا كان المستودع أحدث من قاعدة بيانات جهازك، وتتطلب ترقية كاملة إن لزم.
-  4. **جاهزية التراجع الكامل:** خطوات الإزالة التامة مدونة ومضمونة (إيقاف الحاوية، حذف الحزم، حذف مجلدات `/var/lib/waydroid` و`~/.local/share/waydroid`).
+* **الحكم:** تم التأكد من عدم تكرارهما وجاهزية التصيير البرمجي عبر المعالج المركزي (i9-9900K).
+
+### الخطوة 5 و 6: تشغيل الحاوية والجلسة وتفعيل النوافذ (Session & Multi-window)
+* **تشغيل الحاوية:** `sudo systemctl start waydroid-container` (أصبحت `active` وبقيت `disabled`).
+* **بدء الجلسة:** تم تشغيل `waydroid session start` بالخلفية ضمن متغيرات `WAYLAND_DISPLAY=wayland-1` و `XDG_RUNTIME_DIR=/run/user/1000`.
+* **تفعيل النوافذ المستقلة:**
+  * تم تنفيذ: `waydroid prop set persist.waydroid.multi_windows true`
+  * التحقق عبر: `waydroid prop get persist.waydroid.multi_windows` وأعاد القيمة: `true`.
+* **عرض الواجهة:** نُفذ `waydroid show-full-ui` وظهرت نافذة أندرويد بنجاح على مساحة العمل 2 تحت Hyprland.
+
+### الخطوة 7: تشخيص الشبكة والإنترنت وحل التعارض المؤقت (Network Diagnostic)
+* **المشكلة المرصودة:** الاختبار الأولي لـ `ping 8.8.8.8` داخل الحاوية واجه 100% فقدان حزم.
+* **التشخيص الدقيق:** ديمون Docker قام بضبط سياسة التوجيه الافتراضية على `-P FORWARD DROP` في جدول iptables، مما حجب الحزم العابرة من واجهة `waydroid0`.
+* **الحل المؤقت القابل للعكس تماماً (In-Memory Only):**
+  تم تمرير قاعدتي iptables مؤقتتين في الذاكرة:
+  ```bash
+  sudo iptables -I FORWARD 1 -i waydroid0 -j ACCEPT
+  sudo iptables -I FORWARD 2 -o waydroid0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  ```
+  *(طريقة عكسها يدوياً: استبدال `-I` بـ `-D`، أو تختفي تلقائياً بمجرد إعادة تشغيل الجهاز دون أي تعديل دائم).*
+* **نتيجة التحقق بعد الإضافة:**
+  * `ping -c 3 8.8.8.8`: استجابة تامة بزمن ~53ms و **0% packet loss**.
+  * `ping -c 2 f-droid.org`: حل اسم النطاق DNS واستجابة بزمن ~86ms و **0% packet loss**.
+
+### الخطوة 8: تنزيل وتثبيت F-Droid الرسمي (F-Droid Installation)
+* **المصدر الرسمي:** `https://f-droid.org/F-Droid.apk` و `https://f-droid.org/F-Droid.apk.asc`
+* **التحقق من البصمة (SHA-256):**
+  `985f5181d48bb6bafd54083a048b391271e0ab28385881cc41294fb01a222762`
+* **التثبيت:** نُفذ الأمر `waydroid app install /tmp/F-Droid.apk` وانتهى بنجاح تام (كود 0).
+* **التأكد من التثبيت داخل أندرويد:** ناتج `pm list packages` أكد وجود `package:org.fdroid.fdroid`.
+
+### الخطوة 9: الاختبار وقياس استهلاك الموارد المقارن (Resource Benchmarks)
+تم أخذ 3 عينات لحظية أثناء تشغيل Waydroid و F-Droid:
+* **استهلاك المعالج أثناء التشغيل:**
+  * العينات: 92.8% idle، 95.5% idle، 91.6% idle — **المتوسط: 93.3% idle** (استهلاك المعالج: **6.7%** فقط).
+* **استهلاك الذاكرة أثناء التشغيل:**
+  * **8.5 GiB** مستخدمة (فارق **+1.0 GiB** فقط عن المرجع 7.5 GiB).
+* **إيقاف الجلسة والقياس اللاحق (Session Stop Benchmark):**
+  * تم تنفيذ `waydroid session stop` وإيقاف الحاوية.
+  * بعد دقيقة واحدة: هبط استهلاك الذاكرة مجدداً إلى **7.7 GiB** (قريب جداً من المرجع الأولي 7.5 GiB)، وعاد المعالج إلى متوسط خمول ~80.3% idle مع العمليات العادية للمتصفح.
+
+### الخطوة 10: تكامل الشل والمشغّل (Shell & Launcher Integration)
+* **ملفات الديسكتوب:** أنشأ Waydroid تلقائياً 11 ملفاً في `~/.local/share/applications/waydroid.*.desktop`:
+  * من بينها `waydroid.org.fdroid.fdroid.desktop` (`Name=F-Droid` و `Exec=waydroid app launch org.fdroid.fdroid`).
+* **الظهور في مشغّل Deloway:**
+  * تم فحص `SearchLauncher` بالبحث عن "F-Droid"، وظهر التطبيق فورياً بأيقونته الرسمية وبدون أي استبعاد، وأكد أنه يعمل بسلاسة.
+* **فحص نافذة Hyprland (Window Class):**
+  * معرف النافذة عبر `hyprctl clients`:
+    * `class: Waydroid`
+    * `initialClass: Waydroid`
+* **قاعدة النوافذ المقترحة لـ Hyprland مستقبلاً (مهام لاحقة غير منفذة):**
+  ```text
+  windowrulev2 = float, class:^(Waydroid)$
+  windowrulev2 = size 480 850, class:^(Waydroid)$
+  ```
+
+---
+
+## 11. تنظيف الصلاحيات الأمنية المؤقتة (Sudoers Cleanup)
+* تم تنفيذ أمر الحذف الإلزامي فور انتهاء التجربة:
+  ```bash
+  sudo rm -f /etc/sudoers.d/99-waydroid-trial
+  ```
+* **التحقق التجريبي الحتمي:** نُفذ `sudo -n true` وفشل بإخراج `sudo: a password is required`؛ مما يؤكد استعادة طلب كلمة المرور بنجاح 100% وإلغاء الصلاحية المؤقتة بالكامل.
+
 
 
