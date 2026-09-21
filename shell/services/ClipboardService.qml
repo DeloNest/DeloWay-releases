@@ -11,7 +11,7 @@ Item {
     property var items: []
     property bool isRefreshing: false
 
-    readonly property string cacheDir: "/home/waleed/.cache/deloway/clipboard"
+    readonly property string cacheDir: (Quickshell.env("HOME") || "") + "/.cache/deloway/clipboard"
 
     // Background watcher process
     Process {
