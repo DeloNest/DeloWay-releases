@@ -292,23 +292,24 @@ Item {
         });
         seen.add("settings");
 
+        // App Store backed by pamac (the real system package manager)
         list.push({
             id: "store",
             name: "App Store",
-            genericName: "Software Store",
-            icon: "software-store",
+            genericName: "Package Manager",
+            icon: "store",
             categories: ["System", "All"],
-            comment: "DeloWay App Store",
-            keywords: ["store", "software", "packages", "apps", "متجر", "تطبيقات", "برامج"],
-            startupClass: "deloway-store",
-            execBasename: "store",
+            comment: "Install, remove and update packages with pamac",
+            keywords: ["store", "apps", "software", "packages", "install", "pamac", "pkg", "متجر", "تطبيقات", "برامج"],
+            startupClass: "pamac-manager",
+            execBasename: "pamac-manager",
             isWebApp: false,
             isSubSetting: false,
-            execute: function() { ShellState.openAppStore(); }
+            execute: function() { Hyprland.dispatch("exec pamac-manager"); }
         });
         seen.add("store");
 
-        // Dynamically installed apps from store
+        // Real installed applications registered by system tools
         if (ApplicationManager.dynamicApps) {
             for (let i = 0; i < ApplicationManager.dynamicApps.length; i++) {
                 const da = ApplicationManager.dynamicApps[i];
@@ -723,18 +724,6 @@ Item {
 
         // Sort by score descending
         results.sort((a, b) => b.score - a.score);
-
-        // 5. Store search (at the bottom)
-        results.push({
-            "id": "store-search",
-            "type": "store",
-            "name": (I18n.isRTL ? "البحث عن \"" : "Search for \"") + q + (I18n.isRTL ? "\" في متجر التطبيقات" : "\" in Delo Store"),
-            "desc": I18n.isRTL ? "البحث عن حزم وتطبيقات لتثبيتها" : "Find and install packages, flatpaks, and developer tools",
-            "icon": "software-store",
-            "isAppIcon": true,
-            "score": -1,
-            "data": { "query": q }
-        });
 
         return results;
     }

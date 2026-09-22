@@ -18,7 +18,7 @@ Item {
         }
     }
 
-    // Dynamically registered apps from Delo Store (§4.3)
+    // Dynamically registered apps (§4.3)
     property var dynamicApps: []
 
     function registerInstalledApp(appData) {
@@ -47,8 +47,8 @@ Item {
         if (!identifier) return false;
         const _rev = _entriesRevision;
         const cleanId = identifier.toLowerCase().replace(/\.desktop$/, "");
-        if (cleanId === "settings" || cleanId === "deloway-settings") return true;
-        if (cleanId === "store" || cleanId === "software-store" || cleanId === "delo-store") return true;
+        if (cleanId === "settings" || cleanId === "deloway-settings"
+            || cleanId === "store" || cleanId === "app-store" || cleanId === "pamac") return true;
         if (dynamicApps.some(d => d.id === cleanId)) return true;
         if (allApps && allApps.some(a => a && (
             a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId ||
@@ -72,14 +72,14 @@ Item {
                 execute: function() { ShellState.toggleSettingsApp(); }
             };
         }
-        if (cleanId === "store" || cleanId === "software-store" || cleanId === "delo-store") {
+        if (cleanId === "store" || cleanId === "app-store" || cleanId === "pamac") {
             return {
                 id: "store",
                 name: "App Store",
-                icon: "software-store",
+                icon: "store",
                 categories: ["System", "All"],
-                comment: "DeloWay App Store",
-                execute: function() { ShellState.openAppStore(); }
+                comment: "Install, remove and update packages with pamac",
+                execute: function() { Hyprland.dispatch("exec pamac-manager"); }
             };
         }
         const dynamic = dynamicApps.find(d => d.id === cleanId);
@@ -161,17 +161,18 @@ Item {
         });
         seen.add("settings");
 
+        // App Store backed by pamac (the real system package manager)
         list.push({
             id: "store",
             name: "App Store",
-            icon: "software-store",
+            icon: "store",
             categories: ["System", "All"],
-            comment: "Browse and install applications",
-            execute: function() { ShellState.openAppStore(); }
+            comment: "Install, remove and update packages with pamac",
+            execute: function() { Hyprland.dispatch("exec pamac-manager"); }
         });
         seen.add("store");
 
-        // Dynamically installed apps from store
+        // Real installed applications registered by system tools
         for (let i = 0; i < dynamicApps.length; i++) {
             const da = dynamicApps[i];
             if (seen.has(da.id)) continue;
@@ -244,6 +245,7 @@ Item {
 
         // Explicit known aliases
         if ((a === "brave-browser" && b === "brave") || (a === "brave" && b === "brave-browser")) return true;
+        if ((a === "store" && b === "pamac-manager") || (a === "pamac-manager" && b === "store")) return true;
         if ((a === "code-oss" && b === "code") || (a === "code" && b === "code-oss")) return true;
         if ((a === "google-chrome" && b === "chrome") || (a === "chrome" && b === "google-chrome")) return true;
 
@@ -353,10 +355,6 @@ Item {
             ShellState.toggleSettingsApp();
             return;
         }
-        if (item.id === "store" || item.id === "software-store" || item.id === "delo-store") {
-            ShellState.openAppStore();
-            return;
-        }
         if (item.desktopEntry && typeof item.desktopEntry.execute === "function") {
             item.desktopEntry.execute();
             return;
@@ -372,10 +370,6 @@ Item {
         if (!app) return;
         if (app.id === "settings") {
             ShellState.toggleSettingsApp();
-            return;
-        }
-        if (app.id === "store" || app.id === "software-store" || app.id === "delo-store") {
-            ShellState.openAppStore();
             return;
         }
         if (typeof app.execute === "function") {
