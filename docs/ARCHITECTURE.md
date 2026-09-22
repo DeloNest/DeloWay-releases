@@ -80,7 +80,7 @@ Per Section 4.1 of the authoritative plan, **no surface tracks its own independe
 
 ```
                     ┌───────────────────────────┐
-                    │     Delo App Store        │
+                    │        App Store          │
                     │   (Install / Uninstall)   │
                     └─────────────┬─────────────┘
                                   │ 1. Package Installed
@@ -184,8 +184,8 @@ Quickshell exposes an `IpcHandler` target named `deloway` that permits external 
 | `openSettingsTab(tab)` | `tabId: string` | Directly jumps to a specific settings tab |
 | `toggleQuickSettings()` | None | Toggles the Quick Settings flyout |
 | `showSetup()` | None | Spawns the First-Run Setup Wizard |
-| `openStore(category)` | `category: string` | Opens Delo Store to a specific category |
-| `openStoreApp(appId)` | `appId: string` | Opens Delo Store directly to an app's details |
+| `openStore(category)` | `category: string` | Opens App Store to a specific category |
+| `openStoreApp(appId)` | `appId: string` | Opens App Store directly to an app's details |
 | `setMode(mode)` | `mode: string` (`"dark" \| "light"`) | Switches system theme mode |
 | `setDesktopMode(mode)` | `mode: string` (`"clean" \| "widgets" \| "traditional"`) | Switches desktop mode |
 | `showDesktopContextMenu(x, y)` | `x: int, y: int` | Displays wallpaper context menu |

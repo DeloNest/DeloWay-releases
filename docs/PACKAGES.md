@@ -68,4 +68,4 @@ In accordance with Section 6 of the architecture plan, Flatpak is the recommende
 # Enable Flatpak and Flathub repository if not already enabled:
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
-The **Delo Store** natively indexes Flathub packages and provides immediate one-click installs.
+The **App Store** is backed by `pamac` (the Arch Linux package manager) and provides native package installs, removals and updates from the official repositories.

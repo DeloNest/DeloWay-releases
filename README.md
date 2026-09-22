@@ -90,7 +90,7 @@ Upgrade Deloway seamlessly with the built-in migration engine:
 |---|---|
 | <kbd>Super</kbd> + <kbd>Space</kbd> / <kbd>Super</kbd> + <kbd>D</kbd> | Open App Drawer & Universal Search |
 | <kbd>Super</kbd> + <kbd>I</kbd> | Open DeloOS Settings |
-| <kbd>Super</kbd> + <kbd>S</kbd> | Open Delo App Store |
+| <kbd>Super</kbd> + <kbd>S</kbd> | Open App Store |
 | <kbd>Super</kbd> + <kbd>L</kbd> | Lock Screen (`ext-session-lock-v1`) |
 | <kbd>Super</kbd> + <kbd>A</kbd> | Quick Settings / Control Center |
 | <kbd>Super</kbd> + <kbd>Return</kbd> | Open Terminal (Kitty) |

@@ -68,11 +68,11 @@
 | **Antigravity IDE** | `antigravity-ide` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
 | **Antigravity 2.0** | `antigravity` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
 | **WhatsApp Web** | `brave` | عربي ✔ | مدعوم عبر --lang=ar في brave-flags.conf |
-| **Delo Store** | `pamac-manager` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
-| **Delo Terminal** | `kitty` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
+| **App Store** | `pamac-manager` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
+| **Terminal** | `kitty` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
 | **RPCS3** | `rpcs3-v0.0.42-19931-de6c1b52_linux64.appimage` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
 | **OpenCode** | `opencode-desktop` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
-| **Delo Files** | `thunar` | عربي ✔ | مترجم بالكامل عبر thunar.mo |
+| **Files** | `thunar` | عربي ✔ | مترجم بالكامل عبر thunar.mo |
 | **LocalSend** | `localsend` | غير مدعوم | لا توجد ترجمة عربية مدمجة |
 
 ---

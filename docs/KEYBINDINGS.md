@@ -11,7 +11,7 @@ All standard keyboard shortcuts mapped in Deloway's Hyprland compositor and Quic
 | <kbd>Super</kbd> + <kbd>Space</kbd> | **App Drawer & Search** | Toggles the universal search and application launcher |
 | <kbd>Super</kbd> + <kbd>D</kbd> | **App Drawer** | Secondary shortcut for the application drawer |
 | <kbd>Super</kbd> + <kbd>I</kbd> | **DeloOS Settings** | Opens the native Deloway Settings app |
-| <kbd>Super</kbd> + <kbd>S</kbd> | **Delo Store** | Opens the Delo App Store |
+| <kbd>Super</kbd> + <kbd>S</kbd> | **App Store** | Opens the App Store |
 | <kbd>Super</kbd> + <kbd>L</kbd> | **Lock Screen** | Engages the hardware session lock (`ext-session-lock-v1`) |
 | <kbd>Super</kbd> + <kbd>A</kbd> | **Quick Settings** | Toggles the Quick Settings / Control Center flyout |
 | <kbd>Super</kbd> + <kbd>Escape</kbd> | **Close Overlay** | Dismisses any open drawer, store, settings, or menu |
