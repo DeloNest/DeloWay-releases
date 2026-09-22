@@ -265,7 +265,7 @@ PanelWindow {
     NotchFrame {
         id: notchFrame
         anchors.right: parent.right
-        anchors.rightMargin: Math.round(root.earRadius * (1.0 - root.expandProgress))
+        anchors.rightMargin: Math.round(root.earRadius)
         y: root.currentY
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth
