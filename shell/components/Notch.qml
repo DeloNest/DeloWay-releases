@@ -200,8 +200,10 @@ PanelWindow {
                         MouseArea {
                             anchors.fill: parent
                             onWheel: (wheel) => {
-                                if (wheel.angleDelta.y > 0) {
-                                    wheel.accepted = true;
+                                wheel.accepted = true;
+                                if (wheel.angleDelta.y < 0) {
+                                    ShellState.openSmartNotch();
+                                } else if (wheel.angleDelta.y > 0) {
                                     ShellState.closeSmartNotch();
                                 }
                             }
