@@ -48,7 +48,8 @@ Item {
     property string dockPosition: "bottom"
     property int dockIconSize: 38
     property bool showUnderline: true
-    property var pinnedApps: ["brave-browser", "kitty", "thunar", "spotify", "settings", "store"]
+    readonly property var defaultPinnedApps: ["brave-browser", "kitty", "thunar", "spotify", "settings", "store"]
+    property var pinnedApps: defaultPinnedApps
 
     // TopBar Settings
     property bool topBarShowBrand: true

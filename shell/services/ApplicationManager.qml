@@ -100,7 +100,7 @@ Item {
         const _rev = _entriesRevision;
         const configured = (ConfigManager.pinnedApps && ConfigManager.pinnedApps.length > 0)
             ? ConfigManager.pinnedApps
-            : ["brave-browser", "kitty", "thunar", "spotify", "settings", "store"];
+            : ConfigManager.defaultPinnedApps;
         return configured.filter(id => root.isInstalled(id));
     }
 
