@@ -8,7 +8,7 @@ import "../"
 Item {
     id: root
 
-    property string activeTab: "appearance"
+    property string activeTab: "network"
     signal tabSelected(string tabId)
 
     implicitWidth: 240
@@ -36,24 +36,32 @@ Item {
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
 
-            SidebarSectionHeader {
-                text: I18n.isRTL ? "أقسام الإعدادات" : "SETTINGS"
-            }
-
+            // Grouped navigation: Connectivity · Personalization · System
             Repeater {
-                model: [
-                    { id: "appearance",   icon: "applications-graphics-symbolic" },
-                    { id: "dock",         icon: "view-app-grid-symbolic" },
-                    { id: "windows",      icon: "view-fullscreen-symbolic" },
-                    { id: "connectivity", icon: "network-wireless-symbolic" },
-                    { id: "system",       icon: "preferences-system-symbolic" }
-                ]
-                delegate: SidebarItem {
-                    tabId: modelData.id
-                    iconSource: modelData.icon
-                    label: I18n.tr("tab_" + modelData.id)
-                    isActive: root.activeTab === modelData.id
-                    onActivated: root.tabSelected(modelData.id)
+                model: ShellState.settingsGroups
+                delegate: ColumnLayout {
+                    id: groupCol
+                    required property var modelData
+                    required property int index
+                    Layout.fillWidth: true
+                    Layout.topMargin: index === 0 ? 0 : Theme.space12
+                    spacing: Theme.space4
+
+                    SidebarSectionHeader {
+                        text: I18n.tr("settings_group_" + groupCol.modelData.id)
+                    }
+
+                    Repeater {
+                        model: groupCol.modelData.pages
+                        delegate: SidebarItem {
+                            required property string modelData
+                            tabId: modelData
+                            iconSource: ShellState.settingsPages[modelData].icon
+                            label: I18n.tr("settings_page_" + modelData)
+                            isActive: root.activeTab === modelData
+                            onActivated: root.tabSelected(modelData)
+                        }
+                    }
                 }
             }
         }
@@ -77,7 +85,7 @@ Item {
             font.family: Theme.typography.fontFamily
             font.pixelSize: Theme.fontSize(11)
             font.weight: Font.DemiBold
-            font.letterSpacing: 0.8
+            font.letterSpacing: I18n.isRTL ? 0 : 0.8   // tracking breaks Arabic joining
             color: Theme.notchTextTertiary
             horizontalAlignment: Text.AlignLeft
         }

@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
 import "../../../theme"
 import "../../../services"
 import "../common"
@@ -15,69 +14,6 @@ Item {
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
-    property bool wifiEnabled: true
-    property string wifiSsid: ""
-    property bool bluetoothEnabled: false
-    property string bluetoothDevice: ""
-
-    Component.onCompleted: {
-        networkStatusProc.running = true;
-        btStatusProc.running = true;
-    }
-
-    onVisibleChanged: {
-        if (visible) {
-            networkStatusProc.running = true;
-            btStatusProc.running = true;
-        }
-    }
-
-    // Network status process
-    Process {
-        id: networkStatusProc
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "status"]
-        stdout: SplitParser {
-            onRead: data => {
-                try {
-                    var parsed = JSON.parse(data.trim());
-                    root.wifiEnabled = !!parsed.wifi_enabled;
-                    root.wifiSsid = parsed.ssid || "";
-                } catch (e) {}
-            }
-        }
-    }
-
-    // Network toggle process
-    Process {
-        id: networkToggleProc
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "toggle"]
-        onExited: networkStatusProc.running = true
-    }
-
-    // Bluetooth status process
-    Process {
-        id: btStatusProc
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "list"]
-        stdout: SplitParser {
-            onRead: data => {
-                try {
-                    var parsed = JSON.parse(data.trim());
-                    root.bluetoothEnabled = !!parsed.powered;
-                    var devs = parsed.devices || [];
-                    var connected = devs.find(d => !!d.connected);
-                    root.bluetoothDevice = connected ? (connected.name || connected.address) : "";
-                } catch (e) {}
-            }
-        }
-    }
-
-    // Bluetooth toggle process
-    Process {
-        id: btToggleProc
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "toggle"]
-        onExited: btStatusProc.running = true
-    }
-
     ColumnLayout {
         id: mainCol
         anchors.left: parent.left
@@ -88,9 +24,9 @@ Item {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        // ── 1. Notifications & Sounds ────────────────────────────────
+        // ── 1. General Notification Behavior ─────────────────────────
         SettingsSection {
-            title: I18n.isRTL ? "الإشعارات والأصوات" : "Notifications & Audio"
+            title: I18n.isRTL ? "سلوك التنبيهات العامة" : "General Notifications"
 
             // Do Not Disturb
             SettingsRow {
@@ -179,86 +115,25 @@ Item {
             }
         }
 
-        // ── 2. Wireless Connectivity ─────────────────────────────────
+        // ── 2. Shell & Notch Integration ─────────────────────────────
         SettingsSection {
-            title: I18n.isRTL ? "الاتصالات والشبكات" : "Connectivity & Networks"
-
-            // Wi-Fi
-            SettingsRow {
-                title: I18n.isRTL ? "شبكة Wi-Fi" : "Wi-Fi Network"
-                subtitle: !root.wifiEnabled
-                    ? (I18n.isRTL ? "الواي فاي معطل" : "Wi-Fi is turned off")
-                    : (root.wifiSsid.length > 0
-                        ? (I18n.isRTL ? ("متصل بشبكة: " + root.wifiSsid) : ("Connected to: " + root.wifiSsid))
-                        : (I18n.isRTL ? "مفعّل — غير متصل بأي شبكة" : "Enabled — Not connected"))
-                icon: root.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-offline-symbolic"
-                showDivider: true
-                clickable: true
-                onClicked: {
-                    root.wifiEnabled = !root.wifiEnabled;
-                    networkToggleProc.running = true;
-                }
-
-                SettingsToggle {
-                    checked: root.wifiEnabled
-                    onToggled: {
-                        root.wifiEnabled = !root.wifiEnabled;
-                        networkToggleProc.running = true;
-                    }
-                }
-            }
-
-            // Bluetooth
-            SettingsRow {
-                title: "Bluetooth"
-                subtitle: !root.bluetoothEnabled
-                    ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is turned off")
-                    : (root.bluetoothDevice.length > 0
-                        ? (I18n.isRTL ? ("متصل بجهاز: " + root.bluetoothDevice) : ("Connected to: " + root.bluetoothDevice))
-                        : (I18n.isRTL ? "مفعّل — جاهز للاقتران" : "Enabled — Ready to connect"))
-                icon: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
-                showDivider: false
-                clickable: true
-                onClicked: {
-                    root.bluetoothEnabled = !root.bluetoothEnabled;
-                    btToggleProc.running = true;
-                }
-
-                SettingsToggle {
-                    checked: root.bluetoothEnabled
-                    onToggled: {
-                        root.bluetoothEnabled = !root.bluetoothEnabled;
-                        btToggleProc.running = true;
-                    }
-                }
-            }
-        }
-
-        // ── 3. Advanced Settings (Collapsible) ────────────────────────
-        SettingsSection {
-            title: I18n.isRTL ? "إعدادات متقدمة (Advanced)" : "Advanced Settings"
-            collapsible: true
-            isExpanded: false
+            title: I18n.isRTL ? "تكامل شل DeloWay والنوتش الذكي" : "Shell & Notch Integration"
 
             // Notch Notifications Integration
             SettingsRow {
                 title: I18n.isRTL ? "تكامل إشعارات النوتش الذكي" : "Smart Notch Notifications"
                 subtitle: I18n.isRTL
-                    ? "إدراج الإشعارات وتنبيهاتها ضمن تبويب إشعارات النوتش العلوي"
+                    ? "إدراج الإشعارات وتنبيهاتها ضمن مركز إشعارات النوتش العلوي"
                     : "Integrate incoming toasts into the smart notch notification center"
                 icon: "preferences-system-notifications-symbolic"
                 showDivider: false
                 clickable: true
-                onClicked: {
-                    ConfigManager.notchNotifications = !ConfigManager.notchNotifications;
-                    ConfigManager.saveConfig();
-                }
+                onClicked: ConfigManager.setNotchNotifications(!ConfigManager.notchNotifications)
 
                 SettingsToggle {
                     checked: ConfigManager.notchNotifications
                     onToggled: ch => {
-                        ConfigManager.notchNotifications = ch;
-                        ConfigManager.saveConfig();
+                        ConfigManager.setNotchNotifications(ch);
                     }
                 }
             }

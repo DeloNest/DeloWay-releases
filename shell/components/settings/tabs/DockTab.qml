@@ -1,9 +1,14 @@
+// Dock — live preview, behaviour and pinned applications.
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
+import Quickshell
+import Quickshell.Io
+import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
-import "../../"
 import "../common"
+import "../../"
 
 Item {
     id: root
@@ -91,7 +96,7 @@ Item {
                             return (mockDesktop.height - height) / 2;
                         }
 
-                        opacity: ConfigManager.dockMode === "disabled" ? 0.25 : (ConfigManager.dockMode === "autohide" ? 0.65 : 1.0)
+                        opacity: ConfigManager.dockMode === "disabled" ? 0.25 : (ConfigManager.dockAutoHide ? 0.65 : 1.0)
                         Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                         Behavior on implicitWidth { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                         Behavior on implicitHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
@@ -111,7 +116,7 @@ Item {
                                 model: {
                                     const sourceList = (ApplicationManager.pinnedAppIds && ApplicationManager.pinnedAppIds.length > 0)
                                         ? ApplicationManager.pinnedAppIds
-                                        : ["brave-browser", "kitty", "thunar", "spotify", "settings"];
+                                        : ConfigManager.defaultPinnedApps;
                                     return sourceList.slice(0, miniDock.isHorizontal ? 5 : 4);
                                 }
 
@@ -201,7 +206,9 @@ Item {
                         Text {
                             id: statusText
                             anchors.centerIn: parent
-                            text: (ConfigManager.dockAutoHide
+                            text: (ConfigManager.dockMode === "intellihide"
+                                ? (I18n.isRTL ? "إخفاء ذكي" : "Intellihide")
+                                : ConfigManager.dockAutoHide
                                 ? (I18n.isRTL ? "إخفاء تلقائي" : "Auto-Hide")
                                 : (I18n.isRTL ? "شريط ثابت" : "Fixed")) + " • " + (
                                 ConfigManager.dockPosition === "bottom" ? (I18n.isRTL ? "أسفل" : "Bottom") :
@@ -218,9 +225,9 @@ Item {
             }
         }
 
-        // ── 2. Appearance & Dimensions ───────────────────────────────
+        // ── 2. Dock Appearance & Behavior ────────────────────────────
         SettingsSection {
-            title: I18n.isRTL ? "المظهر والأبعاد" : "Appearance & Dimensions"
+            title: I18n.isRTL ? "إعدادات شريط المهام (Dock)" : "Dock Configuration"
 
             // Icon Size
             SettingsRow {
@@ -282,7 +289,7 @@ Item {
                 title: I18n.tr("dock_position")
                 subtitle: I18n.tr("dock_position_desc")
                 icon: "view-fullscreen-symbolic"
-                showDivider: false
+                showDivider: true
 
                 RowLayout {
                     spacing: Theme.space4
@@ -330,11 +337,6 @@ Item {
                     }
                 }
             }
-        }
-
-        // ── 3. Behavior & Visibility ─────────────────────────────────
-        SettingsSection {
-            title: I18n.isRTL ? "السلوك والتفاعل" : "Behavior & Visibility"
 
             // Dock Display Mode (Always / Auto-Hide / Disabled)
             SettingsRow {
@@ -342,12 +344,15 @@ Item {
                 subtitle: {
                     if (ConfigManager.dockMode === "disabled")
                         return I18n.isRTL ? "معطل تماماً ولا يستهلك أي موارد" : "Completely disabled, zero resource usage";
+                    if (ConfigManager.dockMode === "intellihide")
+                        return I18n.isRTL ? "يختفي فقط عندما تغطيه نافذة، ويظهر عند الاقتراب من الحافة"
+                                          : "Hides only when a window overlaps it; reveal at the screen edge";
                     if (ConfigManager.dockMode === "autohide")
                         return I18n.isRTL ? "يختفي تلقائياً ويتمدد سطح المكتب لكامل الشاشة" : "Auto-hides, windows expand to full screen";
                     return I18n.isRTL ? "ظاهر دائماً مع حجز مساحة حقيقي للنوافذ" : "Always visible with reserved screen space";
                 }
                 icon: "settings-symbolic"
-                showDivider: false
+                showDivider: true
 
                 RowLayout {
                     spacing: Theme.space4
@@ -358,6 +363,7 @@ Item {
                         model: [
                             { id: "always",   label: I18n.isRTL ? "دائماً" : "Always" },
                             { id: "autohide", label: I18n.isRTL ? "إخفاء تلقائي" : "Auto-Hide" },
+                            { id: "intellihide", label: I18n.isRTL ? "إخفاء ذكي" : "Intellihide" },
                             { id: "disabled", label: I18n.isRTL ? "معطل" : "Disabled" }
                         ]
                         delegate: Rectangle {
@@ -396,9 +402,24 @@ Item {
                     }
                 }
             }
+
+            // Active Window Underline
+            SettingsRow {
+                title: I18n.tr("dock_underline")
+                subtitle: I18n.tr("dock_underline_desc")
+                icon: "display-brightness-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setShowUnderline(!ConfigManager.showUnderline)
+
+                SettingsToggle {
+                    checked: ConfigManager.showUnderline
+                    onToggled: ch => ConfigManager.setShowUnderline(ch)
+                }
+            }
         }
 
-        // ── 4. Pinned Applications ───────────────────────────────────
+        // ── 3. Pinned Applications ───────────────────────────────────
         SettingsSection {
             title: (I18n.isRTL ? "إدارة التطبيقات المثبتة (" : "Pinned Applications (") +
                    (ApplicationManager.pinnedAppIds ? ApplicationManager.pinnedAppIds.length : 0) + ")"
@@ -437,7 +458,7 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            ConfigManager.setPinnedApps(["brave-browser", "kitty", "thunar", "spotify", "settings", "store"]);
+                            ConfigManager.setPinnedApps(ConfigManager.defaultPinnedApps);
                         }
                     }
                 }
@@ -499,234 +520,6 @@ Item {
                 subtitle: I18n.isRTL ? "يمكنك تثبيت التطبيقات من درج التطبيقات أو استعادة الافتراضي أعلاه" : "Pin apps from app drawer or restore defaults above"
                 icon: "dialog-warning-symbolic"
                 showDivider: false
-            }
-        }
-
-        // ── 5. Smart Notch & Time Capsule ─────────────────────────────
-        SettingsSection {
-            title: I18n.isRTL ? "النوتش الذكي وكبسولة الوقت" : "Smart Notch & Time Capsule"
-
-            SettingsRow {
-                title: I18n.isRTL ? "إظهار كبسولة الوقت والتاريخ في النوتش" : "Show Time & Date Capsule in Notch"
-                subtitle: I18n.isRTL
-                    ? "عرض كبسولة الوقت في الشريط العلوي مع التقويم وقراءات الهاردوير عند التوسع"
-                    : "Display time capsule in the top bar with calendar and hardware info on expand"
-                icon: "preferences-system-time-symbolic"
-                showDivider: false
-                clickable: true
-                onClicked: ConfigManager.setTimeCapsuleEnabled(!ConfigManager.timeCapsuleEnabled)
-
-                SettingsToggle {
-                    checked: ConfigManager.timeCapsuleEnabled
-                    onToggled: ch => ConfigManager.setTimeCapsuleEnabled(ch)
-                }
-            }
-        }
-
-        // ── 6. Advanced Settings (Collapsible) ────────────────────────
-        SettingsSection {
-            title: I18n.isRTL ? "إعدادات متقدمة (Advanced)" : "Advanced Settings"
-            collapsible: true
-            isExpanded: false
-
-            // Active Window Underline
-            SettingsRow {
-                title: I18n.tr("dock_underline")
-                subtitle: I18n.tr("dock_underline_desc")
-                icon: "display-brightness-symbolic"
-                showDivider: true
-                clickable: true
-                onClicked: ConfigManager.setShowUnderline(!ConfigManager.showUnderline)
-
-                SettingsToggle {
-                    checked: ConfigManager.showUnderline
-                    onToggled: ch => ConfigManager.setShowUnderline(ch)
-                }
-            }
-
-            // Clock Format: 12h / 24h
-            SettingsRow {
-                title: I18n.isRTL ? "تنسيق الوقت" : "Time Format"
-                subtitle: I18n.isRTL ? "التبديل بين نظام 12 ساعة و24 ساعة" : "Toggle between 12-hour and 24-hour time format"
-                icon: "preferences-system-time-symbolic"
-                showDivider: true
-
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { id: "12h", label: I18n.isRTL ? "12 ساعة (ص/م)" : "12-hour" },
-                            { id: "24h", label: I18n.isRTL ? "24 ساعة" : "24-hour" }
-                        ]
-                        delegate: Rectangle {
-                            id: clockPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.clockFormat === modelData.id
-
-                            height: 28
-                            implicitWidth: clockText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: clockPill.isSelected ? Theme.notchSurfaceActive : (clockMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: clockPill.isSelected ? Theme.notchBorderHighlight : (clockMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: clockText
-                                anchors.centerIn: parent
-                                text: clockPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: clockPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: clockPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: clockMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    ConfigManager.clockFormat = clockPill.modelData.id;
-                                    ConfigManager.saveConfig();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Calendar Week Start
-            SettingsRow {
-                title: I18n.isRTL ? "بداية الأسبوع في التقويم" : "Calendar Week Start"
-                subtitle: I18n.isRTL ? "اليوم الأول في شبكة تقويم الشهر الموسعة" : "First day of the week displayed in the monthly calendar grid"
-                icon: "view-calendar-symbolic"
-                showDivider: true
-
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { id: "saturday", label: I18n.isRTL ? "السبت" : "Saturday" },
-                            { id: "sunday",   label: I18n.isRTL ? "الأحد" : "Sunday" },
-                            { id: "monday",   label: I18n.isRTL ? "الاثنين" : "Monday" }
-                        ]
-                        delegate: Rectangle {
-                            id: weekStartPill
-                            required property var modelData
-                            readonly property bool isSelected: (ConfigManager.timeCapsuleWeekStart || "saturday") === modelData.id
-
-                            height: 28
-                            implicitWidth: weekStartText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: weekStartPill.isSelected ? Theme.notchSurfaceActive : (weekStartMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: weekStartPill.isSelected ? Theme.notchBorderHighlight : (weekStartMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: weekStartText
-                                anchors.centerIn: parent
-                                text: weekStartPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: weekStartPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: weekStartPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: weekStartMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setTimeCapsuleWeekStart(weekStartPill.modelData.id)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Show Seconds in Expanded Clock
-            SettingsRow {
-                title: I18n.isRTL ? "إظهار الثواني في الساعة الموسعة" : "Show Seconds in Expanded Clock"
-                subtitle: I18n.isRTL ? "عرض عداد الثواني مع الساعات والدقائق" : "Display seconds counter alongside hours and minutes"
-                icon: "appointment-soon-symbolic"
-                showDivider: true
-                clickable: true
-                onClicked: ConfigManager.setTimeCapsuleShowSeconds(!ConfigManager.timeCapsuleShowSeconds)
-
-                SettingsToggle {
-                    checked: ConfigManager.timeCapsuleShowSeconds
-                    onToggled: ch => ConfigManager.setTimeCapsuleShowSeconds(ch)
-                }
-            }
-
-            // Show Short Date in Compact Capsule
-            SettingsRow {
-                title: I18n.isRTL ? "إظهار التاريخ في الكبسولة المصغّرة" : "Show Date in Compact Capsule"
-                subtitle: I18n.isRTL ? "عرض اليوم والشهر المختصر بجانب الوقت" : "Display short day and month next to time"
-                icon: "x-office-calendar-symbolic"
-                showDivider: true
-                clickable: true
-                onClicked: ConfigManager.setTimeCapsuleShowShortDate(!ConfigManager.timeCapsuleShowShortDate)
-
-                SettingsToggle {
-                    checked: ConfigManager.timeCapsuleShowShortDate
-                    onToggled: ch => ConfigManager.setTimeCapsuleShowShortDate(ch)
-                }
-            }
-
-            // Show Hijri Date (Umm al-Qura)
-            SettingsRow {
-                title: I18n.isRTL ? "إظهار التاريخ الهجري (أم القرى)" : "Show Hijri Date (Umm al-Qura)"
-                subtitle: I18n.isRTL ? "عرض التاريخ الهجري بدقة فلكية في ترويسة الكبسولة" : "Display astronomical Umm al-Qura Hijri date in expanded header"
-                icon: "weather-clear-night-symbolic"
-                showDivider: true
-                clickable: true
-                onClicked: ConfigManager.setTimeCapsuleShowHijri(!ConfigManager.timeCapsuleShowHijri)
-
-                SettingsToggle {
-                    checked: ConfigManager.timeCapsuleShowHijri
-                    onToggled: ch => ConfigManager.setTimeCapsuleShowHijri(ch)
-                }
-            }
-
-            // Eastern Arabic Numerals (٠١٢)
-            SettingsRow {
-                title: I18n.isRTL ? "الأرقام المشرقية (٠١٢٣٤)" : "Eastern Arabic Numerals (٠١٢)"
-                subtitle: I18n.isRTL ? "استخدام الأرقام العربية المشرقية للأوقات والتواريخ" : "Use Eastern Arabic digits for times and dates in Arabic UI"
-                icon: "format-text-bold-symbolic"
-                showDivider: true
-                clickable: true
-                onClicked: ConfigManager.setTimeCapsuleArabicDigits(!ConfigManager.timeCapsuleArabicDigits)
-
-                SettingsToggle {
-                    checked: ConfigManager.timeCapsuleArabicDigits
-                    onToggled: ch => ConfigManager.setTimeCapsuleArabicDigits(ch)
-                }
-            }
-
-            // Show Hardware Telemetry
-            SettingsRow {
-                title: I18n.isRTL ? "إظهار قسم الهاردوير" : "Show Hardware Telemetry"
-                subtitle: I18n.isRTL ? "عرض بطاقات مراقبة الاستهلاك والحرارة أسفل التقويم" : "Display CPU, RAM, and GPU usage cards below calendar"
-                icon: "utilities-system-monitor-symbolic"
-                showDivider: false
-                clickable: true
-                onClicked: ConfigManager.setTimeCapsuleShowHardware(!ConfigManager.timeCapsuleShowHardware)
-
-                SettingsToggle {
-                    checked: ConfigManager.timeCapsuleShowHardware
-                    onToggled: ch => ConfigManager.setTimeCapsuleShowHardware(ch)
-                }
             }
         }
     }

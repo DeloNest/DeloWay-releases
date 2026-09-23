@@ -29,7 +29,7 @@ PanelWindow {
 
     // State management
     property bool isOpen: ShellState.settingsAppOpen
-    property string activeTab: ShellState.activeSettingsTab || "appearance"
+    property string activeTab: ShellState.resolveSettingsTab(ShellState.activeSettingsTab)
     property bool isFullScreen: ShellState.settingsFullScreen
 
     // Window dragging & sizing properties
@@ -46,20 +46,20 @@ PanelWindow {
     readonly property real clampedX: Math.max(10, Math.min(root.width - windowCard.width - 10, (root.customX >= 0) ? root.customX : defaultX))
     readonly property real clampedY: Math.max(10, Math.min(root.height - windowCard.height - 10, (root.customY >= 0) ? root.customY : defaultY))
 
-    // Tab definitions (5 Core Sections)
-    readonly property var tabList: [
-        { id: "appearance",   icon: "applications-graphics-symbolic" },
-        { id: "dock",         icon: "view-app-grid-symbolic" },
-        { id: "windows",      icon: "view-fullscreen-symbolic" },
-        { id: "connectivity", icon: "network-wireless-symbolic" },
-        { id: "system",       icon: "preferences-system-symbolic" }
-    ]
+    // Flattened page order from the registry (groups → pages)
+    readonly property var tabList: {
+        const out = [];
+        for (const g of ShellState.settingsGroups)
+            for (const id of g.pages) out.push({ id: id, icon: ShellState.settingsPages[id].icon, file: ShellState.settingsPages[id].file });
+        return out;
+    }
 
     // Lazy loading registry: maps tabId -> boolean (has been visited)
     property var visitedTabs: ({})
 
     function selectTab(tabId) {
         if (!tabId) return;
+        tabId = ShellState.resolveSettingsTab(tabId);
         root.activeTab = tabId;
         if (!root.visitedTabs[tabId]) {
             var updated = Object.assign({}, root.visitedTabs);
@@ -412,7 +412,7 @@ PanelWindow {
                                     LayoutMirroring.childrenInherit: true
 
                                     Text {
-                                        text: I18n.tr("tab_" + root.activeTab)
+                                        text: I18n.tr("settings_page_" + root.activeTab)
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(18)
                                         font.weight: Font.Bold
@@ -422,7 +422,7 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: I18n.tr(root.activeTab + "_desc")
+                                        text: I18n.tr("settings_page_" + root.activeTab + "_desc")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         color: Theme.notchTextSecondary
@@ -499,41 +499,8 @@ PanelWindow {
                                             onItemChanged: updateCurrent()
                                             Component.onCompleted: updateCurrent()
 
-                                            sourceComponent: {
-                                                switch (modelData.id) {
-                                                case "appearance": return appearanceComponent;
-                                                case "dock": return dockComponent;
-                                                case "windows": return windowsComponent;
-                                                case "connectivity": return connectivityComponent;
-                                                case "system": return systemComponent;
-                                                default: return appearanceComponent;
-                                                }
-                                            }
-
-                                            Component {
-                                                id: appearanceComponent
-                                                AppearanceTab {}
-                                            }
-
-                                            Component {
-                                                id: dockComponent
-                                                DockTab {}
-                                            }
-
-                                            Component {
-                                                id: windowsComponent
-                                                WindowsTab {}
-                                            }
-
-                                            Component {
-                                                id: connectivityComponent
-                                                ConnectivityTab {}
-                                            }
-
-                                            Component {
-                                                id: systemComponent
-                                                SystemTab {}
-                                            }
+                                            // Pages are lazy: loaded on first visit, then kept alive.
+                                            source: "tabs/" + modelData.file
                                         }
                                     }
                                 }
