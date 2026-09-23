@@ -19,7 +19,9 @@ WlSessionLock {
     // PAM service: DeloWay's own file (installed by install.sh), else hyprlock's, else
     // the system 'login' stack. Picked once at startup; never a file that is missing.
     property string pamService: "login"
-    Process {
+    // Held in a property: a bare child of WlSessionLock lands on its default property
+    // (`surface`), where the explicit `surface:` below replaced it and the probe never ran.
+    property Process pamServiceProbe: Process {
         running: true
         command: ["sh", "-c", "for s in deloway hyprlock; do [ -f /etc/pam.d/$s ] && { echo $s; exit 0; }; done; echo login"]
         stdout: StdioCollector {

@@ -102,11 +102,12 @@ Rectangle {
 
         // Selection Enter hint (↵) visible only when selected
         Text {
+            id: enterHint
             Layout.alignment: Qt.AlignVCenter
             visible: root.isSelected
             text: "↵"
             // ↵ points back to the line start: flip it in Arabic (glyphs are not mirrored).
-            transform: Scale { origin.x: width / 2; xScale: I18n.isRTL ? -1 : 1 }
+            transform: Scale { origin.x: enterHint.width / 2; xScale: I18n.isRTL ? -1 : 1 }
             font.family: Theme.typography.fontFamily
             font.pixelSize: Theme.fontSize(13)
             font.weight: Font.DemiBold

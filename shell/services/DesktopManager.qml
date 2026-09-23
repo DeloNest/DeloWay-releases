@@ -544,7 +544,7 @@ Item {
         id: refreshTimer
         interval: 300
         repeat: false
-        onTriggered: refreshDesktop()
+        onTriggered: root.refreshDesktop()
     }
 
     Component.onCompleted: {
