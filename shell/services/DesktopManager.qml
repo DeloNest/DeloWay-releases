@@ -189,11 +189,17 @@ Item {
             editingItemId = "";
             return;
         }
-        const oldP = item.path;
-        const newP = root.desktopDir + "/" + newName.trim();
-        Quickshell.execDetached(["mv", oldP, newP]);
+        const name = newName.trim();
+        // A name, not a path: no '/', '.', '..' (they would move the file out of the
+        // Desktop, e.g. '../.bashrc'). Existing targets are never overwritten.
+        if (!name || name.indexOf("/") >= 0 || name === "." || name === "..") {
+            editingItemId = "";
+            return;
+        }
+        renameProcess.targetName = name;
+        renameProcess.exec(["sh", "-c", '[ -e "$2" ] && exit 3; mv -n -- "$1" "$2"',
+                            "sh", item.path, root.desktopDir + "/" + name]);
         editingItemId = "";
-        refreshTimer.restart();
     }
 
     function moveToTrash(item) {
@@ -202,10 +208,24 @@ Item {
         refreshTimer.restart();
     }
 
+    // gio empties files/ and info/ including dotfiles; the icon state comes from the
+    // re-check afterwards, not an optimistic assignment.
     function emptyTrash() {
-        Quickshell.execDetached(["bash", "-c", "rm -rf '" + root.trashFilesDir + "'/* '" + root.trashInfoDir + "'/*"]);
-        root.isTrashEmpty = true;
-        refreshTimer.restart();
+        emptyTrashProcess.exec(["gio", "trash", "--empty"]);
+    }
+    Process {
+        id: emptyTrashProcess
+        onExited: refreshTimer.restart()
+    }
+    Process {
+        id: renameProcess
+        property string targetName: ""
+        onExited: (code) => {
+            if (code === 3)
+                NotificationManager.postNotification(I18n.isRTL ? "سطح المكتب" : "Desktop",
+                    (I18n.isRTL ? "يوجد عنصر باسم «%1» مسبقاً" : "“%1” already exists").replace("%1", targetName), "", "");
+            refreshTimer.restart();
+        }
     }
 
     function startRenaming(id) {
@@ -314,20 +334,23 @@ Item {
     // ----------------------------------------------------
     // BACKGROUND SCANNING & PROCESSES
     // ----------------------------------------------------
+    // Whole-file read: a line-by-line SplitParser fed JSON.parse one line of the
+    // (pretty-printed) file at a time, so saved positions never loaded back.
     Process {
         id: loadPositionsProcess
-        stdout: SplitParser {
-            onRead: function(data) {
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const trimmed = this.text.trim();
+                if (trimmed.length === 0) return;
                 try {
-                    const trimmed = data.trim();
-                    if (trimmed.length > 0) {
-                        const parsed = JSON.parse(trimmed);
-                        if (parsed && typeof parsed === "object") {
-                            root.iconPositions = parsed;
-                            root.positionsRevision++;
-                        }
+                    const parsed = JSON.parse(trimmed);
+                    if (parsed && typeof parsed === "object") {
+                        root.iconPositions = parsed;
+                        root.positionsRevision++;
                     }
-                } catch(e) {}
+                } catch (e) {
+                    console.warn("[DesktopManager] desktop_positions.json is not valid JSON; keeping auto-layout");
+                }
             }
         }
     }
@@ -337,13 +360,14 @@ Item {
         interval: 350
         repeat: false
         onTriggered: {
-            const jsonStr = JSON.stringify(root.iconPositions, null, 2);
-            Quickshell.execDetached(["bash", "-c", "mkdir -p '" + root.homeDir + "/.config/deloway' && cat << 'EOF' > '" + root.positionsPath + "'\n" + jsonStr + "\nEOF"]);
+            // Content and path are arguments, not part of the script.
+            Quickshell.execDetached(["sh", "-c", 'mkdir -p "$(dirname "$1")" && printf "%s\\n" "$2" > "$1"',
+                                     "sh", root.positionsPath, JSON.stringify(root.iconPositions)]);
         }
     }
 
     function loadPositions() {
-        loadPositionsProcess.command = ["bash", "-c", "cat '" + root.positionsPath + "' 2>/dev/null || echo '{}'"];
+        loadPositionsProcess.command = ["sh", "-c", 'cat "$1" 2>/dev/null || echo "{}"', "sh", root.positionsPath];
         loadPositionsProcess.running = true;
     }
 
@@ -478,7 +502,7 @@ Item {
         listDesktopProcess.command = ["bash", "-c", scanCmd];
         listDesktopProcess.running = true;
 
-        checkTrashProcess.command = ["bash", "-c", "[ -d '" + root.trashFilesDir + "' ] && [ $(ls -A '" + root.trashFilesDir + "' 2>/dev/null | wc -l) -gt 0 ] && echo 'full' || echo 'empty'"];
+        checkTrashProcess.command = ["sh", "-c", '[ -n "$(ls -A "$1" 2>/dev/null)" ] && echo full || echo empty', "sh", root.trashFilesDir];
         checkTrashProcess.running = true;
     }
 
@@ -488,6 +512,10 @@ Item {
             "python3", "-u", "-c",
             "import os, sys, ctypes\n" +
             "libc = ctypes.CDLL(None)\n" +
+            // Die with the shell: PR_SET_PDEATHSIG(SIGTERM). The loop blocks in read()
+            // and would otherwise be orphaned on every shell restart.
+            "libc.prctl(1, 15, 0, 0, 0)\n" +
+            "if os.getppid() == 1: sys.exit(0)\n" +
             "fd = libc.inotify_init()\n" +
             "MASK = 0x100 | 0x200 | 0x40 | 0x80\n" +
             "d = sys.argv[1]\n" +

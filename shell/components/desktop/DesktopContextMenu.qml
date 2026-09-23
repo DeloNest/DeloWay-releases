@@ -454,14 +454,24 @@ Item {
                     }
                 }
 
+                // Permanent deletion: the first click arms, the second confirms.
                 ContextMenuItem {
+                    id: emptyTrashItem
+                    property bool armed: false
                     visible: DesktopManager.contextMenuTargetItem && DesktopManager.contextMenuTargetItem.isTrash
-                    title: I18n.isRTL ? "تفريغ سلة المحذوفات" : "Empty Trash"
+                    title: armed ? (I18n.isRTL ? "تأكيد: حذف كل ما في السلة نهائياً" : "Confirm: permanently delete all")
+                                 : (I18n.isRTL ? "تفريغ سلة المحذوفات" : "Empty Trash")
                     iconSource: "user-trash"
                     isUrgent: true
                     onTriggered: {
+                        if (!armed) { armed = true; return; }
+                        armed = false;
                         DesktopManager.emptyTrash();
                         DesktopManager.closeContextMenu();
+                    }
+                    Connections {
+                        target: DesktopManager
+                        function onContextMenuVisibleChanged() { emptyTrashItem.armed = false; }
                     }
                 }
             }
