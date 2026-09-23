@@ -1,132 +1,137 @@
-# DeloOS / Deloway Desktop Experience
+# Deloway
 
-<p align="center">
-  <img src="assets/wallpaper.jpg" alt="Deloway Desktop" width="800" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
-</p>
+Deloway is a desktop shell for Hyprland, written in QML on top of [Quickshell](https://quickshell.outfoxxed.me/).
+The top bar, dock, app drawer, search, notifications, quick settings, lock screen, desktop and
+settings app all come from one QML codebase. They share their state and a single config file.
 
-<p align="center">
-  <b>A modern, cohesive Linux desktop experience built on Hyprland and Quickshell.</b><br/>
-  Fluent Mica elegance • Integrated Application Lifecycle • 3 Selectable Desktop Modes • Zero Neon AI Glow
-</p>
+The look is deliberately plain: black and neutral grays, with a light variant. There is no accent
+color. Hierarchy comes from brightness, weight and spacing, and red, amber and green only show up as
+small status dots. The interface is built Arabic-first and mirrors fully for right-to-left. English
+works too.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Wayland-100%25-blue?style=flat-square" alt="Wayland" />
-  <img src="https://img.shields.io/badge/Compositor-Hyprland-00a8ff?style=flat-square" alt="Hyprland" />
-  <img src="https://img.shields.io/badge/Shell-Quickshell%20%2B%20QML-41cd52?style=flat-square" alt="Quickshell" />
-  <img src="https://img.shields.io/badge/Toolkit-Qt6%20%2F%20Fluent-blueviolet?style=flat-square" alt="Qt6" />
-  <img src="https://img.shields.io/badge/Icons-Reversal-ffaa00?style=flat-square" alt="Reversal Icons" />
-  <img src="https://img.shields.io/badge/License-GPLv3-lightgrey?style=flat-square" alt="License" />
-</p>
+<!--
+  Screenshots go here once they are captured on a clean desktop, e.g.
+  ![Dark](docs/screenshots/dark.png)  ![Light](docs/screenshots/light.png)
+-->
 
----
+## What's in it
 
-## 🌟 Vision & Design Principles
+- **Top bar**: three capsules, one each for the clock/calendar, the notch (home, notifications, LocalSend sharing) and quick settings (Wi-Fi, Bluetooth, hotspot, audio, brightness, night light, power).
+- **Dock**: pinned and running apps, with an intellihide mode and a right-click menu for app info and uninstall.
+- **Start menu / app drawer and search**: app search with a built-in calculator.
+- **Settings app**: network, Bluetooth, appearance, wallpaper, dock, top bar, windows, notifications, power, apps, time and language.
+- **Lock screen**: uses `ext-session-lock` with PAM.
+- **Three desktop modes**: clean, widgets and a traditional icon desktop.
+- **Dark / Light switch**: also carries GTK apps, the icon theme, window borders and the bundled kitty profile.
 
-Deloway is **not** a traditional "Hyprland dotfiles rice" where disparate utilities (Waybar, Rofi, Dunst, SwayNC, Hyprlock) are glued together with fragile shell scripts and inconsistent color palettes.
+## Requirements
 
-Instead, Deloway delivers:
-- **One Integrated Shell Application**: The top bar, dock, app drawer, search, notifications, quick settings, lock screen, desktop, and settings app live inside **one cohesive codebase** sharing a single in-memory state and unified configuration file.
-- **Strict Monochrome, OLED-first**: exactly two modes — **Dark** (pure black, neutral grays) and **Light** (crisp high-contrast neutrals) — switched in Settings → Appearance. There is no accent color; hierarchy comes from luminance, weight and layering. Red / amber / green appear only as tiny status indicators.
-- **Reversal-black Icons**: the icon theme follows the mode (Reversal-black in Light, Reversal-black-dark in Dark), together with GTK apps, window borders and the DeloWay kitty profile.
-- **Human-Editable JSON Config**: the Settings app and hand edits share `~/.config/deloway/deloway.json`. Settings changes apply instantly; hand edits apply on the next shell restart.
+Arch Linux (or an Arch-based distro) with:
 
----
+- Hyprland
+- an AUR helper, `yay` or `paru`. The installer offers to bootstrap one if neither is present.
+- a display manager that reads Wayland sessions (SDDM, GDM, LightDM), or a TTY login
 
-## 🖥️ Desktop Modes (§5.8)
+Everything else is installed by `install.sh`.
 
-Choose the desktop experience that fits your workflow directly from the Settings App or desktop right-click menu:
+## Install
 
-| Clean Mode | Widgets Mode | Traditional Mode |
-|:---:|:---:|:---:|
-| Minimalist wallpaper view without file or widget clutter. Includes bottom status pills. | Movable, draggable Fluent Mica cards (Clock/Date, Weather, Hardware Monitor, Quick Notes). | Full desktop grid with files, folders, rubber-band multi-select, and inline rename. |
-
----
-
-## 🚀 Quick Start & Installation
-
-Deloway includes an automated installer that detects your Linux distribution and configures all components:
-
-### 1. Clone the repository
 ```bash
-git clone https://github.com/DeloOS/Deloway.git
-cd Deloway
-```
-
-### 2. Run the automated installer
-```bash
+git clone https://github.com/IWLED/Deloway.git ~/Projects/Deloway
+cd ~/Projects/Deloway
 ./install.sh
 ```
 
-*(Options: `--dry-run` to inspect commands without modifying the system; `--no-deps` to skip package manager checks).*
+The installer asks for your default terminal, browser, file manager, editor and system monitor,
+then:
 
-### 3. Log into Deloway
-- From your display manager (**SDDM**, **GDM**, **LightDM**, or **greetd**), select the **"Deloway"** session.
-- Or launch directly from a TTY:
-  ```bash
-  deloway-session
-  ```
+- **Packages:** installs everything the shell and its helper scripts call, from pacman and the AUR (Quickshell, Qt modules, fonts, the Reversal icon theme, NetworkManager, BlueZ, PipeWire, and so on).
+- **Hardware:** detects it and adds what's needed, such as `ddcutil` for external monitors without a backlight, or GPU drivers.
+- **Config and commands:** links the shell into `~/.config/deloway`, writes `~/.config/deloway/deloway.json`, and puts `delo-app` and `deloway-session` in `~/.local/bin`.
+- **System files (sudo):** registers the session in `/usr/share/wayland-sessions` and installs the lock screen's PAM file in `/etc/pam.d/deloway`.
 
----
+Useful flags:
 
-## 🔄 Updates & Safe Migration
+| Flag | |
+|---|---|
+| `--dry-run` | print what would happen without changing anything |
+| `-y` | accept the default choices |
+| `--no-deps` | skip package installation |
 
-Upgrade Deloway seamlessly with the built-in migration engine:
+Run it as your normal user. It asks for sudo when it needs it.
+
+The repo can live anywhere. Outside `~/Projects/Deloway`, the installer writes a
+`~/.config/deloway/hyprland.conf` that points at your clone.
+
+## Logging in
+
+Log out and pick **DeloWay** from the session list on the login screen. From a TTY, run:
 
 ```bash
-./update.sh
+deloway-session
 ```
 
-**What `update.sh` does:**
-1. Pulls latest upstream improvements.
-2. Creates an automatic timestamped backup of your user configuration in `~/.config/deloway/backups/`.
-3. Performs non-destructive deep schema migration, backfilling any newly introduced features without overwriting your custom settings.
-4. Detects the running shell and prints the clean-restart command (`./update.sh --restart` runs it). DeloWay never hot-reloads QML: live reloads can crash Quickshell.
+The first start opens a short setup wizard for language, theme and apps.
 
----
+## Updating
 
-## ⌨️ Essential Keyboard Shortcuts
+```bash
+cd ~/Projects/Deloway
+./update.sh            # pull, back up the config, add new config keys
+./update.sh --restart  # same, then restart the shell
+```
 
-| Shortcut | Function |
+The shell never hot-reloads QML, because live reloads can crash Quickshell. After changing files,
+restart the shell with <kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>R</kbd>.
+
+## Keys you'll want first
+
+| | |
 |---|---|
-| <kbd>Super</kbd> (tap) / <kbd>Super</kbd> + <kbd>A</kbd> | Start menu (App Drawer) |
-| <kbd>Super</kbd> + <kbd>Space</kbd> | Search |
-| <kbd>Super</kbd> + <kbd>N</kbd> / <kbd>Super</kbd> + <kbd>M</kbd> | Quick Settings |
-| <kbd>Super</kbd> + <kbd>I</kbd> | DeloWay Settings |
-| <kbd>Super</kbd> + <kbd>L</kbd> | Lock screen (the shell's `ext-session-lock` screen; hyprlock if the shell is not running) |
-| <kbd>Super</kbd> + <kbd>V</kbd> | Clipboard history |
-| <kbd>Super</kbd> + <kbd>/</kbd> | Keyboard shortcuts overlay |
-| <kbd>Super</kbd> + <kbd>Return</kbd> | Terminal |
-| <kbd>Super</kbd> + <kbd>E</kbd> | File manager |
-| <kbd>Super</kbd> + <kbd>Q</kbd> | Close focused window |
-| <kbd>Super</kbd> + <kbd>F</kbd> | Fullscreen |
-| <kbd>Super</kbd> + <kbd>1</kbd> .. <kbd>0</kbd> | Switch workspace |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> / <kbd>Print</kbd> | Area / full-screen screenshot |
+| <kbd>Super</kbd> (tap) | start menu |
+| <kbd>Super</kbd>+<kbd>Space</kbd> | search |
+| <kbd>Super</kbd>+<kbd>N</kbd> | quick settings |
+| <kbd>Super</kbd>+<kbd>I</kbd> | settings |
+| <kbd>Super</kbd>+<kbd>L</kbd> | lock |
+| <kbd>Super</kbd>+<kbd>Return</kbd> | terminal |
+| <kbd>Super</kbd>+<kbd>/</kbd> | every shortcut, in the shell |
 
-*See [`docs/KEYBINDINGS.md`](docs/KEYBINDINGS.md) for the complete reference.*
+The full list is in [docs/KEYBINDINGS.md](docs/KEYBINDINGS.md).
 
----
+## Configuration
 
-## 📚 Documentation Index
+Settings live in `~/.config/deloway/deloway.json`. The settings app writes the same file, so you can
+use either. Hand edits are picked up on the next shell restart. The schema is documented in
+[docs/CONFIGURATION.md](docs/CONFIGURATION.md).
 
-- [**System Architecture**](docs/ARCHITECTURE.md): Deep dive into the QML shell architecture, services layer, and Hyprland IPC bridge.
-- [**Configuration Guide**](docs/CONFIGURATION.md): Complete schema reference for `config/deloway.json` and hand-editing tips.
-- [**Multi-Distro Packaging**](docs/PACKAGES.md): Package installation guides for Arch, Fedora, Debian/Ubuntu, and openSUSE.
-- [**Keybindings Cheatsheet**](docs/KEYBINDINGS.md): Full compositor and shell shortcut reference.
+Hyprland reads `config/hyprland.conf` from the repo, isolated from `~/.config/hypr`.
 
----
+## Layout
 
-## 👥 Contributing
+```
+shell/
+  shell.qml          entry point: windows per screen, global shortcuts, IPC
+  components/        top bar capsules, dock, drawer, settings, lock screen, desktop…
+  services/          singletons: config, apps, network, bluetooth, notifications, i18n…
+  theme/Theme.qml    every color and size token; components never hardcode colors
+scripts/             Python and shell helpers the services call (network, bluetooth,
+                     theme apply, wallpaper, screenshots, LocalSend…)
+config/              hyprland.conf, kitty profile, default deloway.json
+bin/                 deloway-session (session wrapper), delo-app (default-app launcher)
+system/              session .desktop entry, PAM file
+```
 
-Contributions are welcome! Please ensure that:
-1. All QML changes pass `qmllint` cleanly:
-   ```bash
-   qmllint -I shell/ -I /usr/lib/qt6/qml shell/shell.qml shell/components/*.qml
-   ```
-2. Colors come only from tokens in `shell/theme/Theme.qml` (strict monochrome, see `CLAUDE.md`), and `./scripts/check-theme.sh` passes.
-3. All components interface through central services (`ApplicationManager`, `DesktopManager`, `ConfigManager`).
+The QML side keeps to one rule: components talk to services, services own the state and the
+processes. The shell also answers `qs ipc` calls, e.g.:
 
----
+```bash
+qs ipc -p ~/Projects/Deloway/shell call deloway setMode light
+```
 
-<p align="center">
-  <sub>Crafted with passion for the modern Linux desktop.</sub>
-</p>
+More detail is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Contributing
+
+- Colors come from `shell/theme/Theme.qml` only. `./scripts/check-theme.sh` has to pass.
+- Restart the shell cleanly to test (`killall quickshell`, then start it again) and keep
+  `qs log -p shell` free of new warnings.
