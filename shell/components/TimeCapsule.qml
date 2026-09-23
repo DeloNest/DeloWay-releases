@@ -329,7 +329,6 @@ Item {
                         id: liveRow
                         anchors.centerIn: parent
                         spacing: 4
-                        LayoutMirroring.enabled: false
                         SymbolicIcon {
                             anchors.verticalCenter: parent.verticalCenter
                             iconSize: 11
@@ -429,7 +428,8 @@ Item {
 
                     RowLayout {
                         spacing: Theme.space6
-                        LayoutMirroring.enabled: false   // digits always read LTR
+                        // Mirrors: the digits are one Text (always LTR by bidi); the
+                        // ص/م marker goes to the reading end, as in the compact capsule.
 
                         Text {
                             text: root.expandedClockDigits

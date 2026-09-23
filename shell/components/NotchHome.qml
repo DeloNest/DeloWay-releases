@@ -16,7 +16,9 @@ Item {
     property ShellScreen targetScreen: null
     readonly property HyprlandMonitor hyprMonitor: targetScreen ? Hyprland.monitorFor(targetScreen) : (Hyprland.focusedMonitor || null)
 
-    LayoutMirroring.enabled: false
+    // Follows the reading direction. LTR islands are pinned where they are needed:
+    // the workspace strip (WorkspaceIndicator) and the media transport rows.
+    LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
     readonly property real workspaceContentWidth: (wsIndicator && wsIndicator.visible) ? wsIndicator.implicitWidth : 0
@@ -235,9 +237,13 @@ Item {
         }
 
         // 1.2 Merged Compact Row: Workspaces + Music Player
+        // Physical order kept (workspaces | player) like the rest of the top bar; the
+        // player's own text still renders Arabic correctly.
         RowLayout {
             anchors.centerIn: parent
             spacing: 8
+            LayoutMirroring.enabled: false
+            LayoutMirroring.childrenInherit: true
             opacity: root.viewMode !== "notification" ? 1 : 0
             visible: opacity > 0.01
             Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
@@ -635,7 +641,7 @@ Item {
                     RowLayout {
                         spacing: 8
                         Text {
-                            text: Qt.formatTime(root.currentTime, "hh:mm")
+                            text: I18n.clockDigits(root.currentTime)
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(32)
                             font.weight: Font.Bold
@@ -646,14 +652,15 @@ Item {
                         ColumnLayout {
                             spacing: 0
                             Text {
-                                text: Qt.formatTime(root.currentTime, "AP")
+                                text: I18n.meridiem(root.currentTime)
+                                visible: text.length > 0
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Bold
                                 color: Theme.notchText
                             }
                             Text {
-                                text: Qt.formatTime(root.currentTime, ":ss")
+                                text: I18n.digits(":" + String(root.currentTime.getSeconds()).padStart(2, "0"))
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 color: Theme.notchTextTertiary
@@ -662,7 +669,7 @@ Item {
                     }
 
                     Text {
-                        text: Qt.formatDate(root.currentTime, I18n.isRTL ? "dddd، d MMMM yyyy" : "dddd, MMMM d, yyyy")
+                        text: I18n.fullDateText(root.currentTime)
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(12)
                         renderType: Theme.renderType

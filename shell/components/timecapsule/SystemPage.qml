@@ -242,7 +242,8 @@ ColumnLayout {
 
                 // Legend — luminance keys matching the series weights
                 Row {
-                    LayoutMirroring.enabled: false
+                    LayoutMirroring.enabled: false          // keyed to the LTR TrendChart
+                    LayoutMirroring.childrenInherit: true   // swatch before label in each entry
                     anchors.top: parent.top
                     anchors.right: parent.right
                     spacing: Theme.space8

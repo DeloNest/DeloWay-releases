@@ -12,7 +12,7 @@ Item {
 
     property bool expanded: false
 
-    LayoutMirroring.enabled: false
+    LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
     // State: "idle" | "selecting" | "sending" | "sent" | "failed"
@@ -143,8 +143,6 @@ Item {
         anchors.fill: parent
         anchors.margins: 4
         visible: root.expanded
-        LayoutMirroring.enabled: false
-        LayoutMirroring.childrenInherit: true
 
         // ── Dashed Tray Box (100% NotchNook Tray match) ──
         Item {
@@ -232,8 +230,6 @@ Item {
                 anchors.margins: 12
                 spacing: 14
                 visible: root.droppedUrls.length > 0
-                LayoutMirroring.enabled: false
-                LayoutMirroring.childrenInherit: true
 
                 ListView {
                     id: trayFilesList

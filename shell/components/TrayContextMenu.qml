@@ -165,6 +165,7 @@ PopupWindow {
 
                     Text {
                         Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignLeft   // reading start, whatever the label's script
                         text: submenu.title.length > 0 ? submenu.title : (I18n.isRTL ? "رجوع" : "Back")
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(11)
@@ -298,6 +299,7 @@ PopupWindow {
                             // Text Label
                             Text {
                                 Layout.fillWidth: true
+                                horizontalAlignment: Text.AlignLeft   // reading start, whatever the label's script
                                 text: modelData && modelData.text ? modelData.text.replace(/&(?=[^&])/g, "") : ""
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)

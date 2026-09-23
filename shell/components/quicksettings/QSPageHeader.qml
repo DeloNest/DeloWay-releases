@@ -51,7 +51,9 @@ RowLayout {
         Text {
             Layout.fillWidth: true
             visible: text.length > 0
-            text: NotificationManager.bidi(root.subtitle)
+            // Paragraph direction from the UI language, not the content (an English SSID
+            // inside an Arabic sentence used to flip the whole line).
+            text: (I18n.isRTL ? "\u200F" : "\u200E") + root.subtitle
             horizontalAlignment: Text.AlignLeft
             elide: Text.ElideRight
             font.family: Theme.typography.fontFamily

@@ -54,6 +54,8 @@ ColumnLayout {
         ColumnLayout {
             id: col
             width: flick.width - (flick.contentHeight > flick.height ? 8 : 0)
+            // The scrollbar moves to the left in Arabic: keep the gutter on its side.
+            x: (I18n.isRTL && flick.contentHeight > flick.height) ? 8 : 0
             spacing: 2
 
             component SectionLabel: Text {

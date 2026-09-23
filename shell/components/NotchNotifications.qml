@@ -133,22 +133,29 @@ Item {
                 NumberAnimation { property: "scale"; to: 1; duration: Theme.motionFast }
             }
 
-            delegate: Rectangle {
+            // Full-width delegate; the scrollbar gutter is an anchor margin, which the
+            // inherited mirroring moves to the scrollbar's side (left in Arabic).
+            delegate: Item {
                 id: row
                 required property var modelData
-                width: list.width - (vbar.visible ? 8 : 0)
+                width: list.width
                 implicitHeight: card.implicitHeight + 24
-                radius: Theme.notchRadiusCard
-                color: card.hovered ? Theme.notchSurfaceElevated : Theme.notchSurface
-                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
-                NotificationCard {
-                    id: card
+                Rectangle {
                     anchors.fill: parent
-                    anchors.margins: 12
-                    variant: "card"
-                    notif: row.modelData
-                    onCloseRequested: NotificationManager.dismiss(row.modelData.id)
+                    anchors.rightMargin: vbar.visible ? 8 : 0
+                    radius: Theme.notchRadiusCard
+                    color: card.hovered ? Theme.notchSurfaceElevated : Theme.notchSurface
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                    NotificationCard {
+                        id: card
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        variant: "card"
+                        notif: row.modelData
+                        onCloseRequested: NotificationManager.dismiss(row.modelData.id)
+                    }
                 }
             }
         }

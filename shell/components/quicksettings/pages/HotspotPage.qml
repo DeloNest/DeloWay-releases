@@ -25,6 +25,9 @@ ColumnLayout {
     signal saveClicked(string ssid, string password)
 
     spacing: 10
+    // The only Quick Settings page that never mirrored (no ancestor supplies it).
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
 
     // Header: Back button + Title + Refresh
     QSPageHeader {
@@ -61,6 +64,8 @@ ColumnLayout {
                 spacing: 1
 
                 Text {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignLeft
                     text: I18n.isRTL ? "نقطة الاتصال الشخصية" : "Personal Hotspot"
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(11)
@@ -69,9 +74,11 @@ ColumnLayout {
                 }
 
                 Text {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignLeft
                     text: {
                         if (!root.hotspotAvailable) return I18n.isRTL ? "غير متوفرة" : "Unavailable";
-                        if (root.hotspotEnabled) return I18n.isRTL ? ("مفعلة • " + (root.hotspotSsid || "Hotspot")) : ("Active • " + (root.hotspotSsid || "Hotspot"));
+                        if (root.hotspotEnabled) return I18n.isRTL ? ("مفعلة • " + I18n.isolate(root.hotspotSsid || "Hotspot")) : ("Active • " + I18n.isolate(root.hotspotSsid || "Hotspot"));
                         return I18n.isRTL ? "معطلة" : "Disabled";
                     }
                     font.family: Theme.typography.fontFamily
@@ -168,6 +175,7 @@ ColumnLayout {
                         anchors.leftMargin: 8
                         anchors.rightMargin: 8
                         verticalAlignment: TextInput.AlignVCenter
+                        horizontalAlignment: TextInput.AlignLeft
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(11)
                         color: Theme.notchText
@@ -211,6 +219,7 @@ ColumnLayout {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             verticalAlignment: TextInput.AlignVCenter
+                            horizontalAlignment: TextInput.AlignLeft
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(11)
                             color: Theme.notchText
@@ -257,6 +266,7 @@ ColumnLayout {
 
                 Text {
                     Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignLeft
                     text: {
                         if (root.hotspotError.length > 0) return root.hotspotError;
                         if (root.hotspotSaveSuccess.length > 0) return root.hotspotSaveSuccess;
@@ -366,15 +376,17 @@ ColumnLayout {
                             color: Theme.notchText
                             elide: Text.ElideRight
                             Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignLeft
                         }
 
                         Text {
-                            text: (modelData.ip ? modelData.ip + " • " : "") + (modelData.mac || "")
+                            text: I18n.ltr((modelData.ip ? modelData.ip + " • " : "") + (modelData.mac || ""))
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(9)
                             color: Theme.notchTextTertiary
                             elide: Text.ElideRight
                             Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignLeft
                         }
                     }
                 }

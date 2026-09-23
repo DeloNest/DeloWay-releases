@@ -11,6 +11,7 @@ Item {
 
     implicitHeight: 20
     LayoutMirroring.enabled: false   // data always reads core 0 → N left to right
+    LayoutMirroring.childrenInherit: true
 
     readonly property int count: Math.max(1, values.length)
     readonly property real barWidth: (width - gap * (count - 1)) / count

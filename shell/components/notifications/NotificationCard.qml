@@ -175,8 +175,8 @@ Item {
                         Layout.fillWidth: true
                         // Meta line follows the UI direction as one paragraph, so in Arabic the
                         // app name reads first (right) and the time second — even for Latin app names.
-                        text: (I18n.isRTL ? "\u200F" : "")
-                              + root.appName
+                        text: (I18n.isRTL ? "\u200F" : "\u200E")
+                              + I18n.isolate(root.appName)
                               + (root.timeText.length > 0 && root.appName.length > 0 ? "  ·  " : "")
                               + root.timeText
                         textFormat: Text.PlainText

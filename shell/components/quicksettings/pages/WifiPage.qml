@@ -68,7 +68,7 @@ ColumnLayout {
     QSPageHeader {
         title: "Wi-Fi"
         subtitle: !NetworkService.wifiEnabled ? root.t("متوقف", "Off")
-                  : (NetworkService.wifiSsid ? root.t("متصل بـ ", "Connected to ") + NetworkService.wifiSsid
+                  : (NetworkService.wifiSsid ? root.t("متصل بـ ", "Connected to ") + I18n.isolate(NetworkService.wifiSsid)
                      : root.t(root.sortedNetworks.length + " شبكة متاحة", root.sortedNetworks.length + " networks available"))
         hasAction: NetworkService.wifiEnabled
         actionBusy: NetworkService.isScanning
@@ -111,6 +111,8 @@ ColumnLayout {
             readonly property bool isSaved: NetworkService.isSaved(modelData.ssid)
             readonly property bool needsPassword: isSecured && (!isSaved || NetworkService.passwordRequiredSsid === modelData.ssid)
             width: list.width - (list.contentHeight > list.height ? 8 : 0)
+            // Vertical ListView only positions y: keep the gutter on the scrollbar's side.
+            x: (I18n.isRTL && list.contentHeight > list.height) ? 8 : 0
             iconName: root.signalIcon(modelData.signal || 0)
             title: modelData.ssid
             subtitle: NetworkService.connectingSsid === modelData.ssid ? root.t("جارٍ الاتصال…", "Connecting…")
@@ -146,7 +148,7 @@ ColumnLayout {
                             anchors.leftMargin: 12
                             anchors.rightMargin: 12
                             verticalAlignment: TextInput.AlignVCenter
-                            horizontalAlignment: I18n.isRTL ? TextInput.AlignRight : TextInput.AlignLeft
+                            horizontalAlignment: TextInput.AlignLeft   // mirrored to the right in Arabic by the inherited LayoutMirroring
                             echoMode: reveal.checked ? TextInput.Normal : TextInput.Password
                             passwordCharacter: "•"
                             clip: true

@@ -263,7 +263,18 @@ Item {
             "installed_btn": "Installed",
 
             // Cheat Sheet
+            "widget_time_date": "TIME & DATE",
+            "widget_weather": "WEATHER",
+            "widget_system": "SYSTEM MONITOR",
+            "widget_notes": "QUICK NOTES",
+            "widget_humidity": "Humidity:",
+            "widget_wind": "Wind:",
+            "widget_uv": "UV index:",
+            "widget_cpu": "CPU load",
+            "widget_memory": "Memory usage",
+            "widget_notes_placeholder": "Type notes or tasks here…",
             "cs_title": "Keyboard Shortcuts",
+            "cs_general": "General",
             "cs_shell": "Shell",
             "cs_utilities": "Utilities",
             "cs_window": "Window",
@@ -665,7 +676,18 @@ Item {
             "installed_btn": "مثبت",
 
             // Cheat Sheet
+            "widget_time_date": "الوقت والتاريخ",
+            "widget_weather": "الطقس",
+            "widget_system": "مراقب النظام",
+            "widget_notes": "ملاحظات سريعة",
+            "widget_humidity": "الرطوبة:",
+            "widget_wind": "الرياح:",
+            "widget_uv": "مؤشر الأشعة:",
+            "widget_cpu": "حمل المعالج",
+            "widget_memory": "استخدام الذاكرة",
+            "widget_notes_placeholder": "اكتب ملاحظاتك أو مهامك هنا…",
             "cs_title": "اختصارات لوحة المفاتيح",
+            "cs_general": "عام",
             "cs_shell": "الواجهة واللانشر",
             "cs_utilities": "الأدوات المساعدة",
             "cs_window": "إدارة النوافذ",
@@ -843,6 +865,18 @@ Item {
         const ap = d.getHours() < 12 ? (root.isRTL ? "ص" : "AM") : (root.isRTL ? "م" : "PM");
         return root.digits(h + ":" + mm + ss) + " " + ap;
     }
+    // Digits only ("8:04", "20:04") and the separate meridiem ("ص"/"PM", "" in 24h),
+    // for layouts that style them apart.
+    function clockDigits(d) {
+        if (!d) return "--:--";
+        const h24 = (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return root.digits((h24 ? String(d.getHours()).padStart(2, "0") : String(d.getHours() % 12 || 12)) + ":" + mm);
+    }
+    function meridiem(d) {
+        if (!d || (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h")) return "";
+        return d.getHours() < 12 ? (root.isRTL ? "ص" : "AM") : (root.isRTL ? "م" : "PM");
+    }
     // "الأربعاء، 23 سبتمبر 2026" / "Wednesday, September 23, 2026"
     function fullDateText(d) {
         if (!d) return "";
@@ -857,6 +891,12 @@ Item {
             return root.arDays[d.getDay()] + "، " + root.digits(d.getDate()) + " " + root.arMonths[d.getMonth()];
         return root.enDays[d.getDay()].slice(0, 3) + ", " + root.enMonths[d.getMonth()].slice(0, 3) + " " + d.getDate();
     }
+
+    // Bidi helpers for embedding runs in a sentence of the other direction.
+    //   isolate(s): user/system text of unknown direction (SSIDs, device and app names)
+    //   ltr(s):     always-LTR runs (versions, paths, CLI flags, key combos)
+    function isolate(s) { return "\u2068" + (s === undefined || s === null ? "" : s) + "\u2069"; }
+    function ltr(s) { return "\u2066" + (s === undefined || s === null ? "" : s) + "\u2069"; }
 
     // "8 apps" / Arabic: تطبيق واحد، تطبيقان، ٣–١٠ تطبيقات، ١١+ تطبيقًا
     function appsCount(n) {

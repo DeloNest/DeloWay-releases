@@ -131,7 +131,10 @@ Item {
     RowLayout {
         id: wsRow
         spacing:         Theme.wsIndicatorSpacing
-        layoutDirection: Qt.LeftToRight    // always LTR regardless of RTL locale
+        // Always LTR (workspace 1 on the left), pinned locally: a layoutDirection alone
+        // is flipped by any mirrored ancestor.
+        LayoutMirroring.enabled: false
+        LayoutMirroring.childrenInherit: true
 
         Repeater {
             model: root.displayIds

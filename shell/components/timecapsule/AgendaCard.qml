@@ -169,7 +169,7 @@ DashCard {
                     anchors.leftMargin: 10
                     anchors.rightMargin: 10
                     verticalAlignment: TextInput.AlignVCenter
-                    horizontalAlignment: I18n.isRTL ? TextInput.AlignRight : TextInput.AlignLeft
+                    horizontalAlignment: TextInput.AlignLeft   // mirrored to the right in Arabic by the inherited LayoutMirroring
                     clip: true
                     maximumLength: 80
                     font.family: Theme.typography.fontFamily

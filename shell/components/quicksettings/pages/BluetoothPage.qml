@@ -28,7 +28,7 @@ ColumnLayout {
     QSPageHeader {
         title: root.t("بلوتوث", "Bluetooth")
         subtitle: !BluetoothService.powered ? root.t("متوقف", "Off")
-                  : (BluetoothService.connectedDeviceName ? root.t("متصل بـ ", "Connected to ") + BluetoothService.connectedDeviceName
+                  : (BluetoothService.connectedDeviceName ? root.t("متصل بـ ", "Connected to ") + I18n.isolate(BluetoothService.connectedDeviceName)
                      : root.t("مشغّل", "On"))
         hasAction: BluetoothService.powered
         actionBusy: BluetoothService.isScanning
@@ -56,6 +56,8 @@ ColumnLayout {
         ColumnLayout {
             id: col
             width: flick.width - (flick.contentHeight > flick.height ? 8 : 0)
+            // The scrollbar moves to the left in Arabic: keep the gutter on its side.
+            x: (I18n.isRTL && flick.contentHeight > flick.height) ? 8 : 0
             spacing: 2
 
             Repeater {

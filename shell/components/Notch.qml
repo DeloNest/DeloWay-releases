@@ -178,8 +178,7 @@ Item {
                     anchors.topMargin: 8
                     anchors.bottomMargin: 12
                     spacing: 4
-                    LayoutMirroring.enabled: false
-                    LayoutMirroring.childrenInherit: true
+                    // (inherits the reading direction from NotchFrame's bodyContent)
 
                     // ── TIER 1: Header Bar (Tabs centered, ⚙ on trailing edge) ──
                     Item {
@@ -236,8 +235,6 @@ Item {
                             id: notchTabsRow
                             anchors.centerIn: parent
                             spacing: 6
-                            LayoutMirroring.enabled: false
-                            LayoutMirroring.childrenInherit: true
 
                             // Tab 1: Nook
                             Rectangle {
@@ -424,8 +421,6 @@ Item {
                             id: swipeView
                             anchors.fill: parent
                             currentIndex: ShellState.smartNotchTab
-                            LayoutMirroring.enabled: false
-                            LayoutMirroring.childrenInherit: true
 
                             // Page 0: Nook Tab (Music player + Calendar 50/50 split)
                             NotchHome {

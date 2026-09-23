@@ -15,12 +15,15 @@ Rectangle {
     border.width: 1
     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
+    // Anchored (not x): anchors follow LayoutMirroring, so "on" sits at the reading
+    // end in both directions (left in Arabic), matching SettingsToggle.
     Rectangle {
         width: 14; height: 14; radius: 7
         anchors.verticalCenter: parent.verticalCenter
-        x: root.checked ? root.width - width - 3 : 3
+        anchors.left: parent.left
+        anchors.leftMargin: root.checked ? root.width - width - 3 : 3
         color: root.checked ? Theme.qsTileIconActive : Theme.notchTextSecondary
-        Behavior on x { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+        Behavior on anchors.leftMargin { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
     }
 
     MouseArea {
