@@ -8,6 +8,8 @@ import "../services"
 
 PanelWindow {
     id: root
+    // Descriptions follow the UI language; every row mirrors a real bind in config/hyprland.conf.
+    function t(ar, en) { return I18n.isRTL ? ar : en; }
 
     required property ShellScreen targetScreen
     screen: targetScreen
@@ -98,39 +100,39 @@ PanelWindow {
                     SectionBox {
                         title: I18n.tr("cs_shell")
                         items: [
-                            { keys: ["Super"], desc: "Start menu (tap)" },
-                            { keys: ["Super", "Space"], desc: "Spotlight search" },
-                            { keys: ["Super", "Shift", "F"], desc: "Immersion mode (hide bar & dock)" },
-                            { keys: ["Super", "V"], desc: "Clipboard history >> clipboard" },
-                            { keys: ["Super", "Period"], desc: "Emoji >> clipboard" },
-                            { keys: ["Super", "A"], desc: "Start menu" },
-                            { keys: ["Super", "N"], desc: "Toggle right sidebar" },
-                            { keys: ["Super", "/"], desc: "Toggle cheatsheet" },
-                            { keys: ["Super", "K"], desc: "Toggle on-screen keyboard" },
-                            { keys: ["Super", "M"], desc: "Toggle media controls" },
-                            { keys: ["Ctrl", "Alt", "Delete"], desc: "Toggle session menu" },
-                            { keys: ["Ctrl", "Super", "T"], desc: "Change wallpaper" },
-                            { keys: ["Ctrl", "Super", "R"], desc: "Restart widgets" }
+                            { keys: ["Super"], desc: root.t("قائمة ابدأ (نقرة)", "Start menu (tap)") },
+                            { keys: ["Super", "A"], desc: root.t("درج التطبيقات", "App Drawer") },
+                            { keys: ["Super", "Space"], desc: root.t("البحث", "Search") },
+                            { keys: ["Super", "N"], desc: root.t("الإعدادات السريعة", "Quick Settings") },
+                            { keys: ["Super", "M"], desc: root.t("الإعدادات السريعة", "Quick Settings") },
+                            { keys: ["Super", "Alt", "N"], desc: root.t("النوتش", "Smart Notch") },
+                            { keys: ["Super", "I"], desc: root.t("إعدادات DeloWay", "DeloWay Settings") },
+                            { keys: ["Super", "V"], desc: root.t("سجل الحافظة", "Clipboard history") },
+                            { keys: ["Super", "/"], desc: root.t("دليل الاختصارات", "Keyboard shortcuts") },
+                            { keys: ["Super", "Shift", "F"], desc: root.t("إخفاء/إظهار الشريط والـDock", "Hide / show bar & dock") },
+                            { keys: ["Super", "K"], desc: root.t("لوحة المفاتيح على الشاشة", "On-screen keyboard") },
+                            { keys: ["Ctrl", "Alt", "Delete"], desc: root.t("قائمة الجلسة", "Session menu") },
+                            { keys: ["Ctrl", "Super", "T"], desc: root.t("تغيير الخلفية", "Change wallpaper") },
+                            { keys: ["Ctrl", "Super", "R"], desc: root.t("إعادة تشغيل الواجهة", "Restart the shell") }
                         ]
                     }
 
                     SectionBox {
                         title: I18n.tr("cs_utilities")
                         items: [
-                            { keys: ["Super", "Shift", "S"], desc: "Screen snip" },
-                            { keys: ["Super", "Shift", "C"], desc: "Pick color (Hex) >> clipboard" },
-                            { keys: ["Print"], desc: "Screenshot >> clipboard" },
-                            { keys: ["Ctrl", "Print"], desc: "Screenshot >> clipboard & file" },
-                            { keys: ["Super", "Alt", "R"], desc: "Record region (no sound)" },
-                            { keys: ["Super", "Shift", "Alt", "R"], desc: "Record screen (with sound)" },
-                            { keys: ["Super", "Shift", "Alt", "RMB"], desc: "AI summary for selected text" }
+                            { keys: ["Super", "Shift", "S"], desc: root.t("لقطة لجزء من الشاشة", "Screenshot a region") },
+                            { keys: ["Print"], desc: root.t("لقطة للشاشة كاملة", "Screenshot full screen") },
+                            { keys: ["Super", "Shift", "C"], desc: root.t("التقاط لون (Hex) إلى الحافظة", "Pick color (Hex) to clipboard") },
+                            { keys: ["Super", "Alt", "R"], desc: root.t("تسجيل منطقة (بدون صوت)", "Record region (no sound)") },
+                            { keys: ["Super", "Shift", "Alt", "R"], desc: root.t("تسجيل منطقة (مع الصوت)", "Record region (with sound)") },
+                            { keys: ["Super", "- / ="], desc: root.t("تكبير المؤشر: إلغاء / تكبير", "Cursor zoom: reset / zoom") }
                         ]
                     }
 
                     Item { Layout.fillHeight: true }
                 }
 
-                // ── Column 2: Window + Workspace ─────────────────────────────
+                // ── Column 2: Window management ──────────────────────────────
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -140,39 +142,33 @@ PanelWindow {
                     SectionBox {
                         title: I18n.tr("cs_window")
                         items: [
-                            { keys: ["Super", "LMB"], desc: "Move" },
-                            { keys: ["Super", "RMB"], desc: "Resize" },
-                            { keys: ["Super", "←/↑/→/↓"], desc: "Focus in direction" },
-                            { keys: ["Super", "Shift", "←/↑/→/↓"], desc: "Move in direction" },
-                            { keys: ["Super", "Q"], desc: "Close" },
-                            { keys: ["Super", "Shift", "Alt", "Q"], desc: "Forcefully zap a window" },
-                            { keys: ["Super", "; / '"], desc: "Adjust split ratio" },
-                            { keys: ["Super", "Alt", "Space"], desc: "Float/Tile" },
-                            { keys: ["Super", "D"], desc: "Maximize" },
-                            { keys: ["Super", "F"], desc: "Fullscreen" },
-                            { keys: ["Super", "Alt", "F"], desc: "Fullscreen spoof" },
-                            { keys: ["Super", "P"], desc: "Pin" },
-                            { keys: ["Super", "Alt", "#"], desc: "Send to workspace # (1, 2, 3,...)" },
-                            { keys: ["Super", "Shift", "Page_↑/↓"], desc: "Send to workspace left/right" },
-                            { keys: ["Super", "Alt", "S"], desc: "Send to scratchpad" }
+                            { keys: ["Super", "LMB"], desc: root.t("تحريك", "Move") },
+                            { keys: ["Super", "RMB"], desc: root.t("تغيير الحجم", "Resize") },
+                            { keys: ["Super", "←/↑/→/↓"], desc: root.t("التركيز باتجاه", "Focus in direction") },
+                            { keys: ["Super", "Shift", "←/↑/→/↓"], desc: root.t("نقل باتجاه", "Move in direction") },
+                            { keys: ["Super", "Alt", "←/↑/→/↓"], desc: root.t("تغيير الحجم", "Resize") },
+                            { keys: ["Super", "Q"], desc: root.t("إغلاق", "Close") },
+                            { keys: ["Super", "Shift", "Alt", "Q"], desc: root.t("إنهاء نافذة بالقوة", "Force-kill a window") },
+                            { keys: ["Super", "; / '"], desc: root.t("نسبة التقسيم", "Adjust split ratio") },
+                            { keys: ["Super", "\\"], desc: root.t("تبديل اتجاه التقسيم", "Toggle split direction") },
+                            { keys: ["Super", "Alt", "Space"], desc: root.t("عائمة / مرصوفة", "Float / tile") },
+                            { keys: ["Super", "D"], desc: root.t("تكبير", "Maximize") },
+                            { keys: ["Super", "F"], desc: root.t("ملء الشاشة", "Fullscreen") },
+                            { keys: ["Super", "Alt", "F"], desc: root.t("ملء شاشة وهمي", "Fake fullscreen") },
+                            { keys: ["Super", "P"], desc: root.t("تثبيت فوق الكل", "Pin") },
+                            { keys: ["Super", "G"], desc: root.t("تجميع / فك التجميع", "Group / ungroup") },
+                            { keys: ["Super", "Tab"], desc: root.t("النافذة التالية في المجموعة", "Next window in group") },
+                            { keys: ["Super", "Alt", "#"], desc: root.t("إرسال إلى مساحة العمل #", "Send to workspace #") },
+                            { keys: ["Super", "Shift", "Page_↑/↓"], desc: root.t("إرسال إلى المساحة السابقة/التالية", "Send to previous / next workspace") },
+                            { keys: ["Super", "Alt", "S"], desc: root.t("إرسال إلى المساحة المخفية", "Send to scratchpad") }
                         ]
                     }
 
-                    SectionBox {
-                        title: I18n.tr("cs_workspace")
-                        items: [
-                            { keys: ["Super", "#"], desc: "Focus workspace # (1, 2, 3,...)" },
-                            { keys: ["Ctrl", "Super", "←/→"], desc: "Focus left/right" },
-                            { keys: ["Super", "Page_↑/↓"], desc: "Focus left/right" },
-                            { keys: ["Super", "Scroll ↑/↓"], desc: "Focus left/right" },
-                            { keys: ["Super", "S"], desc: "Toggle scratchpad" }
-                        ]
-                    }
 
                     Item { Layout.fillHeight: true }
                 }
 
-                // ── Column 3: Apps + Quick Launch ────────────────────────────
+                // ── Column 3: Apps, General, Workspaces ──────────────────────
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -182,23 +178,33 @@ PanelWindow {
                     SectionBox {
                         title: I18n.tr("cs_apps")
                         items: [
-                            { keys: ["Super", "Return"], desc: "Terminal (Kitty)" },
-                            { keys: ["Super", "E"], desc: "File Manager (Thunar)" },
-                            { keys: ["Super", "W"], desc: "Browser" },
-                            { keys: ["Super", "C"], desc: "Code Editor" },
-                            { keys: ["Super", "Shift", "W"], desc: "Office Suite" },
-                            { keys: ["Super", "X"], desc: "Text Editor" },
-                            { keys: ["Super", "I"], desc: "Deloway Settings" },
-                            { keys: ["Ctrl", "Shift", "Escape"], desc: "System Monitor" },
-                            { keys: ["Ctrl", "Super", "V"], desc: "Volume Control" }
+                            { keys: ["Super", "Return"], desc: root.t("الطرفية", "Terminal") },
+                            { keys: ["Super", "E"], desc: root.t("مدير الملفات", "File manager") },
+                            { keys: ["Super", "W"], desc: root.t("المتصفح", "Browser") },
+                            { keys: ["Super", "C"], desc: root.t("محرر الشيفرة", "Code editor") },
+                            { keys: ["Super", "Shift", "W"], desc: root.t("حزمة المكتب", "Office suite") },
+                            { keys: ["Super", "X"], desc: root.t("محرر النصوص", "Text editor") },
+                            { keys: ["Ctrl", "Shift", "Escape"], desc: root.t("مراقب النظام", "System monitor") },
+                            { keys: ["Ctrl", "Super", "V"], desc: root.t("التحكم بالصوت", "Volume control") }
                         ]
                     }
 
                     SectionBox {
                         title: I18n.tr("cs_general")
                         items: [
-                            { keys: ["Super", "L"], desc: "Lock screen" },
-                            { keys: ["Super", "Escape"], desc: "Dismiss notifications / panels" }
+                            { keys: ["Super", "L"], desc: root.t("قفل الشاشة", "Lock screen") },
+                            { keys: ["Super", "Shift", "L"], desc: root.t("سكون", "Suspend") }
+                        ]
+                    }
+
+                    SectionBox {
+                        title: I18n.tr("cs_workspace")
+                        items: [
+                            { keys: ["Super", "#"], desc: root.t("الانتقال إلى مساحة العمل #", "Go to workspace #") },
+                            { keys: ["Ctrl", "Super", "←/→"], desc: root.t("المساحة السابقة / التالية", "Previous / next workspace") },
+                            { keys: ["Super", "Page_↑/↓"], desc: root.t("المساحة السابقة / التالية", "Previous / next workspace") },
+                            { keys: ["Super", "Scroll ↑/↓"], desc: root.t("المساحة السابقة / التالية", "Previous / next workspace") },
+                            { keys: ["Super", "S"], desc: root.t("إظهار المساحة المخفية", "Toggle scratchpad") }
                         ]
                     }
 
@@ -215,14 +221,17 @@ PanelWindow {
                     SectionBox {
                         title: I18n.tr("cs_media")
                         items: [
-                            { keys: ["XF86AudioMute"], desc: "Mute/unmute audio" },
-                            { keys: ["XF86AudioLowerVolume"], desc: "Lower volume" },
-                            { keys: ["XF86AudioRaiseVolume"], desc: "Raise volume" },
-                            { keys: ["XF86AudioPlay"], desc: "Play/pause media" },
-                            { keys: ["XF86AudioNext"], desc: "Next track" },
-                            { keys: ["XF86AudioPrev"], desc: "Previous track" },
-                            { keys: ["XF86MonBrightnessUp"], desc: "Increase display brightness" },
-                            { keys: ["XF86MonBrightnessDown"], desc: "Decrease display brightness" }
+                            { keys: ["Super", "Shift", "P"], desc: root.t("تشغيل / إيقاف مؤقت", "Play / pause") },
+                            { keys: ["Super", "Shift", "N"], desc: root.t("المقطع التالي", "Next track") },
+                            { keys: ["Super", "Shift", "B"], desc: root.t("المقطع السابق", "Previous track") },
+                            { keys: ["XF86AudioMute"], desc: root.t("كتم / إلغاء كتم الصوت", "Mute / unmute") },
+                            { keys: ["XF86AudioLowerVolume"], desc: root.t("خفض الصوت", "Lower volume") },
+                            { keys: ["XF86AudioRaiseVolume"], desc: root.t("رفع الصوت", "Raise volume") },
+                            { keys: ["XF86AudioPlay"], desc: root.t("تشغيل / إيقاف مؤقت", "Play / pause") },
+                            { keys: ["XF86AudioNext"], desc: root.t("المقطع التالي", "Next track") },
+                            { keys: ["XF86AudioPrev"], desc: root.t("المقطع السابق", "Previous track") },
+                            { keys: ["XF86MonBrightnessUp"], desc: root.t("رفع السطوع", "Brightness up") },
+                            { keys: ["XF86MonBrightnessDown"], desc: root.t("خفض السطوع", "Brightness down") }
                         ]
                     }
 

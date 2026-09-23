@@ -74,9 +74,9 @@
 | **تسجيل الشاشة (Recording)** | `wf-recorder` + `slurp` | `wf-recorder` `slurp` | مستودع رسمي (`extra`) | مربوط بالاختصارات: `Super+Alt+R` و `Super+Shift+Alt+R` |
 | **التحكم بالسطوع (Brightness)** | `brightnessctl` / `ddcutil` | `brightnessctl` `ddcutil` | مستودعات رسمية | `ddcutil` يتطلب موديول `i2c-dev` ومجموعة `i2c` |
 | **مدير الحافظة (Clipboard)** | `cliphist` + `fuzzel` + `wl-copy` | `cliphist` `fuzzel` `wl-clipboard` | مستودعات رسمية | مربوط بالاختصار: `Super+V` |
-| **شاشة القفل (Lock Screen)** | `hyprlock` / `loginctl` | `hyprlock` | مستودع رسمي (`extra`) | مربوط بالاختصار: `Super+L` |
+| **شاشة القفل (Lock Screen)** | قفل الواجهة (`ext-session-lock`) عبر `qs ipc`، و`hyprlock` احتياطياً | `hyprlock` (احتياطي) | مستودع رسمي (`extra`) | مربوط بالاختصار: `Super+L` |
 | **لوحة المفاتيح الافتراضية** | `wvkbd-mobintl` | `wvkbd-mobintl` | **AUR فقط** | غير مثبتة حالياً بالجهاز، مربوطة بـ `Super+K` |
-| **محرر إعدادات المظهر** | `gsettings` | `glib2` | مستودع رسمي (أساسي) | لتطبيق سمة الأيقونات `Reversal-dark` |
+| **محرر إعدادات المظهر** | `gsettings` | `glib2` | مستودع رسمي (أساسي) | لتطبيق سمة الأيقونات `Reversal-black` / `Reversal-black-dark` حسب الوضع |
 
 ---
 
@@ -203,5 +203,5 @@
 | **أدوات الشبكة والحافظة** | حزم برمجية | رسمي (`extra`) | ✔ نعم | تثبيت: `pacman -S networkmanager cliphist fuzzel` |
 | **التطبيقات المجمعة الأساسية** | برامج مكتبية | رسمي (`extra`) | ✔ نعم | تثبيت: `pacman -S kitty thunar pavucontrol` |
 | **متصفح Brave** | تطبيق ويب | مستودع AUR | ⚠ يحتاج AUR / Flatpak | تثبيت `brave-bin` عبر yay/paru، أو الاعتماد على متصفح النظام البديل عبر `xdg-open`. |
-| **سمة الأيقونات Reversal-dark** | مظهر بصري | مستودع AUR | ⚠ يحتاج AUR | تثبيت `reversal-icon-theme-git` عبر AUR أو وضعها يدوياً في `~/.local/share/icons`. |
+| **سمة الأيقونات Reversal-black / Reversal-black-dark** | مظهر بصري | مستودع AUR | ⚠ يحتاج AUR | تثبيت `reversal-icon-theme-git` عبر AUR أو وضعها يدوياً في `~/.local/share/icons`. |
 | **لوحة المفاتيح الافتراضية** | أداة شاشة لمس | مستودع AUR | ⚠ يحتاج AUR | تثبيت `wvkbd-mobintl` من AUR (اختياري، لأجهزة اللمس فقط). |

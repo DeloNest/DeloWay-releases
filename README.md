@@ -26,9 +26,9 @@ Deloway is **not** a traditional "Hyprland dotfiles rice" where disparate utilit
 
 Instead, Deloway delivers:
 - **One Integrated Shell Application**: The top bar, dock, app drawer, search, notifications, quick settings, lock screen, desktop, and settings app live inside **one cohesive codebase** sharing a single in-memory state and unified configuration file.
-- **Calm Mica Aesthetic**: Inspired by modern Windows 11 Fluent Design principles but elevated with a distinct, independent identity: deep calm Mica surfaces, 10px rounded corners, subtle translucent borders, and strictly **zero over-saturated neon glow**.
-- **Reversal Icon Pack with Amber Folder Uniformity**: Visual clarity with rectangular vector badges and 100% color-unified warm amber folders (`#f5aa1e` / `#f08705` / `#ffc841`) across Home, Trash, Projects, Media, and user folders.
-- **Human-Editable JSON Config**: Both the GUI Settings app and hand-edited dotfiles share the exact same `~/.config/deloway/deloway.json` with live reactive hot-reloading.
+- **Strict Monochrome, OLED-first**: exactly two modes — **Dark** (pure black, neutral grays) and **Light** (crisp high-contrast neutrals) — switched in Settings → Appearance. There is no accent color; hierarchy comes from luminance, weight and layering. Red / amber / green appear only as tiny status indicators.
+- **Reversal-black Icons**: the icon theme follows the mode (Reversal-black in Light, Reversal-black-dark in Dark), together with GTK apps, window borders and the DeloWay kitty profile.
+- **Human-Editable JSON Config**: the Settings app and hand edits share `~/.config/deloway/deloway.json`. Settings changes apply instantly; hand edits apply on the next shell restart.
 
 ---
 
@@ -80,7 +80,7 @@ Upgrade Deloway seamlessly with the built-in migration engine:
 1. Pulls latest upstream improvements.
 2. Creates an automatic timestamped backup of your user configuration in `~/.config/deloway/backups/`.
 3. Performs non-destructive deep schema migration, backfilling any newly introduced features without overwriting your custom settings.
-4. Hot-reloads the Quickshell shell live without terminating your open applications.
+4. Detects the running shell and prints the clean-restart command (`./update.sh --restart` runs it). DeloWay never hot-reloads QML: live reloads can crash Quickshell.
 
 ---
 
@@ -88,17 +88,19 @@ Upgrade Deloway seamlessly with the built-in migration engine:
 
 | Shortcut | Function |
 |---|---|
-| <kbd>Super</kbd> + <kbd>Space</kbd> / <kbd>Super</kbd> + <kbd>D</kbd> | Open App Drawer & Universal Search |
-| <kbd>Super</kbd> + <kbd>I</kbd> | Open DeloOS Settings |
-| <kbd>Super</kbd> + <kbd>S</kbd> | Open App Store |
-| <kbd>Super</kbd> + <kbd>L</kbd> | Lock Screen (`ext-session-lock-v1`) |
-| <kbd>Super</kbd> + <kbd>A</kbd> | Quick Settings / Control Center |
-| <kbd>Super</kbd> + <kbd>Return</kbd> | Open Terminal (Kitty) |
-| <kbd>Super</kbd> + <kbd>E</kbd> | Open File Manager (Thunar) |
-| <kbd>Super</kbd> + <kbd>Q</kbd> | Close Focused Window |
-| <kbd>Super</kbd> + <kbd>F</kbd> | Toggle Fullscreen |
-| <kbd>Super</kbd> + <kbd>1</kbd> .. <kbd>5</kbd> | Switch Workspaces |
-| <kbd>Print</kbd> / <kbd>Shift</kbd> + <kbd>Print</kbd> | Fullscreen or Area Screenshot |
+| <kbd>Super</kbd> (tap) / <kbd>Super</kbd> + <kbd>A</kbd> | Start menu (App Drawer) |
+| <kbd>Super</kbd> + <kbd>Space</kbd> | Search |
+| <kbd>Super</kbd> + <kbd>N</kbd> / <kbd>Super</kbd> + <kbd>M</kbd> | Quick Settings |
+| <kbd>Super</kbd> + <kbd>I</kbd> | DeloWay Settings |
+| <kbd>Super</kbd> + <kbd>L</kbd> | Lock screen (the shell's `ext-session-lock` screen; hyprlock if the shell is not running) |
+| <kbd>Super</kbd> + <kbd>V</kbd> | Clipboard history |
+| <kbd>Super</kbd> + <kbd>/</kbd> | Keyboard shortcuts overlay |
+| <kbd>Super</kbd> + <kbd>Return</kbd> | Terminal |
+| <kbd>Super</kbd> + <kbd>E</kbd> | File manager |
+| <kbd>Super</kbd> + <kbd>Q</kbd> | Close focused window |
+| <kbd>Super</kbd> + <kbd>F</kbd> | Fullscreen |
+| <kbd>Super</kbd> + <kbd>1</kbd> .. <kbd>0</kbd> | Switch workspace |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> / <kbd>Print</kbd> | Area / full-screen screenshot |
 
 *See [`docs/KEYBINDINGS.md`](docs/KEYBINDINGS.md) for the complete reference.*
 
@@ -120,7 +122,7 @@ Contributions are welcome! Please ensure that:
    ```bash
    qmllint -I shell/ -I /usr/lib/qt6/qml shell/shell.qml shell/components/*.qml
    ```
-2. Design tokens strictly adhere to `shell/theme/theme.json`.
+2. Colors come only from tokens in `shell/theme/Theme.qml` (strict monochrome, see `CLAUDE.md`), and `./scripts/check-theme.sh` passes.
 3. All components interface through central services (`ApplicationManager`, `DesktopManager`, `ConfigManager`).
 
 ---

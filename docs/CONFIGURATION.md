@@ -1,6 +1,6 @@
 # DeloOS / Deloway Configuration Guide
 
-This document explains the unified configuration model of Deloway, detailing the schema of `deloway.json`, hand-editing best practices, and reactive hot-reloading.
+This document explains the unified configuration model of Deloway, detailing the schema of `deloway.json` and hand-editing best practices.
 
 ---
 
@@ -9,13 +9,13 @@ This document explains the unified configuration model of Deloway, detailing the
 In accordance with Section 9 of the project plan, Deloway rejects the idea of a GUI-only configuration model. Hyprland and Linux power users expect their systems to be version-controllable, readable, and human-editable.
 
 - **Primary Path**: `~/.config/deloway/deloway.json`
-- **Fallback / Template**: `/home/waleed/Projects/Deloway/config/deloway.json`
+- **Fallback / Template**: `<repo>/config/deloway.json` (copied for new users; `update.sh` back-fills new keys)
 - **One Source of Truth**: The exact same file is read and written by:
   1. The **Settings App** (`SettingsApp.qml`)
   2. The **First-Run Setup Wizard** (`SetupWizard.qml`)
   3. The **Quick Settings** panel (`QuickSettings.qml`)
   4. The user editing the file in Vim, Nano, or VS Code.
-- **Reactive Hot-Reload**: Changes made to `deloway.json` on disk are immediately detected via file-watching (`FileView`) and applied live to the running desktop without dropping windows or restarting the compositor.
+- **Applying changes**: changes made through Settings / Quick Settings apply instantly. Hand edits to `deloway.json` are read on the next shell start — restart the shell with <kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>R</kbd> (a clean restart; DeloWay never hot-reloads QML).
 
 ---
 
@@ -27,8 +27,7 @@ Below is an annotated example of a complete `deloway.json` file:
 {
   "theme": {
     "mode": "dark",
-    "accentColor": "#0084ff",
-    "wallpaper": "/home/waleed/Projects/Deloway/assets/wallpaper.jpg"
+    "wallpaper": ""
   },
   "desktop": {
     "mode": "clean",
@@ -67,8 +66,8 @@ Below is an annotated example of a complete `deloway.json` file:
     "workspacesCount": 5
   },
   "windows": {
-    "activeBorder": "#0084ff",
-    "inactiveBorder": "#2a3142",
+    "activeBorder": "#ffffff",
+    "inactiveBorder": "#444444",
     "gapsIn": 5,
     "gapsOut": 10,
     "rounding": 10
@@ -97,9 +96,8 @@ Below is an annotated example of a complete `deloway.json` file:
 ## 3. Detailed Property Breakdown
 
 ### 3.1 `theme`
-- `mode` *(string)*: `"dark"` or `"light"`. Swaps active design tokens between dark and light Mica surfaces.
-- `accentColor` *(string, hex)*: Primary system highlight color (e.g. `"#0084ff"` or `"#64748b"`). Drives window borders, active tabs, buttons, and sliders.
-- `wallpaper` *(string, path)*: Absolute path to the desktop wallpaper image. Supports JPEG, PNG, and WebP.
+- `mode` *(string)*: `"dark"` or `"light"`. The single source of the theme mode: the shell's tokens, GTK apps, the icon theme (Reversal-black / Reversal-black-dark), Hyprland borders and the DeloWay kitty profile all follow it. There is no accent color.
+- `wallpaper` *(string, path)*: Absolute path to the desktop wallpaper image (JPEG, PNG, WebP). Empty, or a file that no longer exists, falls back to `assets/wallpaper.jpg`.
 
 ### 3.2 `desktop`
 - `mode` *(string)*: Selects the desktop presentation style:
@@ -111,7 +109,7 @@ Below is an annotated example of a complete `deloway.json` file:
 - `enabledWidgets` *(array of strings)*: List of active widgets rendered on the desktop in widgets mode.
 
 ### 3.3 `dock`
-- `position` *(string)*: Dock placement: `"bottom"`, `"top"`, `"left"`, or `"right"`.
+- `position` *(string)*: Dock placement: `"bottom"`, `"left"`, or `"right"`.
 - `autoHide` *(boolean)*: When `true`, dock slides out of view when windows overlap its area.
 - `iconSize` *(integer, px)*: App icon dimensions inside the dock (default: `38`).
 - `showUnderline` *(boolean)*: Toggles running dot / indicator under active apps.
@@ -124,8 +122,7 @@ Below is an annotated example of a complete `deloway.json` file:
 - `workspacesCount` *(integer)*: Number of workspace numbers to show in the bar (default: `5`).
 
 ### 3.5 `windows`
-- `activeBorder` *(string, hex)*: Hyprland border color for focused windows.
-- `inactiveBorder` *(string, hex)*: Border color for inactive windows.
+- `activeBorder` / `inactiveBorder` *(string, hex)*: kept for compatibility. Hyprland borders are derived from the theme mode (white / light gray in Dark, slate / light gray in Light); colored values are not applied.
 - `gapsIn` *(integer, px)*: Inner spacing between adjacent tiled windows.
 - `gapsOut` *(integer, px)*: Outer margins between windows and screen edges.
 - `rounding` *(integer, px)*: Corner curvature radius for Hyprland windows.

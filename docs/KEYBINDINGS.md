@@ -1,72 +1,111 @@
-# DeloOS / Deloway Keybindings Cheatsheet
+# DeloWay Keybindings
 
-All standard keyboard shortcuts mapped in Deloway's Hyprland compositor and Quickshell shell.
-
----
-
-## 1. Shell & Desktop Navigation
-
-| Key Combination | Action | Description |
-|---|---|---|
-| <kbd>Super</kbd> + <kbd>Space</kbd> | **App Drawer & Search** | Toggles the universal search and application launcher |
-| <kbd>Super</kbd> + <kbd>D</kbd> | **App Drawer** | Secondary shortcut for the application drawer |
-| <kbd>Super</kbd> + <kbd>I</kbd> | **DeloOS Settings** | Opens the native Deloway Settings app |
-| <kbd>Super</kbd> + <kbd>S</kbd> | **App Store** | Opens the App Store |
-| <kbd>Super</kbd> + <kbd>L</kbd> | **Lock Screen** | Engages the hardware session lock (`ext-session-lock-v1`) |
-| <kbd>Super</kbd> + <kbd>A</kbd> | **Quick Settings** | Toggles the Quick Settings / Control Center flyout |
-| <kbd>Super</kbd> + <kbd>Escape</kbd> | **Close Overlay** | Dismisses any open drawer, store, settings, or menu |
+Every shortcut below is bound in `config/hyprland.conf` (the Super-tap Start menu lives in the
+generated `config/hypr-startmenu.conf`). The in-shell overlay (<kbd>Super</kbd> + <kbd>/</kbd>)
+shows the same list in Arabic or English. When you change a bind, update this file and
+`shell/components/CheatSheet.qml` together.
 
 ---
 
-## 2. Default Applications
+## 1. Shell
 
-| Key Combination | Action | Description |
-|---|---|---|
-| <kbd>Super</kbd> + <kbd>Return</kbd> | **Terminal** | Launches Kitty terminal |
-| <kbd>Super</kbd> + <kbd>E</kbd> | **File Manager** | Launches Thunar file manager |
-| <kbd>Super</kbd> + <kbd>B</kbd> | **Web Browser** | Launches default browser (Firefox) |
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> (tap) | Start menu (App Drawer) |
+| <kbd>Super</kbd> + <kbd>A</kbd> / <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> | App Drawer |
+| <kbd>Super</kbd> + <kbd>Space</kbd> | Search |
+| <kbd>Super</kbd> + <kbd>N</kbd> / <kbd>Super</kbd> + <kbd>M</kbd> | Quick Settings |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> | Smart Notch |
+| <kbd>Super</kbd> + <kbd>I</kbd> | DeloWay Settings |
+| <kbd>Super</kbd> + <kbd>V</kbd> | Clipboard history (cliphist picker) |
+| <kbd>Super</kbd> + <kbd>/</kbd> / <kbd>Super</kbd> + <kbd>T</kbd> | Keyboard shortcuts overlay |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | Hide / show the top bar and Dock |
+| <kbd>Super</kbd> + <kbd>K</kbd> | On-screen keyboard |
+| <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Delete</kbd> | Session menu |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>T</kbd> | Settings → Wallpaper |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>R</kbd> | Restart the shell (clean restart) |
+
+## 2. Session
+
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> + <kbd>L</kbd> | Lock screen (the shell's `ext-session-lock` screen; `hyprlock` if the shell is not running) |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> | Suspend |
+
+## 3. Applications
+
+These open the defaults chosen in Settings → Apps (through `bin/delo-app`) where noted.
+
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> + <kbd>Return</kbd> | Terminal (`delo-app terminal`) |
+| <kbd>Super</kbd> + <kbd>E</kbd> | File manager (`delo-app files`) |
+| <kbd>Super</kbd> + <kbd>W</kbd> | Browser (`delo-app browser`) |
+| <kbd>Super</kbd> + <kbd>C</kbd> | Code editor |
+| <kbd>Super</kbd> + <kbd>X</kbd> | Text editor |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>W</kbd> | Office suite |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Escape</kbd> | System monitor |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>V</kbd> | Volume control |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>/</kbd> | Edit `hyprland.conf` |
+
+## 4. Windows
+
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> + <kbd>Q</kbd> | Close window |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>Q</kbd> | Force-kill a window (click it) |
+| <kbd>Super</kbd> + <kbd>←</kbd>/<kbd>↑</kbd>/<kbd>→</kbd>/<kbd>↓</kbd> | Focus in direction |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + arrows | Move window in direction |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + arrows | Resize window |
+| <kbd>Super</kbd> + <kbd>;</kbd> / <kbd>'</kbd> | Adjust split ratio |
+| <kbd>Super</kbd> + <kbd>\</kbd> | Toggle split direction |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>Space</kbd> | Float / tile |
+| <kbd>Super</kbd> + <kbd>D</kbd> | Maximize |
+| <kbd>Super</kbd> + <kbd>F</kbd> | Fullscreen |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>F</kbd> | Fake fullscreen (window thinks it is fullscreen) |
+| <kbd>Super</kbd> + <kbd>P</kbd> | Pin (show on every workspace) |
+| <kbd>Super</kbd> + <kbd>G</kbd> / <kbd>Super</kbd> + <kbd>Tab</kbd> | Group / next window in group |
+| <kbd>Super</kbd> + left drag / right drag | Move / resize with the mouse |
+
+## 5. Workspaces
+
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> + <kbd>1</kbd> .. <kbd>0</kbd> | Go to workspace 1–10 |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>1</kbd> .. <kbd>0</kbd> | Send window to workspace 1–10 (stay here) |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Super</kbd> + <kbd>Page Up</kbd>/<kbd>Page Down</kbd>, <kbd>Super</kbd> + scroll | Previous / next workspace |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Page Up</kbd>/<kbd>Page Down</kbd>, <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>←</kbd>/<kbd>→</kbd> | Move window to previous / next workspace |
+| <kbd>Super</kbd> + <kbd>S</kbd> | Toggle scratchpad |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> | Send window to scratchpad |
+
+## 6. Screenshots & recording
+
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Screenshot a region |
+| <kbd>Print</kbd> / <kbd>Ctrl</kbd> + <kbd>Print</kbd> | Screenshot the full screen |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Pick a color (hex) to the clipboard |
+| <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>R</kbd> | Record a region (no sound) |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>R</kbd> | Record a region with sound |
+| <kbd>Super</kbd> + <kbd>-</kbd> / <kbd>=</kbd> | Cursor zoom: reset / zoom in |
+
+Screenshots are saved to `~/Pictures/Screenshots` and copied to the clipboard.
+
+## 7. Media & hardware keys
+
+| Key Combination | Action |
+|---|---|
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd> / <kbd>XF86AudioPlay</kbd> | Play / pause |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> / <kbd>XF86AudioNext</kbd> | Next track |
+| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>B</kbd> / <kbd>XF86AudioPrev</kbd> | Previous track |
+| <kbd>XF86AudioStop</kbd> | Stop |
+| <kbd>XF86AudioRaiseVolume</kbd> / <kbd>XF86AudioLowerVolume</kbd> | Volume ±5% (`wpctl`) |
+| <kbd>XF86AudioMute</kbd> / <kbd>XF86AudioMicMute</kbd> | Mute output / microphone |
+| <kbd>XF86MonBrightnessUp</kbd> / <kbd>XF86MonBrightnessDown</kbd> | Backlight ±5% (`brightnessctl`; DDC monitors use the Quick Settings slider) |
 
 ---
 
-## 3. Window Management (Hyprland Tiling)
-
-| Key Combination | Action | Description |
-|---|---|---|
-| <kbd>Super</kbd> + <kbd>Q</kbd> | **Close Window** | Closes the currently active window |
-| <kbd>Super</kbd> + <kbd>F</kbd> | **Toggle Fullscreen** | Toggles fullscreen on the active window |
-| <kbd>Super</kbd> + <kbd>V</kbd> | **Toggle Floating** | Switches between tiled and floating mode |
-| <kbd>Super</kbd> + <kbd>H</kbd> / <kbd>←</kbd> | **Focus Left** | Moves focus to the left window |
-| <kbd>Super</kbd> + <kbd>L</kbd> / <kbd>→</kbd> | **Focus Right** | Moves focus to the right window |
-| <kbd>Super</kbd> + <kbd>K</kbd> / <kbd>↑</kbd> | **Focus Up** | Moves focus to the window above |
-| <kbd>Super</kbd> + <kbd>J</kbd> / <kbd>↓</kbd> | **Focus Down** | Moves focus to the window below |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> / <kbd>←</kbd> | **Swap Left** | Swaps position with window on left |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd> / <kbd>→</kbd> | **Swap Right** | Swaps position with window on right |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd> / <kbd>↑</kbd> | **Swap Up** | Swaps position with window above |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd> / <kbd>↓</kbd> | **Swap Down** | Swaps position with window below |
-
----
-
-## 4. Workspaces
-
-| Key Combination | Action | Description |
-|---|---|---|
-| <kbd>Super</kbd> + <kbd>1</kbd> .. <kbd>5</kbd> | **Switch Workspace** | Switches to workspace 1 through 5 |
-| <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd> .. <kbd>5</kbd> | **Move to Workspace** | Moves active window to target workspace |
-| <kbd>Super</kbd> + <kbd>Scroll Up/Down</kbd> | **Cycle Workspaces** | Scrolls through active workspaces |
-
----
-
-## 5. Media & Hardware Keys
-
-| Key Combination | Action | Description |
-|---|---|---|
-| <kbd>Print</kbd> | **Full Screenshot** | Captures full screen to `~/Pictures/Screenshots` |
-| <kbd>Shift</kbd> + <kbd>Print</kbd> | **Area Snippet** | Interactive area selection via `slurp` + `grim` |
-| <kbd>XF86AudioRaiseVolume</kbd> | **Volume Up** | Increases master audio volume by 5% |
-| <kbd>XF86AudioLowerVolume</kbd> | **Volume Down** | Decreases master audio volume by 5% |
-| <kbd>XF86AudioMute</kbd> | **Mute Audio** | Toggles master audio mute |
-| <kbd>XF86MonBrightnessUp</kbd> | **Brightness Up** | Increases screen backlight by 5% |
-| <kbd>XF86MonBrightnessDown</kbd> | **Brightness Down** | Decreases screen backlight by 5% |
-| <kbd>XF86AudioPlay</kbd> | **Play / Pause** | Toggles MPRIS media playback |
-| <kbd>XF86AudioNext</kbd> | **Next Track** | Skips to next track via `playerctl` |
-| <kbd>XF86AudioPrev</kbd> | **Previous Track** | Rewinds to previous track via `playerctl` |
+**Removed in the final review:** the vim-style <kbd>Super</kbd> + <kbd>H</kbd>/<kbd>J</kbd>/<kbd>K</kbd>/<kbd>L</kbd>
+focus and move binds (they collided with Lock, the on-screen keyboard and Suspend), and the
+duplicate <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd> Quick Settings bind (it fired together
+with "next track"). Keyboard resizing moved to <kbd>Super</kbd> + <kbd>Alt</kbd> + arrows.

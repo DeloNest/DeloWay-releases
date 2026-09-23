@@ -97,7 +97,7 @@
 3. **إعدادات لوحة المفاتيح والتبديل (hyprland.conf)**:
    ```ini
    input {
-       kb_layout = us,ar
+       kb_layout = us,ara
        kb_options = grp:alt_shift_toggle
    }
    ```

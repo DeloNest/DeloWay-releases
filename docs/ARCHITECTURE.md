@@ -69,7 +69,7 @@ Deloway is designed from the ground up as a **single, cohesive desktop shell** a
   - **Lock Screen**: Hardware-secure Wayland session lock via `ext-session-lock-v1`.
   - **Desktop Surface**: Three distinct selectable modes (Clean, Widgets, and Traditional).
   - **Settings App**: Complete native GUI for system and shell customizations.
-  - **App Store**: Curated package store with featured apps, reviews, categories, and one-click installation.
+  - **App Store**: there is no in-shell store UI. The "App Store" launcher entry and "View in Store" open `pamac-manager` (AUR `pamac-aur`); installs and uninstalls go through `pamac`.
   - **First-Run Setup Wizard**: Onboarding wizard initializing user preferences before first desktop presentation.
 
 ---
@@ -154,20 +154,21 @@ Deloway supports three distinct desktop operating modes, managed by `DesktopMana
 
 ## 5. Design Token System & Theming Architecture
 
-The shell uses a centralized JSON design token architecture (`theme.json`) rather than hardcoded CSS:
+DeloWay is strictly monochrome (see `CLAUDE.md`): two modes, no accent color, and red / amber /
+green only as tiny status indicators.
 
-- **Tokens Hierarchy**:
-  - `deloos-dark.json`: Calm Mica dark palette (`#161922`, `#1e2330`, `#2a3142`).
-  - `deloos-light.json`: Calm Mica light palette (`#f3f4f6`, `#ffffff`, `#e2e8f0`).
-- **Accent Parity**:
-  - `primary` and `accent` (`#0084ff`) remain identical in both dark and light modes.
-  - Folder colors (`#f5aa1e`, `#f08705`, `#ffc841`) remain strictly identical across all themes to preserve visual identity.
-- **Cross-Toolkit Propagation**:
-  - Whenever `Theme.setMode(mode)` or `ConfigManager.setThemeMode(mode)` is invoked:
-    1. Updates `shell/theme/theme.json`.
-    2. Dispatches `gsettings set org.gnome.desktop.interface color-scheme (prefer-dark | prefer-light)`.
-    3. Updates GTK 3/4 CSS in `~/.config/gtk-3.0/gtk.css` and `~/.config/gtk-4.0/gtk.css`.
-    4. Dynamically updates Hyprland window border colors via `hyprctl keyword general:col.active_border`.
+- **Tokens**: `shell/theme/Theme.qml` is the only source of colors. It holds the dark and light
+  palettes (pure neutral grays) and the mode-aware tokens components use (`notch*`, `inverseSurface`,
+  `textSelection`, `modalScrim`, `onImageText`, …). Components never contain hex colors;
+  `./scripts/check-theme.sh` enforces it.
+- **Mode**: `ConfigManager.themeMode` (persisted as `theme.mode` in `deloway.json`) is the single
+  source of truth. `Theme.mode`, `Theme.isDark` and `Theme.colors` are pure bindings on it.
+- **Propagation**: `ConfigManager.setThemeMode(mode)`:
+  1. saves `deloway.json` (the shell restyles through bindings);
+  2. pushes the Hyprland border colors for the mode (`general:col.active_border` / `col.inactive_border`);
+  3. runs `scripts/deloway-theme-apply.py`, which sets `color-scheme`, the DeloWay-Dark/Light GTK
+     theme and GTK 3/4 CSS, and switches the icon theme between Reversal-black-dark and Reversal-black.
+  kitty launched through `delo-app` follows the system scheme itself (`config/kitty/*-theme.auto.conf`).
 
 ---
 
@@ -184,8 +185,6 @@ Quickshell exposes an `IpcHandler` target named `deloway` that permits external 
 | `openSettingsTab(tab)` | `tabId: string` | Directly jumps to a specific settings tab |
 | `toggleQuickSettings()` | None | Toggles the Quick Settings flyout |
 | `showSetup()` | None | Spawns the First-Run Setup Wizard |
-| `openStore(category)` | `category: string` | Opens App Store to a specific category |
-| `openStoreApp(appId)` | `appId: string` | Opens App Store directly to an app's details |
 | `setMode(mode)` | `mode: string` (`"dark" \| "light"`) | Switches system theme mode |
 | `setDesktopMode(mode)` | `mode: string` (`"clean" \| "widgets" \| "traditional"`) | Switches desktop mode |
 | `showDesktopContextMenu(x, y)` | `x: int, y: int` | Displays wallpaper context menu |
