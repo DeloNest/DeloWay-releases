@@ -146,14 +146,14 @@ Rectangle {
                         width: 28
                         height: 28
                         radius: Theme.radiusSmall
-                        color: closeMouse.containsMouse ? Theme.colors.urgent : "transparent"
+                        color: closeMouse.containsMouse ? Theme.overlayHoverStrong : "transparent"
                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         Text {
                             anchors.centerIn: parent
                             text: "✕"
                             font.pixelSize: 11
-                            color: closeMouse.containsMouse ? Theme.textOnAccent : Theme.colors.textSecondary
+                            color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.textSecondary
                         }
 
                         MouseArea {

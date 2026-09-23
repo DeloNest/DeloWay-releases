@@ -5,6 +5,7 @@ import "../../../theme"
 import "../../../services"
 import "../.."
 import ".."
+import "../../timecapsule"
 
 ColumnLayout {
     id: root
@@ -205,7 +206,7 @@ ColumnLayout {
                     height: 26
                     radius: Theme.notchRadiusPill
                     color: Theme.notchBackground
-                    border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : (pwdInput.text.length < 8 && pwdInput.text.length > 0 ? Theme.colors.danger : Theme.notchBorder)
+                    border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
 
                     RowLayout {
@@ -264,6 +265,15 @@ ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
+                // Semantic state on the 6px dot only; the message itself stays neutral.
+                StatusDot {
+                    readonly property bool isError: root.hotspotError.length > 0 || (pwdInput.text.length < 8 && pwdInput.text.length > 0)
+                    visible: isError || root.hotspotSaveSuccess.length > 0
+                    level: isError ? 2 : 0
+                    color: isError ? Theme.danger : Theme.colors.success
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
                 Text {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignLeft
@@ -275,11 +285,8 @@ ColumnLayout {
                     }
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(10)
-                    color: {
-                        if (root.hotspotError.length > 0 || (pwdInput.text.length < 8 && pwdInput.text.length > 0)) return Theme.colors.danger;
-                        if (root.hotspotSaveSuccess.length > 0) return Theme.colors.success;
-                        return Theme.notchTextTertiary;
-                    }
+                    color: (root.hotspotError.length > 0 || root.hotspotSaveSuccess.length > 0 || pwdInput.text.length > 0)
+                           ? Theme.notchTextSecondary : Theme.notchTextTertiary
                     elide: Text.ElideRight
                 }
 

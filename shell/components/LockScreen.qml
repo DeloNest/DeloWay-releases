@@ -153,7 +153,7 @@ WlSessionLock {
                         Layout.preferredHeight: 44
                         radius: Theme.radiusMedium
                         color: Theme.colors.surface
-                        border.color: pwdInput.activeFocus ? Theme.colors.borderHighlight : (errorMsg.text ? Theme.colors.urgent : Theme.hairline)
+                        border.color: pwdInput.activeFocus ? Theme.colors.borderHighlight : Theme.hairline
                         border.width: 1
 
                         RowLayout {
@@ -208,15 +208,24 @@ WlSessionLock {
                         }
                     }
 
-                    // 4. ERROR MESSAGE / STATUS
-                    Text {
-                        id: errorMsg
+                    // 4. ERROR MESSAGE / STATUS — neutral text; the 6px dot marks real errors
+                    Row {
                         Layout.alignment: Qt.AlignHCenter
-                        text: ""
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: 11
-                        color: Theme.colors.urgent
-                        visible: text.length > 0
+                        spacing: 8
+                        visible: errorMsg.text.length > 0
+                        Rectangle {
+                            width: 6; height: 6; radius: 3
+                            anchors.verticalCenter: parent.verticalCenter
+                            color: Theme.danger
+                            visible: errorMsg.text !== I18n.tr("lock_verifying")
+                        }
+                        Text {
+                            id: errorMsg
+                            text: ""
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: 11
+                            color: Theme.colors.textSecondary
+                        }
                     }
                 }
             }

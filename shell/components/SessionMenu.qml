@@ -293,14 +293,10 @@ PanelWindow {
 
         Layout.preferredHeight: 82
         radius: Theme.radius.large
-        color: tileMouse.pressed
-               ? (isDanger ? Qt.alpha(Theme.colors.urgent, 0.25) : Theme.colors.surfaceActive)
-               : (tileMouse.containsMouse
-                  ? (isDanger ? Qt.alpha(Theme.colors.urgent, 0.15) : Theme.colors.surfaceHover)
-                  : Theme.colors.surface)
-        border.color: tileMouse.containsMouse
-                      ? (isDanger ? Theme.colors.urgent : Theme.colors.borderHighlight)
-                      : Theme.colors.borderSubtle
+        // Danger is signalled by the glyph colour only (semantic colours never fill surfaces).
+        color: tileMouse.pressed ? Theme.colors.surfaceActive
+               : (tileMouse.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surface)
+        border.color: tileMouse.containsMouse ? Theme.colors.borderHighlight : Theme.colors.borderSubtle
         border.width: 1
 
         Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -322,9 +318,7 @@ PanelWindow {
             Text {
                 Layout.alignment: Qt.AlignHCenter
                 text: tileRoot.title
-                color: tileRoot.isDanger
-                       ? Theme.colors.urgent
-                       : (tileMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary)
+                color: tileMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference
                 font.pixelSize: 11

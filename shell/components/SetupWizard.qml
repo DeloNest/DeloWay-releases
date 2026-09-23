@@ -719,17 +719,26 @@ PanelWindow {
                                             implicitWidth: 80
                                             implicitHeight: 28
                                             radius: Theme.radiusSmall
-                                            color: Qt.alpha(Theme.colors.success, 0.16)
-                                            border.color: Theme.colors.success
+                                            color: Theme.colors.surfaceElevated
+                                            border.color: Theme.hairline
                                             border.width: 1
 
-                                            Text {
+                                            Row {
                                                 anchors.centerIn: parent
-                                                text: "✓ " + I18n.tr("installed_btn")
-                                                font.family: Theme.typography.fontFamily
-                                                font.pixelSize: 10
-                                                font.weight: Font.DemiBold
-                                                color: Theme.colors.success
+                                                spacing: 4
+                                                Text {
+                                                    text: "✓"
+                                                    font.pixelSize: 10
+                                                    font.weight: Font.Bold
+                                                    color: Theme.colors.success
+                                                }
+                                                Text {
+                                                    text: I18n.tr("installed_btn")
+                                                    font.family: Theme.typography.fontFamily
+                                                    font.pixelSize: 10
+                                                    font.weight: Font.DemiBold
+                                                    color: Theme.colors.textSecondary
+                                                }
                                             }
                                         }
 

@@ -62,8 +62,8 @@ Item {
                         anchors.fill: parent
                         radius: Theme.notchRadiusCard
                         gradient: Gradient {
-                            GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.25) }
-                            GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.65) }
+                            GradientStop { position: 0.0; color: Theme.imageScrimSoft }
+                            GradientStop { position: 1.0; color: Theme.imageScrimStrong }
                         }
                     }
 
@@ -490,8 +490,8 @@ Item {
                         height: 28
                         width: 28
                         radius: 14
-                        color: unpinMa.pressed ? Qt.rgba(0.9, 0.2, 0.2, 0.35) : (unpinMa.containsMouse ? Qt.rgba(0.9, 0.2, 0.2, 0.18) : Theme.notchSurfaceElevated)
-                        border.color: unpinMa.containsMouse ? Qt.rgba(0.9, 0.2, 0.2, 0.5) : Theme.notchBorderSubtle
+                        color: unpinMa.pressed ? Theme.notchSurfaceActive : (unpinMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
+                        border.color: unpinMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                         border.width: 1
                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -499,7 +499,7 @@ Item {
                             anchors.centerIn: parent
                             iconSize: 14
                             source: "user-trash-symbolic"
-                            iconColor: unpinMa.containsMouse ? Theme.urgent : Theme.notchTextSecondary
+                            iconColor: unpinMa.containsMouse ? Theme.danger : Theme.notchTextSecondary
                         }
 
                         MouseArea {

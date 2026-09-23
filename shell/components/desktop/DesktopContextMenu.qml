@@ -67,9 +67,7 @@ Item {
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(12)
                 font.weight: cItem.isChecked ? Font.DemiBold : Font.Medium
-                color: cItem.isUrgent
-                       ? Theme.danger
-                       : (itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
+                color: itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                 elide: Text.ElideRight
                 renderType: Theme.renderType
             }

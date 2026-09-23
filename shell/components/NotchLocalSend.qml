@@ -107,11 +107,9 @@ Item {
             font.family: Theme.typography.fontFamily
             font.pixelSize: 10
             renderType: Theme.renderType
-            color: root.stage === "failed"
-                   ? Theme.colors.urgent
-                   : (root.stage === "sent"
-                      ? Theme.colors.success
-                      : (LocalSendService.isRunning ? Theme.colors.textSecondary : Theme.colors.textTertiary))
+            // State colour lives on the 8px dot beside this text.
+            color: (root.stage === "failed" || root.stage === "sent" || LocalSendService.isRunning)
+                   ? Theme.notchTextSecondary : Theme.notchTextTertiary
             elide: Text.ElideRight
             Layout.fillWidth: true
         }
@@ -219,7 +217,7 @@ Item {
                         text: "LocalSend: " + LocalSendService.localAlias + " • " + (LocalSendService.isRunning ? I18n.tr("notch_status_ready") : I18n.tr("notch_status_stopped"))
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: 10
-                        color: LocalSendService.isRunning ? Theme.colors.success : Theme.notchTextTertiary
+                        color: LocalSendService.isRunning ? Theme.notchTextSecondary : Theme.notchTextTertiary
                     }
                 }
             }
@@ -297,7 +295,7 @@ Item {
                                     implicitWidth: 24
                                     implicitHeight: 10
                                     radius: 2
-                                    color: Theme.danger
+                                    color: Theme.notchSurfaceActive
                                     visible: (fileItem.modelData || "").toLowerCase().endsWith(".pdf")
                                     Layout.alignment: Qt.AlignHCenter
 
@@ -306,7 +304,7 @@ Item {
                                         text: "PDF"
                                         font.pixelSize: 7
                                         font.bold: true
-                                        color: Theme.textOnPrimary
+                                        color: Theme.notchText
                                     }
                                 }
                             }
@@ -676,7 +674,9 @@ Item {
                     implicitWidth: 32
                     implicitHeight: 32
                     radius: 16
-                    color: Theme.colors.success
+                    color: Theme.notchSurfaceElevated
+                    border.color: Theme.notchBorder
+                    border.width: 1
                     Layout.alignment: Qt.AlignHCenter
 
                     Text {
@@ -684,7 +684,7 @@ Item {
                         text: "✓"
                         font.pixelSize: 14
                         font.weight: Font.Bold
-                        color: Theme.textOnAccent
+                        color: Theme.colors.success
                     }
                 }
 

@@ -735,11 +735,7 @@ Item {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Medium
-                                color: {
-                                    if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
-                                    if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
-                                    return Theme.notchTextSecondary;
-                                }
+                                color: Theme.notchTextSecondary
                                 renderType: Theme.renderType
                             }
                         }

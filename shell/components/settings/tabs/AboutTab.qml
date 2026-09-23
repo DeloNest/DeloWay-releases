@@ -278,9 +278,9 @@ Item {
                         implicitWidth: resetBtnText.implicitWidth + Theme.space24
                         radius: 14
                         color: root.confirmReset
-                            ? (resetMa.pressed ? Qt.rgba(0.9, 0.2, 0.2, 0.4) : Qt.rgba(0.9, 0.2, 0.2, 0.2))
+                            ? (resetMa.pressed ? Theme.primaryHover : Theme.inverseSurface)
                             : (resetMa.pressed ? Theme.notchSurfaceActive : (resetMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated))
-                        border.color: root.confirmReset ? Theme.colors.urgent : (resetMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
+                        border.color: root.confirmReset ? Theme.inverseSurface : (resetMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
                         border.width: 1
                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -291,7 +291,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(11)
                             font.weight: Font.DemiBold
-                            color: root.confirmReset ? Theme.colors.urgent : (resetMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
+                            color: root.confirmReset ? Theme.inverseText : (resetMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
                         }
 
                         MouseArea {

@@ -205,7 +205,7 @@ Item {
                                 radius: 4
                                 color: deskItemWrapper.isSelected
                                        ? "transparent"
-                                       : (itemMouse.containsMouse ? Qt.rgba(0, 0, 0, 0.40) : Qt.rgba(0, 0, 0, 0.28))
+                                       : (itemMouse.containsMouse ? Theme.imageScrim : Theme.imageScrimSoft)
                                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                             }
 
@@ -223,7 +223,7 @@ Item {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
-                                color: Qt.rgba(0, 0, 0, 0.70)
+                                color: Theme.imageTextShadow
                                 renderType: Theme.renderType
                             }
 
@@ -241,7 +241,7 @@ Item {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
-                                color: "#ffffff"
+                                color: Theme.onImageText
                                 renderType: Theme.renderType
                             }
                         }

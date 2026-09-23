@@ -183,7 +183,7 @@ Item {
                 SymbolicIcon {
                     source: "weather-sunny"
                     iconSize: 13
-                    iconColor: Theme.colors.warning
+                    iconColor: Theme.colors.textSecondary
                 }
 
                 Text {
@@ -191,7 +191,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
-                    color: Theme.colors.warning
+                    color: Theme.colors.textSecondary
                 }
 
                 Item { Layout.fillWidth: true }
@@ -209,7 +209,7 @@ Item {
                 SymbolicIcon {
                     source: "weather-sunny"
                     iconSize: 34
-                    iconColor: Theme.colors.warning
+                    iconColor: Theme.colors.text
                 }
 
                 ColumnLayout {
@@ -366,7 +366,7 @@ Item {
                         width: parent.width * SystemMonitor.ramUsage
                         height: parent.height
                         radius: 3
-                        color: Theme.colors.success
+                        color: Theme.colors.text
                     }
                 }
             }
@@ -379,7 +379,7 @@ Item {
                 SymbolicIcon {
                     source: SystemMonitor.hasBattery ? "battery-level-100-symbolic" : "preferences-system-symbolic"
                     iconSize: 14
-                    iconColor: Theme.colors.success
+                    iconColor: (SystemMonitor.hasBattery && SystemMonitor.batteryPercent <= 20) ? Theme.danger : Theme.colors.textSecondary
                 }
 
                 Text {
@@ -439,7 +439,7 @@ Item {
                 SymbolicIcon {
                     source: "applications-office-symbolic"
                     iconSize: 13
-                    iconColor: Theme.colors.warning
+                    iconColor: Theme.colors.textSecondary
                 }
 
                 Text {
@@ -447,7 +447,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
-                    color: Theme.colors.warning
+                    color: Theme.colors.textSecondary
                 }
 
                 Item { Layout.fillWidth: true }

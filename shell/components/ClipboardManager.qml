@@ -64,7 +64,7 @@ PanelWindow {
     Rectangle {
         id: backdrop
         anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.50)
+        color: Theme.modalScrim
         opacity: cardHost.opacity
 
         Behavior on opacity {
@@ -185,12 +185,8 @@ PanelWindow {
                         Layout.preferredHeight: 32
                         Layout.preferredWidth: clearRow.implicitWidth + Theme.space16
                         radius: Theme.radiusSmall
-                        color: clearMa.pressed
-                               ? Qt.rgba(Theme.colors.urgent.r, Theme.colors.urgent.g, Theme.colors.urgent.b, 0.20)
-                               : (clearMa.containsMouse
-                                  ? Qt.rgba(Theme.colors.urgent.r, Theme.colors.urgent.g, Theme.colors.urgent.b, 0.12)
-                                  : "transparent")
-                        border.color: clearMa.containsMouse ? Theme.colors.urgent : Theme.notchBorderSubtle
+                        color: clearMa.pressed ? Theme.notchSurfaceActive : (clearMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                        border.color: clearMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                         border.width: 1
 
                         RowLayout {
@@ -209,7 +205,7 @@ PanelWindow {
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Medium
-                                color: clearMa.containsMouse ? Theme.colors.urgent : Theme.notchTextSecondary
+                                color: clearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                                 renderType: Theme.renderType
                             }
                         }
@@ -354,9 +350,7 @@ PanelWindow {
                                     height: 28
                                     radius: Theme.radiusSmall
                                     visible: itemMa.containsMouse || delMa.containsMouse
-                                    color: delMa.containsMouse
-                                           ? Qt.rgba(Theme.colors.urgent.r, Theme.colors.urgent.g, Theme.colors.urgent.b, 0.15)
-                                           : "transparent"
+                                    color: delMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                                     SymbolicIcon {
                                         anchors.centerIn: parent

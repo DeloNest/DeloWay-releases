@@ -83,17 +83,22 @@ Item {
                         Layout.rightMargin: Theme.space16
                         implicitHeight: 32
                         radius: 8
-                        color: Qt.rgba(0.9, 0.2, 0.2, 0.15)
-                        border.color: Theme.colors.urgent
+                        color: Theme.notchSurfaceElevated
+                        border.color: Theme.notchBorder
                         border.width: 1
 
-                        Text {
+                        // Semantic colour only on the 6px dot.
+                        Row {
                             anchors.centerIn: parent
-                            text: BluetoothService.error
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(11)
-                            font.weight: Font.Medium
-                            color: Theme.colors.urgent
+                            spacing: 8
+                            Rectangle { width: 6; height: 6; radius: 3; color: Theme.danger; anchors.verticalCenter: parent.verticalCenter }
+                            Text {
+                                text: BluetoothService.error
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: Font.Medium
+                                color: Theme.notchText
+                            }
                         }
                     }
 
@@ -197,7 +202,7 @@ Item {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(10)
                                         font.weight: Font.Medium
-                                        color: btRow.modelData.connected ? (btActionMa.containsMouse ? Theme.colors.urgent : Theme.notchTextSecondary) : Theme.notchText
+                                        color: btRow.modelData.connected ? (btActionMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary) : Theme.notchText
                                     }
 
                                     MouseArea {
@@ -220,8 +225,8 @@ Item {
                                     height: 26
                                     width: 26
                                     radius: 13
-                                    color: unpairMa.pressed ? Qt.rgba(0.9, 0.2, 0.2, 0.35) : (unpairMa.containsMouse ? Qt.rgba(0.9, 0.2, 0.2, 0.18) : Theme.notchSurfaceElevated)
-                                    border.color: unpairMa.containsMouse ? Qt.rgba(0.9, 0.2, 0.2, 0.5) : Theme.notchBorderSubtle
+                                    color: unpairMa.pressed ? Theme.notchSurfaceActive : (unpairMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
+                                    border.color: unpairMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                                     border.width: 1
 
                                     SymbolicIcon {

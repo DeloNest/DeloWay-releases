@@ -48,7 +48,7 @@ PanelWindow {
     // Dimmed Backdrop
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(0, 0, 0, 0.65)
+        color: Theme.modalScrim
         opacity: ShellState.cheatSheetOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 

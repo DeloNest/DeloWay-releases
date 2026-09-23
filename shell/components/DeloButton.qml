@@ -24,7 +24,8 @@ Rectangle {
         if (root.variant === "primary") {
             return mouseArea.pressed ? Theme.colors.primaryActive : (mouseArea.containsMouse ? Theme.colors.primaryHover : Theme.colors.primary);
         } else if (root.variant === "danger") {
-            return mouseArea.pressed ? Qt.darker(Theme.colors.urgent, 1.2) : (mouseArea.containsMouse ? Theme.colors.urgent : Qt.alpha(Theme.colors.urgent, 0.15));
+            // Semantic red never fills a surface: danger looks like secondary with a red glyph/label.
+            return mouseArea.pressed ? Theme.colors.surfaceActive : (mouseArea.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceElevated);
         } else if (root.variant === "ghost") {
             return mouseArea.pressed ? Theme.overlayHoverStrong : (mouseArea.containsMouse ? Theme.overlayHover : "transparent");
         } else {
@@ -38,7 +39,7 @@ Rectangle {
         if (root.variant === "primary") {
             return "transparent";
         } else if (root.variant === "danger") {
-            return mouseArea.containsMouse ? Theme.colors.urgent : Qt.alpha(Theme.colors.urgent, 0.35);
+            return mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline;
         } else if (root.variant === "ghost") {
             return "transparent";
         } else {
@@ -51,7 +52,7 @@ Rectangle {
         if (root.variant === "primary") {
             return Theme.textOnPrimary;
         } else if (root.variant === "danger") {
-            return mouseArea.containsMouse ? "#ffffff" : Theme.colors.urgent;
+            return Theme.colors.urgent;
         } else {
             return mouseArea.containsMouse ? Theme.colors.text : Theme.colors.textSecondary;
         }

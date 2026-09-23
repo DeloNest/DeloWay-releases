@@ -158,6 +158,12 @@ Item {
     readonly property color wallpaperTint: isDark ? Qt.alpha(colors.background, 0.15) : Qt.alpha(colors.text, 0.07)
     readonly property color captionScrim: Qt.alpha(notchBackground, 0.85)   // text strips over images
     readonly property color modalScrim: Qt.rgba(0, 0, 0, 0.60)             // neutral dim behind dialogs
+    // On-image tokens: text and scrims drawn over a wallpaper/photo are mode-independent.
+    readonly property color onImageText: "#ffffff"
+    readonly property color imageTextShadow: Qt.rgba(0, 0, 0, 0.70)
+    readonly property color imageScrimSoft: Qt.rgba(0, 0, 0, 0.28)
+    readonly property color imageScrim: Qt.rgba(0, 0, 0, 0.40)
+    readonly property color imageScrimStrong: Qt.rgba(0, 0, 0, 0.65)
     readonly property color primaryHover: colors.primaryHover
 
     // Direct color accessors for cleaner QML code
