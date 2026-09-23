@@ -241,7 +241,7 @@ PanelWindow {
                             verticalAlignment: TextInput.AlignVCenter
                             horizontalAlignment: TextInput.AlignLeft
                             color: Theme.notchText
-                            selectionColor: Qt.rgba(1, 1, 1, 0.25)
+                            selectionColor: Theme.textSelection
                             selectedTextColor: Theme.notchText
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference

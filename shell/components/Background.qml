@@ -40,7 +40,7 @@ PanelWindow {
         // Dark Mica Calm Overlay
         Rectangle {
             anchors.fill: parent
-            color: Theme.mode === "dark" ? Qt.alpha(Theme.colors.background, 0.15) : Qt.alpha(Theme.colors.text, 0.07)
+            color: Theme.wallpaperTint
         }
     }
 

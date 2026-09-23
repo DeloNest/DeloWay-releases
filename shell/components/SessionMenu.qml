@@ -107,7 +107,7 @@ PanelWindow {
         // Dim backdrop with click-to-dismiss
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(0.04, 0.05, 0.07, 0.65)
+            color: Theme.modalScrim
 
             MouseArea {
                 anchors.fill: parent

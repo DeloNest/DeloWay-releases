@@ -1048,13 +1048,8 @@ def main():
         except Exception as e:
             print(f"[deloway-theme] Warning reading {user_config_path}: {e}", file=sys.stderr)
 
-    if theme_json_path.exists() and not args.mode:
-        try:
-            with open(theme_json_path, "r", encoding="utf-8") as f:
-                t_data = json.load(f)
-            mode = t_data.get("mode", mode)
-        except Exception as e:
-            print(f"[deloway-theme] Warning reading {theme_json_path}: {e}", file=sys.stderr)
+    # The mode comes from deloway.json (or --mode) only. shell/theme/theme.json is no
+    # longer written by the shell, so it must not override the user's choice.
 
     if args.mode:
         mode = args.mode
@@ -1073,7 +1068,10 @@ def main():
     # 3. Read authoritative system settings from gsettings
     icon_theme_default = "Reversal-black-dark" if is_dark else "Reversal-black"
     cur_icon = get_gsettings_value("icon-theme")
-    if not cur_icon or cur_icon in ["Reversal", "Reversal-dark", "Reversal-blue", "Reversal-blue-dark"]:
+    # Any Reversal variant (the DeloWay default family) follows the mode — the list
+    # used to miss Reversal-black(-dark), so icons never switched. A non-Reversal
+    # theme the user picked is left alone.
+    if not cur_icon or cur_icon.startswith("Reversal"):
         icon_theme = icon_theme_default
     else:
         icon_theme = cur_icon

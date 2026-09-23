@@ -1,14 +1,18 @@
 pragma Singleton
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import "../services"
 
 Item {
     id: root
 
-    property string mode: (typeof ConfigManager !== "undefined" && ConfigManager.themeMode)
-                          ? ConfigManager.themeMode : "dark"
+    // ── Single source of truth: ConfigManager.themeMode (persisted in deloway.json).
+    // Everything here is DERIVED — nothing assigns mode/colors imperatively, and
+    // nothing is read from or written to theme.json at runtime any more (that file
+    // used to override the mode and fed scaled font sizes back in as the base).
+    // The typeof guard stays: Theme and ConfigManager import each other.
+    readonly property string mode: (typeof ConfigManager !== "undefined" && ConfigManager.themeMode === "light")
+                                   ? "light" : "dark"
     readonly property bool isDark: mode === "dark"
     readonly property real fontScale: (typeof ConfigManager !== "undefined" && ConfigManager.fontSizeScale)
                                      ? ConfigManager.fontSizeScale : 1.0
@@ -19,15 +23,6 @@ Item {
         return Math.round(baseSize * root.fontScale);
     }
 
-
-    Connections {
-        target: (typeof ConfigManager !== "undefined") ? ConfigManager : null
-        function onThemeModeChanged() {
-            if (ConfigManager.themeMode && ConfigManager.themeMode !== root.mode) {
-                root.setMode(ConfigManager.themeMode);
-            }
-        }
-    }
 
     // -------------------------------------------------------------------------
     // Performance Tiers (NewPlan.md §3)
@@ -78,79 +73,92 @@ Item {
     readonly property int space24: 24
     readonly property int space48: 48
 
+    // Legacy palette, re-based on neutral greys (was blue-slate: #101318, #1b202c,
+    // #9da7be…). Tertiary/muted text meet WCAG AA on their surfaces.
     readonly property var darkPalette: ({
-        "background": "#101318",
-        "backgroundAlt": "#151922",
-        "surface": "#1b202c",
-        "surfaceLayer1": "#1b202c",
-        "surfaceLayer2": "#222736",
-        "surfaceCard": "#1b202c",
-        "surfaceElevated": "#222736",
-        "surfaceHover": "#262c3d",
-        "surfaceActive": "#2f374c",
-        "surfaceVariant": "#151924",
-        "border": "#2a3142",
-        "borderSubtle": "#202533",
-        "borderHighlight": "#3d465c",
+        "background": "#000000",
+        "backgroundAlt": "#0a0a0a",
+        "surface": "#0d0d0d",
+        "surfaceLayer1": "#0d0d0d",
+        "surfaceLayer2": "#141414",
+        "surfaceCard": "#0d0d0d",
+        "surfaceElevated": "#141414",
+        "surfaceHover": "#1c1c1c",
+        "surfaceActive": "#262626",
+        "surfaceVariant": "#0a0a0a",
+        "border": "#262626",
+        "borderSubtle": "#1a1a1a",
+        "borderHighlight": "#404040",
         "primary": "#ffffff",
-        "primaryHover": "#e2e8f0",
-        "primaryActive": "#cbd5e1",
+        "primaryHover": "#e5e5e5",
+        "primaryActive": "#d4d4d4",
         "accent": "#ffffff",
-        "accentSecondary": "#94a3b8",
+        "accentSecondary": "#a3a3a3",
         "accentText": "#000000",
         "text": "#ffffff",
         "textPrimary": "#ffffff",
-        "textSecondary": "#9da7be",
-        "textTertiary": "#626c82",
-        "textMuted": "#626c82",
+        "textSecondary": "#a3a3a3",
+        "textTertiary": "#808080",
+        "textMuted": "#808080",
         "activeIndicator": "#ffffff",
         "urgent": "#ef4444",
         "danger": "#ef4444",
         "warning": "#f59e0b",
         "success": "#10b981",
-        "folderBase": "#f5aa1e",
-        "folderAccent": "#f08705",
-        "folderHighlight": "#ffc841",
+        "folderBase": "#d4d4d4",
+        "folderAccent": "#a3a3a3",
+        "folderHighlight": "#e5e5e5",
         "folderEmblem": "#ffffff"
     })
 
     readonly property var lightPalette: ({
-        "background": "#f4f6f9",
-        "backgroundAlt": "#e9edf3",
+        "background": "#f5f5f5",
+        "backgroundAlt": "#ebebeb",
         "surface": "#ffffff",
         "surfaceLayer1": "#ffffff",
-        "surfaceLayer2": "#f8fafc",
+        "surfaceLayer2": "#fafafa",
         "surfaceCard": "#ffffff",
         "surfaceElevated": "#ffffff",
-        "surfaceHover": "#f1f3f7",
-        "surfaceActive": "#e2e6ed",
-        "surfaceVariant": "#f8fafc",
-        "border": "#d5dbe6",
-        "borderSubtle": "#e5e9f0",
-        "borderHighlight": "#b8c3d6",
+        "surfaceHover": "#f0f0f0",
+        "surfaceActive": "#e5e5e5",
+        "surfaceVariant": "#fafafa",
+        "border": "#d4d4d4",
+        "borderSubtle": "#e5e5e5",
+        "borderHighlight": "#a3a3a3",
         "primary": "#0f172a",
-        "primaryHover": "#1e293b",
-        "primaryActive": "#334155",
+        "primaryHover": "#262626",
+        "primaryActive": "#404040",
         "accent": "#0f172a",
-        "accentSecondary": "#475569",
+        "accentSecondary": "#525252",
         "accentText": "#ffffff",
         "text": "#111827",
         "textPrimary": "#111827",
-        "textSecondary": "#4b5563",
-        "textTertiary": "#9ca3af",
-        "textMuted": "#9ca3af",
+        "textSecondary": "#525252",
+        "textTertiary": "#6b6b6b",
+        "textMuted": "#6b6b6b",
         "activeIndicator": "#0f172a",
         "urgent": "#ef4444",
         "danger": "#ef4444",
         "warning": "#d97706",
-        "success": "#10b981",
-        "folderBase": "#f5aa1e",
-        "folderAccent": "#f08705",
-        "folderHighlight": "#ffc841",
+        "success": "#059669",
+        "folderBase": "#525252",
+        "folderAccent": "#404040",
+        "folderHighlight": "#737373",
         "folderEmblem": "#ffffff"
     })
 
-    property var colors: Object.assign({}, darkPalette)
+    readonly property var colors: isDark ? darkPalette : lightPalette
+
+    // ── Mode-aware tokens that replace raw `isDark ? "#hex" : "#hex"` in components ──
+    readonly property color inverseSurface: isDark ? "#ffffff" : "#0f172a"   // selected pill / primary fill
+    readonly property color inverseText: isDark ? "#000000" : "#ffffff"      // text/knob on inverseSurface
+    readonly property color textSelection: isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.20)
+    readonly property color selectedSurface: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.05)
+    readonly property color toggleKnobOff: isDark ? "#ffffff" : "#737373"
+    readonly property color wallpaperTint: isDark ? Qt.alpha(colors.background, 0.15) : Qt.alpha(colors.text, 0.07)
+    readonly property color captionScrim: Qt.alpha(notchBackground, 0.85)   // text strips over images
+    readonly property color modalScrim: Qt.rgba(0, 0, 0, 0.60)             // neutral dim behind dialogs
+    readonly property color primaryHover: colors.primaryHover
 
     // Direct color accessors for cleaner QML code
     readonly property color accent: colors.accent || (isDark ? "#ffffff" : "#0f172a")
@@ -277,13 +285,6 @@ Item {
     }
     readonly property int dockReserved: dockReservedFor(68) // 86px
 
-    function setMode(newMode) {
-        if (newMode !== "dark" && newMode !== "light") return;
-        root.mode = newMode;
-        const targetPalette = (newMode === "light") ? root.lightPalette : root.darkPalette;
-        root.colors = Object.assign({}, targetPalette);
-    }
-
     property var baseRadius: ({
         "xsmall": 4,
         "small": 6,
@@ -372,37 +373,4 @@ Item {
         "fontSizeLarge":   Math.round((baseTypography.fontSizeLarge || 18) * root.fontScale),
         "fontSizeTitle":   Math.round((baseTypography.fontSizeTitle || 22) * root.fontScale)
     })
-
-    property FileView themeWatcher: FileView {
-        path: Qt.resolvedUrl("theme.json")
-        watchChanges: true
-        preload: true
-
-        function reloadTheme() {
-            try {
-                const textContent = themeWatcher.text();
-                if (!textContent || textContent.trim() === "") return;
-                const parsed = JSON.parse(textContent);
-                if (parsed.mode && parsed.mode !== root.mode) {
-                    root.setMode(parsed.mode);
-                }
-                const activePalette = (root.mode === "light")
-                    ? (parsed.light || parsed.colors || {})
-                    : (parsed.dark || parsed.colors || {});
-                root.colors = Object.assign({}, (root.mode === "light" ? root.lightPalette : root.darkPalette), activePalette);
-                if (parsed.radius) root.baseRadius = Object.assign({}, root.baseRadius, parsed.radius);
-                if (parsed.spacing) root.spacing = Object.assign({}, root.spacing, parsed.spacing);
-                if (parsed.typography) root.baseTypography = Object.assign({}, root.baseTypography, parsed.typography);
-            } catch (e) {
-                console.warn("[Deloway/Theme] Failed to parse theme.json:", e);
-            }
-        }
-
-        onLoaded: reloadTheme()
-        onTextChanged: reloadTheme()
-    }
-
-    Component.onCompleted: {
-        root.setMode(root.mode);
-    }
 }

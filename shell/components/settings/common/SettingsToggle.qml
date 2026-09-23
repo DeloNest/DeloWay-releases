@@ -6,9 +6,9 @@ Item {
     id: root
 
     property bool checked: false
-    property color onColor: Theme.isDark ? "#ffffff" : "#0f172a"
+    property color onColor: Theme.inverseSurface
     property color offColor: Theme.notchSurfaceElevated
-    property color knobColor: root.checked ? (Theme.isDark ? "#000000" : "#ffffff") : (Theme.isDark ? "#ffffff" : "#64748b")
+    property color knobColor: root.checked ? Theme.inverseText : Theme.toggleKnobOff
     signal toggled(bool checked)
 
     implicitWidth: 44

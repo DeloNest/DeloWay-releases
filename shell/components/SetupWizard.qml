@@ -133,7 +133,7 @@ PanelWindow {
                             width: (index === root.currentStep) ? 22 : 8
                             height: 8
                             radius: 4
-                            color: (index === root.currentStep) ? (Theme.isDark ? "#ffffff" : "#0f172a") : (index < root.currentStep ? Theme.colors.borderHighlight : Theme.colors.surfaceHover)
+                            color: (index === root.currentStep) ? Theme.inverseSurface : (index < root.currentStep ? Theme.colors.borderHighlight : Theme.colors.surfaceHover)
                             Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                             Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                         }
@@ -201,7 +201,7 @@ PanelWindow {
                                     width: 38
                                     height: 28
                                     radius: Theme.radiusSmall
-                                    color: ConfigManager.uiLanguage === "en" ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceElevated
+                                    color: ConfigManager.uiLanguage === "en" ? Theme.inverseSurface : Theme.colors.surfaceElevated
 
                                     Text {
                                         anchors.centerIn: parent
@@ -209,7 +209,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 12
                                         font.weight: Font.Bold
-                                        color: ConfigManager.uiLanguage === "en" ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
+                                        color: ConfigManager.uiLanguage === "en" ? Theme.inverseText : Theme.colors.text
                                     }
                                 }
 
@@ -252,7 +252,7 @@ PanelWindow {
                                     width: 38
                                     height: 28
                                     radius: Theme.radiusSmall
-                                    color: ConfigManager.uiLanguage === "ar" ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceElevated
+                                    color: ConfigManager.uiLanguage === "ar" ? Theme.inverseSurface : Theme.colors.surfaceElevated
 
                                     Text {
                                         anchors.centerIn: parent
@@ -260,7 +260,7 @@ PanelWindow {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 14
                                         font.weight: Font.Bold
-                                        color: ConfigManager.uiLanguage === "ar" ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
+                                        color: ConfigManager.uiLanguage === "ar" ? Theme.inverseText : Theme.colors.text
                                     }
                                 }
 
@@ -530,7 +530,7 @@ PanelWindow {
                                     width: 44
                                     height: 24
                                     radius: 12
-                                    color: ConfigManager.dockAutoHide ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceHover
+                                    color: ConfigManager.dockAutoHide ? Theme.inverseSurface : Theme.colors.surfaceHover
 
                                     Rectangle {
                                         // Anchored so "on" is at the reading end (mirrored in Arabic)
@@ -540,7 +540,7 @@ PanelWindow {
                                         width: 20
                                         height: 20
                                         radius: 10
-                                        color: ConfigManager.dockAutoHide ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
+                                        color: ConfigManager.dockAutoHide ? Theme.inverseText : Theme.colors.text
                                         Behavior on anchors.leftMargin { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                                     }
 
@@ -669,7 +669,7 @@ PanelWindow {
                                 Layout.preferredHeight: 96
                                 cardRadius: Theme.radiusMedium
                                 selected: appCard.isInstalling
-                                selectedBorderColor: Theme.isDark ? "#ffffff" : "#0f172a"
+                                selectedBorderColor: Theme.inverseSurface
 
                                 ColumnLayout {
                                     anchors.fill: parent
@@ -760,7 +760,7 @@ PanelWindow {
                                             anchors.bottom: parent.bottom
                                             width: parent.width * Math.max(0.05, Math.min(1.0, appCard.progress))
                                             radius: 1.5
-                                            color: Theme.isDark ? "#ffffff" : "#0f172a"
+                                            color: Theme.inverseSurface
                                             Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                                         }
                                     }

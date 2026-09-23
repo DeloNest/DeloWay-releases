@@ -163,7 +163,7 @@ Item {
                             height: 88
                             radius: Theme.notchRadiusCard
                             color: Theme.notchSurfaceElevated
-                            border.color: wpCard.isSelected ? (Theme.isDark ? "#ffffff" : "#0f172a") : (wpMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
+                            border.color: wpCard.isSelected ? Theme.inverseSurface : (wpMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle)
                             border.width: wpCard.isSelected ? 2 : 1
                             clip: true
                             LayoutMirroring.enabled: I18n.isRTL
@@ -189,7 +189,7 @@ Item {
                                 width: 20
                                 height: 20
                                 radius: 10
-                                color: Theme.isDark ? "#ffffff" : "#0f172a"
+                                color: Theme.inverseSurface
 
                                 Text {
                                     anchors.centerIn: parent
@@ -197,7 +197,7 @@ Item {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.Bold
-                                    color: Theme.isDark ? "#000000" : "#ffffff"
+                                    color: Theme.inverseText
                                 }
                             }
 
@@ -207,7 +207,7 @@ Item {
                                 anchors.left: parent.left
                                 anchors.right: parent.right
                                 height: 24
-                                color: Qt.rgba(0, 0, 0, 0.75)
+                                color: Theme.captionScrim   // light scrim in light mode: its text stays readable
 
                                 Text {
                                     anchors.fill: parent

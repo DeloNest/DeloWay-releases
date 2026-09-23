@@ -10,8 +10,8 @@ Rectangle {
     property color surfaceHoverColor: Theme.colors.surfaceHover
     property color borderColor: Theme.hairline
     property color borderHoverColor: Theme.colors.borderHighlight
-    property color selectedColor: Theme.isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.05)
-    property color selectedBorderColor: Theme.isDark ? "#ffffff" : "#0f172a"
+    property color selectedColor: Theme.selectedSurface
+    property color selectedBorderColor: Theme.inverseSurface
     property int cardRadius: Theme.radiusMedium
     property int borderWidth: 1
     property int selectedBorderWidth: 2

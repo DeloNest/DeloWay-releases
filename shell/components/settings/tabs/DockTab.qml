@@ -81,7 +81,7 @@ Item {
                         width: implicitWidth
                         height: implicitHeight
                         radius: Math.min(previewDockH / 2, 14)
-                        color: Qt.rgba(0.06, 0.07, 0.10, 0.90)
+                        color: Theme.dockGlass            // the real Dock's surface, in both modes
                         border.color: Theme.notchBorderHighlight
                         border.width: 1
 
@@ -199,7 +199,7 @@ Item {
                         implicitWidth: statusText.implicitWidth + 16
                         width: implicitWidth
                         radius: 11
-                        color: Qt.rgba(0, 0, 0, 0.70)
+                        color: Theme.captionScrim
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
 

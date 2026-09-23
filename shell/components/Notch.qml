@@ -310,7 +310,7 @@ Item {
                                         implicitWidth: Math.max(16, unreadText.implicitWidth + 6)
                                         implicitHeight: 14
                                         radius: 7
-                                        color: Theme.isDark ? "#ffffff" : "#0f172a"
+                                        color: Theme.inverseSurface
                                         Layout.alignment: Qt.AlignVCenter
 
                                         Text {
@@ -320,7 +320,7 @@ Item {
                                             font.family: Theme.typography.fontFamily
                                             font.pixelSize: Theme.fontSize(9)
                                             font.weight: Font.Bold
-                                            color: Theme.isDark ? "#000000" : "#ffffff"
+                                            color: Theme.inverseText
                                         }
                                     }
                                 }

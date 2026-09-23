@@ -83,7 +83,7 @@ Rectangle {
                 verticalAlignment: TextInput.AlignVCenter
                 horizontalAlignment: TextInput.AlignLeft
                 color: Theme.colors.text
-                selectionColor: Theme.isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.20)
+                selectionColor: Theme.textSelection
                 selectedTextColor: Theme.colors.text
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference

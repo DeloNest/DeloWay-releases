@@ -35,18 +35,57 @@ Item {
             title: I18n.tr("theme_mode")
 
             SettingsRow {
-                title: I18n.isRTL ? "المظهر الداكن (Dark Mode)" : "Dark Mode"
+                title: I18n.isRTL ? "المظهر" : "Appearance"
                 subtitle: ConfigManager.themeMode === "dark"
-                          ? (I18n.isRTL ? "مفعّل — أسطح داكنة نقية لتقليل استهلاك الطاقة وإراحة العين" : "Enabled — Deep dark surfaces for low eye strain")
-                          : (I18n.isRTL ? "معطّل — أسطح فاتحة ناصعة (Light Mode)" : "Disabled — Clean light surfaces (Light Mode)")
+                          ? (I18n.isRTL ? "داكن — أسطح سوداء نقية لشاشات OLED" : "Dark — pure black OLED surfaces")
+                          : (I18n.isRTL ? "فاتح — أسطح محايدة عالية التباين" : "Light — crisp high-contrast neutrals")
                 icon: ConfigManager.themeMode === "dark" ? "weather-clear-night-symbolic" : "weather-sunny-symbolic"
                 showDivider: false
-                clickable: true
-                onClicked: ConfigManager.setThemeMode(ConfigManager.themeMode === "dark" ? "light" : "dark")
 
-                SettingsToggle {
-                    checked: ConfigManager.themeMode === "dark"
-                    onToggled: ch => ConfigManager.setThemeMode(ch ? "dark" : "light")
+                // Dark | Light — the one theme choice; everything else (GTK, icons,
+                // kitty, window borders) follows it via ConfigManager.setThemeMode.
+                RowLayout {
+                    spacing: Theme.space4
+
+                    Repeater {
+                        model: [
+                            { mode: "dark",  ar: "داكن", en: "Dark" },
+                            { mode: "light", ar: "فاتح", en: "Light" }
+                        ]
+                        delegate: Rectangle {
+                            id: modePill
+                            required property var modelData
+                            readonly property bool isSelected: ConfigManager.themeMode === modelData.mode
+
+                            height: 28
+                            implicitWidth: Math.max(64, modeText.implicitWidth + Theme.space16)
+                            radius: 14
+                            color: modePill.isSelected ? Theme.notchSurfaceActive : (modeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: modePill.isSelected ? Theme.notchBorderHighlight : (modeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                id: modeText
+                                anchors.centerIn: parent
+                                text: I18n.isRTL ? modePill.modelData.ar : modePill.modelData.en
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: modePill.isSelected ? Font.DemiBold : Font.Normal
+                                color: modePill.isSelected ? Theme.notchText : Theme.notchTextSecondary
+                                renderType: Theme.renderType
+                            }
+
+                            MouseArea {
+                                id: modeMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: if (!modePill.isSelected) ConfigManager.setThemeMode(modePill.modelData.mode)
+                            }
+                        }
+                    }
                 }
             }
         }

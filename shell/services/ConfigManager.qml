@@ -222,7 +222,10 @@ Item {
                 ["input:follow_mouse", root.followMouse ? 1 : 0],
                 ["decoration:dim_inactive", root.dimInactive ? "true" : "false"]
             ];
-            if (root.activeBorder) pairs.push(["general:col.active_border", root.hyprColor(root.activeBorder)]);
+            // Window borders follow the theme mode (they used to stay white on light).
+            const dark = root.themeMode !== "light";
+            pairs.push(["general:col.active_border", dark ? "rgba(ffffffdd)" : "rgba(0f172add)"]);
+            pairs.push(["general:col.inactive_border", dark ? "rgba(444444cc)" : "rgba(c8c8c8cc)"]);
             root.hyprKeywords(pairs);
         } catch (err) {
             console.warn("[Deloway] Failed to sync Hyprland settings: " + err);
@@ -235,7 +238,6 @@ Item {
             if (cfg.theme) {
                 if (cfg.theme.mode) {
                     root.themeMode = cfg.theme.mode;
-                    Theme.setMode(cfg.theme.mode);
                 }
                 // Legacy accentColor compatibility: safely ignored in strict monochrome identity
                 if (cfg.theme.wallpaper !== undefined) root.wallpaper = cfg.theme.wallpaper;
@@ -339,27 +341,11 @@ Item {
     }
 
 
-    function writeThemeJson() {
-        const themeJsonPath = root.projectDir + "/shell/theme/theme.json";
-        const themeJsonContent = JSON.stringify({
-            "theme": root.themeMode === "dark" ? "deloos-dark" : "deloos-light",
-            "mode": root.themeMode,
-            "colors": Theme.colors,
-            "dark": Theme.darkPalette,
-            "light": Theme.lightPalette,
-            "radius": Theme.baseRadius,   // unscaled: the scaled view is derived at runtime
-            "spacing": Theme.spacing,
-            "typography": Theme.typography
-        }, null, 2);
-        saveThemeProcess.exec(["bash", "-c", "cat << 'EOF' > " + themeJsonPath + "\n" + themeJsonContent + "\nEOF"]);
-    }
-
     function setThemeMode(mode) {
         if (mode !== "dark" && mode !== "light") return;
         root.themeMode = mode;
-        Theme.setMode(mode);
         saveConfig();
-        writeThemeJson();
+        syncHyprlandWindowSettings();
 
         if (root.applySystemTheme) {
             updateGtkThemes();
@@ -917,9 +903,6 @@ Item {
         id: saveProcess
     }
 
-    Process {
-        id: saveThemeProcess
-    }
 
     Process {
         id: gtkThemeProcess

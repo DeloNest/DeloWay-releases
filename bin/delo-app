@@ -55,8 +55,9 @@ case "$CATEGORY" in
         APP=$(get_default_app "terminal" "kitty")
         case "$APP" in
             kitty)
-                if [ -f "$DELOWAY_DIR/config/kitty.conf" ]; then
-                    exec kitty --config "$DELOWAY_DIR/config/kitty.conf" "$@"
+                if [ -f "$DELOWAY_DIR/config/kitty/kitty.conf" ]; then
+                    # Config directory (not --config) so the *-theme.auto.conf files load too.
+                    KITTY_CONFIG_DIRECTORY="$DELOWAY_DIR/config/kitty" exec kitty "$@"
                 else
                     exec kitty "$@"
                 fi

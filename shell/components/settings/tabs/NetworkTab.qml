@@ -287,7 +287,7 @@ Item {
                                         height: 28
                                         implicitWidth: connBtnText.implicitWidth + Theme.space20
                                         radius: 14
-                                        color: connBtnMa.pressed ? Theme.notchSurfaceActive : (connBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.isDark ? "#ffffff" : "#0f172a")
+                                        color: connBtnMa.pressed ? Theme.notchSurfaceActive : (connBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.inverseSurface)
                                         border.color: Theme.notchBorderHighlight
                                         border.width: 1
 
@@ -300,7 +300,7 @@ Item {
                                             font.family: Theme.typography.fontFamily
                                             font.pixelSize: Theme.fontSize(11)
                                             font.weight: Font.DemiBold
-                                            color: (connBtnMa.pressed || connBtnMa.containsMouse) ? Theme.notchText : (Theme.isDark ? "#000000" : "#ffffff")
+                                            color: (connBtnMa.pressed || connBtnMa.containsMouse) ? Theme.notchText : Theme.inverseText
                                         }
 
                                         MouseArea {
@@ -455,7 +455,7 @@ Item {
                                     height: 28
                                     implicitWidth: saveBtnText.implicitWidth + Theme.space20
                                     radius: 14
-                                    color: saveBtnMa.pressed ? Theme.notchSurfaceActive : (saveBtnMa.containsMouse ? Theme.notchSurfaceHover : (Theme.isDark ? "#ffffff" : "#0f172a"))
+                                    color: saveBtnMa.pressed ? Theme.notchSurfaceActive : (saveBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.inverseSurface)
                                     border.color: Theme.notchBorderHighlight
                                     border.width: 1
 
@@ -468,7 +468,7 @@ Item {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(10)
                                         font.weight: Font.DemiBold
-                                        color: (saveBtnMa.pressed || saveBtnMa.containsMouse) ? Theme.notchText : (Theme.isDark ? "#000000" : "#ffffff")
+                                        color: (saveBtnMa.pressed || saveBtnMa.containsMouse) ? Theme.notchText : Theme.inverseText
                                     }
 
                                     MouseArea {
