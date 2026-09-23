@@ -334,10 +334,9 @@ PanelWindow {
 
         // Key Hint badge (e.g. "1", "2")
         Rectangle {
-            anchors.top: parent.top
-            anchors.right: I18n.isRTL ? undefined : parent.right
-            anchors.left: I18n.isRTL ? parent.left : undefined
-            anchors.margins: 6
+            // Direction via x: runtime-flipped left/right anchors stretch the item.
+            y: 6
+            x: I18n.isRTL ? 6 : parent.width - width - 6
             width: 16
             height: 16
             radius: 8

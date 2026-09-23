@@ -98,10 +98,12 @@ PanelWindow {
                     SectionBox {
                         title: I18n.tr("cs_shell")
                         items: [
-                            { keys: ["Super", "Space"], desc: "Unified launcher (search & apps)" },
+                            { keys: ["Super"], desc: "Start menu (tap)" },
+                            { keys: ["Super", "Space"], desc: "Spotlight search" },
+                            { keys: ["Super", "Shift", "F"], desc: "Immersion mode (hide bar & dock)" },
                             { keys: ["Super", "V"], desc: "Clipboard history >> clipboard" },
                             { keys: ["Super", "Period"], desc: "Emoji >> clipboard" },
-                            { keys: ["Super", "A"], desc: "Toggle left sidebar" },
+                            { keys: ["Super", "A"], desc: "Start menu" },
                             { keys: ["Super", "N"], desc: "Toggle right sidebar" },
                             { keys: ["Super", "/"], desc: "Toggle cheatsheet" },
                             { keys: ["Super", "K"], desc: "Toggle on-screen keyboard" },

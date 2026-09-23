@@ -7,19 +7,18 @@ import Quickshell.Wayland
 import "../theme"
 import "../services"
 
-PanelWindow {
+// Smart Notch — centre surface of the unified TopBar window (see TopBar.qml).
+// This is a plain Item: it owns no layer surface of its own, so its geometry and the
+// side capsules' geometry are always composed in the same frame buffer.
+Item {
     id: root
 
     required property ShellScreen targetScreen
-    screen: targetScreen
+    anchors.fill: parent
 
-    anchors {
-        top: true
-    }
-
-    margins {
-        top: 0
-    }
+    // Exposed to TopBar for the unified input mask / exclusive zone.
+    readonly property alias maskItem: notchFrame
+    readonly property int reservedZone: root.isExpanded ? Theme.topBarReserved : Theme.topBarExclusiveZone
 
     // Dynamic width & height with smooth physics animations
     property bool isExpanded: ShellState.smartNotchExpanded
@@ -27,12 +26,12 @@ PanelWindow {
 
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
-        if (notchHomeItem.notificationActive) return 420;
+        if (notchHomeItem.notificationActive) return 440;
         if (notchHomeItem.hasPlayer) return Math.min(520, Math.max(320, notchHomeItem.workspaceContentWidth + notchHomeItem.playerContentWidth + 48));
         return Math.max(110, notchHomeItem.workspaceContentWidth + 24);
     }
     readonly property real compactHeight: 44
-    readonly property real expandedWidth: 600
+    readonly property real expandedWidth: Theme.notchExpandedWidth
     readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : 176
     property real expandedHeight: baseExpandedHeight
     Behavior on expandedHeight {
@@ -41,25 +40,7 @@ PanelWindow {
             easing.type: root.isExpanded ? Easing.OutCubic : Easing.OutQuad
         }
     }
-    readonly property real earRadius: 18
-
-    // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
-    readonly property real fixedWindowWidth: 640
-    readonly property real fixedWindowHeight: 460
-
-    implicitWidth: fixedWindowWidth
-    implicitHeight: fixedWindowHeight
-    color: "transparent"
-
-    WlrLayershell.namespace: "deloway:smart-notch"
-    WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: root.isExpanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-    exclusionMode: ExclusionMode.Normal
-    exclusiveZone: root.isExpanded ? Theme.topBarReserved : Theme.topBarExclusiveZone
-
-    mask: Region {
-        item: notchFrame
-    }
+    readonly property real earRadius: Theme.notchEarRadius
 
     Shortcut {
         sequence: "Escape"
@@ -76,12 +57,21 @@ PanelWindow {
         }
     }
 
-    readonly property real currentWidth: Math.round(root.compactWidth + (root.expandedWidth - root.compactWidth) * root.expandProgress)
+    // Compact width changes (idle ↔ music ↔ notification banner) morph smoothly; the side
+    // capsules follow automatically through smartNotchCurrentWidth.
+    property real animatedCompactWidth: compactWidth
+    Behavior on animatedCompactWidth {
+        NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter }
+    }
+
+    readonly property real currentWidth: Math.round(root.animatedCompactWidth + (root.expandedWidth - root.animatedCompactWidth) * root.expandProgress)
     readonly property real currentHeight: Math.round(root.compactHeight + (root.expandedHeight - root.compactHeight) * root.expandProgress)
     readonly property real currentY: Math.round(Theme.topBarMarginTop * (1.0 - root.expandProgress))
 
-    onCurrentWidthChanged: ShellState.smartNotchCurrentWidth = currentWidth
-    Component.onCompleted: ShellState.smartNotchCurrentWidth = currentWidth
+    readonly property real outerWidth: Math.round(currentWidth + root.earRadius * 2 * root.expandProgress)
+
+    onOuterWidthChanged: ShellState.smartNotchCurrentWidth = outerWidth
+    Component.onCompleted: ShellState.smartNotchCurrentWidth = outerWidth
 
     onIsExpandedChanged: {
         if (root.isExpanded) {
@@ -211,13 +201,14 @@ PanelWindow {
 
                         // Collapse Button on leading edge
                         Rectangle {
-                            anchors.left: I18n.isRTL ? undefined : parent.left
-                            anchors.right: I18n.isRTL ? parent.right : undefined
-                            anchors.leftMargin: I18n.isRTL ? 0 : 4
-                            anchors.rightMargin: I18n.isRTL ? 4 : 0
+                            // Direction via x, not conditional left/right anchors: when the
+                            // language flips at runtime both anchors are briefly set, the item
+                            // stretches across the header and keeps that width (misplaced icon,
+                            // oversized hover area). x + fixed size can't stretch.
+                            x: I18n.isRTL ? parent.width - width - 4 : 4
                             anchors.verticalCenter: parent.verticalCenter
-                            implicitWidth: 24
-                            implicitHeight: 24
+                            width: 24
+                            height: 24
                             radius: 12
                             color: collapseMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -395,10 +386,8 @@ PanelWindow {
 
                         // Settings Icon (⚙) — Decoupled from tabs, anchored to trailing edge
                         Rectangle {
-                            anchors.right: I18n.isRTL ? undefined : parent.right
-                            anchors.left: I18n.isRTL ? parent.left : undefined
-                            anchors.rightMargin: I18n.isRTL ? 0 : 4
-                            anchors.leftMargin: I18n.isRTL ? 4 : 0
+                            // Trailing edge via x (see collapse button note).
+                            x: I18n.isRTL ? 4 : parent.width - width - 4
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24
                             implicitHeight: 24

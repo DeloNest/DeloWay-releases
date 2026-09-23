@@ -5,47 +5,34 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import "../theme"
 import "../services"
+import "./timecapsule"
 
 // TimeCapsule — Top-left status capsule for DeloWay Smart TopBar.
 // Compact mode: Crisp bold time + localized short date powered by SystemClock.
 // Expanded mode (Phase 2): Big time + full date + Hijri date, monthly calendar, and hardware telemetry.
-PanelWindow {
+// Lives inside the unified TopBar window (TopBar.qml) as a plain Item, so its frame is
+// composed in the same buffer as the Notch: reflow is a pure scene-graph animation with
+// no layer-shell margins, no cross-surface repaint timing and no collision.
+Item {
     id: root
 
     required property ShellScreen targetScreen
-    screen: targetScreen
-
-    anchors {
-        top: true
-        right: true
-    }
-
-    readonly property real earRadius: 18
-    readonly property real bottomRadius: 26
-    readonly property real capsuleGap: Theme.space20
-
-    // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
-    readonly property real fixedWindowWidth: 420
-    readonly property real fixedWindowHeight: 530
-
-    implicitWidth: fixedWindowWidth
-    implicitHeight: fixedWindowHeight
-
-    margins {
-        top: 0
-        right: Math.round(targetScreen.width / 2 + ShellState.smartNotchCurrentWidth / 2 + capsuleGap - earRadius)
-    }
-
-    color: "transparent"
+    anchors.fill: parent
     visible: ConfigManager.timeCapsuleEnabled
 
-    WlrLayershell.namespace: "deloway:time-capsule"
-    WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: root.isExpanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-    exclusionMode: ExclusionMode.Ignore
+    // Exposed to TopBar for the unified input mask.
+    readonly property alias maskItem: notchFrame
 
-    mask: Region {
-        item: notchFrame
+    readonly property real earRadius: Theme.notchEarRadius
+    readonly property real bottomRadius: 26
+    readonly property real capsuleGap: Theme.capsuleGap
+
+    // Distance from the screen centre to this capsule's frame edge. Tracks the Notch's
+    // live outer width every animation frame, clamped so the capsule never leaves the screen.
+    readonly property real notchSlotOffset: {
+        const desired = ShellState.smartNotchCurrentWidth / 2 + root.capsuleGap;
+        const maxOffset = root.width / 2 - Theme.capsuleEdgeMargin - notchFrame.width;
+        return Math.round(Math.max(0, Math.min(desired, maxOffset)));
     }
 
     Shortcut {
@@ -58,9 +45,47 @@ PanelWindow {
     readonly property bool isExpanded: ShellState.timeCapsuleExpanded
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(132, compactContentRow.implicitWidth + 36)
-    readonly property real expandedWidth: 350
-    readonly property real expandedHeight: root.hasVisibleHardware ? 284 : 172
-    readonly property bool hasVisibleHardware: ConfigManager.timeCapsuleShowHardware && (ConfigManager.timeCapsuleShowCpu || ConfigManager.timeCapsuleShowRam || ConfigManager.timeCapsuleShowGpu)
+
+    // ── Dashboard geometry ────────────────────────────────────────────────
+    // Width adapts to the room left of the Notch (400..500px); height is the exact sum of
+    // the visible sections so the frame animation lands on the final size with no jump.
+    readonly property real expandedWidth: Math.round(Math.max(400, Math.min(500,
+        root.width / 2 - ShellState.smartNotchCurrentWidth / 2 - root.capsuleGap
+        - Theme.capsuleEdgeMargin - root.earRadius * 2)))
+
+    readonly property int dashPad: 14
+    readonly property int dashGap: 8
+    readonly property int hProgress: 2
+
+    // Exact content height from the layout itself (expandedCol never goes invisible, it
+    // only fades), so the frame always opens to precisely the size of its sections.
+    readonly property real expandedHeight: Math.ceil(expandedCol.implicitHeight + root.dashPad * 2)
+
+    // ── Tabs ──────────────────────────────────────────────────────────────
+    // Tab index lives in ShellState (survives collapse, drivable over IPC).
+    // Both pages stay instantiated; only one is "current". The page viewport height is a
+    // single animated number (pageHeight) so switching tabs morphs the frame height in
+    // lock-step with the cross-slide — no Loader churn, no relayout jumps.
+    readonly property int tab: ShellState.timeCapsuleTab
+    readonly property real activePageHeight: root.tab === 0 ? utilPage.implicitHeight : sysPage.implicitHeight
+    property real pageHeight: activePageHeight
+    Behavior on pageHeight {
+        enabled: root.isExpanded
+        NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter }
+    }
+    readonly property real slideSign: I18n.isRTL ? -1 : 1
+    readonly property int slideDistance: 28
+
+    // Day-granular "today" (the seconds clock must not re-evaluate 42 calendar cells/s).
+    readonly property string todayKey: TimeKeeperService.dateKey(sysClock.date || new Date())
+    property date todayDate: new Date()
+    onTodayKeyChanged: root.todayDate = new Date()
+
+    Shortcut {
+        sequence: "Ctrl+Tab"
+        enabled: root.isExpanded
+        onActivated: ShellState.setTimeCapsuleTab(root.tab === 0 ? 1 : 0)
+    }
 
     // Single unified motion driver (200ms open, 160ms close)
     property real expandProgress: root.isExpanded ? 1.0 : 0.0
@@ -176,6 +201,16 @@ PanelWindow {
         return Qt.formatDateTime(d, withSec ? "h:mm:ss ap" : "h:mm ap");
     }
 
+    readonly property string expandedClockDigits: {
+        const d = sysClock.date;
+        if (!d) return "--:--";
+        const withSec = ConfigManager.timeCapsuleShowSeconds;
+        const fmt = (ConfigManager.clockFormat === "24h")
+                    ? (withSec ? "hh:mm:ss" : "hh:mm")
+                    : (withSec ? "h:mm:ss" : "h:mm");
+        return Qt.formatDateTime(d, fmt);
+    }
+
     readonly property string formattedAmPm: {
         const d = sysClock.date;
         if (!d || ConfigManager.clockFormat === "24h") return "";
@@ -224,48 +259,18 @@ PanelWindow {
         }
     }
 
-    // ── Calendar Strip Helper Functions (100% NotchHome / Smart Notch matching) ──
-    function getMonthName() {
-        const d = sysClock.date || new Date();
-        return I18n.isRTL ? arMonths[d.getMonth()] : enMonths[d.getMonth()];
-    }
-
-    function getDaysStrip() {
-        const days = [];
-        const dayNamesEn = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-        const dayNamesAr = ["أحد", "إثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
-        const dayAbbrAr = ["أح", "إث", "ثل", "أر", "خم", "جم", "سب"];
-        const now = sysClock.date || new Date();
-        for (let offset = -3; offset <= 3; offset++) {
-            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
-            const dayIdx = d.getDay();
-            days.push({
-                dayOffset: offset,
-                dayNumber: d.getDate(),
-                dayName: I18n.isRTL ? dayNamesAr[dayIdx] : dayNamesEn[dayIdx],
-                dayAbbr: I18n.isRTL ? dayAbbrAr[dayIdx] : dayNamesEn[dayIdx].substring(0, 1),
-                isToday: offset === 0
-            });
-        }
-        return days;
-    }
-
-    // ── Load Color Helper ─────────────────────────────────────────────────
-    function getLoadColor(usageFraction, tempC) {
-        if (usageFraction >= 0.90 || (tempC !== null && tempC !== undefined && tempC >= 85)) {
-            return Theme.colors.danger;
-        }
-        if (usageFraction >= 0.70 || (tempC !== null && tempC !== undefined && tempC >= 75)) {
-            return Theme.colors.warning;
-        }
-        return Theme.notchText;
+    // ── Clock extras ──
+    readonly property real dayProgress: {
+        const d = sysClock.date;
+        if (!d) return 0;
+        return (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 86400;
     }
 
     // ── Outer Shape & Notch Framing ───────────────────────────────────────
     NotchFrame {
         id: notchFrame
-        anchors.right: parent.right
-        anchors.rightMargin: Math.round(root.earRadius)
+        // Trailing edge sits notchSlotOffset px left of the screen centre.
+        x: Math.round(root.width / 2 - root.notchSlotOffset - width)
         y: root.currentY
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth
@@ -310,6 +315,42 @@ PanelWindow {
                     visible: ConfigManager.timeCapsuleShowShortDate
                 }
 
+                // Live timer / ringing alarm pill (only when something is running)
+                Rectangle {
+                    readonly property bool ringing: TimeKeeperService.alarmRinging
+                    visible: ringing || TimeKeeperService.timerRunning || TimeKeeperService.timerFinished
+                    Layout.alignment: Qt.AlignVCenter
+                    implicitWidth: liveRow.implicitWidth + 14
+                    implicitHeight: 22
+                    radius: 11
+                    color: Theme.notchSurfaceActive
+
+                    Row {
+                        id: liveRow
+                        anchors.centerIn: parent
+                        spacing: 4
+                        LayoutMirroring.enabled: false
+                        SymbolicIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            iconSize: 11
+                            source: "alarm-symbolic"
+                            iconColor: Theme.notchText
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: TimeKeeperService.alarmRinging
+                                  ? I18n.tr("tk_ringing", "Ringing")
+                                  : TimeKeeperService.formatClock(TimeKeeperService.timerRemainingSec)
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(11)
+                            font.weight: Font.Bold
+                            font.features: { "tnum": 1 }
+                            color: Theme.notchText
+                            renderType: Theme.renderType
+                        }
+                    }
+                }
+
                 // Short Date
                 Text {
                     text: root.formattedShortDate
@@ -344,116 +385,118 @@ PanelWindow {
         // ═══════════════════════════════════════════════════════════════════
         // EXPANDED VIEW: Header + Monthly Calendar + Hardware Cards
         // ═══════════════════════════════════════════════════════════════════
+        MouseArea {
+            anchors.fill: parent
+            enabled: root.isExpanded
+            acceptedButtons: Qt.NoButton
+            onWheel: (wheel) => {
+                wheel.accepted = true;
+                if (wheel.angleDelta.y < 0) {
+                    ShellState.openTimeCapsule();
+                } else if (wheel.angleDelta.y > 0) {
+                    ShellState.closeTimeCapsule();
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // EXPANDED VIEW — tabbed mini-dashboard
+        //   Header   : clock · date · Hijri · [Time | System] switcher · collapse
+        //   Hairline : day progress
+        //   Viewport : UtilitiesPage (calendar, reminders, alarm, timer)
+        //              SystemPage    (gauges, cores, trend, net/disk, processes)
+        // ═══════════════════════════════════════════════════════════════════
         ColumnLayout {
             id: expandedCol
             anchors.fill: parent
-            anchors.topMargin: Theme.space16
-            anchors.bottomMargin: Theme.space16
-            anchors.leftMargin: Theme.space16
-            anchors.rightMargin: Theme.space16
-            spacing: Theme.space8
-            visible: root.isExpanded
+            anchors.margins: root.dashPad
+            spacing: root.dashGap
+            enabled: root.isExpanded
             opacity: root.isExpanded ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+            Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
 
-            // ─────────────────────────────────────────────────────────────
-            // 1. HEADER: Big Time with seconds + Full Date + Hijri Date
-            // ─────────────────────────────────────────────────────────────
+            // ── HEADER ───────────────────────────────────────────────────
             RowLayout {
                 Layout.fillWidth: true
-                spacing: Theme.space8
-                LayoutMirroring.enabled: I18n.isRTL
-                LayoutMirroring.childrenInherit: true
+                spacing: Theme.space12
 
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 2
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
+                    Layout.alignment: Qt.AlignVCenter
+                    spacing: 0
 
-                    // Big Time Row
                     RowLayout {
-                        spacing: Theme.space4
-                        LayoutMirroring.enabled: false // Always LTR for digital time digits
+                        spacing: Theme.space6
+                        LayoutMirroring.enabled: false   // digits always read LTR
 
                         Text {
-                            text: root.formattedExpandedTime
+                            text: root.expandedClockDigits
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(26)
                             font.weight: Font.Bold
+                            font.features: { "tnum": 1 }
                             color: Theme.notchText
                             renderType: Theme.renderType
                         }
-
                         Text {
                             text: root.formattedAmPm
+                            visible: text.length > 0
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(13)
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.notchTextSecondary
                             renderType: Theme.renderType
-                            visible: ConfigManager.clockFormat !== "24h"
                             Layout.alignment: Qt.AlignBaseline
                         }
                     }
 
-                    // Full Gregorian Date
                     Text {
+                        Layout.fillWidth: true
                         text: root.formattedFullDate
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(12)
-                        font.weight: Font.Normal
-                        color: Theme.notchTextSecondary
-                        renderType: Theme.renderType
-                    }
-                }
-
-                // Hijri Date Pill
-                Rectangle {
-                    visible: ConfigManager.timeCapsuleShowHijri
-                    Layout.alignment: Qt.AlignVCenter
-                    radius: Theme.radiusSmall
-                    color: Theme.notchSurface
-                    border.color: Theme.notchBorderSubtle
-                    border.width: 1
-                    implicitWidth: hijriText.implicitWidth + Theme.space16
-                    implicitHeight: hijriText.implicitHeight + Theme.space8
-
-                    Text {
-                        id: hijriText
-                        anchors.centerIn: parent
-                        text: root.formattedHijriDate
+                              + (ConfigManager.timeCapsuleShowHijri ? "  ·  " + root.formattedHijriDate : "")
+                        elide: Text.ElideRight
+                        horizontalAlignment: Text.AlignLeft
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(11)
-                        font.weight: Font.Medium
                         color: Theme.notchTextSecondary
                         renderType: Theme.renderType
                     }
                 }
 
-                // Collapse Button
+                TabSwitcher {
+                    Layout.alignment: Qt.AlignVCenter
+                    currentIndex: root.tab
+                    tabs: [
+                        { label: I18n.tr("tk_tab_time", "Time"),     icon: "x-office-calendar-symbolic" },
+                        { label: I18n.tr("tk_tab_system", "System"), icon: "utilities-system-monitor-symbolic" }
+                    ]
+                    onActivated: (i) => ShellState.setTimeCapsuleTab(i)
+                }
+
+                // Collapse
                 Rectangle {
                     Layout.alignment: Qt.AlignVCenter
                     implicitWidth: 26
                     implicitHeight: 26
                     radius: 13
-                    color: timeCollapseMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                    color: tcCollapseMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
                     border.color: Theme.notchBorderSubtle
                     border.width: 1
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                     Text {
                         anchors.centerIn: parent
+                        anchors.verticalCenterOffset: 2
                         text: "⌃"
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(14)
+                        font.pixelSize: Theme.fontSize(13)
                         font.weight: Font.Bold
-                        color: timeCollapseMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                        color: tcCollapseMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                     }
-
                     MouseArea {
-                        id: timeCollapseMa
+                        id: tcCollapseMa
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
@@ -462,447 +505,53 @@ PanelWindow {
                 }
             }
 
-            // Divider
-            Rectangle {
+            // ── DAY PROGRESS ─────────────────────────────────────────────
+            Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: Theme.notchBorder
-                opacity: 0.35
-            }
+                Layout.preferredHeight: root.hProgress
 
-            // ─────────────────────────────────────────────────────────────
-            // 2. CALENDAR STRIP (Matches Smart Notch / NotchHome reference)
-            // ─────────────────────────────────────────────────────────────
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 6
-                LayoutMirroring.enabled: I18n.isRTL
-                LayoutMirroring.childrenInherit: true
-
-                // Top: Month name + Horizontal Days Strip
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-
-                    // Large Month Label (e.g. Jul / سبتمبر)
-                    Text {
-                        text: root.getMonthName()
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(22)
-                        font.weight: Font.Bold
-                        renderType: Theme.renderType
-                        color: Theme.notchText
-                        Layout.alignment: Qt.AlignVCenter
-                    }
-
-                    // 7-Day Horizontal Strip
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 6
-
-                        Repeater {
-                            model: root.getDaysStrip()
-
-                            delegate: ColumnLayout {
-                                id: dayCol
-                                required property var modelData
-                                spacing: 2
-                                Layout.alignment: Qt.AlignHCenter
-                                Layout.fillWidth: true
-
-                                // Day of week abbreviation
-                                Text {
-                                    text: dayCol.modelData.isToday ? dayCol.modelData.dayName.toUpperCase() : dayCol.modelData.dayAbbr.toUpperCase()
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 9 : 8)
-                                    font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
-                                    color: dayCol.modelData.isToday ? Theme.notchText : Theme.notchTextTertiary
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-
-                                // Day Number
-                                Text {
-                                    text: (I18n.isRTL && ConfigManager.timeCapsuleArabicDigits) ? root.toArabicDigits(dayCol.modelData.dayNumber) : dayCol.modelData.dayNumber.toString()
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 20 : 14)
-                                    font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal
-                                    color: dayCol.modelData.isToday
-                                           ? Theme.notchText
-                                           : (dayCol.modelData.dayOffset === -2 ? Theme.calendarPast : (dayCol.modelData.dayOffset === 2 ? Theme.calendarFuture : Theme.notchTextTertiary))
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Bottom: Calendar Icon + "Nothing for today" status
-                RowLayout {
-                    spacing: 6
-                    Layout.alignment: Qt.AlignHCenter
-
-                    SymbolicIcon {
-                        iconSize: 13
-                        source: "x-office-calendar-symbolic"
-                        iconColor: Theme.notchTextTertiary
-                    }
-
-                    Text {
-                        text: I18n.tr("notch_today_events")
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(11)
-                        renderType: Theme.renderType
-                        color: Theme.notchTextTertiary
-                    }
+                Rectangle { anchors.fill: parent; radius: 1; color: Theme.notchBorderSubtle }
+                Rectangle {
+                    anchors.left: parent.left
+                    height: parent.height
+                    width: Math.round(parent.width * root.dayProgress)
+                    radius: 1
+                    color: Theme.notchTextTertiary
+                    Behavior on width { NumberAnimation { duration: Theme.motionBase } }
                 }
             }
 
-            // Divider (between Calendar & Hardware)
-            Rectangle {
-                visible: root.hasVisibleHardware
+            // ── PAGE VIEWPORT ────────────────────────────────────────────
+            Item {
+                id: pageViewport
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: Theme.notchBorder
-                opacity: 0.35
-            }
+                Layout.preferredHeight: root.pageHeight
+                clip: true
 
-            // ─────────────────────────────────────────────────────────────
-            // 3. HARDWARE TELEMETRY CARDS (CPU, RAM, GPU)
-            // ─────────────────────────────────────────────────────────────
-            RowLayout {
-                visible: root.hasVisibleHardware
-                Layout.fillWidth: true
-                spacing: Theme.space8
-                LayoutMirroring.enabled: I18n.isRTL
-                LayoutMirroring.childrenInherit: true
-
-                // ── CPU Card ──
-                Rectangle {
-                    visible: ConfigManager.timeCapsuleShowCpu
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 96
-                    radius: Theme.radiusMedium
-                    color: Theme.notchSurfaceElevated
-                    border.color: Theme.notchBorderSubtle
-                    border.width: 1
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.space8
-                        spacing: 3
-                        LayoutMirroring.enabled: I18n.isRTL
-                        LayoutMirroring.childrenInherit: true
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Text {
-                                text: "CPU"
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchTextSecondary
-                                renderType: Theme.renderType
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: HardwareService.cpuPercentText
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.Bold
-                                color: root.getLoadColor(HardwareService.cpuUsage, HardwareService.cpuTemp)
-                                renderType: Theme.renderType
-                            }
-                        }
-
-                        // Temp
-                        Text {
-                            text: HardwareService.cpuTempText
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(10)
-                            font.weight: Font.Normal
-                            color: Theme.notchTextTertiary
-                            renderType: Theme.renderType
-                            visible: ConfigManager.timeCapsuleShowTemps
-                        }
-
-                        // Sparkline Canvas (~60s history)
-                        Canvas {
-                            id: cpuCanvas
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 20
-                            property var history: HardwareService.cpuHistory
-                            property color strokeColor: root.getLoadColor(HardwareService.cpuUsage, HardwareService.cpuTemp)
-                            property color fillColor: Qt.rgba(strokeColor.r, strokeColor.g, strokeColor.b, 0.15)
-
-                            onHistoryChanged: if (root.isExpanded) requestPaint()
-                            onStrokeColorChanged: if (root.isExpanded) requestPaint()
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                if (!history || history.length < 2) return;
-                                const w = width;
-                                const h = height;
-                                const n = history.length;
-                                const step = w / Math.max(1, n - 1);
-
-                                ctx.beginPath();
-                                for (let i = 0; i < n; i++) {
-                                    const x = i * step;
-                                    const y = h - 2 - (history[i] * (h - 4));
-                                    if (i === 0) ctx.moveTo(x, y);
-                                    else ctx.lineTo(x, y);
-                                }
-                                ctx.strokeStyle = strokeColor;
-                                ctx.lineWidth = 1.5;
-                                ctx.lineJoin = "round";
-                                ctx.stroke();
-
-                                ctx.lineTo(w, h);
-                                ctx.lineTo(0, h);
-                                ctx.closePath();
-                                ctx.fillStyle = fillColor;
-                                ctx.fill();
-                            }
-                        }
-
-                        // Load bar
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 2
-                            radius: 1
-                            color: Theme.notchBorderSubtle
-
-                            Rectangle {
-                                width: Math.max(2, Math.round(parent.width * HardwareService.cpuUsage))
-                                height: parent.height
-                                radius: 1
-                                color: root.getLoadColor(HardwareService.cpuUsage, HardwareService.cpuTemp)
-                            }
-                        }
-                    }
+                UtilitiesPage {
+                    id: utilPage
+                    readonly property bool current: root.tab === 0
+                    width: pageViewport.width
+                    dashGap: root.dashGap
+                    today: root.todayDate
+                    enabled: current
+                    x: current ? 0 : -root.slideSign * root.slideDistance
+                    opacity: current ? 1 : 0
+                    Behavior on x { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
                 }
 
-                // ── RAM Card ──
-                Rectangle {
-                    visible: ConfigManager.timeCapsuleShowRam
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 96
-                    radius: Theme.radiusMedium
-                    color: Theme.notchSurfaceElevated
-                    border.color: Theme.notchBorderSubtle
-                    border.width: 1
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.space8
-                        spacing: 3
-                        LayoutMirroring.enabled: I18n.isRTL
-                        LayoutMirroring.childrenInherit: true
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Text {
-                                text: "RAM"
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchTextSecondary
-                                renderType: Theme.renderType
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: HardwareService.ramPercentText
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.Bold
-                                color: root.getLoadColor(HardwareService.ramUsage, null)
-                                renderType: Theme.renderType
-                            }
-                        }
-
-                        // Memory used / total
-                        Text {
-                            text: HardwareService.ramText
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(10)
-                            font.weight: Font.Normal
-                            color: Theme.notchTextTertiary
-                            renderType: Theme.renderType
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        // Sparkline Canvas (~60s history)
-                        Canvas {
-                            id: ramCanvas
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 20
-                            property var history: HardwareService.ramHistory
-                            property color strokeColor: root.getLoadColor(HardwareService.ramUsage, null)
-                            property color fillColor: Qt.rgba(strokeColor.r, strokeColor.g, strokeColor.b, 0.15)
-
-                            onHistoryChanged: if (root.isExpanded) requestPaint()
-                            onStrokeColorChanged: if (root.isExpanded) requestPaint()
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                if (!history || history.length < 2) return;
-                                const w = width;
-                                const h = height;
-                                const n = history.length;
-                                const step = w / Math.max(1, n - 1);
-
-                                ctx.beginPath();
-                                for (let i = 0; i < n; i++) {
-                                    const x = i * step;
-                                    const y = h - 2 - (history[i] * (h - 4));
-                                    if (i === 0) ctx.moveTo(x, y);
-                                    else ctx.lineTo(x, y);
-                                }
-                                ctx.strokeStyle = strokeColor;
-                                ctx.lineWidth = 1.5;
-                                ctx.lineJoin = "round";
-                                ctx.stroke();
-
-                                ctx.lineTo(w, h);
-                                ctx.lineTo(0, h);
-                                ctx.closePath();
-                                ctx.fillStyle = fillColor;
-                                ctx.fill();
-                            }
-                        }
-
-                        // Load bar
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 2
-                            radius: 1
-                            color: Theme.notchBorderSubtle
-
-                            Rectangle {
-                                width: Math.max(2, Math.round(parent.width * HardwareService.ramUsage))
-                                height: parent.height
-                                radius: 1
-                                color: root.getLoadColor(HardwareService.ramUsage, null)
-                            }
-                        }
-                    }
-                }
-
-                // ── GPU Card ──
-                Rectangle {
-                    visible: ConfigManager.timeCapsuleShowGpu
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 96
-                    radius: Theme.radiusMedium
-                    color: Theme.notchSurfaceElevated
-                    border.color: Theme.notchBorderSubtle
-                    border.width: 1
-
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: Theme.space8
-                        spacing: 3
-                        LayoutMirroring.enabled: I18n.isRTL
-                        LayoutMirroring.childrenInherit: true
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Text {
-                                text: "GPU"
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchTextSecondary
-                                renderType: Theme.renderType
-                            }
-                            Item { Layout.fillWidth: true }
-                            Text {
-                                text: HardwareService.gpuPercentText
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.Bold
-                                color: HardwareService.hasGpu ? root.getLoadColor(HardwareService.gpuUsage || 0, HardwareService.gpuTemp) : Theme.notchTextTertiary
-                                renderType: Theme.renderType
-                            }
-                        }
-
-                        // GPU subtext (temp or VRAM)
-                        Text {
-                            text: {
-                                if (!HardwareService.hasGpu) return "—";
-                                if (ConfigManager.timeCapsuleShowTemps) {
-                                    return HardwareService.gpuTempText + " • " + HardwareService.gpuVramText;
-                                }
-                                return HardwareService.gpuVramText;
-                            }
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(10)
-                            font.weight: Font.Normal
-                            color: Theme.notchTextTertiary
-                            renderType: Theme.renderType
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-
-                        // Sparkline Canvas (~60s history)
-                        Canvas {
-                            id: gpuCanvas
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 20
-                            property var history: HardwareService.gpuHistory
-                            property color strokeColor: HardwareService.hasGpu ? root.getLoadColor(HardwareService.gpuUsage || 0, HardwareService.gpuTemp) : Theme.notchTextTertiary
-                            property color fillColor: Qt.rgba(strokeColor.r, strokeColor.g, strokeColor.b, 0.15)
-
-                            onHistoryChanged: if (root.isExpanded) requestPaint()
-                            onStrokeColorChanged: if (root.isExpanded) requestPaint()
-
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                if (!history || history.length < 2) return;
-                                const w = width;
-                                const h = height;
-                                const n = history.length;
-                                const step = w / Math.max(1, n - 1);
-
-                                ctx.beginPath();
-                                for (let i = 0; i < n; i++) {
-                                    const x = i * step;
-                                    const y = h - 2 - (history[i] * (h - 4));
-                                    if (i === 0) ctx.moveTo(x, y);
-                                    else ctx.lineTo(x, y);
-                                }
-                                ctx.strokeStyle = strokeColor;
-                                ctx.lineWidth = 1.5;
-                                ctx.lineJoin = "round";
-                                ctx.stroke();
-
-                                ctx.lineTo(w, h);
-                                ctx.lineTo(0, h);
-                                ctx.closePath();
-                                ctx.fillStyle = fillColor;
-                                ctx.fill();
-                            }
-                        }
-
-                        // Load bar
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 2
-                            radius: 1
-                            color: Theme.notchBorderSubtle
-
-                            Rectangle {
-                                width: Math.max(2, Math.round(parent.width * (HardwareService.gpuUsage || 0.0)))
-                                height: parent.height
-                                radius: 1
-                                color: HardwareService.hasGpu ? root.getLoadColor(HardwareService.gpuUsage || 0, HardwareService.gpuTemp) : Theme.notchBorderSubtle
-                            }
-                        }
-                    }
+                SystemPage {
+                    id: sysPage
+                    readonly property bool current: root.tab === 1
+                    width: pageViewport.width
+                    dashGap: root.dashGap
+                    live: root.isExpanded && current
+                    enabled: current
+                    x: current ? 0 : root.slideSign * root.slideDistance
+                    opacity: current ? 1 : 0
+                    Behavior on x { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+                    Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
                 }
             }
         }

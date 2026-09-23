@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.SystemTray
+import Qt5Compat.GraphicalEffects
 import "../theme"
 
 Item {
@@ -52,17 +53,15 @@ Item {
                     Behavior on color { ColorAnimation { duration: 80 } }
                 }
 
-                // Native QtQuick Image element displaying item.icon directly with crisp high-dpi sizing
-                Image {
+                // Tray glyph. Most tray icons are single-colour glyphs authored for dark
+                // panels (white on transparent) and vanished on the light-mode capsule.
+                // Monochrome icons are tinted with the theme foreground; genuinely colourful
+                // icons (Discord, Steam, …) keep their colours instead of becoming blobs.
+                TrayGlyph {
                     anchors.centerIn: parent
                     width: 20
                     height: 20
-                    sourceSize.width: 48
-                    sourceSize.height: 48
-                    fillMode: Image.PreserveAspectFit
                     source: modelData.icon || ""
-                    smooth: true
-                    mipmap: true
                 }
 
                 onPressed: (mouse) => {
@@ -123,5 +122,70 @@ Item {
             Layout.leftMargin: 4
             Layout.rightMargin: 4
         }
+    }
+
+    component TrayGlyph: Item {
+        id: glyph
+        property string source: ""
+        // null = not analysed yet (render untinted until known)
+        property var monochrome: null
+
+        Image {
+            id: raw
+            anchors.fill: parent
+            sourceSize.width: 48
+            sourceSize.height: 48
+            fillMode: Image.PreserveAspectFit
+            source: glyph.source
+            smooth: true
+            mipmap: true
+            visible: glyph.monochrome !== true
+        }
+
+        ColorOverlay {
+            anchors.fill: raw
+            source: raw
+            color: Theme.notchText
+            visible: glyph.monochrome === true && raw.status === Image.Ready
+        }
+
+        // One-shot colour probe: 16×16 downsample, mean saturation of opaque pixels.
+        Canvas {
+            id: probe
+            width: 16
+            height: 16
+            opacity: 0                       // must stay "visible" to paint
+            renderStrategy: Canvas.Immediate
+            property string loaded: ""
+
+            function analyse() {
+                if (!glyph.source) return;
+                if (probe.loaded && probe.loaded !== glyph.source) probe.unloadImage(probe.loaded);
+                probe.loaded = glyph.source;
+                if (probe.isImageLoaded(glyph.source)) probe.requestPaint();
+                else probe.loadImage(glyph.source);
+            }
+            onImageLoaded: requestPaint()
+            onPaint: {
+                if (!probe.loaded || !probe.isImageLoaded(probe.loaded)) return;
+                const ctx = getContext("2d");
+                ctx.clearRect(0, 0, 16, 16);
+                ctx.drawImage(probe.loaded, 0, 0, 16, 16);
+                const d = ctx.getImageData(0, 0, 16, 16).data;
+                let n = 0, satSum = 0;
+                for (let i = 0; i < d.length; i += 4) {
+                    if (d[i + 3] < 64) continue;                    // ignore transparent pixels
+                    const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255;
+                    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+                    satSum += mx > 0 ? (mx - mn) / mx : 0;
+                    n++;
+                }
+                // Unreadable (e.g. provider refused pixels) → assume monochrome glyph.
+                glyph.monochrome = n === 0 ? true : (satSum / n) < 0.18;
+            }
+        }
+
+        onSourceChanged: { glyph.monochrome = null; probe.analyse(); }
+        Component.onCompleted: probe.analyse()
     }
 }

@@ -29,8 +29,8 @@ Item {
         anchors.leftMargin: -2
         anchors.rightMargin: -2
         radius: root.bottomRadius + 2
-        color: Qt.rgba(0, 0, 0, 0.40)
-        visible: root.isExpanded
+        color: Theme.notchShadow            // theme-aware (was a fixed 40% black)
+        visible: root.isExpanded && Theme.enableShadows
         z: 0
     }
 
@@ -89,6 +89,58 @@ Item {
         }
     }
 
+
+    // ──────────────────────────────────────────────────────────────────────
+    // LIGHT-MODE OUTLINE (attached state)
+    // One continuous stroke: left ear arc → left side → bottom → right side → right ear
+    // arc. Never along the screen edge, and no seam where the ears meet the body — a
+    // plain rectangle border drew both, which read as black lines/corners in light mode.
+    // ──────────────────────────────────────────────────────────────────────
+    Shape {
+        id: attachedOutline
+        visible: root.isExpanded && !Theme.isDark
+        opacity: 1
+        z: 3
+        preferredRendererType: Shape.CurveRenderer
+        readonly property real er: root.earRadius
+        readonly property real bx: notchBody.x
+        readonly property real bw: notchBody.width
+        readonly property real bh: notchBody.height
+        readonly property real br: root.bottomRadius
+
+        ShapePath {
+            strokeColor: Theme.notchBorder
+            strokeWidth: 1
+            fillColor: "transparent"
+            joinStyle: ShapePath.RoundJoin
+            startX: attachedOutline.bx - attachedOutline.er
+            startY: 0.5
+            PathArc {
+                x: attachedOutline.bx + 0.5; y: attachedOutline.er
+                radiusX: attachedOutline.er; radiusY: attachedOutline.er
+                direction: PathArc.Clockwise
+            }
+            PathLine { x: attachedOutline.bx + 0.5; y: attachedOutline.bh - attachedOutline.br }
+            PathArc {
+                x: attachedOutline.bx + attachedOutline.br; y: attachedOutline.bh - 0.5
+                radiusX: attachedOutline.br; radiusY: attachedOutline.br
+                direction: PathArc.Counterclockwise
+            }
+            PathLine { x: attachedOutline.bx + attachedOutline.bw - attachedOutline.br; y: attachedOutline.bh - 0.5 }
+            PathArc {
+                x: attachedOutline.bx + attachedOutline.bw - 0.5; y: attachedOutline.bh - attachedOutline.br
+                radiusX: attachedOutline.br; radiusY: attachedOutline.br
+                direction: PathArc.Counterclockwise
+            }
+            PathLine { x: attachedOutline.bx + attachedOutline.bw - 0.5; y: attachedOutline.er }
+            PathArc {
+                x: attachedOutline.bx + attachedOutline.bw + attachedOutline.er; y: 0.5
+                radiusX: attachedOutline.er; radiusY: attachedOutline.er
+                direction: PathArc.Clockwise
+            }
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // MAIN NOTCH BODY (Pure solid deep black, macOS Retina/OLED feel)
     // ──────────────────────────────────────────────────────────────────────
@@ -100,7 +152,8 @@ Item {
         height: root.currentHeight
         color: Theme.notchBackground
         border.color: Theme.notchBorderSubtle
-        border.width: Theme.isDark ? 0 : 1
+        // Full border only for the floating pill; attached state uses attachedOutline.
+        border.width: (!Theme.isDark && !root.isExpanded) ? 1 : 0
         clip: root.clipContent
         z: 2
 

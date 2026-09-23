@@ -80,10 +80,10 @@ PanelWindow {
     Rectangle {
         id: battPill
         visible: SystemMonitor.hasBattery
+        // Direction via x: runtime-flipped left/right anchors stretch the item.
         anchors.bottom: parent.bottom
-        anchors.right: I18n.isRTL ? undefined : parent.right
-        anchors.left: I18n.isRTL ? parent.left : undefined
-        anchors.margins: Theme.space16
+        anchors.bottomMargin: Theme.space16
+        x: I18n.isRTL ? Theme.space16 : parent.width - width - Theme.space16
         implicitHeight: 28
         implicitWidth: battRow.implicitWidth + 18
         radius: Theme.radiusSmall
