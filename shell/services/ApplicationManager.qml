@@ -96,7 +96,9 @@ Item {
     }
 
     // Pinned application IDs for the Dock synced with ConfigManager (strictly filtered to installed apps)
-    property var pinnedAppIds: {
+    // Pure binding: ConfigManager.pinnedApps is the single source (assigning this
+    // property used to break the binding, so Dock resets/external edits stopped applying).
+    readonly property var pinnedAppIds: {
         const _rev = _entriesRevision;
         const configured = (ConfigManager.pinnedApps && ConfigManager.pinnedApps.length > 0)
             ? ConfigManager.pinnedApps
@@ -119,22 +121,21 @@ Item {
         if (!appId) return;
         const cleanId = appId.toLowerCase().replace(/\.desktop$/, "");
         if (!root.isInstalled(cleanId)) return;
-        if (!isPinned(cleanId)) {
-            const updated = pinnedAppIds.concat([cleanId]);
-            pinnedAppIds = updated;
-            ConfigManager.setPinnedApps(updated);
-        }
+        if (!isPinned(cleanId)) ConfigManager.setPinnedApps(root._configuredPins().concat([cleanId]));
     }
 
     // Unpin an application
     function unpinApp(appId) {
         if (!appId) return;
         const cleanId = appId.toLowerCase().replace(/\.desktop$/, "");
-        if (isPinned(cleanId)) {
-            const updated = pinnedAppIds.filter(id => id.toLowerCase().replace(/\.desktop$/, "") !== cleanId);
-            pinnedAppIds = updated;
-            ConfigManager.setPinnedApps(updated);
-        }
+        if (isPinned(cleanId))
+            ConfigManager.setPinnedApps(root._configuredPins().filter(id => id.toLowerCase().replace(/\.desktop$/, "") !== cleanId));
+    }
+
+    // The configured list (incl. pins of apps that are not installed right now).
+    function _configuredPins() {
+        return ((ConfigManager.pinnedApps && ConfigManager.pinnedApps.length > 0)
+                ? ConfigManager.pinnedApps : ConfigManager.defaultPinnedApps).slice();
     }
 
     // Toggle pin status

@@ -272,19 +272,20 @@ Item {
     }
 
     // ── Side effects ─────────────────────────────────────────────────────
-    Process { id: notifyProc }
-    Process { id: soundProc }
     Process {
         id: alarmSound
-        command: ["bash", "-c", "for i in $(seq 1 40); do pw-play '" + root.soundAlarm + "' 2>/dev/null || paplay '" + root.soundAlarm + "'; sleep 0.3; done"]
+        command: ["sh", "-c", 'for i in $(seq 1 40); do pw-play "$1" 2>/dev/null || paplay "$1"; sleep 0.3; done',
+                  "sh", root.soundAlarm]
     }
 
+    // Detached, one process per call: exec() on a shared Process terminates the one
+    // still running, so of several reminders due in the same tick only the last was sent.
     function notify(title, body, icon, urgency) {
-        notifyProc.exec(["notify-send", "-a", "DeloWay", "-i", icon || "alarm-symbolic",
-                         "-u", urgency || "normal", title, body]);
+        Quickshell.execDetached(["notify-send", "-a", "DeloWay", "-i", icon || "alarm-symbolic",
+                                 "-u", urgency || "normal", title, body]);
     }
     function play(file) {
-        soundProc.exec(["bash", "-c", "pw-play '" + file + "' 2>/dev/null || paplay '" + file + "'"]);
+        Quickshell.execDetached(["sh", "-c", 'pw-play "$1" 2>/dev/null || paplay "$1"', "sh", file]);
     }
 
     // ── Persistence ──────────────────────────────────────────────────────
@@ -319,7 +320,17 @@ Item {
             }
             if (d.timerTotalSec) { root.timerTotalSec = d.timerTotalSec; root.timerPausedRemaining = d.timerTotalSec; }
         } catch (e) {
+            // Unreadable file: keep a copy before anything can overwrite it, and say so,
+            // instead of silently persisting an empty list over the user's reminders.
             root.events = [];
+            // Back up the text already read (not the file): a later persist() may
+            // replace the file before an async cp would run.
+            const bad = store.path;
+            Quickshell.execDetached(["sh", "-c", 'printf "%s" "$2" > "$1"', "sh", bad + ".bak", store.text() || ""]);
+            console.warn("[TimeKeeper] timekeeper.json is not valid JSON; saved a copy to timekeeper.json.bak");
+            root.notify(I18n.isRTL ? "تعذّرت قراءة التذكيرات" : "Couldn't read reminders",
+                        (I18n.isRTL ? "حُفظت نسخة من الملف في " : "A copy of the file was kept at ") + bad + ".bak",
+                        "dialog-warning-symbolic", "normal");
         }
         // Alarms missed while the shell was down are skipped, not fired late.
         root.nextAlarmAt = root.alarmEnabled ? root.computeNextAlarm(Date.now()) : 0;

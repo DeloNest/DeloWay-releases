@@ -82,49 +82,46 @@ Item {
         }
     }
 
-    // Toggle power process
-    Process {
-        id: toggleProc
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "toggle"]
-        onExited: root.refresh()
-    }
+    // ── Actions: one queue, one process, real results ───────────────────────
+    // Each action runs to completion before the next starts (starting a busy Process
+    // silently dropped or mixed up requests), and its JSON result is read: failures
+    // (device off, PIN needed, timeout) surface in `error` instead of vanishing.
+    readonly property string helper: ConfigManager.projectDir + "/scripts/deloway-bluetooth.py"
+    property var _queue: []
+    property var _current: null
 
-    // Scan process
+    function _enqueue(verb, address) {
+        root._queue = root._queue.concat([{ verb: verb, address: address || "" }]);
+        if (!actionProc.running) root._next();
+    }
+    function _next() {
+        if (root._queue.length === 0) return;
+        const job = root._queue[0];
+        root._queue = root._queue.slice(1);
+        root._current = job;
+        if (job.verb === "connect") root.connectingAddress = job.address;
+        if (job.verb === "scan") root.isScanning = true;
+        actionProc.command = job.address ? ["python3", root.helper, job.verb, job.address]
+                                         : ["python3", root.helper, job.verb];
+        actionProc.running = true;
+    }
     Process {
-        id: scanProc
-        command: ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "scan"]
-        onStarted: root.isScanning = true
-        onExited: {
-            root.isScanning = false;
-            root.refresh();
+        id: actionProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let r = null;
+                try { r = JSON.parse(this.text); } catch (e) { r = { success: false, error: this.text.trim() || "no result" }; }
+                root.error = r.success ? "" : (r.error || "failed");
+            }
         }
-    }
-
-    // Connect process
-    Process {
-        id: connectProc
-        onExited: {
-            root.connectingAddress = "";
+        onExited: (code) => {
+            const job = root._current;
+            if (job && job.verb === "connect") root.connectingAddress = "";
+            if (job && job.verb === "scan") root.isScanning = false;
+            root._current = null;
             root.refresh();
+            root._next();
         }
-    }
-
-    // Disconnect process
-    Process {
-        id: disconnectProc
-        onExited: root.refresh()
-    }
-
-    // Pair process
-    Process {
-        id: pairProc
-        onExited: root.refresh()
-    }
-
-    // Remove / Unpair process
-    Process {
-        id: removeProc
-        onExited: root.refresh()
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -136,39 +133,14 @@ Item {
     }
 
     function togglePower() {
-        const next = !root.powered;
-        toggleProc.running = true;
-        root.powered = next;
+        root.powered = !root.powered;          // optimistic; refresh() corrects it
+        root._enqueue("toggle");
     }
-
-    function scan() {
-        scanProc.running = true;
-    }
-
-    function connectDevice(address) {
-        if (!address) return;
-        root.connectingAddress = address;
-        connectProc.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "connect", address];
-        connectProc.running = true;
-    }
-
-    function disconnectDevice(address) {
-        if (!address) return;
-        disconnectProc.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "disconnect", address];
-        disconnectProc.running = true;
-    }
-
-    function pairDevice(address) {
-        if (!address) return;
-        pairProc.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "pair", address];
-        pairProc.running = true;
-    }
-
-    function removeDevice(address) {
-        if (!address) return;
-        removeProc.command = ["python3", ConfigManager.projectDir + "/scripts/deloway-bluetooth.py", "remove", address];
-        removeProc.running = true;
-    }
+    function scan() { root._enqueue("scan"); }
+    function connectDevice(address) { if (address) root._enqueue("connect", address); }
+    function disconnectDevice(address) { if (address) root._enqueue("disconnect", address); }
+    function pairDevice(address) { if (address) root._enqueue("pair", address); }
+    function removeDevice(address) { if (address) root._enqueue("remove", address); }
 
     // Periodic & Lifecycle
     Component.onCompleted: {

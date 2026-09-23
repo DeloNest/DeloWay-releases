@@ -440,18 +440,26 @@ Item {
     }
 
     // 6. DDC/CI Backlight Write (Single command executed on released)
+    // DDC writes are slow (~100 ms+) and must not be interrupted mid-transaction:
+    // never kill a running write; if the value changed meanwhile, write again after.
     Process {
         id: ddcWriteProcess
+        property bool pending: false
+        onExited: if (pending) { pending = false; root.applyDdcBrightness(); }
+    }
+    Timer {
+        id: ddcWriteDebounce
+        interval: 250
+        onTriggered: root.applyDdcBrightness()
     }
 
     function applyDdcBrightness() {
         if (root.brightnessBackend !== "ddc")
             return;
+        if (ddcWriteProcess.running) { ddcWriteProcess.pending = true; return; }
         const pct = Math.max(0, Math.min(100, Math.round(root.screenBrightness * 100)));
-        const dispArg = root.ddcDisplayNum.length > 0 ? ("--display " + root.ddcDisplayNum + " ") : "";
-        ddcWriteProcess.command = ["sh", "-c", "ddcutil " + dispArg + "setvcp 10 " + pct + " >/dev/null 2>&1 || true"];
-        if (ddcWriteProcess.running)
-            ddcWriteProcess.running = false;
+        const disp = root.ddcDisplayNum.length > 0 ? ["--display", root.ddcDisplayNum] : [];
+        ddcWriteProcess.command = ["ddcutil"].concat(disp, ["setvcp", "10", String(pct)]);
         ddcWriteProcess.running = true;
     }
 
@@ -459,6 +467,8 @@ Item {
         root.screenBrightness = Math.max(0, Math.min(1, value));
         if (root.brightnessBackend === "kernel")
             backlightWriteDebounce.restart();
+        else if (root.brightnessBackend === "ddc")     // was never written on DDC monitors
+            ddcWriteDebounce.restart();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -469,21 +479,24 @@ Item {
     Process {
         id: nightLightInitialCheckProcess
         command: ["hyprctl", "hyprsunset", "temperature"]
+        onExited: (code) => { if (code !== 0) root.nightLightEnabled = false; }
         stdout: SplitParser {
             onRead: data => {
-                root.nightLightEnabled = (data.trim() === "4500");
+                root.nightLightEnabled = (parseInt(data.trim(), 10) === 4500);
             }
         }
     }
 
+    // Optimistic flip for responsiveness, then read hyprsunset back so the tile
+    // reflects what actually happened (e.g. hyprsunset missing or not running).
+    Process {
+        id: nightLightSetProcess
+        onExited: nightLightInitialCheckProcess.running = true
+    }
     function toggleNightLight() {
         const next = !root.nightLightEnabled;
         root.nightLightEnabled = next;
-        if (next) {
-            Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset temperature 4500"]);
-        } else {
-            Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset temperature 6000"]);
-        }
+        nightLightSetProcess.exec(["hyprctl", "hyprsunset", "temperature", next ? "4500" : "6000"]);
     }
 
     Component.onCompleted: {

@@ -10,6 +10,29 @@ import json
 import subprocess
 import time
 
+
+def nm_split(line):
+    """Split one `nmcli -t` line on UNESCAPED colons and unescape the fields.
+    In terse mode nmcli writes ':' as '\\:' and '\\' as '\\\\' inside values, so an
+    SSID like 'Cafe:Guest' arrives as 'Cafe\\:Guest'."""
+    fields, cur, i = [], [], 0
+    while i < len(line):
+        c = line[i]
+        if c == "\\" and i + 1 < len(line):
+            cur.append(line[i + 1]); i += 2; continue
+        if c == ":":
+            fields.append("".join(cur)); cur = []
+        else:
+            cur.append(c)
+        i += 1
+    fields.append("".join(cur))
+    return fields
+
+def nm_unescape(value):
+    """Undo nmcli terse escaping in a single field value ('\\:' -> ':', '\\\\' -> '\\')."""
+    import re
+    return re.sub(r"\\(.)", r"\1", value) if value else value
+
 def get_network_info():
     # Check Ethernet
     ethernet = {"connected": False, "device": "", "ip": "", "speed": ""}
@@ -18,7 +41,7 @@ def get_network_info():
     try:
         dev_res = subprocess.run(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "dev"], capture_output=True, text=True, timeout=2).stdout
         for line in dev_res.strip().splitlines():
-            parts = line.split(":")
+            parts = nm_split(line)
             if len(parts) >= 3:
                 d, t, s = parts[0], parts[1], parts[2]
                 if t == "ethernet" and "connected" in s:
@@ -56,7 +79,7 @@ def get_network_info():
             w_res = subprocess.run(["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY,IN-USE", "dev", "wifi", "list"], capture_output=True, text=True, timeout=5).stdout
             seen = set()
             for line in w_res.strip().splitlines():
-                parts = line.split(":")
+                parts = nm_split(line)
                 if len(parts) >= 4:
                     ssid = parts[0].strip()
                     sig = parts[1].strip()
@@ -85,7 +108,7 @@ def get_wifi_device():
     try:
         res = subprocess.run(["nmcli", "-t", "-f", "DEVICE,TYPE", "dev"], capture_output=True, text=True, timeout=2).stdout
         for line in res.strip().splitlines():
-            parts = line.split(":")
+            parts = nm_split(line)
             if len(parts) >= 2 and parts[1].strip() == "wifi":
                 return parts[0].strip()
     except Exception:
@@ -106,7 +129,7 @@ def is_hotspot_active():
     try:
         res = subprocess.run(["nmcli", "-t", "-f", "NAME,TYPE", "con", "show", "--active"], capture_output=True, text=True, timeout=2).stdout
         for line in res.strip().splitlines():
-            parts = line.split(":")
+            parts = nm_split(line)
             if len(parts) >= 2 and parts[0].strip() == "Deloway-Hotspot" and parts[1].strip() in ("802-11-wireless", "wifi"):
                 return True
     except Exception:
@@ -128,11 +151,11 @@ def get_hotspot_details():
             res = subprocess.run(["nmcli", "-s", "-t", "-f", "802-11-wireless.ssid,802-11-wireless-security.psk", "con", "show", "Deloway-Hotspot"], capture_output=True, text=True, timeout=2).stdout
             for line in res.strip().splitlines():
                 if line.startswith("802-11-wireless.ssid:"):
-                    val = line.split(":", 1)[1].strip()
+                    val = nm_unescape(line.split(":", 1)[1]).strip()
                     if val:
                         ssid = val
                 elif line.startswith("802-11-wireless-security.psk:"):
-                    val = line.split(":", 1)[1].strip()
+                    val = nm_unescape(line.split(":", 1)[1]).strip()
                     if val:
                         password = val
         except Exception:
@@ -149,7 +172,7 @@ def get_hotspot_status():
     try:
         res = subprocess.run(["nmcli", "-t", "-f", "TYPE,STATE,CONNECTION", "dev"], capture_output=True, text=True, timeout=2).stdout
         for line in res.strip().splitlines():
-            parts = line.split(":")
+            parts = nm_split(line)
             if len(parts) >= 2 and parts[0].strip() == "wifi" and parts[1].strip() == "connected":
                 conn = parts[2].strip() if len(parts) > 2 else ""
                 if conn != "Deloway-Hotspot":

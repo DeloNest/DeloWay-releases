@@ -82,60 +82,71 @@ def is_powered():
     except Exception:
         return False
 
+def busctl(args, timeout):
+    """Run busctl and report the REAL outcome (it exits 1 with 'Call failed: …' on
+    e.g. br-connection-page-timeout; ignoring that made every action look successful)."""
+    try:
+        r = subprocess.run(["busctl"] + args, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return {"success": False, "error": "timeout"}
+    except OSError as e:
+        return {"success": False, "error": str(e)}
+    if r.returncode == 0:
+        return {"success": True}
+    return {"success": False, "error": (r.stderr or r.stdout).strip() or f"busctl exit {r.returncode}"}
+
+def scan_discovery(adapter, seconds):
+    """BlueZ ends a discovery session when the D-Bus client that started it leaves
+    the bus; busctl leaves immediately, so discovery used to stop after ~100 ms.
+    Hold one connection for the whole scan window, then stop discovery."""
+    try:
+        from gi.repository import Gio, GLib
+    except ImportError:
+        return busctl(["call", "org.bluez", adapter, "org.bluez.Adapter1", "StartDiscovery"], 3)
+    try:
+        bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        call = lambda m: bus.call_sync("org.bluez", adapter, "org.bluez.Adapter1", m,
+                                       None, None, Gio.DBusCallFlags.NONE, 5000, None)
+        call("StartDiscovery")
+        GLib.usleep(int(seconds * 1_000_000))
+        try:
+            call("StopDiscovery")
+        except GLib.Error:
+            pass
+        return {"success": True}
+    except Exception as e:
+        return {"success": False, "error": str(getattr(e, "message", e))}
+
+def device_path(adapter, mac):
+    return f"{adapter}/dev_{mac.replace(':', '_')}"
+
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "list":
         print(json.dumps({
             "powered": is_powered(),
             "devices": get_devices()
         }))
-    elif sys.argv[1] == "toggle":
+        return
+    verb = sys.argv[1]
+    adapter = get_adapter_path()
+    if verb == "toggle":
         curr = is_powered()
-        adapter = get_adapter_path()
-        subprocess.run(["busctl", "set-property", "org.bluez", adapter, "org.bluez.Adapter1", "Powered", "b", "false" if curr else "true"])
-        print(json.dumps({"success": True, "powered": not curr}))
-    elif sys.argv[1] == "scan":
-        adapter = get_adapter_path()
-        try:
-            subprocess.run(["busctl", "call", "org.bluez", adapter, "org.bluez.Adapter1", "StartDiscovery"], timeout=3)
-            print(json.dumps({"success": True}))
-        except Exception as e:
-            print(json.dumps({"success": False, "error": str(e)}))
-    elif sys.argv[1] == "connect" and len(sys.argv) > 2:
-        addr = sys.argv[2].replace(":", "_")
-        adapter = get_adapter_path()
-        dev_path = f"{adapter}/dev_{addr}"
-        try:
-            subprocess.run(["busctl", "call", "org.bluez", dev_path, "org.bluez.Device1", "Connect"], timeout=10)
-            print(json.dumps({"success": True}))
-        except Exception as e:
-            print(json.dumps({"success": False, "error": str(e)}))
-    elif sys.argv[1] == "disconnect" and len(sys.argv) > 2:
-        addr = sys.argv[2].replace(":", "_")
-        adapter = get_adapter_path()
-        dev_path = f"{adapter}/dev_{addr}"
-        try:
-            subprocess.run(["busctl", "call", "org.bluez", dev_path, "org.bluez.Device1", "Disconnect"], timeout=5)
-            print(json.dumps({"success": True}))
-        except Exception as e:
-            print(json.dumps({"success": False, "error": str(e)}))
-    elif sys.argv[1] == "pair" and len(sys.argv) > 2:
-        addr = sys.argv[2].replace(":", "_")
-        adapter = get_adapter_path()
-        dev_path = f"{adapter}/dev_{addr}"
-        try:
-            subprocess.run(["busctl", "call", "org.bluez", dev_path, "org.bluez.Device1", "Pair"], timeout=15)
-            print(json.dumps({"success": True}))
-        except Exception as e:
-            print(json.dumps({"success": False, "error": str(e)}))
-    elif sys.argv[1] == "remove" and len(sys.argv) > 2:
-        addr = sys.argv[2].replace(":", "_")
-        adapter = get_adapter_path()
-        dev_path = f"{adapter}/dev_{addr}"
-        try:
-            subprocess.run(["busctl", "call", "org.bluez", adapter, "org.bluez.Adapter1", "RemoveDevice", "o", dev_path], timeout=5)
-            print(json.dumps({"success": True}))
-        except Exception as e:
-            print(json.dumps({"success": False, "error": str(e)}))
+        res = busctl(["set-property", "org.bluez", adapter, "org.bluez.Adapter1", "Powered", "b",
+                      "false" if curr else "true"], 5)
+        res["powered"] = (not curr) if res["success"] else curr
+    elif verb == "scan":
+        res = scan_discovery(adapter, 12)
+    elif verb in ("connect", "disconnect", "pair") and len(sys.argv) > 2:
+        method = {"connect": "Connect", "disconnect": "Disconnect", "pair": "Pair"}[verb]
+        timeout = {"connect": 10, "disconnect": 5, "pair": 15}[verb]
+        res = busctl(["call", "org.bluez", device_path(adapter, sys.argv[2]), "org.bluez.Device1", method], timeout)
+    elif verb == "remove" and len(sys.argv) > 2:
+        res = busctl(["call", "org.bluez", adapter, "org.bluez.Adapter1", "RemoveDevice", "o",
+                      device_path(adapter, sys.argv[2])], 5)
+    else:
+        res = {"success": False, "error": "usage: list|toggle|scan|connect|disconnect|pair|remove <mac>"}
+    res["action"] = verb
+    print(json.dumps(res))
 
 if __name__ == "__main__":
     main()

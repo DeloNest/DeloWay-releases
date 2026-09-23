@@ -148,6 +148,13 @@ Item {
         onExited: {
             root.connectingSsid = "";
             root.refresh();
+            // A request made while this one ran starts only now, so results are never
+            // attributed to the wrong network.
+            if (root._pendingConnect) {
+                const next = root._pendingConnect;
+                root._pendingConnect = null;
+                root._startConnect(next.ssid, next.password);
+            }
         }
     }
 
@@ -168,7 +175,7 @@ Item {
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
-                const parts = data.trim().split(":");
+                const parts = root.nmSplit(data.trim());
                 if (parts.length < 4) return;
                 const type = parts[2].trim();
                 const name = parts[0].trim();
@@ -340,8 +347,32 @@ Item {
         wifiRescanProc.running = true;
     }
 
+    // `nmcli -t` escapes ':' and '\\' inside values ("Cafe\\:Guest"): split on unescaped
+    // colons only, then unescape.
+    function nmSplit(line) {
+        const out = []; let cur = "";
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (c === "\\" && i + 1 < line.length) { cur += line[++i]; continue; }
+            if (c === ":") { out.push(cur); cur = ""; } else cur += c;
+        }
+        out.push(cur);
+        return out;
+    }
+
+    // Latest tap wins: while an attempt is running (nmcli can take ~25 s), a new
+    // request is held and started when it exits (starting a busy Process only
+    // queued a restart with whatever command was set last).
+    property var _pendingConnect: null
     function connectWifi(ssid, password) {
         if (!ssid) return;
+        if (wifiConnectProc.running) {
+            root._pendingConnect = { ssid: ssid, password: password || "" };
+            return;
+        }
+        root._startConnect(ssid, password);
+    }
+    function _startConnect(ssid, password) {
         root.connectingSsid = ssid;
         root.networkError = "";
         const cmd = ["python3", ConfigManager.projectDir + "/scripts/deloway-network.py", "connect", ssid];
