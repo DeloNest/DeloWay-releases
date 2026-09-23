@@ -261,6 +261,191 @@ Item {
         return false;
     }
 
+    // ── Window state (Hyprland-backed) ───────────────────────────────────
+    // Hyprland ignores foreign-toplevel minimize requests, so "minimized" = parked on
+    // the special workspace below; restore moves the window back to the focused
+    // workspace.
+    //
+    // Minimized + focused state is tracked HERE from Hyprland's own event payloads
+    // (movewindowv2 / activewindowv2 / closewindow), seeded once from `hyprctl -j`.
+    // Quickshell's cached HyprlandToplevel.workspace and Toplevel.activated lag behind
+    // (or never update) after moves to special workspaces, which made a second dock
+    // click act on stale state.
+    readonly property string minimizedWorkspace: "special:minimized"
+    property var _minimized: ({})        // normalized address → true
+    property string activeAddress: ""     // normalized address of Hyprland's active window
+
+    function normAddr(a) {
+        const s = String(a || "").toLowerCase();
+        return s.startsWith("0x") ? s.substring(2) : s;
+    }
+    function hyprToplevelFor(t) {
+        if (!t) return null;
+        const list = Hyprland.toplevels.values;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i] && list[i].wayland === t) return list[i];
+        }
+        return null;
+    }
+    function addressOf(t) {
+        const hl = hyprToplevelFor(t);
+        return (hl && hl.address) ? "0x" + normAddr(hl.address) : "";
+    }
+    function isMinimized(t) {
+        const a = normAddr(addressOf(t));
+        return a.length > 0 && root._minimized[a] === true;
+    }
+    function isActiveWindow(t) {
+        const a = normAddr(addressOf(t));
+        if (a.length > 0 && root.activeAddress.length > 0) return a === root.activeAddress;
+        return !!(t && t.activated);
+    }
+    function isUrgent(t) {
+        const hl = hyprToplevelFor(t);
+        return !!(hl && hl.urgent);
+    }
+    function currentWorkspaceId() {
+        const ws = Hyprland.focusedWorkspace;
+        return ws ? ws.id : 1;
+    }
+    function _setMinimized(addr, on) {
+        const a = normAddr(addr);
+        if (!a) return;
+        if (on === (root._minimized[a] === true)) return;
+        const m = Object.assign({}, root._minimized);
+        if (on) m[a] = true; else delete m[a];
+        root._minimized = m;
+        root._windowStateRevision++;
+    }
+
+    function minimizeWindow(t) {
+        const a = addressOf(t);
+        if (!a) return;
+        // After parking it, hand focus to another window on this workspace so typing
+        // doesn't keep going into the hidden window.
+        const wsId = root.currentWorkspaceId();
+        const self = normAddr(a);
+        const list = Hyprland.toplevels.values;
+        let next = "";
+        for (let i = 0; i < list.length; i++) {
+            const h = list[i];
+            if (!h || !h.address || !h.workspace || h.workspace.id !== wsId) continue;
+            const ha = normAddr(h.address);
+            if (ha === self || root._minimized[ha]) continue;
+            next = "0x" + ha;
+            if (h.wayland && h.wayland.activated) continue;   // prefer not the one we hide
+            break;
+        }
+        root._setMinimized(a, true);                           // optimistic; event confirms
+        Hyprland.dispatch("movetoworkspacesilent " + root.minimizedWorkspace + ",address:" + a);
+        if (next) Hyprland.dispatch("focuswindow address:" + next);
+    }
+    function restoreWindow(t) {
+        const a = addressOf(t);
+        if (!a) return;
+        root._setMinimized(a, false);
+        Hyprland.dispatch("movetoworkspacesilent " + root.currentWorkspaceId() + ",address:" + a);
+        Hyprland.dispatch("focuswindow address:" + a);
+    }
+    function focusWindow(t) {
+        if (!t) return;
+        if (isMinimized(t)) { restoreWindow(t); return; }
+        const a = addressOf(t);
+        if (a) Hyprland.dispatch("focuswindow address:" + a);   // also switches workspace
+        else if (typeof t.activate === "function") t.activate();
+    }
+    function toggleMaximize(t) {
+        const a = addressOf(t);
+        if (!a) return;
+        if (isMinimized(t)) restoreWindow(t);
+        Hyprland.dispatch("focuswindow address:" + a);
+        Hyprland.dispatch("fullscreen 1");                      // Hyprland "maximize" (keeps gaps/bar)
+    }
+    // Hyprland "maximize" = fullscreen mode 1; reported via foreign-toplevel `maximized`
+    // and, as a fallback, the IPC snapshot.
+    function isMaximized(t) {
+        if (!t) return false;
+        if (t.maximized) return true;
+        const hl = hyprToplevelFor(t);
+        const ipc = hl ? hl.lastIpcObject : null;
+        return !!(ipc && (ipc.fullscreen === 1 || ipc.fullscreenClient === 1));
+    }
+    // The window a per-app action (maximize, minimize…) should target.
+    function primaryWindow(item) {
+        const wins = (item && item.windows) ? item.windows.filter(w => !!w) : [];
+        return wins.find(w => root.isActiveWindow(w)) || wins.find(w => !root.isMinimized(w)) || wins[0] || null;
+    }
+    function minimizeAll(item) {
+        for (const w of ((item && item.windows) || [])) if (w && !root.isMinimized(w)) root.minimizeWindow(w);
+    }
+    function restoreAll(item) {
+        const wins = ((item && item.windows) || []).filter(w => w && root.isMinimized(w));
+        for (const w of wins) root.restoreWindow(w);
+    }
+    function closeAllWindows(item) {
+        const wins = (item && item.windows) ? item.windows : [];
+        for (const w of wins) if (w && typeof w.close === "function") w.close();
+    }
+
+    // Dock click semantics (Windows-taskbar style):
+    //   not running           → launch
+    //   one window, focused   → minimize        one window, minimized → restore + focus
+    //   one window, elsewhere → focus (switches workspace if needed)
+    //   several windows       → focused one? cycle to the next : bring the most relevant up
+    function clickDockApp(item) {
+        if (!item) return;
+        const wins = (item.windows || []).filter(w => !!w);
+        if (wins.length === 0) { root.activateOrLaunch(item); return; }
+        if (wins.length === 1) {
+            const w = wins[0];
+            if (root.isMinimized(w)) root.restoreWindow(w);
+            else if (root.isActiveWindow(w)) root.minimizeWindow(w);
+            else root.focusWindow(w);
+            return;
+        }
+        const activeIdx = wins.findIndex(w => root.isActiveWindow(w));
+        if (activeIdx !== -1) {
+            // cycle among non-minimized windows first
+            for (let k = 1; k < wins.length; k++) {
+                const cand = wins[(activeIdx + k) % wins.length];
+                if (!root.isMinimized(cand)) { root.focusWindow(cand); return; }
+            }
+            root.minimizeWindow(wins[activeIdx]);
+            return;
+        }
+        const visible = wins.find(w => !root.isMinimized(w));
+        root.focusWindow(visible || wins[0]);
+    }
+
+    function newWindow(item) {
+        if (!item) return;
+        if (item.desktopEntry && typeof item.desktopEntry.execute === "function") item.desktopEntry.execute();
+        else root.launchApp(root.findApp(item.id) || item);
+    }
+
+    // Seed minimized/active state once (e.g. after a shell restart with parked windows).
+    Process {
+        id: windowStateSeed
+        running: true
+        command: ["sh", "-c", "hyprctl -j clients; echo @@; hyprctl -j activewindow"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const parts = this.text.split("@@");
+                try {
+                    const m = {};
+                    for (const c of JSON.parse(parts[0]))
+                        if (c.workspace && c.workspace.name === root.minimizedWorkspace) m[root.normAddr(c.address)] = true;
+                    root._minimized = m;
+                } catch (e) {}
+                try {
+                    const aw = JSON.parse(parts[1] || "{}");
+                    if (aw && aw.address) root.activeAddress = root.normAddr(aw.address);
+                } catch (e) {}
+                root._windowStateRevision++;
+            }
+        }
+    }
+
     // Get open windows matching an application ID
     function getWindowsForApp(appId) {
         if (!appId) return [];
@@ -272,8 +457,33 @@ Item {
     }
 
     // Dynamic list for the Dock: all pinned apps + any currently running apps
+    // Bumped on Hyprland window events that change minimized/urgent state.
+    property int _windowStateRevision: 0
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            const n = event.name;
+            const d = String(event.data || "");
+            if (n === "movewindowv2") {                         // ADDR,WSID,WSNAME
+                const f = d.split(",");
+                root._setMinimized(f[0], f.slice(2).join(",") === root.minimizedWorkspace);
+            } else if (n === "activewindowv2") {                // ADDR (empty when none)
+                root.activeAddress = root.normAddr(d);
+            } else if (n === "closewindow") {                   // ADDR
+                root._setMinimized(d, false);
+            }
+            if (n === "urgent" || n === "movewindow" || n === "movewindowv2" || n === "workspace"
+                || n === "workspacev2" || n === "activewindowv2" || n === "closewindow" || n === "openwindow"
+                || n === "fullscreen") {
+                root._windowStateRevision++;
+                if (n === "urgent" || n === "fullscreen") Hyprland.refreshToplevels();
+            }
+        }
+    }
+
     readonly property var dockApps: {
         const _rev = _entriesRevision;
+        const _ws = _windowStateRevision;
         const _all = allApps;
         const list = [];
         const seen = new Set();
@@ -288,7 +498,8 @@ Item {
             const wins = getWindowsForApp(cleanId);
 
             const hasLiveWin = wins.length > 0;
-            const isLiveActive = wins.some(w => w.activated);
+            const isLiveActive = wins.some(w => root.isActiveWindow(w) && !root.isMinimized(w));
+            const minCount = wins.filter(w => root.isMinimized(w)).length;
 
             list.push({
                 "id": cleanId,
@@ -300,7 +511,9 @@ Item {
                 "running": hasLiveWin,
                 "windowCount": wins.length,
                 "windows": wins,
-                "isActive": isLiveActive
+                "isActive": isLiveActive,
+                "urgent": wins.some(w => root.isUrgent(w)),
+                "allMinimized": hasLiveWin && minCount === wins.length
             });
         }
 
@@ -325,7 +538,9 @@ Item {
                 "running": true,
                 "windowCount": wins.length,
                 "windows": wins,
-                "isActive": wins.some(w => w.activated)
+                "isActive": wins.some(w => root.isActiveWindow(w) && !root.isMinimized(w)),
+                "urgent": wins.some(w => root.isUrgent(w)),
+                "allMinimized": wins.length > 0 && wins.every(w => root.isMinimized(w))
             });
         }
 
