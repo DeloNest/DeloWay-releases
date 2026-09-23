@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=DeloWay
-Comment=Fluent Mica Wayland Desktop Experience on Hyprland
-Exec=deloway-session
+Comment=DeloWay desktop shell on Hyprland
+Exec=/usr/local/bin/deloway-session
 Type=Application
 DesktopNames=Hyprland;DeloWay
 Keywords=wayland;compositor;hyprland;deloway;deloos;

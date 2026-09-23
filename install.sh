@@ -471,6 +471,24 @@ queue_core_packages() {
         "hyprpolkitagent"        # polkit prompts (hyprland.conf exec-once, package actions)
         "wireplumber"            # wpctl: volume keys / audio page
         "gvfs"                   # trash:// for the Dock / desktop Trash
+        # QML modules the shell imports (missing = components fail to load):
+        "kirigami"               # org.kde.kirigami (AppIcon)
+        "qt6-5compat"            # Qt5Compat.GraphicalEffects
+        "qt6-svg"                # SVG icons and assets
+        "qt6-imageformats"       # WebP wallpapers
+        # Tools the helpers and binds call:
+        "python-gobject"         # deloway-bluetooth.py scan (Gio / BlueZ discovery)
+        "bluez-utils"            # bluetoothctl (restores power after airplane mode)
+        "iw"                     # Wi-Fi / hotspot capability checks
+        "psmisc"                 # killall (binds, shell restart)
+        "pipewire-pulse"         # PipeWire audio server (pw-play / paplay alarm sound)
+        "hyprlock"               # Super+L fallback when the shell is not running
+        "xdg-utils"              # xdg-open / xdg-mime / xdg-settings (default apps)
+        "gtk3"                   # gtk-launch (delo-app, desktop shortcuts)
+        "zenity"                 # "Browse…" file picker for wallpapers
+        # Fonts: Arabic coverage and the Settings → Appearance font choices
+        "noto-fonts"
+        "inter-font"
     )
 
     for pkg in "${core_tools[@]}"; do
@@ -489,8 +507,19 @@ queue_core_packages() {
     # The session uses Reversal-black / Reversal-black-dark (theme-apply switches them by mode).
     if [ ! -d "/usr/share/icons/Reversal-black-dark" ] && [ ! -d "$HOME/.local/share/icons/Reversal-black-dark" ]; then
         log_info "Queuing 'reversal-icon-theme-git' from AUR."
-        AUR_PKGS_TO_INSTALL+=("reversal-icon-theme-git")
+        AUR_PKGS_TO_INSTALL+=("reversal-icon-theme-git")   # its PKGBUILD installs every color variant
     fi
+
+    # AUR packages the shell depends on:
+    #   ttf-cairo      — the default UI font (Theme.qml falls back to "Cairo")
+    #   localsend-bin  — Notch → Share (LocalSend)
+    #   pamac-aur      — App Store entry, "View in Store", package install / uninstall
+    if ! fc-list 2>/dev/null | grep -qi "/cairo"; then
+        AUR_PKGS_TO_INSTALL+=("ttf-cairo")
+    fi
+    command -v localsend &>/dev/null || command -v localsend_app &>/dev/null || [ -x "$HOME/.local/bin/localsend" ] \
+        || AUR_PKGS_TO_INSTALL+=("localsend-bin")
+    command -v pamac &>/dev/null || AUR_PKGS_TO_INSTALL+=("pamac-aur")
 
     # Optional Tools: Satty & SwayOSD (Explicitly separated from code integration)
     if [ "$AUTO_YES" = true ]; then
@@ -551,6 +580,7 @@ install_packages() {
         log_info "Enabling essential system services..."
         sudo systemctl enable --now NetworkManager.service 2>/dev/null || true
         sudo systemctl enable --now bluetooth.service 2>/dev/null || true
+        sudo systemctl enable --now power-profiles-daemon.service 2>/dev/null || true
 
         # If ddcutil was installed, load i2c-dev module and add user to i2c group
         if [[ " ${PKGS_TO_INSTALL[*]} " =~ " ddcutil " ]]; then
@@ -570,7 +600,6 @@ configure_deloway() {
         "$USER_CONFIG_DIR"
         "$USER_CONFIG_DIR/backups"
         "$USER_BIN_DIR"
-        "$SESSIONS_DIR"
         "$HOME/Desktop"
     )
 
@@ -678,18 +707,20 @@ EOF
         log_success "Generated $user_hypr for $DELOWAY_DIR"
     fi
 
-    # 5. Install Wayland Desktop Session Entry
-    local session_desktop="$SESSIONS_DIR/deloway.desktop"
-    log_info "Registering Wayland session in $session_desktop..."
-    if [ "$DRY_RUN" = false ]; then
-        cat > "$session_desktop" << EOF
-[Desktop Entry]
-Name=DeloWay
-Comment=Fluent Mica Wayland Desktop Environment on Hyprland
-Exec=$USER_BIN_DIR/deloway-session
-Type=Application
-DesktopNames=DeloWay;Hyprland
-EOF
+    # 5. Register the session with the display manager. SDDM / GDM / LightDM only read the
+    # system session folders, so this needs sudo: link the wrapper into /usr/local/bin (a
+    # link, so updates reach it) and install the .desktop entry pointing at it.
+    log_info "Registering the DeloWay session for the display manager..."
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}[DRY-RUN]${NC} sudo ln -sfn $DELOWAY_DIR/bin/deloway-session /usr/local/bin/deloway-session"
+        echo -e "${CYAN}[DRY-RUN]${NC} sudo install -Dm644 $DELOWAY_DIR/system/deloway.desktop /usr/share/wayland-sessions/deloway.desktop"
+    elif sudo ln -sfn "$DELOWAY_DIR/bin/deloway-session" /usr/local/bin/deloway-session \
+         && sudo install -Dm644 "$DELOWAY_DIR/system/deloway.desktop" /usr/share/wayland-sessions/deloway.desktop; then
+        SESSION_REGISTERED=true
+        rm -f "$SESSIONS_DIR/deloway.desktop"   # old per-user entry no display manager reads
+        log_success "Session registered: pick 'DeloWay' on the login screen."
+    else
+        log_warn "Could not register the session. Run ./scripts/install-session.sh later."
     fi
 
     # 6. PAM service for the shell's lock screen (LockScreen.qml uses "deloway";
@@ -720,8 +751,11 @@ print_completion_summary() {
     echo ""
     echo -e "To start your DeloWay session:"
     echo -e "  1. Log out of your current session."
-    echo -e "  2. To list DeloWay in a display manager (SDDM/GDM/LightDM), run ${BOLD}scripts/install-session.sh${NC} once"
-    echo -e "     (display managers only read system session folders), then pick ${BOLD}DeloWay${NC} at login."
+    if [ "${SESSION_REGISTERED:-false}" = true ]; then
+        echo -e "  2. Pick ${BOLD}DeloWay${NC} in the session menu of your login screen (SDDM/GDM/LightDM)."
+    else
+        echo -e "  2. Register the session first: ${BOLD}./scripts/install-session.sh${NC}, then pick ${BOLD}DeloWay${NC} at login."
+    fi
     echo -e "  3. Or launch directly from TTY with: ${BOLD}$USER_BIN_DIR/deloway-session${NC}"
     echo ""
 }
