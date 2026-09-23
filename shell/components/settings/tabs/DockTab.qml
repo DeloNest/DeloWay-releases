@@ -54,7 +54,10 @@ Item {
                         source: ConfigManager.wallpaper ? (ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper)) : ""
                         fillMode: Image.PreserveAspectCrop
                         opacity: 0.45
+                        sourceSize.width: Math.round(width * 2)   // preview card, not the full wallpaper
+                        sourceSize.height: Math.round(height * 2)
                         cache: true
+                        asynchronous: true
                     }
 
                     // Ambient vignette overlay

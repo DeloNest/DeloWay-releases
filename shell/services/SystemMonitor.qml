@@ -101,8 +101,12 @@ QtObject {
     }
 
     // Refresh timers
+    // CPU/RAM/weather are only drawn by the Widgets desktop. Outside that mode the top bar
+    // needs just battery + network state, so poll 3 s there and 10 s otherwise.
+    readonly property bool widgetsVisible: ConfigManager.desktopMode === "widgets"
+
     property var sysTimer: Timer {
-        interval: 3000
+        interval: root.widgetsVisible ? 3000 : 10000
         repeat: true
         running: true
         triggeredOnStart: true
@@ -114,7 +118,7 @@ QtObject {
     property var weatherTimer: Timer {
         interval: 900000
         repeat: true
-        running: true
+        running: root.widgetsVisible
         triggeredOnStart: true
         onTriggered: {
             procWeather.running = true;

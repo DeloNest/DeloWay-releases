@@ -17,7 +17,8 @@ Item {
 
     readonly property real clamped: Math.max(0, Math.min(1, value))
     property real shown: hasValue ? clamped : 0
-    Behavior on shown { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+    property bool animate: true         // false while off screen: jump instead of animating
+    Behavior on shown { enabled: root.animate; NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
 
     readonly property real arcStart: 135
     readonly property real arcSweep: 270

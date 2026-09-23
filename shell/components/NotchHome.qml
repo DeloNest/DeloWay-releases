@@ -26,10 +26,13 @@ Item {
 
     // Time & Date state
     property date currentTime: new Date()
+    // Only the expanded Home tab shows the seconds clock / day strip; ticking while hidden
+    // dirtied the whole TopBar surface every second.
     Timer {
         interval: 1000
-        running: true
+        running: root.expanded && ShellState.smartNotchExpanded && ShellState.smartNotchTab === 0
         repeat: true
+        triggeredOnStart: true
         onTriggered: root.currentTime = new Date()
     }
 
@@ -290,6 +293,8 @@ Item {
                         anchors.fill: parent
                         source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
                         fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(64, 64)
+                        asynchronous: true
                         visible: status === Image.Ready
                     }
 
@@ -478,6 +483,8 @@ Item {
                             anchors.fill: parent
                             source: root.activePlayer && root.activePlayer.trackArtUrl ? root.activePlayer.trackArtUrl : ""
                             fillMode: Image.PreserveAspectCrop
+                            sourceSize: Qt.size(144, 144)
+                            asynchronous: true
                             visible: status === Image.Ready
                         }
 

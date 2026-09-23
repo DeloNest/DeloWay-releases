@@ -34,6 +34,9 @@ PanelWindow {
                 ? (ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper))
                 : ("file://" + ConfigManager.projectDir + "/assets/wallpaper.jpg")
         fillMode: Image.PreserveAspectCrop
+        // Decode at the output's pixel size (a 4K JPEG on a 1440p screen was ~33 MB decoded).
+        sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+        sourceSize.height: Math.round(height * Screen.devicePixelRatio)
         cache: false
         asynchronous: true
 

@@ -41,6 +41,10 @@ WlSessionLock {
                 anchors.fill: parent
                 source: ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper)
                 fillMode: Image.PreserveAspectCrop
+                // Same decode size as the desktop Background, off the GUI thread.
+                sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+                sourceSize.height: Math.round(height * Screen.devicePixelRatio)
+                asynchronous: true
 
                 Rectangle {
                     anchors.fill: parent

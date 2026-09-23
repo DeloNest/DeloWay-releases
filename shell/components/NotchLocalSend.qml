@@ -265,6 +265,8 @@ Item {
                                     return s;
                                 }
                                 fillMode: Image.PreserveAspectCrop
+                                sourceSize: Qt.size(96, 80)   // 2× the 48×40 tile; big photos decoded off-thread
+                                asynchronous: true
                                 visible: {
                                     let s = (fileItem.modelData || "").toLowerCase();
                                     return s.endsWith(".png") || s.endsWith(".jpg") || s.endsWith(".jpeg") || s.endsWith(".webp") || s.endsWith(".svg");

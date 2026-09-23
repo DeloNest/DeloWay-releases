@@ -207,11 +207,16 @@ Item {
         }
     }
 
+    // Status is only shown on the Notch "Share" tab (index 2): poll and scan only while
+    // it is on screen, instead of forking the helper every 3 s for the whole session.
+    readonly property bool panelVisible: ShellState.smartNotchExpanded && ShellState.smartNotchTab === 2
+    onPanelVisibleChanged: if (panelVisible) root.scanNetwork()
+
     // Periodic status refresh
     Timer {
         id: statusTimer
         interval: 3000
-        running: true
+        running: root.panelVisible
         repeat: true
         triggeredOnStart: true
         onTriggered: {
@@ -278,8 +283,5 @@ Item {
         sendProcess.exec(cmd);
     }
 
-    Component.onCompleted: {
-        root.refreshStatus();
-        root.scanNetwork();
-    }
+    Component.onCompleted: root.refreshStatus()   // one status read; the subnet scan waits for the Share tab
 }

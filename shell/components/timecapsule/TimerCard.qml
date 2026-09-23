@@ -51,12 +51,16 @@ DashCard {
                 Layout.preferredWidth: 62
                 Layout.preferredHeight: 62
                 stroke: 4
+                // The card lives in the collapsed Time capsule's Utilities tab (1): animate only
+                // while that tab is actually on screen, never at display rate in the background.
+                readonly property bool onScreen: ShellState.timeCapsuleExpanded && ShellState.timeCapsuleTab === 1
+                animate: onScreen
                 value: root.tk.timerTotalSec > 0 ? root.tk.timerRemainingSec / root.tk.timerTotalSec : 0
                 centerText: root.tk.formatClock(root.tk.timerRemainingSec)
 
                 // Finished → gentle breathing of the whole ring (luminance only)
                 SequentialAnimation on opacity {
-                    running: root.tk.timerFinished
+                    running: root.tk.timerFinished && ring.onScreen
                     loops: Animation.Infinite
                     onRunningChanged: if (!running) ring.opacity = 1
                     NumberAnimation { to: 0.35; duration: 600; easing.type: Easing.InOutSine }

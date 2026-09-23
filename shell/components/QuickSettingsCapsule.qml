@@ -90,6 +90,8 @@ Item {
     readonly property real currentY: Math.round(Theme.topBarMarginTop * (1.0 - root.expandProgress))
 
 
+    property real _lastPrefetch: 0
+
     onCurrentViewChanged: {
         if (root.currentView === "hotspot" || root.currentView === "wifi") {
             NetworkService.refresh();
@@ -224,8 +226,10 @@ Item {
         if (isExpanded) {
             ShellState.closeSmartNotch();
             ShellState.closeTimeCapsule();
-            NetworkService.refresh();
-            BluetoothService.refresh();
+            if (Date.now() - root._lastPrefetch > 2000) {   // hover prefetch already in flight
+                NetworkService.refresh();
+                BluetoothService.refresh();
+            }
             ControlCenterService.refresh();
             if (root.brightnessBackend === "kernel") {
                 backlightReadProcess.running = true;
@@ -675,6 +679,10 @@ Item {
                     acceptedButtons: Qt.LeftButton
                     enabled: !root.isExpanded
                     onEntered: {
+                        // Prefetch at most every 10 s; the expand path skips a fetch this fresh.
+                        const now = Date.now();
+                        if (now - root._lastPrefetch < 10000) return;
+                        root._lastPrefetch = now;
                         if (SystemMonitor.isWifi) {
                             NetworkService.refresh();
                         }
