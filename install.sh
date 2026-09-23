@@ -165,23 +165,31 @@ check_aur_helper() {
         case "$CHOICE" in
             1)
                 log_info "Bootstrapping paru-bin from AUR..."
-                local tmp_dir
-                tmp_dir=$(mktemp -d)
-                git clone https://aur.archlinux.org/paru-bin.git "$tmp_dir/paru-bin"
-                (cd "$tmp_dir/paru-bin" && makepkg -si --noconfirm)
-                rm -rf "$tmp_dir"
+                if [ "$DRY_RUN" = true ]; then
+                    echo -e "${CYAN}[DRY-RUN]${NC} git clone https://aur.archlinux.org/paru-bin.git && makepkg -si --noconfirm"
+                else
+                    local tmp_dir
+                    tmp_dir=$(mktemp -d)
+                    git clone https://aur.archlinux.org/paru-bin.git "$tmp_dir/paru-bin"
+                    (cd "$tmp_dir/paru-bin" && makepkg -si --noconfirm)
+                    rm -rf "$tmp_dir"
+                    log_success "paru installed successfully!"
+                fi
                 AUR_HELPER="paru"
-                log_success "paru installed successfully!"
                 ;;
             2)
                 log_info "Bootstrapping yay-bin from AUR..."
-                local tmp_dir
-                tmp_dir=$(mktemp -d)
-                git clone https://aur.archlinux.org/yay-bin.git "$tmp_dir/yay-bin"
-                (cd "$tmp_dir/yay-bin" && makepkg -si --noconfirm)
-                rm -rf "$tmp_dir"
+                if [ "$DRY_RUN" = true ]; then
+                    echo -e "${CYAN}[DRY-RUN]${NC} git clone https://aur.archlinux.org/yay-bin.git && makepkg -si --noconfirm"
+                else
+                    local tmp_dir
+                    tmp_dir=$(mktemp -d)
+                    git clone https://aur.archlinux.org/yay-bin.git "$tmp_dir/yay-bin"
+                    (cd "$tmp_dir/yay-bin" && makepkg -si --noconfirm)
+                    rm -rf "$tmp_dir"
+                    log_success "yay installed successfully!"
+                fi
                 AUR_HELPER="yay"
-                log_success "yay installed successfully!"
                 ;;
             *)
                 log_warn "Proceeding without an AUR helper. AUR-dependent packages will be skipped."
@@ -565,8 +573,10 @@ configure_deloway() {
     log_info "Configuring centralized application settings in $target_cfg..."
 
     if [ "$DRY_RUN" = false ]; then
+        local fresh_cfg=0
         if [ ! -f "$target_cfg" ]; then
             cp "$DELOWAY_DIR/config/deloway.json" "$target_cfg"
+            fresh_cfg=1
         fi
 
         # Inject defaultApps using jq or python3
@@ -574,23 +584,31 @@ configure_deloway() {
 import json, os
 
 cfg_path = os.path.expanduser("$target_cfg")
+fresh = $fresh_cfg == 1
 try:
     with open(cfg_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 except Exception:
     data = {}
 
-data["defaultApps"] = {
+chosen = {
     "browser": "$SELECTED_BROWSER",
     "terminal": "$SELECTED_TERMINAL",
     "fileManager": "$SELECTED_FILEMANAGER",
     "editor": "$SELECTED_EDITOR",
     "monitor": "$SELECTED_MONITOR"
 }
+# A fresh config takes the installer answers; on re-runs (repairs/updates) only
+# missing keys are filled so Settings → Apps choices are never overwritten.
+apps = data.get("defaultApps") if isinstance(data.get("defaultApps"), dict) else {}
+for k, v in chosen.items():
+    if fresh or not apps.get(k):
+        apps[k] = v
+data["defaultApps"] = apps
 # Backward compatibility keys
-data["browser"] = "$SELECTED_BROWSER"
-data["terminal"] = "$SELECTED_TERMINAL"
-data["fileManager"] = "$SELECTED_FILEMANAGER"
+for k in ("browser", "terminal", "fileManager"):
+    if fresh or not data.get(k):
+        data[k] = apps[k]
 
 with open(cfg_path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=4, ensure_ascii=False)
@@ -615,10 +633,15 @@ EOF
         chmod +x "$DELOWAY_DIR/bin/deloway-session"
     fi
 
-    # 4. Link Shell directory
+    # 4. Link Shell directory. A real directory there (e.g. a customised copy) is
+    # moved to backups/, never deleted; an existing symlink is simply replaced.
     local target_shell="$USER_CONFIG_DIR/shell"
     if [ "$DRY_RUN" = false ]; then
-        rm -rf "$target_shell"
+        if [ -d "$target_shell" ] && [ ! -L "$target_shell" ]; then
+            local bk="$USER_CONFIG_DIR/backups/shell-$(date +%Y%m%d-%H%M%S)"
+            mv "$target_shell" "$bk"
+            log_warn "Existing $target_shell moved to $bk"
+        fi
         ln -sfn "$DELOWAY_DIR/shell" "$target_shell"
     fi
 
@@ -636,7 +659,16 @@ DesktopNames=DeloWay;Hyprland
 EOF
     fi
 
-    # 6. Apply Icon Theme
+    # 6. PAM service for the shell's lock screen (LockScreen.qml uses "deloway";
+    # without it the lock screen falls back to hyprlock's or login's PAM file).
+    log_info "Installing lock-screen PAM service to /etc/pam.d/deloway..."
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}[DRY-RUN]${NC} sudo install -Dm644 $DELOWAY_DIR/system/pam.d/deloway /etc/pam.d/deloway"
+    elif ! sudo install -Dm644 "$DELOWAY_DIR/system/pam.d/deloway" /etc/pam.d/deloway; then
+        log_warn "Could not install /etc/pam.d/deloway (the lock screen will use the 'login' PAM service)."
+    fi
+
+    # 7. Apply Icon Theme
     if command -v gsettings &>/dev/null && [ "$DRY_RUN" = false ]; then
         gsettings set org.gnome.desktop.interface icon-theme "Reversal-dark" 2>/dev/null || true
     fi
