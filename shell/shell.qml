@@ -141,6 +141,9 @@ ShellRoot {
     IpcHandler {
         target: "deloway"
 
+        // ── Session lock (Super+L runs `qs ipc … call deloway lock || hyprlock`) ─
+        function lock() { lockScreen.lockSession(); }
+
         // ── Shell Toggle / Fullscreen ───────────────────────────────────────
         function toggleShell() { ShellState.toggleShell(); }
         function hideShell()   { ShellState.setShellHidden(true); }

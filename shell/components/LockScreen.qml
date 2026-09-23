@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import Quickshell.Services.Pam
 import "../theme"
 import "../services"
@@ -10,7 +11,25 @@ import "../services"
 WlSessionLock {
     id: root
 
-    property string currentUser: Quickshell.env("USER") || "DeloOS"
+    // Display name only. PamContext.user is left at its default (the real uid) unless
+    // $USER is set: a made-up fallback name would make getpwnam fail and hang PAM.
+    readonly property string envUser: Quickshell.env("USER") || ""
+    property string currentUser: envUser || "DeloOS"
+
+    // PAM service: DeloWay's own file (installed by install.sh), else hyprlock's, else
+    // the system 'login' stack. Picked once at startup; never a file that is missing.
+    property string pamService: "login"
+    Process {
+        running: true
+        command: ["sh", "-c", "for s in deloway hyprlock; do [ -f /etc/pam.d/$s ] && { echo $s; exit 0; }; done; echo login"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const s = this.text.trim();
+                if (s) root.pamService = s;
+            }
+        }
+    }
+    property var now: new Date()
 
     surface: Component {
         WlSessionLockSurface {
@@ -64,7 +83,7 @@ WlSessionLock {
                         Text {
                             id: lockClock
                             Layout.alignment: Qt.AlignHCenter
-                            text: Qt.formatTime(new Date(), ConfigManager.clockFormat === "24h" ? "HH:mm" : "hh:mm")
+                            text: I18n.clockText(root.now, false)
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 68
                             font.weight: Font.Light
@@ -74,7 +93,7 @@ WlSessionLock {
                         Text {
                             id: lockDate
                             Layout.alignment: Qt.AlignHCenter
-                            text: Qt.formatDate(new Date(), "dddd, d MMMM yyyy")
+                            text: I18n.fullDateText(root.now)
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.typography.fontSizeRegular
                             color: Theme.colors.textSecondary
@@ -153,13 +172,16 @@ WlSessionLock {
                                 color: Theme.colors.text
                                 echoMode: TextInput.Password
                                 verticalAlignment: TextInput.AlignVCenter
+                                horizontalAlignment: TextInput.AlignLeft   // mirrored in Arabic
+                                readOnly: pam.active
                                 selectByMouse: true
                                 focus: true
 
                                 Text {
                                     anchors.fill: parent
                                     verticalAlignment: Text.AlignVCenter
-                                    text: "Enter Password"
+                                    horizontalAlignment: Text.AlignLeft
+                                    text: I18n.tr("lock_placeholder")
                                     font.family: Theme.typography.fontFamily
                                     font.hintingPreference: Theme.hintingPreference
                                     font.pixelSize: Theme.typography.scaleBody.size
@@ -178,7 +200,9 @@ WlSessionLock {
                                 Layout.preferredWidth: 28
                                 Layout.preferredHeight: 28
                                 variant: "ghost"
-                                iconSource: "go-next-symbolic"
+                                // Points toward the reading end (the button sits there).
+                                iconSource: I18n.isRTL ? "go-previous-symbolic" : "go-next-symbolic"
+                                Accessible.name: I18n.tr("lock_unlock")
                                 onClicked: tryUnlock()
                             }
                         }
@@ -197,39 +221,37 @@ WlSessionLock {
                 }
             }
 
-            // Clock update timer
+            // Clock update timer (only while locked)
             Timer {
                 interval: 1000
                 running: root.locked
                 repeat: true
-                onTriggered: {
-                    lockClock.text = Qt.formatTime(new Date(), ConfigManager.clockFormat === "24h" ? "HH:mm" : "hh:mm");
-                    lockDate.text = Qt.formatDate(new Date(), "dddd, d MMMM yyyy");
-                }
+                triggeredOnStart: true
+                onTriggered: root.now = new Date()
             }
 
             // PAM Context
             PamContext {
                 id: pam
-                user: root.currentUser
-                config: "hyprlock"
+                config: root.pamService
+                Component.onCompleted: if (root.envUser) pam.user = root.envUser
 
                 onCompleted: result => {
                     if (result === PamResult.Success) {
                         errorMsg.text = "";
                         pwdInput.text = "";
                         root.locked = false;
-                    } else {
-                        errorMsg.text = "Incorrect password";
-                        shakeAnim.restart();
-                        pwdInput.text = "";
-                        pwdInput.forceActiveFocus();
+                        return;
                     }
-                }
-
-                onError: err => {
-                    errorMsg.text = "Authentication failed";
+                    // PAM's own text wins when it explains why (e.g. faillock:
+                    // "account locked … minutes left"); otherwise a clear local message.
+                    const pamText = (pam.messageIsError && pam.message) ? pam.message : "";
+                    errorMsg.text = pamText || (result === PamResult.MaxTries ? I18n.tr("lock_max_tries")
+                                              : result === PamResult.Error ? I18n.tr("lock_error")
+                                              : I18n.tr("lock_wrong"));
                     shakeAnim.restart();
+                    pwdInput.text = "";
+                    pwdInput.forceActiveFocus();
                 }
 
                 onResponseRequiredChanged: {
@@ -240,9 +262,15 @@ WlSessionLock {
             }
 
             function tryUnlock() {
-                if (!pwdInput.text) return;
-                errorMsg.text = "Verifying...";
-                pam.start();
+                if (pam.active) return;                 // one conversation at a time
+                errorMsg.text = I18n.tr("lock_verifying");
+                // start() returns false when the conversation cannot begin (missing PAM
+                // file, unknown user): no signal follows, so report it here instead of
+                // leaving "Verifying…" forever. Empty passwords are allowed (nullok).
+                if (!pam.start()) {
+                    errorMsg.text = I18n.tr("lock_unavailable");
+                    shakeAnim.restart();
+                }
             }
 
             Component.onCompleted: {

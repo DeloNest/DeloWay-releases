@@ -1,0 +1,5 @@
+#%PAM-1.0
+# DeloWay lock screen (shell/components/LockScreen.qml → PamContext config "deloway").
+# Authenticates exactly like a console login, including pam_faillock.
+# Installed to /etc/pam.d/deloway by install.sh.
+auth       include      login

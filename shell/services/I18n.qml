@@ -376,6 +376,13 @@ Item {
             "drawer_cat_other": "Other",
             "drawer_view_folders": "Folders",
             "drawer_view_az": "A–Z",
+            "lock_placeholder": "Enter password",
+            "lock_verifying": "Verifying…",
+            "lock_wrong": "Incorrect password",
+            "lock_max_tries": "Too many attempts. Try again later.",
+            "lock_error": "Authentication error",
+            "lock_unavailable": "Authentication service unavailable",
+            "lock_unlock": "Unlock",
             "dock_new_window": "New Window",
             "dock_close_window": "Close Window",
             "dock_close_all": "Close All Windows",
@@ -850,6 +857,13 @@ Item {
             "drawer_cat_other": "أخرى",
             "drawer_view_folders": "مجلدات",
             "drawer_view_az": "أ–ي",
+            "lock_placeholder": "أدخل كلمة المرور",
+            "lock_verifying": "جارٍ التحقق…",
+            "lock_wrong": "كلمة المرور غير صحيحة",
+            "lock_max_tries": "محاولات كثيرة، حاول لاحقاً.",
+            "lock_error": "خطأ في نظام المصادقة",
+            "lock_unavailable": "خدمة المصادقة غير متاحة",
+            "lock_unlock": "فتح القفل",
             "dock_new_window": "نافذة جديدة",
             "dock_close_window": "إغلاق النافذة",
             "dock_close_all": "إغلاق كل النوافذ",
@@ -965,6 +979,47 @@ Item {
     })
 
     // "3 windows" / Arabic dual & plural forms (١ نافذة، نافذتان، ٣ نوافذ، ١١ نافذة).
+    // ── Locale-aware date & time (Qt.formatDate uses the process C locale, not the
+    // shell language, so Arabic names/digits must be produced here). Shared by the lock
+    // screen, the Notch idle view, desktop widgets and the Time capsule.
+    readonly property var arDays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
+    readonly property var arMonths: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+                                     "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+    readonly property var enDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    readonly property var enMonths: ["January", "February", "March", "April", "May", "June",
+                                     "July", "August", "September", "October", "November", "December"]
+    readonly property bool arabicDigits: root.isRTL && !!(typeof ConfigManager !== "undefined" && ConfigManager.timeCapsuleArabicDigits)
+
+    function digits(v) {
+        const s = String(v === undefined || v === null ? "" : v);
+        return root.arabicDigits ? s.replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]) : s;
+    }
+    // Clock honouring Settings → clock format (24h / 12h). Arabic uses ص/م.
+    function clockText(d, withSeconds) {
+        if (!d) return "--:--";
+        const h24 = (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        const ss = withSeconds ? ":" + String(d.getSeconds()).padStart(2, "0") : "";
+        if (h24) return root.digits(String(d.getHours()).padStart(2, "0") + ":" + mm + ss);
+        const h = d.getHours() % 12 || 12;
+        const ap = d.getHours() < 12 ? (root.isRTL ? "ص" : "AM") : (root.isRTL ? "م" : "PM");
+        return root.digits(h + ":" + mm + ss) + " " + ap;
+    }
+    // "الأربعاء، 23 سبتمبر 2026" / "Wednesday, September 23, 2026"
+    function fullDateText(d) {
+        if (!d) return "";
+        if (root.isRTL)
+            return root.arDays[d.getDay()] + "، " + root.digits(d.getDate()) + " " + root.arMonths[d.getMonth()] + " " + root.digits(d.getFullYear());
+        return root.enDays[d.getDay()] + ", " + root.enMonths[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
+    }
+    // "الأربعاء، 23 سبتمبر" / "Wed, Sep 23"
+    function shortDateText(d) {
+        if (!d) return "";
+        if (root.isRTL)
+            return root.arDays[d.getDay()] + "، " + root.digits(d.getDate()) + " " + root.arMonths[d.getMonth()];
+        return root.enDays[d.getDay()].slice(0, 3) + ", " + root.enMonths[d.getMonth()].slice(0, 3) + " " + d.getDate();
+    }
+
     // "8 apps" / Arabic: تطبيق واحد، تطبيقان، ٣–١٠ تطبيقات، ١١+ تطبيقًا
     function appsCount(n) {
         if (!root.isRTL) return n + (n === 1 ? " app" : " apps");
