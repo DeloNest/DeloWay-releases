@@ -27,10 +27,42 @@ ShellRoot {
         onPressed: ShellState.toggleLauncher()
     }
 
+    // ── Shell Toggle (Super alone) ──────────────────────────────────────────
+    GlobalShortcut {
+        name: "shellToggle"
+        description: "Immersion mode: hide top capsules and dock (Super + Shift + F)"
+        onPressed: ShellState.toggleShell()
+    }
+
     GlobalShortcut {
         name: "drawerToggle"
-        description: "Toggles the Deloway Search Launcher (Super alone / Super + Space)"
+        description: "Toggles the Deloway Search Launcher (Super + Space)"
         onPressed: ShellState.toggleLauncher()
+    }
+
+    // ── Start menu (Super tap) ──────────────────────────────────────────────
+    // Tap-vs-combo detection (Hyprland alone can't tell them apart — a release bind
+    // fires even after Super+1):
+    //   startMenuSuper     : Super pressed  → arm;  Super released → toggle if still armed
+    //   startMenuInterrupt : ANY other key / mouse button / wheel while Super is held
+    //                        (transparent, non-consuming catch-all) → disarm
+    // So Super+<anything> keeps its own action and never opens the menu.
+    property bool startMenuArmed: false
+
+    GlobalShortcut {
+        name: "startMenuSuper"
+        description: "Tap Super: toggle the Start-style App Drawer"
+        onPressed: root.startMenuArmed = true
+        onReleased: {
+            if (root.startMenuArmed) ShellState.toggleAppDrawer();
+            root.startMenuArmed = false;
+        }
+    }
+
+    GlobalShortcut {
+        name: "startMenuInterrupt"
+        description: "Internal: a Super combo happened, cancel the pending Start-menu tap"
+        onPressed: root.startMenuArmed = false
     }
 
     GlobalShortcut {
@@ -43,12 +75,6 @@ ShellRoot {
         name: "settingsToggle"
         description: "Toggles the Deloway Settings App (Super + I)"
         onPressed: ShellState.toggleSettingsApp()
-    }
-
-    GlobalShortcut {
-        name: "storeToggle"
-        description: "Toggles the Deloway App Store (Super + S)"
-        onPressed: ShellState.toggleAppStore()
     }
 
     GlobalShortcut {
@@ -115,6 +141,11 @@ ShellRoot {
     IpcHandler {
         target: "deloway"
 
+        // ── Shell Toggle / Fullscreen ───────────────────────────────────────
+        function toggleShell() { ShellState.toggleShell(); }
+        function hideShell()   { ShellState.setShellHidden(true); }
+        function showShell()   { ShellState.setShellHidden(false); }
+
         // ── Smart Notch ─────────────────────────────────────────────────────
         function toggleSmartNotch()    { ShellState.toggleSmartNotch(); }
         function openSmartNotch()      { ShellState.openSmartNotch(); }
@@ -155,6 +186,8 @@ ShellRoot {
         function isSettingsOpen(): bool       { return ShellState.settingsAppOpen; }
         function openSettingsTab(tabId: string) { ShellState.openSettingsTab(tabId); }
         function scrollSettings(pos: real)    { ShellState.scrollSettings(pos); }
+        // Settings → Apps → details card for a desktop id (same as the app menu's "App Info").
+        function openAppInfo(desktopId: string) { AppActions.openInfo(AppActions.entryFor(desktopId)); }
 
         // ── Sidebars & Session ──────────────────────────────────────────────
         function toggleLeftSidebar()  { ShellState.toggleLeftSidebar(); }
@@ -170,6 +203,69 @@ ShellRoot {
         function toggleTimeCapsule() { ShellState.toggleTimeCapsule(); }
         function openTimeCapsule()   { ShellState.openTimeCapsule(); }
         function closeTimeCapsule()  { ShellState.closeTimeCapsule(); }
+        function setTimeCapsuleTab(tab: int) { ShellState.setTimeCapsuleTab(tab); }
+        function startTimer(minutes: int) {
+            TimeKeeperService.setTimerMinutes(minutes > 0 ? minutes : 5);
+            TimeKeeperService.startTimer();
+        }
+        function stopAlarm() { TimeKeeperService.dismissAlarm(); }
+        function setAlarm(time: string) {
+            const t = TimeKeeperService.parseTime(time);
+            if (!t) return;
+            const hm = t.split(":");
+            TimeKeeperService.setAlarmTime(parseInt(hm[0]), parseInt(hm[1]));
+            TimeKeeperService.setAlarmEnabled(true);
+        }
+        function disableAlarm() { TimeKeeperService.setAlarmEnabled(false); }
+        function removeReminder(id: string) { TimeKeeperService.removeEvent(id); }
+        // Generic settings hook: `ipc call deloway setSetting performanceTier 0`
+        // Calls the SAME ConfigManager setter the Settings UI uses (set<Key>).
+        function setSetting(key: string, value: string): bool {
+            if (!key) return false;
+            const fn = "set" + key.charAt(0).toUpperCase() + key.slice(1);
+            if (typeof ConfigManager[fn] !== "function") return false;
+            let v = value;
+            if (value === "true" || value === "false") v = (value === "true");
+            else if (value !== "" && !isNaN(Number(value))) v = Number(value);
+            ConfigManager[fn](v);
+            return true;
+        }
+        function getSetting(key: string): string {
+            const v = ConfigManager[key];
+            return v === undefined ? "undefined" : JSON.stringify(v);
+        }
+        // Dock: the same action as a left click on an app's icon (focus / minimize / restore / cycle / launch).
+        function dockClick(appId: string): string {
+            const e = ApplicationManager.dockApps.find(x => x.id === appId);
+            if (!e) return "not-in-dock";
+            ApplicationManager.clickDockApp(e);
+            return "ok";
+        }
+        function dockState(): string {
+            return JSON.stringify(ApplicationManager.dockApps.map(e => ({
+                id: e.id, pinned: e.pinned, running: e.running, active: e.isActive,
+                windows: e.windowCount, allMinimized: e.allMinimized, urgent: e.urgent })));
+        }
+        function controlCenterState(): string {
+            const c = ControlCenterService;
+            return JSON.stringify({ chassis: c.chassis, hasBattery: c.hasBattery, isPortable: c.isPortable,
+                                    airplaneMode: c.airplaneMode, showAirplaneToggle: c.showAirplaneToggle,
+                                    screenSleepArmed: c.screenSleepArmed, screenSleepTimeoutSec: c.screenSleepTimeoutSec,
+                                    displayAsleep: c.displayAsleep });
+        }
+        function timekeeperState(): string {
+            const tk = TimeKeeperService;
+            return JSON.stringify({
+                timer: { running: tk.timerRunning, finished: tk.timerFinished, remaining: tk.timerRemainingSec, total: tk.timerTotalSec },
+                alarm: { enabled: tk.alarmEnabled, time: tk.pad2(tk.alarmHour) + ":" + tk.pad2(tk.alarmMinute),
+                         next: tk.nextAlarmAt ? new Date(tk.nextAlarmAt).toISOString() : null, ringing: tk.alarmRinging },
+                events: tk.events.length
+            });
+        }
+        function addReminder(date: string, time: string, title: string): bool {
+            const key = (date && date !== "today") ? date : TimeKeeperService.dateKey(new Date());
+            return TimeKeeperService.addEvent(key, title, time);
+        }
 
         // ── Cheat Sheet & Screenshot ────────────────────────────────────────
         function toggleCheatsheet() { ShellState.toggleCheatSheet(); }
@@ -180,16 +276,6 @@ ShellRoot {
             if (mode === "area")          ScreenshotManager.captureArea();
             else if (mode === "window")   ScreenshotManager.captureWindow();
             else                          ScreenshotManager.captureFullScreen();
-        }
-
-        // ── Store ───────────────────────────────────────────────────────────
-        function toggleStore()        { ShellState.toggleAppStore(); }
-        function openStore(category: string)   { ShellState.openAppStore(category || "featured", ""); }
-        function searchStore(query: string)    { ShellState.openAppStore("all", query); }
-        function installStoreApp(appId: string){ PackageManager.installApp(appId); }
-        function openStoreApp(appId: string) {
-            var app = PackageManager.getApp(appId);
-            if (app) ShellState.openAppDetails(app);
         }
 
         // ── Config ──────────────────────────────────────────────────────────
@@ -229,7 +315,6 @@ ShellRoot {
             if (ShellState.cheatSheetOpen)    { ShellState.closeCheatSheet();    return true; }
             if (ShellState.quickSettingsCapsuleExpanded) { ShellState.closeQuickSettingsCapsule(); return true; }
             if (ShellState.timeCapsuleExpanded)          { ShellState.closeTimeCapsule();          return true; }
-            if (ShellState.appStoreOpen)      { ShellState.closeAppStore();      return true; }
             if (ShellState.sessionMenuOpen)   { ShellState.closeSessionMenu();   return true; }
             return false;
         }
@@ -291,9 +376,8 @@ ShellRoot {
                     Dock { targetScreen: screenScope.modelData }
                 }
             }
-            Notch        { targetScreen: screenScope.modelData }
-            QuickSettingsCapsule { targetScreen: screenScope.modelData }
-            TimeCapsule  { targetScreen: screenScope.modelData }
+            // Unified top bar: TimeCapsule + Notch + QuickSettingsCapsule in ONE surface
+            TopBar       { targetScreen: screenScope.modelData }
 
             // ── On-demand overlays ──────────────────────────────────────────
             SearchLauncher   { targetScreen: screenScope.modelData }
@@ -309,7 +393,6 @@ ShellRoot {
             // ── Full-screen apps / tools ────────────────────────────────────
             SettingsAppV2  { targetScreen: screenScope.modelData }
             SetupWizard    { targetScreen: screenScope.modelData }
-            AppStore       { targetScreen: screenScope.modelData }
             ScreenshotTool { targetScreen: screenScope.modelData }
             CheatSheet     { targetScreen: screenScope.modelData }
         }

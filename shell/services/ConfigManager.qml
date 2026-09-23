@@ -25,6 +25,7 @@ Item {
     readonly property color accentColor: Theme.colors.accent
     property string wallpaper: projectDir + "/assets/wallpaper.jpg"
     property real fontSizeScale: 1.0
+    property string fontFamily: "Cairo"
     property int transparencyLevel: 85
     property int elementRadius: 8
     property int performanceTier: 1 // 0=Efficient, 1=Balanced, 2=High
@@ -42,8 +43,8 @@ Item {
     })
 
     // Dock Settings
-    property string dockMode: "always" // "always" | "autohide" | "disabled"
-    property bool dockAutoHide: dockMode === "autohide"
+    property string dockMode: "always" // "always" | "autohide" | "intellihide" | "disabled"
+    property bool dockAutoHide: dockMode === "autohide" || dockMode === "intellihide"
     property bool dockEnabled: dockMode !== "disabled"
     property string dockPosition: "bottom"
     property int dockIconSize: 38
@@ -83,6 +84,7 @@ Item {
     property int notificationsTimeout: 5000
     property bool notificationsSound: false
     property bool notchNotifications: true
+    property string drawerGroupBy: "category"   // App Drawer › All apps: "category" (folders) | "alpha" (A–Z)
 
     // Power Settings (§5.9)
     property string powerProfile: "balanced"
@@ -126,6 +128,19 @@ Item {
 
         onTextChanged: {
             root.loadFromText(text());
+            // Apply compositor-side settings from what was actually loaded (the startup
+            // sync used to run before the async file load and pushed the built-in defaults).
+            hyprSyncDebounce.restart();
+        }
+    }
+
+    Timer {
+        id: hyprSyncDebounce
+        interval: 200
+        repeat: false
+        onTriggered: {
+            root.syncHyprlandWindowSettings();
+            root.syncHyprlandVisualEffects();
         }
     }
 
@@ -140,21 +155,75 @@ Item {
                 root.loadFromText(raw);
             }
             root.syncHyprlandWindowSettings();
+            root.syncHyprlandVisualEffects();
         } catch (e) {
             console.log("[Deloway] ConfigManager using default configuration: " + e);
         }
     }
 
+    // Graphics & Visual Effects tier → compositor effects (blur / shadows).
+    //   0 Efficient : no blur, no shadows      (shell drop-shadows also off via Theme.enableShadows)
+    //   1 Balanced  : blur 8×2, shadow 14      (the stock DeloWay values)
+    //   2 High      : blur 10×3, shadow 22
+    function syncHyprlandVisualEffects() {
+        const t = root.performanceTier;
+        const pairs = [
+            ["decoration:blur:enabled", t >= 1 ? "true" : "false"],
+            ["decoration:shadow:enabled", t >= 1 ? "true" : "false"]
+        ];
+        if (t >= 1) {
+            pairs.push(["decoration:blur:size", t >= 2 ? 10 : 8]);
+            pairs.push(["decoration:blur:passes", t >= 2 ? 3 : 2]);
+            pairs.push(["decoration:shadow:range", t >= 2 ? 22 : 14]);
+        }
+        root.hyprKeywords(pairs);
+    }
+
+    // `hyprctl reload` (e.g. after editing hyprland.conf) resets every runtime keyword
+    // back to the file's values; re-apply the user's Settings choices afterwards.
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name === "configreloaded") {
+                root.syncHyprlandWindowSettings();
+                root.syncHyprlandVisualEffects();
+            }
+        }
+    }
+
+    // ── Command helpers ──────────────────────────────────────────────────
+    // Side-effect commands run as independent detached processes. (They previously all
+    // shared `saveProcess`, and each exec() replaced the one before it — so multi-command
+    // setters kept only their LAST command, which was usually the config write. Result:
+    // gaps/rounding/focus/dim, default apps, wallpaper GTK keys… never actually applied.)
+    function run(cmd) {
+        Quickshell.execDetached(cmd);
+    }
+
+    // Several Hyprland keywords in ONE hyprctl call (atomic, one round-trip).
+    function hyprKeywords(pairs) {
+        const batch = pairs.map(p => "keyword " + p[0] + " " + p[1]).join(" ; ");
+        root.run(["hyprctl", "--batch", batch]);
+    }
+
+    // Qt colour → Hyprland colour literal (rgba(rrggbbaa)); "#ffffff" is not accepted.
+    function hyprColor(c) {
+        const q = Qt.color(c);
+        const h = v => ("0" + Math.round(v * 255).toString(16)).slice(-2);
+        return "rgba(" + h(q.r) + h(q.g) + h(q.b) + h(q.a) + ")";
+    }
+
     function syncHyprlandWindowSettings() {
         try {
-            saveProcess.exec(["hyprctl", "keyword", "general:gaps_in", String(root.windowGapsIn)]);
-            saveProcess.exec(["hyprctl", "keyword", "general:gaps_out", String(root.windowGapsOut)]);
-            saveProcess.exec(["hyprctl", "keyword", "decoration:rounding", String(root.windowRounding)]);
-            saveProcess.exec(["hyprctl", "keyword", "input:follow_mouse", root.followMouse ? "1" : "0"]);
-            saveProcess.exec(["hyprctl", "keyword", "decoration:dim_inactive", root.dimInactive ? "true" : "false"]);
-            if (root.activeBorder) {
-                saveProcess.exec(["hyprctl", "keyword", "general:col.active_border", root.activeBorder.toString()]);
-            }
+            const pairs = [
+                ["general:gaps_in", root.windowGapsIn],
+                ["general:gaps_out", root.windowGapsOut],
+                ["decoration:rounding", root.windowRounding],
+                ["input:follow_mouse", root.followMouse ? 1 : 0],
+                ["decoration:dim_inactive", root.dimInactive ? "true" : "false"]
+            ];
+            if (root.activeBorder) pairs.push(["general:col.active_border", root.hyprColor(root.activeBorder)]);
+            root.hyprKeywords(pairs);
         } catch (err) {
             console.warn("[Deloway] Failed to sync Hyprland settings: " + err);
         }
@@ -171,6 +240,7 @@ Item {
                 // Legacy accentColor compatibility: safely ignored in strict monochrome identity
                 if (cfg.theme.wallpaper !== undefined) root.wallpaper = cfg.theme.wallpaper;
                 if (cfg.theme.fontSizeScale !== undefined) root.fontSizeScale = cfg.theme.fontSizeScale;
+                if (cfg.theme.fontFamily !== undefined) root.fontFamily = cfg.theme.fontFamily;
                 if (cfg.theme.transparencyLevel !== undefined) root.transparencyLevel = cfg.theme.transparencyLevel;
                 if (cfg.theme.elementRadius !== undefined) root.elementRadius = cfg.theme.elementRadius;
                 if (cfg.theme.performanceTier !== undefined) root.performanceTier = cfg.theme.performanceTier;
@@ -194,6 +264,9 @@ Item {
                 if (cfg.dock.iconSize) root.dockIconSize = cfg.dock.iconSize;
                 if (cfg.dock.showUnderline !== undefined) root.showUnderline = cfg.dock.showUnderline;
                 if (cfg.dock.pinnedApps) root.pinnedApps = cfg.dock.pinnedApps;
+            }
+            if (cfg.drawer && (cfg.drawer.groupBy === "category" || cfg.drawer.groupBy === "alpha")) {
+                root.drawerGroupBy = cfg.drawer.groupBy;
             }
             if (cfg.topBar) {
                 if (cfg.topBar.showBrand !== undefined) root.topBarShowBrand = cfg.topBar.showBrand;
@@ -233,6 +306,7 @@ Item {
                 if (cfg.notifications.dnd !== undefined) root.notificationsDnd = cfg.notifications.dnd;
                 if (cfg.notifications.timeout) root.notificationsTimeout = cfg.notifications.timeout;
                 if (cfg.notifications.sound !== undefined) root.notificationsSound = cfg.notifications.sound;
+                if (cfg.notifications.notch !== undefined) root.notchNotifications = cfg.notifications.notch;
             }
             if (cfg.power) {
                 if (cfg.power.profile) root.powerProfile = cfg.power.profile;
@@ -256,8 +330,8 @@ Item {
                 root.setupCompleted = cfg.setupCompleted;
             }
             const initialLang = (root.uiLanguage === "ar") ? "ar" : "en_US:en";
-            saveProcess.exec(["hyprctl", "keyword", "env", "LANGUAGE," + initialLang]);
-            saveProcess.exec(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + initialLang]);
+            root.run(["hyprctl", "keyword", "env", "LANGUAGE," + initialLang]);
+            root.run(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + initialLang]);
             updateGtkThemes();
         } catch (err) {
             console.warn("[Deloway] Failed to parse config JSON: " + err);
@@ -273,7 +347,7 @@ Item {
             "colors": Theme.colors,
             "dark": Theme.darkPalette,
             "light": Theme.lightPalette,
-            "radius": Theme.radius,
+            "radius": Theme.baseRadius,   // unscaled: the scaled view is derived at runtime
             "spacing": Theme.spacing,
             "typography": Theme.typography
         }, null, 2);
@@ -307,18 +381,32 @@ Item {
     function setPerformanceTier(tier) {
         if (tier < 0 || tier > 2) return;
         root.performanceTier = tier;
+        syncHyprlandVisualEffects();
         saveConfig();
     }
 
     // Qt theming integration (kdeglobals/qt6ct) - delegated to system theme engine
 
+    // Coalesce rapid changes (mode + font + radius) into one toolkit re-theme.
+    Timer {
+        id: themeApplyDebounce
+        interval: 150
+        repeat: false
+        onTriggered: gtkThemeProcess.exec(["python3", root.projectDir + "/scripts/deloway-theme-apply.py",
+                                           "--mode", root.themeMode,
+                                           "--font-scale", String(root.fontSizeScale),
+                                           "--radius", String(root.elementRadius)])
+    }
+
     function updateGtkThemes() {
         if (!root.applySystemTheme) return;
-        gtkThemeProcess.exec(["python3", root.projectDir + "/scripts/deloway-theme-apply.py"]);
+        // Pass the mode explicitly: deloway.json / theme.json are written asynchronously
+        // (debounced), so the script could otherwise read the previous mode.
+        themeApplyDebounce.restart();
     }
 
     function setDockMode(mode) {
-        if (mode !== "always" && mode !== "autohide" && mode !== "disabled") return;
+        if (["always", "autohide", "intellihide", "disabled"].indexOf(mode) < 0) return;
         root.dockMode = mode;
         saveConfig();
     }
@@ -331,7 +419,7 @@ Item {
         if (!val) {
             root.setDockMode("disabled");
         } else {
-            root.setDockMode(root.dockAutoHide ? "autohide" : "always");
+            root.setDockMode(root.dockAutoHide ? (root.dockMode === "intellihide" ? "intellihide" : "autohide") : "always");
         }
     }
 
@@ -350,6 +438,27 @@ Item {
         saveConfig();
     }
 
+    function setNotificationsSound(val) {
+        root.notificationsSound = !!val;
+        saveConfig();
+    }
+
+    function setDrawerGroupBy(mode) {
+        if (mode !== "category" && mode !== "alpha") return;
+        root.drawerGroupBy = mode;
+        saveConfig();
+    }
+
+    function setNotchNotifications(val) {
+        root.notchNotifications = !!val;
+        saveConfig();
+    }
+
+    function setTopBarShowWorkspaces(val) {
+        root.topBarShowWorkspaces = !!val;
+        saveConfig();
+    }
+
     function setNotificationsTimeout(ms) {
         root.notificationsTimeout = Math.max(1000, Math.min(20000, ms));
         saveConfig();
@@ -363,33 +472,58 @@ Item {
     function setWindowGaps(gapsIn, gapsOut) {
         root.windowGapsIn = Math.max(0, Math.min(30, gapsIn));
         root.windowGapsOut = Math.max(0, Math.min(40, gapsOut));
-        saveProcess.exec(["hyprctl", "keyword", "general:gaps_in", String(root.windowGapsIn)]);
-        saveProcess.exec(["hyprctl", "keyword", "general:gaps_out", String(root.windowGapsOut)]);
+        root.hyprKeywords([["general:gaps_in", root.windowGapsIn], ["general:gaps_out", root.windowGapsOut]]);
         saveConfig();
     }
 
     function setWindowRounding(r) {
         root.windowRounding = Math.max(0, Math.min(24, r));
-        saveProcess.exec(["hyprctl", "keyword", "decoration:rounding", String(root.windowRounding)]);
+        root.run(["hyprctl", "keyword", "decoration:rounding", String(root.windowRounding)]);
         saveConfig();
     }
 
     function setFollowMouse(val) {
         root.followMouse = val;
-        saveProcess.exec(["hyprctl", "keyword", "input:follow_mouse", val ? "1" : "0"]);
+        root.run(["hyprctl", "keyword", "input:follow_mouse", val ? "1" : "0"]);
         saveConfig();
     }
 
     function setDimInactive(val) {
         root.dimInactive = val;
-        saveProcess.exec(["hyprctl", "keyword", "decoration:dim_inactive", val ? "true" : "false"]);
+        root.run(["hyprctl", "keyword", "decoration:dim_inactive", val ? "true" : "false"]);
         saveConfig();
     }
 
     function setActiveBorder(col) {
         root.activeBorder = col;
-        saveProcess.exec(["hyprctl", "keyword", "general:col.active_border", col.toString()]);
+        root.hyprKeywords([["general:col.active_border", root.hyprColor(col)]]);
         saveConfig();
+    }
+
+    // Factory reset of the options exposed in Settings. Goes through the setters so
+    // compositor keywords, GTK theming and theme files are re-applied, not just saved.
+    function resetToDefaults() {
+        setThemeMode("dark");
+        setFontSizeScale(1.0);
+        setElementRadius(8);
+        setPerformanceTier(1);
+        setDockMode("always");
+        setDockPosition("bottom");
+        setDockIconSize(48);
+        setShowUnderline(true);
+        setWindowGaps(5, 10);
+        setWindowRounding(8);
+        setFollowMouse(true);
+        setDimInactive(false);
+        setWorkspacesCount(5);
+        setWorkspaceIndicatorStyle("icons");
+        setTopBarShowWorkspaces(true);
+        setNotificationsDnd(false);
+        setNotificationsSound(false);
+        setNotificationsTimeout(5000);
+        setNotchNotifications(true);
+        setSleepTimeout(30);
+        setClockFormat("12h");
     }
 
     function setDesktopMode(mode) {
@@ -449,12 +583,21 @@ Item {
 
         // Sync with GNOME GSettings so external tools and image viewers stay in sync
         var uri = "file://" + cleanPath;
-        saveProcess.exec(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]);
-        saveProcess.exec(["gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri]);
+        root.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]);
+        root.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri]);
     }
 
     function setFontSizeScale(scale) {
         root.fontSizeScale = Math.max(0.7, Math.min(1.5, scale));
+        saveConfig();
+        if (root.applySystemTheme) {
+            updateGtkThemes();
+        }
+    }
+
+    function setFontFamily(family) {
+        if (!family || root.fontFamily === family) return;
+        root.fontFamily = family;
         saveConfig();
         if (root.applySystemTheme) {
             updateGtkThemes();
@@ -468,9 +611,9 @@ Item {
 
     function setElementRadius(r) {
         root.elementRadius = Math.max(0, Math.min(24, Math.round(r)));
-        root.windowRounding = root.elementRadius;
-        saveProcess.exec(["hyprctl", "keyword", "decoration:rounding", String(root.elementRadius)]);
         saveConfig();
+        // App corner radii follow the shell's (passed to the theme script as --radius)
+        if (root.applySystemTheme) updateGtkThemes();
     }
 
     function setWorkspaceIndicatorStyle(style) {
@@ -553,8 +696,9 @@ Item {
     }
 
     function setPowerProfile(prof) {
+        if (["power-saver", "balanced", "performance"].indexOf(prof) < 0) return;
         root.powerProfile = prof;
-        saveProcess.exec(["bash", "-c", "command -v powerprofilesctl >/dev/null && powerprofilesctl set " + prof + " || true"]);
+        ControlCenterService.setPowerProfile(prof);   // powerprofilesctl set + read-back
         saveConfig();
     }
 
@@ -564,17 +708,21 @@ Item {
     }
 
     function setDefaultApp(cat, cmd) {
+        if (!cmd) return;
+        const cleanCmd = cmd.replace(/\.desktop$/, "");
+        const desktopFile = cleanCmd + ".desktop";
         if (cat === "browser") {
-            root.defaultBrowser = cmd;
-            saveProcess.exec(["xdg-settings", "set", "default-web-browser", cmd + ".desktop"]);
+            root.defaultBrowser = cleanCmd;
+            root.run(["xdg-settings", "set", "default-web-browser", desktopFile]);
+            root.run(["xdg-mime", "default", desktopFile, "x-scheme-handler/http", "x-scheme-handler/https", "text/html"]);
         } else if (cat === "terminal") {
-            root.defaultTerminal = cmd;
+            root.defaultTerminal = cleanCmd;
         } else if (cat === "fileManager") {
-            root.defaultFileManager = cmd;
-            saveProcess.exec(["xdg-mime", "default", cmd + ".desktop", "inode/directory"]);
+            root.defaultFileManager = cleanCmd;
+            root.run(["xdg-mime", "default", desktopFile, "inode/directory"]);
         } else if (cat === "editor") {
-            root.defaultEditor = cmd;
-            saveProcess.exec(["xdg-mime", "default", cmd + ".desktop", "text/plain"]);
+            root.defaultEditor = cleanCmd;
+            root.run(["xdg-mime", "default", desktopFile, "text/plain"]);
         }
         saveConfig();
     }
@@ -607,9 +755,9 @@ Item {
         if (target.type === "url" && target.value) {
             const url = target.value.trim();
             if (target.webApp) {
-                saveProcess.exec(["bash", "-c", "for b in brave chromium google-chrome google-chrome-stable thorium-browser; do if command -v $b >/dev/null 2>&1; then exec $b --app=" + url + "; exit 0; fi; done; xdg-open " + url]);
+                root.run(["bash", "-c", "for b in brave chromium google-chrome google-chrome-stable thorium-browser; do if command -v $b >/dev/null 2>&1; then exec $b --app=" + url + "; exit 0; fi; done; xdg-open " + url]);
             } else {
-                saveProcess.exec(["xdg-open", url]);
+                root.run(["xdg-open", url]);
             }
         } else if (target.type === "app" && target.value) {
             const val = target.value.trim();
@@ -617,7 +765,7 @@ Item {
             if (app && typeof app.execute === "function") {
                 app.execute();
             } else {
-                saveProcess.exec(["bash", "-c", "gtk-launch " + val + " 2>/dev/null || hyprctl dispatch exec " + val]);
+                root.run(["bash", "-c", "gtk-launch " + val + " 2>/dev/null || hyprctl dispatch exec " + val]);
             }
         }
     }
@@ -627,8 +775,8 @@ Item {
         root.uiLanguage = lang;
         saveConfig();
         const langVal = (lang === "ar") ? "ar" : "en_US:en";
-        saveProcess.exec(["hyprctl", "keyword", "env", "LANGUAGE," + langVal]);
-        saveProcess.exec(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + langVal]);
+        root.run(["hyprctl", "keyword", "env", "LANGUAGE," + langVal]);
+        root.run(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + langVal]);
         localeApplyProcess.exec(["python3", root.projectDir + "/scripts/deloway-locale-apply.py", "--lang", lang]);
         if (root.applySystemTheme) {
             updateGtkThemes();
@@ -649,15 +797,27 @@ Item {
         root.keyboardLayouts = layouts;
         saveConfig();
         const layoutStr = layouts.join(",");
-        saveProcess.exec(["hyprctl", "keyword", "input:kb_layout", layoutStr]);
+        root.run(["hyprctl", "keyword", "input:kb_layout", layoutStr]);
     }
 
+    // Coalesce bursts (e.g. resetToDefaults → 20 setters) into one full write.
+    Timer {
+        id: saveDebounce
+        interval: 120
+        repeat: false
+        onTriggered: root.writeConfigNow()
+    }
     function saveConfig() {
+        saveDebounce.restart();
+    }
+
+    function writeConfigNow() {
         const configData = {
             theme: {
                 mode: root.themeMode,
                 wallpaper: root.wallpaper,
                 fontSizeScale: root.fontSizeScale,
+                fontFamily: root.fontFamily,
                 transparencyLevel: root.transparencyLevel,
                 elementRadius: root.elementRadius,
                 performanceTier: root.performanceTier,
@@ -708,7 +868,11 @@ Item {
             notifications: {
                 dnd: root.notificationsDnd,
                 timeout: root.notificationsTimeout,
-                sound: root.notificationsSound
+                sound: root.notificationsSound,
+                notch: root.notchNotifications
+            },
+            drawer: {
+                groupBy: root.drawerGroupBy
             },
             power: {
                 profile: root.powerProfile,
@@ -738,7 +902,7 @@ Item {
     function completeSetup() {
         root.setupCompleted = true;
         saveConfig();
-        saveProcess.exec(["bash", "-c", "mkdir -p " + root.userConfigDir + " && echo 'done' > " + root.markerPath]);
+        root.run(["bash", "-c", "mkdir -p " + root.userConfigDir + " && echo 'done' > " + root.markerPath]);
     }
 
     Process {

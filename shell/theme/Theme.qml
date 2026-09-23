@@ -12,6 +12,8 @@ Item {
     readonly property bool isDark: mode === "dark"
     readonly property real fontScale: (typeof ConfigManager !== "undefined" && ConfigManager.fontSizeScale)
                                      ? ConfigManager.fontSizeScale : 1.0
+    readonly property string fontFamily: (typeof ConfigManager !== "undefined" && ConfigManager.fontFamily)
+                                         ? ConfigManager.fontFamily : "Cairo"
 
     function fontSize(baseSize) {
         return Math.round(baseSize * root.fontScale);
@@ -58,16 +60,28 @@ Item {
     // Radius Tokens (NewPlan.md §4.2)
     // 3 canonical values only: Small (buttons, inputs), Medium (cards), Large (windows, Dock, Notch).
     // -------------------------------------------------------------------------
-    readonly property int radiusSmall: 6
-    readonly property int radiusMedium: 10
-    readonly property int radiusLarge: 14
+    // "Shell Corner Radius" (Settings → Appearance) scales every card/tile/control radius.
+    // 8px = 1.0 (design default); 4px ≈ 0.67 (sharp); 14px = 1.5 (rounded).
+    // Outer capsule/notch/dock silhouettes are geometry, not "corners", and stay fixed.
+    readonly property real radiusScale: {
+        const r = (typeof ConfigManager !== "undefined" && ConfigManager.elementRadius !== undefined) ? ConfigManager.elementRadius : 8;
+        return Math.max(0.5, Math.min(1.6, 1 + (r - 8) / 12));
+    }
+    function scaledRadius(base) { return Math.round(base * root.radiusScale); }
+
+    readonly property int radiusSmall: scaledRadius(6)
+    readonly property int radiusMedium: scaledRadius(10)
+    readonly property int radiusLarge: scaledRadius(14)
 
     // -------------------------------------------------------------------------
     // Spacing Tokens (NewPlan.md §4.3) - 8pt Grid
     // -------------------------------------------------------------------------
     readonly property int space4: 4
+    readonly property int space6: 6
     readonly property int space8: 8
+    readonly property int space12: 12
     readonly property int space16: 16
+    readonly property int space20: 20
     readonly property int space24: 24
     readonly property int space32: 32
     readonly property int space48: 48
@@ -198,6 +212,11 @@ Item {
     readonly property color notchText: isDark ? "#ffffff" : "#0f172a"
     readonly property color notchTextSecondary: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.65)
     readonly property color notchTextTertiary: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
+    // Reading-text tokens for dense surfaces (notifications). OPAQUE neutral greys instead of
+    // alpha: alpha text over black/blur renders thin and washed-out with native hinting,
+    // especially for Arabic strokes. Body ≈ 88% luminance, meta ≈ 70% (dark mode).
+    readonly property color notchTextBody: isDark ? Qt.rgba(0.88, 0.88, 0.88, 1) : Qt.rgba(0.14, 0.14, 0.14, 1)
+    readonly property color notchTextMeta: isDark ? Qt.rgba(0.70, 0.70, 0.70, 1) : Qt.rgba(0.34, 0.34, 0.34, 1)
     readonly property color notchSurface: isDark ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.04)
     readonly property color notchSurfaceElevated: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.07)
     readonly property color notchSurfaceHover: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
@@ -208,18 +227,26 @@ Item {
     readonly property color notchShadow: isDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.12)
     readonly property int notchRadius: 22
     readonly property int notchRadiusWindow: 26
-    readonly property int notchRadiusPanel: 16
-    readonly property int notchRadiusCard: 12
-    readonly property int notchRadiusPill: 8
+    readonly property int notchRadiusPanel: scaledRadius(16)
+    readonly property int notchRadiusCard: scaledRadius(12)
+    readonly property int notchRadiusPill: scaledRadius(8)
     readonly property int radiusDock: 24
 
     // Dock Tokens (Unified with OLED Notch/Capsule aesthetic)
-    readonly property color dockGlass: notchBackground
+    // Translucent glass when compositor blur is on (Hyprland blurs the deloway:dock layer
+    // behind it); solid when effects are off so text/icons never sit on raw wallpaper.
+    readonly property color dockGlass: Qt.alpha(notchBackground, enableBlur ? 0.78 : 1.0)
     readonly property color dockGlassSheen: notchBorderSubtle
     readonly property color dockBorder: notchBorder
     readonly property color dockShadow: notchShadow
     readonly property color dockDot: isDark ? Qt.rgba(1, 1, 1, 0.95) : Qt.rgba(0, 0, 0, 0.85)
     readonly property color dockDivider: notchBorderHighlight
+    readonly property color dockDividerFaint: notchBorder               // pinned | running
+    readonly property color dockIndicator: dockDot                        // focused app pill
+    readonly property color dockIndicatorIdle: isDark ? Qt.rgba(1, 1, 1, 0.50) : Qt.rgba(0, 0, 0, 0.42)
+    readonly property color dockIndicatorHalo: isDark ? Qt.rgba(1, 1, 1, 0.18) : Qt.rgba(0, 0, 0, 0.12)
+    readonly property color dockActiveWell: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
+    readonly property int dockTooltipRoom: 64                             // headroom so tooltips never clip
     readonly property color dockTooltipBg: notchBackground
     readonly property color dockTooltipBorder: notchBorder
 
@@ -232,7 +259,7 @@ Item {
 
     // Quick Settings Capsule Tokens (4px unit grid, refined scale)
     readonly property int qsTileHeight: 52
-    readonly property int qsTileRadius: 16
+    readonly property int qsTileRadius: scaledRadius(16)
     readonly property int qsIconCircleSize: 36
     readonly property int qsIconCircleRadius: 18
     readonly property int qsRoundButtonSize: 36
@@ -240,7 +267,7 @@ Item {
     readonly property int qsSliderCardHeight: 68
     readonly property int qsSliderTrackHeight: 28
     readonly property int qsSliderTrackRadius: 14
-    readonly property int qsCardRadius: 16
+    readonly property int qsCardRadius: scaledRadius(16)
     readonly property int qsSpacing: 8
     readonly property int qsPadding: 12
 
@@ -259,17 +286,20 @@ Item {
     readonly property color qsSliderIconActive: isDark ? "#000000" : "#ffffff"
     readonly property color qsSliderIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.60) : Qt.rgba(0, 0, 0, 0.50)
 
-    // Workspace Indicator Tokens
-    readonly property int wsDotSize:            6
-    readonly property int wsCircleSize:         28
-    readonly property int wsPillHeight:         32
-    readonly property int wsPillBase:           30    // pill width: number only (active, no icons)
-    readonly property int wsPillIconGap:        4     // gap between number and icon area in pill
-    readonly property int wsIconSizeSingle:     15    // icon size when 1 shown (circle or pill)
-    readonly property int wsIconSizeDouble:     12    // each icon size when 2 overlapping
-    readonly property int wsIconOverlapOffset:  8     // horizontal offset of 2nd icon centre
-    readonly property int wsBadgeSize:          13
-    readonly property int wsIndicatorSpacing:   5
+    // Workspace Indicator Tokens (collapsed Notch)
+    // Every state has a FIXED slot width that never depends on hover, so hovering can
+    // never change the row width (and therefore never resizes the Notch).
+    readonly property int wsDotSize:            7     // empty workspace dot
+    readonly property int wsEmptySlot:          12    // fixed slot around the dot (hit target)
+    readonly property int wsCircleSize:         30    // occupied workspace
+    readonly property int wsPillHeight:         32    // active workspace
+    readonly property int wsPillBase:           32    // pill width: number only (active, no icons)
+    readonly property int wsPillIconGap:        5     // gap between number and icon area in pill
+    readonly property int wsIconSizeSingle:     17    // icon size when 1 shown (circle or pill)
+    readonly property int wsIconSizeDouble:     14    // each icon size when 2 overlapping
+    readonly property int wsIconOverlapOffset:  9     // horizontal offset of 2nd icon centre
+    readonly property int wsBadgeSize:          14
+    readonly property int wsIndicatorSpacing:   6
 
     // kept for back-compat
     readonly property int wsPillWidth:  wsPillBase
@@ -292,6 +322,15 @@ Item {
     readonly property int topBarExclusiveZone: 54 // 54px
     readonly property int topBarReserved: 54 // 54px
 
+    // Top-bar capsule geometry (single source of truth for Notch + side capsules).
+    // Side capsules are positioned INSIDE their own fixed layer surface relative to
+    // the screen centre, so reflow never depends on runtime layer-shell margin updates.
+    readonly property int notchEarRadius: 18
+    readonly property int notchExpandedWidth: 600
+    readonly property int notchExpandedOuterWidth: notchExpandedWidth + notchEarRadius * 2 // 636px
+    readonly property int capsuleGap: space20        // minimum clearance between notch and a side capsule
+    readonly property int capsuleEdgeMargin: space8  // minimum clearance between a capsule and the screen edge
+
     readonly property int dockMarginBottom: 10
     readonly property int dockGap: 8
     function dockExclusiveZoneFor(dockHeight) {
@@ -310,7 +349,7 @@ Item {
         root.colors = Object.assign({}, targetPalette);
     }
 
-    property var radius: ({
+    property var baseRadius: ({
         "xsmall": 4,
         "small": 6,
         "medium": 10,
@@ -325,6 +364,15 @@ Item {
         "dockItem": 11,
         "none": 0
     })
+
+    readonly property var radius: {
+        const out = {};
+        for (const k in root.baseRadius) {
+            const v = root.baseRadius[k];
+            out[k] = (k === "pill" || k === "none") ? v : Math.round(v * root.radiusScale);
+        }
+        return out;
+    }
 
     property var spacing: ({
         "xsmall": 4,
@@ -348,8 +396,8 @@ Item {
     readonly property var fontFamilies: ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"]
 
     property var baseTypography: ({
-        "fontFamily": "Inter",
-        "fontFamilies": ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"],
+        "fontFamily": root.fontFamily,
+        "fontFamilies": ["Cairo", "Readex Pro", "Rubik", "Noto Kufi Arabic", "Inter", "sans-serif"],
         "terminalFont": "JetBrainsMono Nerd Font",
 
         // 4-Level Semantic Type Scale
@@ -372,8 +420,8 @@ Item {
     })
 
     readonly property var typography: ({
-        "fontFamily": baseTypography.fontFamily || "Inter",
-        "fontFamilies": baseTypography.fontFamilies || ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"],
+        "fontFamily": root.fontFamily,
+        "fontFamilies": baseTypography.fontFamilies || ["Cairo", "Readex Pro", "Rubik", "Noto Kufi Arabic", "Inter", "sans-serif"],
         "terminalFont": baseTypography.terminalFont || "JetBrainsMono Nerd Font",
 
         // 4-Level Semantic Type Scale (Scaled dynamically)
@@ -408,7 +456,7 @@ Item {
                     ? (parsed.light || parsed.colors || {})
                     : (parsed.dark || parsed.colors || {});
                 root.colors = Object.assign({}, (root.mode === "light" ? root.lightPalette : root.darkPalette), activePalette);
-                if (parsed.radius) root.radius = Object.assign({}, root.radius, parsed.radius);
+                if (parsed.radius) root.baseRadius = Object.assign({}, root.baseRadius, parsed.radius);
                 if (parsed.spacing) root.spacing = Object.assign({}, root.spacing, parsed.spacing);
                 if (parsed.typography) root.baseTypography = Object.assign({}, root.baseTypography, parsed.typography);
             } catch (e) {

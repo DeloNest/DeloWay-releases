@@ -75,10 +75,6 @@ Item {
         "system-shutdown-symbolic": "status/power-symbolic.svg",
         "power": "status/power-symbolic.svg",
         "power-symbolic": "status/power-symbolic.svg",
-        "system-reboot": "status/power-symbolic.svg",
-        "system-reboot-symbolic": "status/power-symbolic.svg",
-        "system-log-out": "status/power-symbolic.svg",
-        "system-log-out-symbolic": "status/power-symbolic.svg",
         "changes-prevent": "status/alert.svg",
         "changes-prevent-symbolic": "status/alert.svg",
         "system-lock-screen": "status/lock.svg",
@@ -221,11 +217,37 @@ Item {
         visible: rawIcon.status === Image.Ready
     }
 
-    // Fallback: If image fails to resolve locally, use Quickshell / Kirigami icon
+    // Theme symbolic icons (not in the bundled map) are tinted too, so every "*-symbolic"
+    // glyph follows the monochrome tokens (e.g. black on an active white tile) instead of
+    // the theme's baked-in colour. Mirroring is intentionally NOT applied here: callers
+    // that pick a direction per locale for unmapped icons keep working unchanged.
+    readonly property bool themeSymbolic: !root.resolvedSource && root.source.length > 0
+                                          && /-symbolic$/.test(root.source) && Quickshell.hasThemeIcon(root.source)
+
+    Image {
+        id: themeIcon
+        anchors.fill: parent
+        source: root.themeSymbolic ? Quickshell.iconPath(root.source, "") : ""
+        sourceSize.width: Math.round(root.iconSize * 2)
+        sourceSize.height: Math.round(root.iconSize * 2)
+        fillMode: Image.PreserveAspectFit
+        smooth: true
+        mipmap: true
+        visible: false
+    }
+
+    ColorOverlay {
+        anchors.fill: themeIcon
+        source: themeIcon
+        color: root.iconColor
+        visible: root.themeSymbolic && themeIcon.status === Image.Ready
+    }
+
+    // Fallback: non-symbolic / unresolvable names keep the theme's own rendering
     IconImage {
         anchors.fill: parent
         source: root.resolvedSource ? "" : Quickshell.iconPath(root.source, "image-missing")
         implicitSize: root.iconSize
-        visible: rawIcon.status !== Image.Ready
+        visible: rawIcon.status !== Image.Ready && !(root.themeSymbolic && themeIcon.status === Image.Ready)
     }
 }

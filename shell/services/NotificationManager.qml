@@ -2,16 +2,120 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Services.Notifications
+import Quickshell.Io
 import "../theme"
 
+// NotificationManager — single source of truth for notifications.
+// Every surface (Notch banner, Notch history, fallback toast) renders the SAME
+// normalised item, so text sanitising, BiDi handling and time formatting live here once.
 Item {
     id: root
 
-    // Real system notifications received via NotificationServer
     property var notifications: []
     property int unreadCount: 0
 
     signal toastRequested(var notif)
+
+    // Coarse clock for relative timestamps ("now", "5m"). Ticks only while history exists.
+    property real now: Date.now()
+    Timer {
+        interval: 30000
+        repeat: true
+        running: root.notifications.length > 0
+        onTriggered: root.now = Date.now()
+    }
+
+    // ── Text normalisation ───────────────────────────────────────────────
+    // Bodies may carry markup (bodyMarkupSupported). Rich text disables eliding and
+    // mixes font metrics, so everything is rendered as clean PlainText.
+    function plainText(s, singleLine) {
+        if (!s) return "";
+        let t = String(s)
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<[^>]+>/g, "")
+            .replace(/&nbsp;/g, " ")
+            .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+            .replace(/&quot;/g, "\"").replace(/&#0*39;|&apos;/g, "'")
+            .replace(/&amp;/g, "&")
+            .replace(/[ \t]+/g, " ")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+        if (singleLine) t = t.replace(/\s*\n\s*/g, "  ");
+        return t;
+    }
+
+    // Paragraph direction: any Arabic/Hebrew letter makes the paragraph RTL (RLM prefix),
+    // so strings that merely *start* with a filename, number or Latin brand still read
+    // right-to-left. Pure Latin text keeps its natural LTR order.
+    readonly property var rtlPattern: /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/
+    function isRtlText(s) { return root.rtlPattern.test(s || ""); }
+    function bidi(s) {
+        if (!s) return "";
+        return root.isRtlText(s) ? "\u200F" + s : s;
+    }
+
+    // ── Localised time ───────────────────────────────────────────────────
+    function clockLabel(ts) {
+        const d = new Date(ts);
+        if (ConfigManager.clockFormat === "24h") return Qt.formatTime(d, "hh:mm");
+        const hm = Qt.formatTime(d, "h:mm");
+        if (I18n.isRTL) return hm + " " + (d.getHours() < 12 ? "ص" : "م");
+        return hm + " " + (d.getHours() < 12 ? "AM" : "PM");
+    }
+    function timeLabel(ts) {
+        if (!ts) return "";
+        const diff = Math.max(0, root.now - ts);
+        const rtl = I18n.isRTL;
+        if (diff < 60000) return rtl ? "الآن" : "now";
+        if (diff < 3600000) {
+            const m = Math.floor(diff / 60000);
+            return rtl ? "منذ " + m + " د" : m + "m";
+        }
+        const d = new Date(ts), today = new Date(root.now);
+        if (d.toDateString() === today.toDateString()) return root.clockLabel(ts);
+        const y = new Date(root.now - 86400000);
+        if (d.toDateString() === y.toDateString()) return (rtl ? "أمس " : "Yesterday ") + root.clockLabel(ts);
+        return Qt.formatDate(d, "d/M");
+    }
+
+    // ── Item factory ─────────────────────────────────────────────────────
+    function makeItem(fields) {
+        const ts = Date.now();
+        return Object.assign({
+            id: ts,
+            appName: "",
+            iconSource: "",
+            summary: "",
+            body: "",
+            urgency: 1,           // 0 low · 1 normal · 2 critical
+            imagePath: "",
+            isScreenshot: false,
+            timestamp: ts,
+            timeStr: root.clockLabel(ts),   // back-compat for older consumers
+            notificationRef: null
+        }, fields);
+    }
+
+    // "Notification Sounds" (Settings → Notifications): short chime, silent in DND.
+    readonly property string chimePath: "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga"
+    Process { id: chimeProc }
+    function chime(item) {
+        if (!ConfigManager.notificationsSound || ConfigManager.notificationsDnd) return;
+        if (item && item.urgency === 0) return;            // low-urgency stays silent
+        if (chimeProc.running) return;                     // bursts → one chime
+        chimeProc.exec(["sh", "-c", "pw-play '" + root.chimePath + "' 2>/dev/null || paplay '" + root.chimePath + "'"]);
+    }
+
+    function push(item) {
+        root.now = Date.now();
+        root.chime(item);
+        const list = root.notifications.slice();
+        list.unshift(item);
+        if (list.length > 50) list.pop();
+        root.notifications = list;
+        root.unreadCount++;
+        root.toastRequested(item);
+    }
 
     NotificationServer {
         id: server
@@ -22,97 +126,61 @@ Item {
         imageSupported: true
 
         onNotification: notif => {
-            // Track notification in Quickshell
             notif.tracked = true;
 
-            const notifItem = {
+            root.push(root.makeItem({
                 id: notif.id,
-                appName: notif.appName || "Application",
-                appIcon: notif.appIcon || "dialog-information",
-                summary: notif.summary || "Notification",
-                body: notif.body || "",
-                timeStr: Qt.formatTime(new Date(), "hh:mm AP"),
-                timestamp: Date.now(),
+                appName: root.plainText(notif.appName, true),
+                // image hint (avatar / cover / icon name) wins over app_icon, then the desktop entry
+                iconSource: notif.image || notif.appIcon || notif.desktopEntry || "",
+                summary: root.plainText(notif.summary, true),
+                body: root.plainText(notif.body, false),
+                urgency: notif.urgency === NotificationUrgency.Critical ? 2
+                         : (notif.urgency === NotificationUrgency.Low ? 0 : 1),
                 notificationRef: notif
-            };
+            }));
 
-            // Prepend to notifications list
-            let list = root.notifications.slice();
-            list.unshift(notifItem);
-            if (list.length > 50) list.pop();
-            root.notifications = list;
-            root.unreadCount++;
-
-            // Emit toast for popup
-            root.toastRequested(notifItem);
-
-            notif.closed.connect(reason => {
-                root.removeById(notif.id);
-            });
+            notif.closed.connect(reason => root.removeById(notif.id));
         }
     }
 
     function removeById(id) {
-        let list = root.notifications.filter(n => n.id !== id);
-        root.notifications = list;
-        if (root.unreadCount > 0) root.unreadCount = Math.max(0, root.unreadCount - 1);
+        const before = root.notifications.length;
+        root.notifications = root.notifications.filter(n => n.id !== id);
+        if (root.notifications.length < before && root.unreadCount > 0)
+            root.unreadCount = Math.max(0, root.unreadCount - 1);
     }
 
     function dismiss(id) {
         const item = root.notifications.find(n => n.id === id);
         if (item && item.notificationRef) {
-            try {
-                item.notificationRef.dismiss();
-            } catch (e) {
-                // Ignore if already dismissed
-            }
+            try { item.notificationRef.dismiss(); } catch (e) {}
         }
-        removeById(id);
+        root.removeById(id);
     }
 
     function postNotification(appName, summary, body, appIcon) {
-        const notifItem = {
-            id: Date.now(),
+        root.push(root.makeItem({
             appName: appName || "DeloOS",
-            appIcon: appIcon || "software-store",
-            summary: summary || "Notification",
-            body: body || "",
-            timeStr: Qt.formatTime(new Date(), "hh:mm AP"),
-            timestamp: Date.now(),
-            notificationRef: null
-        };
-        let list = root.notifications.slice();
-        list.unshift(notifItem);
-        if (list.length > 50) list.pop();
-        root.notifications = list;
-        root.unreadCount++;
-        root.toastRequested(notifItem);
+            iconSource: appIcon || "",
+            summary: summary || "",
+            body: root.plainText(body, false)
+        }));
     }
 
     function postScreenshotNotification(filePath) {
-        const notifItem = {
-            id: Date.now(),
-            appName: "Screenshot Tool",
-            appIcon: "camera-photo",
-            summary: "Screenshot Captured",
-            body: "Image copied to clipboard and saved to disk.",
+        root.push(root.makeItem({
+            appName: I18n.isRTL ? "لقطة الشاشة" : "Screenshot",
+            iconSource: "camera-photo",
+            summary: I18n.isRTL ? "تم التقاط لقطة الشاشة" : "Screenshot captured",
+            body: I18n.isRTL ? "نُسخت إلى الحافظة وحُفظت على القرص" : "Copied to clipboard and saved to disk",
             imagePath: filePath,
-            isScreenshot: true,
-            timeStr: Qt.formatTime(new Date(), "hh:mm AP"),
-            timestamp: Date.now(),
-            notificationRef: null
-        };
-        let list = root.notifications.slice();
-        list.unshift(notifItem);
-        if (list.length > 50) list.pop();
-        root.notifications = list;
-        root.unreadCount++;
-        root.toastRequested(notifItem);
+            isScreenshot: true
+        }));
     }
 
     function clearAll() {
-        for (let i = 0; i < root.notifications.length; i++) {
-            const item = root.notifications[i];
+        for (const item of root.notifications) {
             if (item && item.notificationRef) {
                 try { item.notificationRef.dismiss(); } catch (e) {}
             }

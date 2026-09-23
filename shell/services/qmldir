@@ -11,3 +11,8 @@ singleton LocalSendService 1.0 LocalSendService.qml
 singleton HardwareService 1.0 HardwareService.qml
 singleton ClipboardService 1.0 ClipboardService.qml
 singleton LauncherIndex 1.0 LauncherIndex.qml
+singleton NetworkService 1.0 NetworkService.qml
+singleton BluetoothService 1.0 BluetoothService.qml
+singleton TimeKeeperService 1.0 TimeKeeperService.qml
+singleton ControlCenterService 1.0 ControlCenterService.qml
+singleton AppActions 1.0 AppActions.qml
