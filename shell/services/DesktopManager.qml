@@ -492,7 +492,6 @@ Item {
         onExited: {
             root.userItems = root._pendingUserItems;
             root.allItems = root.systemItems.concat(root.userItems);
-            console.log("[Deloway Desktop] Scan complete. Found " + root.userItems.length + " user items, total allItems: " + root.allItems.length);
         }
     }
 

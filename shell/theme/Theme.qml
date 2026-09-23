@@ -19,9 +19,6 @@ Item {
         return Math.round(baseSize * root.fontScale);
     }
 
-    function scaleFont(baseSize) {
-        return root.fontSize(baseSize);
-    }
 
     Connections {
         target: (typeof ConfigManager !== "undefined") ? ConfigManager : null
@@ -41,11 +38,7 @@ Item {
     readonly property int performanceTier: (typeof ConfigManager !== "undefined" && ConfigManager.performanceTier !== undefined)
                                            ? ConfigManager.performanceTier : 1
 
-    readonly property real blurRadius: performanceTier >= 2 ? 64 : (performanceTier === 1 ? 32 : 0)
-    readonly property bool enableBlur: performanceTier >= 1
-    readonly property bool enableComplexMotion: performanceTier >= 1
     readonly property bool enableShadows: performanceTier >= 1
-    readonly property bool enableLayeredShadows: performanceTier >= 2
 
     // -------------------------------------------------------------------------
     // Motion Tokens (NewPlan.md §4.4)
@@ -83,7 +76,6 @@ Item {
     readonly property int space16: 16
     readonly property int space20: 20
     readonly property int space24: 24
-    readonly property int space32: 32
     readonly property int space48: 48
 
     readonly property var darkPalette: ({
@@ -161,49 +153,20 @@ Item {
     property var colors: Object.assign({}, darkPalette)
 
     // Direct color accessors for cleaner QML code
-    readonly property color background: colors.background || "#101318"
-    readonly property color surface: colors.surface || "#1b202c"
-    readonly property color surfaceLayer1: colors.surfaceLayer1 || surface
-    readonly property color surfaceLayer2: colors.surfaceLayer2 || surfaceElevated
-    readonly property color surfaceCard: colors.surfaceCard || surface
-    readonly property color surfaceElevated: colors.surfaceElevated || "#222736"
-    readonly property color surfaceHover: colors.surfaceHover || "#262c3d"
-    readonly property color surfaceActive: colors.surfaceActive || "#2f374c"
-    readonly property color surfaceVariant: colors.surfaceVariant || "#151924"
-    readonly property color border: colors.border || "#2a3142"
-    readonly property color borderSubtle: colors.borderSubtle || "#202533"
-    readonly property color borderHighlight: colors.borderHighlight || "#3d465c"
     readonly property color accent: colors.accent || (isDark ? "#ffffff" : "#0f172a")
-    readonly property color primary: colors.primary || (isDark ? "#ffffff" : "#0f172a")
     readonly property color textOnAccent: isDark ? "#000000" : "#ffffff"
     readonly property color textOnPrimary: isDark ? "#000000" : "#ffffff"
-    readonly property color text: colors.text || (isDark ? "#ffffff" : "#111827")
-    readonly property color textPrimary: colors.textPrimary || text
-    readonly property color textSecondary: colors.textSecondary || "#9da7be"
-    readonly property color textTertiary: colors.textTertiary || "#626c82"
-    readonly property color textMuted: colors.textMuted || textTertiary
     readonly property color urgent: colors.urgent || "#ef4444"
     readonly property color danger: colors.danger || urgent
-    readonly property color success: colors.success || "#10b981"
     readonly property color warning: colors.warning || "#f59e0b"
 
-    readonly property color folderBase: colors.folderBase || "#f5aa1e"
-    readonly property color folderAccent: colors.folderAccent || "#f08705"
-    readonly property color folderHighlight: colors.folderHighlight || "#ffc841"
-    readonly property color folderEmblem: colors.folderEmblem || "#ffffff"
 
     // Fluent materials — opacity used for Mica / Acrylic surfaces
-    property var material: ({
-        "acrylic": 0.82,
-        "mica": 0.88,
-        "solid": 0.98
-    })
 
     // Reactive overlays — derive from text so they invert with the theme mode
     readonly property color overlayHover: Qt.alpha(colors.text, 0.065)
     readonly property color overlayHoverStrong: Qt.alpha(colors.text, 0.10)
     readonly property color hairline: Qt.alpha(colors.text, 0.08)
-    readonly property color hairlineSoft: Qt.alpha(colors.text, 0.05)
 
     // -------------------------------------------------------------------------
     // Dynamic Deep Black / Notch Surface Tokens (Unified OLED / Clean Light)
@@ -225,7 +188,6 @@ Item {
     readonly property color notchBorderSubtle: isDark ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color notchBorderHighlight: isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.18)
     readonly property color notchShadow: isDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.12)
-    readonly property int notchRadius: 22
     readonly property int notchRadiusWindow: 26
     readonly property int notchRadiusPanel: scaledRadius(16)
     readonly property int notchRadiusCard: scaledRadius(12)
@@ -242,36 +204,21 @@ Item {
     readonly property color dockIndicator: dockDot                        // focused app pill
     readonly property color dockIndicatorIdle: isDark ? Qt.rgba(1, 1, 1, 0.50) : Qt.rgba(0, 0, 0, 0.42)
     readonly property color dockActiveWell: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
-    readonly property color dockTooltipBg: notchBackground
-    readonly property color dockTooltipBorder: notchBorder
 
     // Semantic Component Tokens (Dark / Light adaptive)
     readonly property color calendarPast: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
     readonly property color calendarFuture: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
-    readonly property color sliderTrack: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.08)
-    readonly property color sliderFill: isDark ? "#ffffff" : colors.textPrimary
-    readonly property color sliderThumb: isDark ? "#ffffff" : colors.textPrimary
 
     // Quick Settings Capsule Tokens (4px unit grid, refined scale)
     readonly property int qsTileHeight: 52
     readonly property int qsTileRadius: scaledRadius(16)
-    readonly property int qsIconCircleSize: 36
-    readonly property int qsIconCircleRadius: 18
-    readonly property int qsRoundButtonSize: 36
-    readonly property int qsRoundButtonRadius: 18
-    readonly property int qsSliderCardHeight: 68
-    readonly property int qsSliderTrackHeight: 28
-    readonly property int qsSliderTrackRadius: 14
     readonly property int qsCardRadius: scaledRadius(16)
-    readonly property int qsSpacing: 8
     readonly property int qsPadding: 12
 
     readonly property color qsTileBackground: isDark ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.04)
     readonly property color qsTileBackgroundHover: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
-    readonly property color qsTileBackgroundActive: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color qsTileBorder: isDark ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color qsTileIconCircleInactive: isDark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.07)
-    readonly property color qsTileIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.60)
     readonly property color qsTileActive: isDark ? "#ffffff" : colors.textPrimary
     readonly property color qsTileIconActive: isDark ? "#000000" : "#ffffff"
     readonly property color qsSliderTrack: notchSurfaceElevated
@@ -279,7 +226,6 @@ Item {
     readonly property color notchSliderFill: isDark ? "#ffffff" : "#0f172a"
     readonly property color qsSliderFill: notchSliderFill
     readonly property color qsSliderIconActive: isDark ? "#000000" : "#ffffff"
-    readonly property color qsSliderIconInactive: isDark ? Qt.rgba(1, 1, 1, 0.60) : Qt.rgba(0, 0, 0, 0.50)
 
     // Workspace Indicator Tokens (collapsed Notch)
     // Every state has a FIXED slot width that never depends on hover, so hovering can
@@ -297,8 +243,6 @@ Item {
     readonly property int wsIndicatorSpacing:   6
 
     // kept for back-compat
-    readonly property int wsPillWidth:  wsPillBase
-    readonly property int wsIconSize:   wsIconSizeSingle
 
     // Workspace colours — OLED monochrome identity
     readonly property color wsActiveBg:    isDark ? "#ffffff" : "#0f172a"
@@ -307,9 +251,7 @@ Item {
     readonly property color wsEmptyBg:     isDark ? Qt.rgba(1, 1, 1, 0.28) : Qt.rgba(0, 0, 0, 0.22)
 
     // Exclusion & Strut Geometry Tokens (Reserved Space)
-    readonly property int topBarHeight: 44
     readonly property int topBarMarginTop: 8
-    readonly property int topBarGap: 8
     // In layer-shell on Hyprland, windows are placed at (exclusiveZone + gaps_out).
     // With gaps_out = 6, setting exclusiveZone = 54 results in window top at 60px.
     // Since capsules sit from y = topBarMarginTop (8px) to 8 + 44 = 52px,
@@ -322,7 +264,6 @@ Item {
     // the screen centre, so reflow never depends on runtime layer-shell margin updates.
     readonly property int notchEarRadius: 18
     readonly property int notchExpandedWidth: 600
-    readonly property int notchExpandedOuterWidth: notchExpandedWidth + notchEarRadius * 2 // 636px
     readonly property int capsuleGap: space20        // minimum clearance between notch and a side capsule
     readonly property int capsuleEdgeMargin: space8  // minimum clearance between a capsule and the screen edge
 
@@ -334,7 +275,6 @@ Item {
     function dockReservedFor(dockHeight) {
         return Math.round((dockHeight > 0 ? dockHeight : 68) + dockMarginBottom + dockGap); // 86px
     }
-    readonly property int dockExclusiveZone: dockExclusiveZoneFor(68) // 76px
     readonly property int dockReserved: dockReservedFor(68) // 86px
 
     function setMode(newMode) {
@@ -388,7 +328,6 @@ Item {
     // High-fidelity typography rendering helpers
     readonly property int renderType: Text.NativeRendering
     readonly property int hintingPreference: Font.PreferFullHinting
-    readonly property var fontFamilies: ["Inter", "Inter Display", "Cairo", "Noto Kufi Arabic", "SF Pro Display", "SF Arabic", "Noto Sans", "sans-serif"]
 
     property var baseTypography: ({
         "fontFamily": root.fontFamily,

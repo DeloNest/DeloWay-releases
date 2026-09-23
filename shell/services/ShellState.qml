@@ -121,17 +121,8 @@ QtObject {
         toggleQuickSettingsCapsule("main");
     }
 
-    function openQuickSettings(view) {
-        openQuickSettingsCapsule(view || "main");
-    }
 
-    function openQuickSettingsWithView(viewName) {
-        openQuickSettingsCapsule(viewName || "main");
-    }
 
-    function closeQuickSettings() {
-        closeQuickSettingsCapsule();
-    }
 
     function openSetupWizard() {
         setupWizardOpen = true;
@@ -270,12 +261,10 @@ QtObject {
 
     // Settings → Apps shows a details card for this desktop id (set by the app menu).
     property string appInfoId: ""
-    signal appInfoRequested(string desktopId)
     function openAppInfo(desktopId) {
         appInfoId = desktopId || "";
         openSettingsTab("apps");
         settingsScrollRequested(0);
-        appInfoRequested(appInfoId);
     }
 
     function openSettingsTab(tabId) {
@@ -345,11 +334,6 @@ QtObject {
         sessionMenuOpen = !sessionMenuOpen;
     }
 
-    function openSessionMenu() {
-        appDrawerOpen = false;
-        quickSettingsCapsuleExpanded = false;
-        sessionMenuOpen = true;
-    }
 
     function closeSessionMenu() {
         sessionMenuOpen = false;
@@ -365,7 +349,6 @@ QtObject {
         } else {
             shellHidden = false;
         }
-        console.log("[Deloway] toggleShell executed. shellHidden =", shellHidden);
     }
 
     function setShellHidden(val) {

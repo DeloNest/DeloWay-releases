@@ -244,7 +244,6 @@ Item {
             );
 
             root.appInstalled(cleanId);
-            console.log("[PackageManager] Successfully installed app:", app.name);
         }
     }
 
