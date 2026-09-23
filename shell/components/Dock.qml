@@ -286,7 +286,7 @@ PanelWindow {
         x: root.edge === "left" ? 8 : (root.edge === "right" ? parent.width - width - 8 : Math.round((parent.width - width) / 2))
         y: root.isVertical ? Math.round((parent.height - height) / 2) : parent.height - height - 8
 
-        // Slide fully past the edge; opacity trails slightly so blur/shadow never linger.
+        // Slide fully past the edge; opacity trails slightly so nothing lingers at the edge.
         readonly property real hiddenOffset: root.dockVisible ? 0 : root.dockH + 30
         opacity: root.dockVisible ? 1 : 0
         Behavior on opacity {
@@ -299,19 +299,7 @@ PanelWindow {
             Behavior on y { NumberAnimation { duration: root.dockVisible ? 300 : 240; easing.type: root.dockVisible ? Easing.OutQuint : Easing.InOutCubic } }
         }
 
-        // Ambient shadow
-        Rectangle {
-            anchors.fill: dockCard
-            anchors.topMargin: 4
-            anchors.bottomMargin: -4
-            anchors.leftMargin: -2
-            anchors.rightMargin: -2
-            radius: root.cardRadius + 2
-            color: Theme.dockShadow
-            visible: Theme.enableShadows
-        }
-
-        // ── Glass card ───────────────────────────────────────────────────
+        // ── Card: flat, opaque, 1px border (no shadow, glow or blur) ──────
         Rectangle {
             id: dockCard
             width: root.isVertical ? root.dockH : dockLayout.implicitWidth + 20
@@ -319,23 +307,12 @@ PanelWindow {
             x: root.edge === "left" ? 6 : (root.edge === "right" ? parent.width - width - 6 : Math.round((parent.width - width) / 2))
             y: root.isVertical ? Math.round((parent.height - height) / 2) : parent.height - height - 6
 
-            // Translucent when blur is on (Hyprland blurs the layer behind it).
             color: Theme.dockGlass
             radius: root.cardRadius
             border.color: Theme.dockBorder
             border.width: 1
             Behavior on width { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
             Behavior on height { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-
-            // Inner sheen rim
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: Math.max(0, parent.radius - 1)
-                color: "transparent"
-                border.color: Theme.dockGlassSheen
-                border.width: 1
-            }
 
             // Empty dock area: a click dismisses an open app menu. (No wheel binding: scrolling
             // over the dock must never open the App Drawer — Super or the Apps button do.)
@@ -535,7 +512,7 @@ PanelWindow {
         }
 
         // ── Running indicator: pill hugging the docked edge ──────────────
-        //   focused      long bright pill + soft halo
+        //   focused      long bright pill
         //   running      short dim pill (a bit longer with several windows)
         //   minimized    same, faded
         //   urgent       6px pulsing danger dot (semantic colour, ≤ 8px)
@@ -558,25 +535,6 @@ PanelWindow {
             opacity: slot.allMinimized ? 0.45 : 1
             Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
 
-            // Halo (two soft layers read as a glow without a blur pass)
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width + (root.isVertical ? 6 : 12)
-                height: parent.height + (root.isVertical ? 12 : 6)
-                radius: Math.min(width, height) / 2
-                color: Theme.dockIndicatorHalo
-                opacity: slot.active && !slot.urgent ? 0.55 : 0
-                Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
-            }
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width + (root.isVertical ? 3 : 6)
-                height: parent.height + (root.isVertical ? 6 : 3)
-                radius: Math.min(width, height) / 2
-                color: Theme.dockIndicatorHalo
-                opacity: slot.active && !slot.urgent ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
-            }
             Rectangle {
                 id: pill
                 anchors.fill: parent

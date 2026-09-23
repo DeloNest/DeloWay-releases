@@ -233,18 +233,14 @@ Item {
     readonly property int radiusDock: 24
 
     // Dock Tokens (Unified with OLED Notch/Capsule aesthetic)
-    // Translucent glass when compositor blur is on (Hyprland blurs the deloway:dock layer
-    // behind it); solid when effects are off so text/icons never sit on raw wallpaper.
-    readonly property color dockGlass: Qt.alpha(notchBackground, enableBlur ? 0.78 : 1.0)
-    readonly property color dockGlassSheen: notchBorderSubtle
+    // Flat and opaque: no blur, shadow or glow around the Dock (clean edges on any wallpaper).
+    readonly property color dockGlass: notchBackground
     readonly property color dockBorder: notchBorder
-    readonly property color dockShadow: notchShadow
     readonly property color dockDot: isDark ? Qt.rgba(1, 1, 1, 0.95) : Qt.rgba(0, 0, 0, 0.85)
     readonly property color dockDivider: notchBorderHighlight
     readonly property color dockDividerFaint: notchBorder               // pinned | running
     readonly property color dockIndicator: dockDot                        // focused app pill
     readonly property color dockIndicatorIdle: isDark ? Qt.rgba(1, 1, 1, 0.50) : Qt.rgba(0, 0, 0, 0.42)
-    readonly property color dockIndicatorHalo: isDark ? Qt.rgba(1, 1, 1, 0.18) : Qt.rgba(0, 0, 0, 0.12)
     readonly property color dockActiveWell: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color dockTooltipBg: notchBackground
     readonly property color dockTooltipBorder: notchBorder

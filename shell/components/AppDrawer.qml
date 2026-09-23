@@ -317,16 +317,6 @@ PanelWindow {
         // Swallow clicks on the panel so they don't reach the dismiss area
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onClicked: contextMenu.hide() }
 
-        // Soft shadow
-        Rectangle {
-            anchors.fill: card
-            anchors.topMargin: 6
-            anchors.bottomMargin: -6
-            radius: card.radius
-            color: Theme.notchShadow
-            visible: Theme.enableShadows
-        }
-
         Rectangle {
             id: card
             anchors.fill: parent

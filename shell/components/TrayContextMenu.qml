@@ -62,22 +62,6 @@ PopupWindow {
         }
     }
 
-    // Ambient Drop Shadow
-    Rectangle {
-        id: menuShadow
-        z: 0
-        anchors.fill: menuCard
-        anchors.topMargin: 3
-        anchors.bottomMargin: -3
-        anchors.leftMargin: -2
-        anchors.rightMargin: -2
-        radius: menuCard.radius + 2
-        color: Theme.notchShadow
-        opacity: menuCard.opacity
-        scale: menuCard.scale
-        transformOrigin: menuCard.transformOrigin
-    }
-
     // Main OLED Menu Card
     Rectangle {
         id: menuCard

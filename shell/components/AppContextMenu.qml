@@ -8,21 +8,23 @@ import "../services"
 // AppContextMenu: the ONE right-click menu for application icons, shared by the Dock
 // and the App Drawer (same rows, same logic, same look).
 //
-//   ┌──────────────────────────────┐
-//   │ [icon] Firefox               │  header: name · live status · source
-//   │        2 windows · AUR       │
-//   │ • Window title A             │  window list (≥ 2 windows) → focus / restore
-//   │ ○ Window title B             │
-//   │ ───────────────────────────  │
-//   │ New Window                   │  launch
-//   │ Maximize · Minimize          │  window ops (running only)
-//   │ ───────────────────────────  │
-//   │ Unpin from Dock              │  app
-//   │ App Info                     │
-//   │ Uninstall…                   │  → in-menu confirmation step
-//   │ ───────────────────────────  │
-//   │ Close All Windows            │  (running only; red glyph only, ≤ 14px)
-//   └──────────────────────────────┘
+//   ┌──────────────────────────┐
+//   │ [icon] Firefox           │  header: icon + name only
+//   │ ──────────────────────── │
+//   │ • Window title A         │  window list (only with ≥ 2 windows) → focus/restore
+//   │ ○ Window title B         │
+//   │ ──────────────────────── │
+//   │ New window / Open        │  app
+//   │ Pin / Unpin              │
+//   │ App info                 │
+//   │ ──────────────────────── │
+//   │ Minimize · Maximize      │  window (running only)
+//   │ ──────────────────────── │
+//   │ Uninstall…               │  destructive, last (Uninstall asks to confirm)
+//   │ Close window(s)          │
+//   └──────────────────────────┘
+//
+// Flat by design: opaque card, 1px border, no shadow/glow/rim, neutral icons only.
 //
 // Hosting: `openFor(app, item, placement)` anchors to an item's rect ("above" | "left" |
 // "right"; the Dock), `openAt(app, x, y)` anchors at the pointer (the App Drawer).
@@ -80,9 +82,9 @@ PopupWindow {
         adjustment: PopupAdjustment.Slide | PopupAdjustment.Flip
     }
 
-    // Shadow room around the card, plus a gap toward the anchor for edge placements.
-    readonly property int pad: 8
-    readonly property int gap: placement === "pointer" ? 0 : 6
+    // Tiny inset so the 1px border is never clipped, plus a gap toward the anchor.
+    readonly property int pad: 2
+    readonly property int gap: placement === "pointer" ? 0 : 8
     implicitWidth: menuCard.width + pad * 2 + ((placement === "left" || placement === "right") ? gap : 0)
     implicitHeight: menuCard.height + pad * 2 + (placement === "above" ? gap : 0)
 
@@ -138,37 +140,41 @@ PopupWindow {
             })));
         }
 
-        const launchGroup = [root.running
+        // App: launch · pin · info
+        const appGroup = [root.running
             ? { kind: "action", id: "new", label: I18n.tr("dock_new_window"), icon: "window-new-symbolic" }
             : { kind: "action", id: "open", label: I18n.tr("open_app"), icon: "media-playback-start-symbolic" }];
+        appGroup.push({ kind: "action", id: "pin", icon: "view-pin-symbolic",
+                        label: I18n.tr(a.pinned ? "unpin_from_dock" : "pin_to_dock") });
+        if (!a.internal)
+            appGroup.push({ kind: "action", id: "info", icon: root.infoIcon, label: I18n.tr("app_info") });
+        groups.push(appGroup);
+
+        // Window (running only)
         if (root.running) {
             const prim = ApplicationManager.primaryWindow(a);
             const maxed = prim ? ApplicationManager.isMaximized(prim) : false;
-            launchGroup.push({ kind: "action", id: "max",
-                               icon: maxed ? "window-restore-symbolic" : "window-maximize-symbolic",
-                               label: I18n.tr(maxed ? "dock_unmaximize" : "dock_maximize") });
-            launchGroup.push({ kind: "action", id: "min",
-                               icon: a.allMinimized ? "window-restore-symbolic" : "window-minimize-symbolic",
-                               label: I18n.tr(a.allMinimized ? "dock_restore" : "dock_minimize") });
+            groups.push([
+                { kind: "action", id: "min",
+                  icon: a.allMinimized ? "window-restore-symbolic" : "window-minimize-symbolic",
+                  label: I18n.tr(a.allMinimized ? "dock_restore" : "dock_minimize") },
+                { kind: "action", id: "max",
+                  icon: maxed ? "window-restore-symbolic" : "window-maximize-symbolic",
+                  label: I18n.tr(maxed ? "dock_unmaximize" : "dock_maximize") }
+            ]);
         }
-        groups.push(launchGroup);
 
-        const appGroup = [{ kind: "action", id: "pin",
-                            icon: a.pinned ? "list-remove-symbolic" : "view-pin-symbolic",
-                            label: I18n.tr(a.pinned ? "unpin_from_dock" : "pin_to_dock") }];
-        if (!a.internal) {
-            appGroup.push({ kind: "action", id: "info", icon: "help-about-symbolic", label: I18n.tr("app_info") });
-            // Hidden once the backend says it can't be removed; shown while still checking.
-            if (!root.info || root.info.removable || !root.info.ok)
-                appGroup.push({ kind: "action", id: "uninstall", icon: "user-trash-symbolic",
-                                label: root.uninstallBusy ? I18n.tr("app_uninstalling") : I18n.tr("app_uninstall"),
-                                disabled: root.uninstallBusy });
-        }
-        groups.push(appGroup);
-
+        // Destructive, last
+        const endGroup = [];
+        // Hidden once the backend says it can't be removed; shown while still checking.
+        if (!a.internal && (!root.info || root.info.removable || !root.info.ok))
+            endGroup.push({ kind: "action", id: "uninstall", icon: "user-trash-symbolic",
+                            label: root.uninstallBusy ? I18n.tr("app_uninstalling") : I18n.tr("app_uninstall"),
+                            disabled: root.uninstallBusy });
         if (root.running)
-            groups.push([{ kind: "action", id: "close", danger: true, icon: "window-close-symbolic",
-                           label: I18n.tr(root.windows.length > 1 ? "dock_close_all" : "dock_close_window") }]);
+            endGroup.push({ kind: "action", id: "close", icon: "window-close-symbolic",
+                            label: I18n.tr(root.windows.length > 1 ? "dock_close_all" : "dock_close_window") });
+        groups.push(endGroup);
 
         const out = [];
         for (let g = 0; g < groups.length; g++) {
@@ -218,27 +224,14 @@ PopupWindow {
     }
 
     property int hoverIndex: -1
-
-    // ── Shadow ───────────────────────────────────────────────────────────
-    Rectangle {
-        anchors.fill: menuCard
-        anchors.topMargin: 3
-        anchors.bottomMargin: -4
-        anchors.leftMargin: -2
-        anchors.rightMargin: -2
-        radius: menuCard.radius + 2
-        color: Theme.notchShadow
-        visible: Theme.enableShadows
-        opacity: menuCard.opacity
-        scale: menuCard.scale
-        transformOrigin: menuCard.transformOrigin
-    }
+    // A circled "i" where the icon theme has one (some themes draw help-about as a sparkle).
+    readonly property string infoIcon: Quickshell.hasThemeIcon("info-symbolic") ? "info-symbolic" : "help-about-symbolic"
 
     // ── Card ─────────────────────────────────────────────────────────────
     Rectangle {
         id: menuCard
-        width: 248
-        height: (root.view === "main" ? mainCol.implicitHeight : confirmCol.implicitHeight) + 12
+        width: 228
+        height: (root.view === "main" ? mainCol.implicitHeight : confirmCol.implicitHeight) + 10
         x: root.placement === "right" ? root.pad + root.gap : root.pad
         y: root.pad
         radius: Theme.radiusLarge
@@ -249,32 +242,16 @@ PopupWindow {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        // Fade + short slide out of the anchor side.
+        // Fade + short slide out of the anchor side (no scale, no shadow).
         readonly property real slideFrom: 6
         opacity: root._cardVisible ? 1.0 : 0.0
-        scale: root._cardVisible ? 1.0 : 0.96
-        transformOrigin: root.placement === "right" ? Item.Left
-                       : root.placement === "left" ? Item.Right
-                       : root.placement === "pointer" ? (I18n.isRTL ? Item.TopRight : Item.TopLeft)
-                       : Item.Bottom
         transform: Translate {
             x: root._cardVisible ? 0 : (root.placement === "right" ? -menuCard.slideFrom : root.placement === "left" ? menuCard.slideFrom : 0)
             y: root._cardVisible ? 0 : (root.placement === "above" ? menuCard.slideFrom : root.placement === "pointer" ? -menuCard.slideFrom / 2 : 0)
-            Behavior on x { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
-            Behavior on y { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
+            Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+            Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
         }
-        Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        Behavior on scale   { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
-
-        // Inner sheen rim
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: Math.max(0, parent.radius - 1)
-            color: "transparent"
-            border.color: Theme.notchBorderSubtle
-            border.width: 1
-        }
+        Behavior on opacity { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
 
         // ── Main view ────────────────────────────────────────────────────
         ColumnLayout {
@@ -282,13 +259,21 @@ PopupWindow {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 6
-            spacing: 1
+            anchors.margins: 5
+            spacing: 0
             visible: opacity > 0.01
             opacity: root.view === "main" ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 120 } }
 
             MenuHeader { Layout.fillWidth: true }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.leftMargin: 8
+                Layout.rightMargin: 8
+                Layout.bottomMargin: 4
+                Layout.preferredHeight: 1
+                color: Theme.notchBorderSubtle
+            }
 
             Repeater {
                 model: root.rows
@@ -302,7 +287,7 @@ PopupWindow {
                     readonly property bool highlighted: root.hoverIndex === index && !modelData.disabled
 
                     Layout.fillWidth: true
-                    Layout.preferredHeight: isSep ? 9 : (isWindow ? 30 : 32)
+                    Layout.preferredHeight: isSep ? 9 : 32
 
                     Rectangle {
                         visible: rowItem.isSep
@@ -349,9 +334,8 @@ PopupWindow {
                             SymbolicIcon {
                                 visible: !rowItem.isWindow
                                 source: rowItem.modelData.icon || ""
-                                iconSize: 14
-                                iconColor: rowItem.modelData.danger ? Theme.colors.urgent
-                                         : (rowItem.highlighted ? Theme.notchText : Theme.notchTextSecondary)
+                                iconSize: 16
+                                iconColor: rowItem.highlighted ? Theme.notchText : Theme.notchTextSecondary
                                 Layout.alignment: Qt.AlignVCenter
                             }
 
@@ -362,8 +346,7 @@ PopupWindow {
                                 textFormat: Text.PlainText
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(rowItem.isWindow ? 12 : 13)
-                                font.weight: (rowItem.highlighted || (rowItem.isWindow && rowItem.modelData.active))
-                                             ? Font.DemiBold : Font.Normal
+                                font.weight: (rowItem.isWindow && rowItem.modelData.active) ? Font.DemiBold : Font.Normal
                                 color: (rowItem.isWindow && rowItem.modelData.minimized) ? Theme.notchTextMeta
                                      : (rowItem.isWindow ? Theme.notchTextBody : Theme.notchText)
                                 elide: Text.ElideRight
@@ -396,7 +379,7 @@ PopupWindow {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 6
+            anchors.margins: 5
             spacing: 8
             visible: opacity > 0.01
             opacity: root.view === "confirm" ? 1 : 0
@@ -457,53 +440,32 @@ PopupWindow {
         }
     }
 
-    // Header shared by both views: icon · name · live status (· source once known)
+    // Header shared by both views: app icon + name. No status line.
     component MenuHeader: RowLayout {
         spacing: 10
         Layout.leftMargin: 8
         Layout.rightMargin: 8
-        Layout.topMargin: 5
-        Layout.bottomMargin: 5
+        Layout.topMargin: 4
+        Layout.bottomMargin: 4
 
         AppIcon {
-            iconSize: 28
+            iconSize: 22
             source: root.app ? root.app.icon : ""
             Layout.alignment: Qt.AlignVCenter
         }
-        ColumnLayout {
+        Text {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            spacing: -3
-            Text {
-                Layout.fillWidth: true
-                text: root.app ? NotificationManager.bidi(root.app.name || root.app.id || "") : ""
-                textFormat: Text.PlainText
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(13)
-                font.weight: Font.DemiBold
-                color: Theme.notchText
-                elide: Text.ElideRight
-                maximumLineCount: 1
-                horizontalAlignment: Text.AlignLeft
-                renderType: Theme.renderType
-            }
-            Text {
-                Layout.fillWidth: true
-                text: {
-                    let s = !root.running ? I18n.tr("app_not_running")
-                          : (root.app && root.app.allMinimized && root.windows.length === 1)
-                              ? I18n.tr("dock_minimized") : I18n.windowsCount(root.windows.length);
-                    if (root.info && root.info.ok) s += " · " + AppActions.sourceLabel(root.info);
-                    return NotificationManager.bidi(s);
-                }
-                textFormat: Text.PlainText
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                color: Theme.notchTextMeta
-                elide: Text.ElideRight
-                horizontalAlignment: Text.AlignLeft
-                renderType: Theme.renderType
-            }
+            text: root.app ? NotificationManager.bidi(root.app.name || root.app.id || "") : ""
+            textFormat: Text.PlainText
+            font.family: Theme.typography.fontFamily
+            font.pixelSize: Theme.fontSize(14)
+            font.weight: Font.DemiBold
+            color: Theme.notchText
+            elide: Text.ElideRight
+            maximumLineCount: 1
+            horizontalAlignment: Text.AlignLeft
+            renderType: Theme.renderType
         }
     }
 
@@ -532,7 +494,7 @@ PopupWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 source: mb.glyph
                 iconSize: 12
-                iconColor: Theme.colors.urgent
+                iconColor: mb.primary ? Theme.notchBackground : Theme.notchTextSecondary
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter

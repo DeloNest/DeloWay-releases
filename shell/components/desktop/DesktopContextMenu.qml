@@ -170,7 +170,7 @@ Item {
         }
     }
 
-    // Outer Card Container (OLED dark glass with subtle shadow)
+    // Outer card: flat OLED surface, 1px border (no shadow or glow)
     Rectangle {
         id: menuCard
         x: Math.max(12, Math.min(DesktopManager.contextMenuX, root.width - width - 12))
@@ -190,17 +190,6 @@ Item {
         scale: DesktopManager.contextMenuVisible ? 1.0 : 0.96
         Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
         Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-        // Ambient drop shadow
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -4
-            radius: 16
-            color: "transparent"
-            border.color: Qt.rgba(0, 0, 0, 0.40)
-            border.width: 3
-            z: -1
-        }
 
         // Prevent clicks inside menu from closing it
         MouseArea {
