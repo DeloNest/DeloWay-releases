@@ -931,7 +931,9 @@ Item {
 
     Process {
         id: wallpaperGsettingsMonitorProc
-        command: ["gsettings", "monitor", "org.gnome.desktop.background", "picture-uri"]
+        // Tethered: dies with the shell (it used to be orphaned on every restart).
+        command: ["python3", root.projectDir + "/scripts/deloway-tether.py",
+                  "gsettings", "monitor", "org.gnome.desktop.background", "picture-uri"]
         running: true
         stdout: SplitParser {
             onRead: data => {

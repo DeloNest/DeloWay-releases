@@ -70,18 +70,46 @@ def notify_quickshell(abs_path: str):
     except Exception as e:
         print(f"[deloway-wallpaper-daemon] Quickshell IPC warning: {e}", file=sys.stderr)
 
+def _die_with_parent():
+    """preexec_fn: PR_SET_PDEATHSIG(SIGTERM) in the child before exec."""
+    import ctypes, signal
+    ctypes.CDLL(None).prctl(1, signal.SIGTERM, 0, 0, 0)
+
+def acquire_single_instance_lock():
+    """One daemon per user session: exec-once runs on every login, and the daemon
+    outlives Hyprland when KillUserProcesses=no. Returns the held lock file."""
+    import fcntl
+    runtime = os.environ.get("XDG_RUNTIME_DIR") or f"/tmp/deloway-{os.getuid()}"
+    os.makedirs(runtime, exist_ok=True)
+    fh = open(os.path.join(runtime, "deloway-wallpaper-daemon.lock"), "w")
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        sys.exit(0)          # another instance is already running
+    return fh
+
+def compositor_alive():
+    """False once the Hyprland session that started us is gone."""
+    sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+    if not sig:
+        return True          # not started from Hyprland: keep running
+    runtime = os.environ.get("XDG_RUNTIME_DIR", "")
+    return os.path.exists(os.path.join(runtime, "hypr", sig))
+
 def main():
-    print("[deloway-wallpaper-daemon] Starting GSettings wallpaper sync monitor...")
+    _lock = acquire_single_instance_lock()
+    print("[deloway-wallpaper-daemon] Starting GSettings wallpaper sync monitor...", file=sys.stderr)
     cmd = ["gsettings", "monitor", "org.gnome.desktop.background", "picture-uri"]
-    
-    while True:
+
+    while compositor_alive():
         try:
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,
-                bufsize=1
+                bufsize=1,
+                preexec_fn=_die_with_parent,   # gsettings must not outlive the daemon
             )
             for line in proc.stdout:
                 line = line.strip()
@@ -93,7 +121,7 @@ def main():
                 
                 current = get_current_deloway_wallpaper()
                 if path != current:
-                    print(f"[deloway-wallpaper-daemon] Detected external wallpaper change: {path}")
+                    print(f"[deloway-wallpaper-daemon] Detected external wallpaper change: {path}", file=sys.stderr)
                     update_config_file(path)
                     notify_quickshell(path)
                     try:
@@ -111,7 +139,9 @@ def main():
                         pass
         except Exception as e:
             print(f"[deloway-wallpaper-daemon] Error in monitor loop: {e}", file=sys.stderr)
-            time.sleep(2)
+        # gsettings exited (EOF, e.g. the session bus went away): never respawn in a
+        # busy loop, and stop once the compositor session is gone.
+        time.sleep(2)
 
 if __name__ == "__main__":
     main()
