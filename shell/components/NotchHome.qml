@@ -7,6 +7,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Hyprland
 import "../theme"
 import "../services"
+import "./notifications"
 
 Item {
     id: root
@@ -18,7 +19,7 @@ Item {
     LayoutMirroring.enabled: false
     LayoutMirroring.childrenInherit: true
 
-    readonly property real workspaceContentWidth: wsIndicator ? wsIndicator.implicitWidth : 100
+    readonly property real workspaceContentWidth: (wsIndicator && wsIndicator.visible) ? wsIndicator.implicitWidth : 0
     readonly property real playerContentWidth: (miniMusicPlayer && hasPlayer) ? miniMusicPlayer.implicitWidth : 0
 
     // Time & Date state
@@ -144,29 +145,36 @@ Item {
     property bool notificationActive: false
     property real notifRemainingRatio: 1.0
 
+    // Hovering the banner / detail card pauses the countdown (resumes where it left off).
+    readonly property bool notifPaused: bannerCard.hovered || detailCard.hovered
+
     Connections {
         target: NotificationManager
         function onToastRequested(notif) {
+            // DND silences banners; with "Smart Notch Notifications" off the fallback
+            // NotificationToast shows them instead (previously both appeared).
+            if (ConfigManager.notificationsDnd || !ConfigManager.notchNotifications) return;
             root.activeNotification = notif;
+            // Every new notification gets its full display time (was: inherited the
+            // remaining time of the previous one because `elapsed` never reset).
+            notifTimer.elapsed = 0;
+            root.notifRemainingRatio = 1.0;
             root.notificationActive = true;
             notifTimer.restart();
         }
+    }
+
+    function dismissActiveNotification() {
+        root.notificationActive = false;
     }
 
     Timer {
         id: notifTimer
         interval: 50
         repeat: true
-        running: root.notificationActive
+        running: root.notificationActive && !root.notifPaused
         property int elapsed: 0
         readonly property int duration: ConfigManager.notificationsTimeout || 5000
-
-        onRunningChanged: {
-            if (running) {
-                elapsed = 0;
-                root.notifRemainingRatio = 1.0;
-            }
-        }
 
         onTriggered: {
             elapsed += interval;
@@ -214,84 +222,31 @@ Item {
         anchors.fill: parent
         visible: !root.expanded
 
-        // 1.1 Compact Notification
-        RowLayout {
+        // 1.1 Compact Notification — shared single-line banner, cross-faded
+        NotificationCard {
+            id: bannerCard
             anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 12
-            spacing: 8
-            visible: root.viewMode === "notification"
-
-            SymbolicIcon {
-                iconSize: 15
-                source: root.activeNotification && root.activeNotification.appIcon ? root.activeNotification.appIcon : "dialog-information"
-                iconColor: Theme.notchText
-            }
-
-            Text {
-                text: root.activeNotification ? root.activeNotification.summary : ""
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                font.weight: Font.DemiBold
-                renderType: Theme.renderType
-                color: Theme.colors.text
-                elide: Text.ElideRight
-                Layout.maximumWidth: 120
-            }
-
-            Text {
-                text: "•"
-                font.pixelSize: Theme.fontSize(10)
-                color: Theme.colors.textTertiary
-            }
-
-            Text {
-                text: root.activeNotification ? root.activeNotification.body : ""
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(10)
-                renderType: Theme.renderType
-                color: Theme.colors.textSecondary
-                elide: Text.ElideRight
-                Layout.fillWidth: true
-            }
-
-            // Quick Dismiss '✕'
-            Rectangle {
-                implicitWidth: 16
-                implicitHeight: 16
-                radius: 8
-                color: dismissHover.containsMouse ? Theme.colors.surfaceHover : "transparent"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: Theme.fontSize(8)
-                    color: Theme.colors.textSecondary
-                }
-
-                MouseArea {
-                    id: dismissHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    acceptedButtons: Qt.LeftButton
-                    onClicked: (mouse) => {
-                        if (mouse.button === Qt.LeftButton) root.notificationActive = false;
-                    }
-                }
-            }
+            variant: "banner"
+            notif: root.activeNotification
+            opacity: root.viewMode === "notification" ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+            onCloseRequested: root.dismissActiveNotification()
         }
 
         // 1.2 Merged Compact Row: Workspaces + Music Player
         RowLayout {
             anchors.centerIn: parent
             spacing: 8
-            visible: root.viewMode !== "notification"
+            opacity: root.viewMode !== "notification" ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
             z: 1
 
             // ── SECTION A: Workspaces (Dynamic WorkspaceIndicator) ────────────
             WorkspaceIndicator {
                 id: wsIndicator
+                visible:        ConfigManager.topBarShowWorkspaces
                 hyprMonitor:    root.hyprMonitor
                 staticCount:    ConfigManager.workspacesCount
                 indicatorStyle: ConfigManager.workspaceIndicatorStyle || "icons"
@@ -301,7 +256,7 @@ Item {
 
             // ── SECTION B: Subtle Divider (Visible when music player is present) ─
             Rectangle {
-                visible: root.hasPlayer
+                visible: root.hasPlayer && wsIndicator.visible
                 Layout.preferredWidth: 1
                 Layout.preferredHeight: 20
                 Layout.alignment: Qt.AlignVCenter
@@ -459,98 +414,23 @@ Item {
         anchors.fill: parent
         visible: root.expanded
 
-        // 2.1 Expanded Notification
-        RowLayout {
-            anchors.fill: parent
-            anchors.margins: 14
-            spacing: 14
-            visible: root.viewMode === "notification"
-
-            Rectangle {
-                implicitWidth: 46
-                implicitHeight: 46
-                radius: 12
-                color: Theme.notchSurfaceElevated
-                border.color: Theme.notchBorderHighlight
-                border.width: 1
-
-                SymbolicIcon {
-                    anchors.centerIn: parent
-                    iconSize: 24
-                    source: root.activeNotification && root.activeNotification.appIcon ? root.activeNotification.appIcon : "dialog-information"
-                    iconColor: Theme.notchText
-                }
-            }
-
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 3
-
-                RowLayout {
-                    spacing: 6
-                    Text {
-                        text: root.activeNotification ? root.activeNotification.appName : "System"
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(11)
-                        font.weight: Font.DemiBold
-                        color: Theme.notchText
-                    }
-                    Text {
-                        text: "• " + (root.activeNotification ? root.activeNotification.timeStr : "")
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(10)
-                        color: Theme.colors.textTertiary
-                    }
-                }
-
-                Text {
-                    text: root.activeNotification ? root.activeNotification.summary : ""
-                    font.family: Theme.typography.fontFamily
-                    font.pixelSize: Theme.fontSize(13)
-                    font.weight: Font.Bold
-                    renderType: Theme.renderType
-                    color: Theme.colors.text
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-
-                Text {
-                    text: root.activeNotification ? root.activeNotification.body : ""
-                    font.family: Theme.typography.fontFamily
-                    font.pixelSize: Theme.fontSize(11)
-                    renderType: Theme.renderType
-                    color: Theme.colors.textSecondary
-                    wrapMode: Text.WordWrap
-                    maximumLineCount: 2
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                }
-            }
-
-            // Dismiss Button
-            Rectangle {
-                implicitWidth: 28
-                implicitHeight: 28
-                radius: 14
-                color: dismissExpHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
-                border.color: Theme.notchBorderSubtle
-                border.width: 1
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "✕"
-                    font.pixelSize: Theme.fontSize(11)
-                    color: Theme.colors.text
-                }
-
-                MouseArea {
-                    id: dismissExpHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.notificationActive = false
-                }
-            }
+        // 2.1 Expanded Notification — full card, cross-faded with the home view
+        NotificationCard {
+            id: detailCard
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: 24
+            anchors.rightMargin: 24
+            variant: "card"
+            iconSize: 40
+            maxBodyLines: 4
+            alwaysShowClose: true
+            notif: root.activeNotification
+            opacity: root.viewMode === "notification" ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+            onCloseRequested: root.dismissActiveNotification()
         }
 
         // 2.2 Expanded Main View (Split: Music/Clock on Start + Calendar Strip on End)
@@ -562,7 +442,9 @@ Item {
             anchors.topMargin: 6
             anchors.bottomMargin: 10
             spacing: 24
-            visible: root.viewMode !== "notification"
+            opacity: root.viewMode !== "notification" ? 1 : 0
+            visible: opacity > 0.01
+            Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 
             // ── LEFT: Music Player (or Clock when idle) ──
             Item {

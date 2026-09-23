@@ -4,7 +4,12 @@ import QtQuick.Controls
 import Quickshell
 import "../theme"
 import "../services"
+import "./notifications"
 
+// NotchNotifications — history tab of the Smart Notch.
+// One header line, then a list of shared NotificationCards. Items fade/slide in,
+// slide out toward the reading-end edge on dismiss, and the rest glide up (displaced)
+// so the list never jumps.
 Item {
     id: root
 
@@ -12,347 +17,138 @@ Item {
     LayoutMirroring.childrenInherit: true
 
     readonly property int notifCount: NotificationManager.notifications ? NotificationManager.notifications.length : 0
+    readonly property real exitSign: I18n.isRTL ? -1 : 1
 
-    Item {
+    // ── Empty state ──────────────────────────────────────────────────────
+    Column {
+        anchors.centerIn: parent
+        spacing: 10
+        opacity: root.notifCount === 0 ? 1 : 0
+        visible: opacity > 0.01
+        Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
+
+        SymbolicIcon {
+            anchors.horizontalCenter: parent.horizontalCenter
+            source: "preferences-system-notifications-symbolic"
+            iconSize: 26
+            iconColor: Theme.notchTextTertiary
+        }
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: I18n.isRTL ? "لا توجد إشعارات" : "No notifications"
+            font.family: Theme.typography.fontFamily
+            font.pixelSize: Theme.fontSize(12)
+            color: Theme.notchTextSecondary
+            renderType: Theme.renderType
+        }
+    }
+
+    ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 8
-        LayoutMirroring.enabled: I18n.isRTL
-        LayoutMirroring.childrenInherit: true
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+        anchors.topMargin: 4
+        spacing: 8
+        opacity: root.notifCount > 0 ? 1 : 0
+        visible: opacity > 0.01
+        Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
 
-        // ═════════════════════════════════════════════════════════════════════
-        // 1. حالة الفراغ (EMPTY STATE — 0 Notifications)
-        // ═════════════════════════════════════════════════════════════════════
-        ColumnLayout {
-            anchors.centerIn: parent
+        // ── Header: count · clear all ────────────────────────────────────
+        RowLayout {
+            Layout.fillWidth: true
             spacing: 8
-            visible: root.notifCount === 0
+
+            Text {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignLeft
+                text: I18n.isRTL
+                      ? (root.notifCount === 1 ? "إشعار واحد" : root.notifCount + " إشعارات")
+                      : (root.notifCount === 1 ? "1 notification" : root.notifCount + " notifications")
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(12)
+                font.weight: Font.Medium
+                color: Theme.notchTextMeta
+                renderType: Theme.renderType
+            }
 
             Rectangle {
-                implicitWidth: 48
-                implicitHeight: 48
-                radius: 24
-                color: Theme.notchSurfaceElevated
-                border.color: Theme.notchBorderSubtle
-                border.width: 1
-                Layout.alignment: Qt.AlignHCenter
+                implicitWidth: clearTxt.implicitWidth + 20
+                implicitHeight: 24
+                radius: 12
+                color: clearMa.pressed ? Theme.notchSurfaceActive : (clearMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
+                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
-                SymbolicIcon {
+                Text {
+                    id: clearTxt
                     anchors.centerIn: parent
-                    source: "preferences-system-notifications-symbolic"
-                    iconSize: 24
-                    iconColor: Theme.notchTextSecondary
+                    text: I18n.isRTL ? "مسح الكل" : "Clear all"
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: Theme.fontSize(11)
+                    font.weight: Font.Medium
+                    color: clearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                    renderType: Theme.renderType
                 }
-            }
-
-            Text {
-                text: I18n.isRTL ? "لا توجد إشعارات جديدة" : "No new notifications"
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(13)
-                font.weight: Font.DemiBold
-                color: Theme.notchText
-                Layout.alignment: Qt.AlignHCenter
-            }
-
-            Text {
-                text: I18n.isRTL ? "سجل الإشعارات فارغ وجميع التنبيهات مقروءة" : "All notifications have been cleared"
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                color: Theme.notchTextSecondary
-                Layout.alignment: Qt.AlignHCenter
+                MouseArea {
+                    id: clearMa
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: NotificationManager.clearAll()
+                }
             }
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        // 2. قائمة الإشعارات وسجل التاريخ (HEADER + LIST VIEW)
-        // ═════════════════════════════════════════════════════════════════════
-        ColumnLayout {
-            anchors.fill: parent
+        // ── List ─────────────────────────────────────────────────────────
+        ListView {
+            id: list
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
             spacing: 6
-            visible: root.notifCount > 0
+            boundsBehavior: Flickable.StopAtBounds
+            model: NotificationManager.notifications
 
-            // ── ترويسة تبويب الإشعارات مع زر مسح الكل ──────────────────────────
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 24
-                spacing: 8
-
-                RowLayout {
-                    spacing: 6
-                    Layout.alignment: Qt.AlignVCenter
-
-                    SymbolicIcon {
-                        source: "preferences-system-notifications-symbolic"
-                        iconSize: 13
-                        iconColor: Theme.notchText
-                    }
-
-                    Text {
-                        text: I18n.isRTL ? "الإشعارات" : "Notifications"
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(12)
-                        font.weight: Font.DemiBold
-                        color: Theme.notchText
-                    }
-
-                    Rectangle {
-                        implicitWidth: Math.max(18, countTxt.implicitWidth + 8)
-                        implicitHeight: 16
-                        radius: 8
-                        color: Theme.notchSurfaceElevated
-                        border.color: Theme.notchBorderSubtle
-                        border.width: 1
-
-                        Text {
-                            id: countTxt
-                            anchors.centerIn: parent
-                            text: String(root.notifCount)
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(9)
-                            font.weight: Font.Bold
-                            color: Theme.notchTextSecondary
-                        }
-                    }
-                }
-
-                Item { Layout.fillWidth: true }
-
-                // زر مسح الكل المدمج بالترويسة
-                Rectangle {
-                    implicitWidth: clearContent.implicitWidth + 14
-                    implicitHeight: 22
-                    radius: 6
-                    color: clearMa.pressed
-                           ? Theme.notchSurfaceActive
-                           : (clearMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                    border.color: clearMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
-                    border.width: 1
-
-                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                    RowLayout {
-                        id: clearContent
-                        anchors.centerIn: parent
-                        spacing: 4
-
-                        SymbolicIcon {
-                            source: "user-trash-symbolic"
-                            iconSize: 11
-                            iconColor: clearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                        }
-
-                        Text {
-                            text: I18n.isRTL ? "مسح الكل" : "Clear All"
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(10)
-                            font.weight: Font.Medium
-                            color: clearMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                        }
-                    }
-
-                    MouseArea {
-                        id: clearMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: NotificationManager.clearAll()
-                    }
-                }
+            ScrollBar.vertical: ScrollBar {
+                id: vbar
+                policy: list.contentHeight > list.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                width: 4
+                contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
             }
 
-            // ── قائمة الإشعارات القابلة للتمرير ───────────────────────────────
-            ListView {
-                id: notifListView
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                clip: true
-                spacing: 6
-                model: NotificationManager.notifications
-
-                boundsBehavior: Flickable.StopAtBounds
-                ScrollBar.vertical: ScrollBar {
-                    id: vbar
-                    active: notifListView.moving || notifListView.flicking
-                    policy: notifListView.contentHeight > notifListView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                    width: 4
-
-                    contentItem: Rectangle {
-                        implicitWidth: 4
-                        radius: 2
-                        color: Theme.notchBorderHighlight
-                    }
+            add: Transition {
+                ParallelAnimation {
+                    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.motionBase; easing.type: Theme.easingEnter }
+                    NumberAnimation { property: "scale"; from: 0.97; to: 1; duration: Theme.motionBase; easing.type: Theme.easingEnter }
                 }
+            }
+            remove: Transition {
+                ParallelAnimation {
+                    NumberAnimation { property: "opacity"; to: 0; duration: Theme.motionFast; easing.type: Theme.easingExit }
+                    NumberAnimation { property: "x"; to: root.exitSign * 40; duration: Theme.motionFast; easing.type: Theme.easingExit }
+                }
+            }
+            displaced: Transition {
+                NumberAnimation { properties: "x,y"; duration: Theme.motionBase; easing.type: Theme.easingEnter }
+                NumberAnimation { property: "opacity"; to: 1; duration: Theme.motionFast }
+                NumberAnimation { property: "scale"; to: 1; duration: Theme.motionFast }
+            }
 
-                delegate: Rectangle {
+            delegate: Rectangle {
+                id: row
+                required property var modelData
+                width: list.width - (vbar.visible ? 8 : 0)
+                implicitHeight: card.implicitHeight + 24
+                radius: Theme.notchRadiusCard
+                color: card.hovered ? Theme.notchSurfaceElevated : Theme.notchSurface
+                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                NotificationCard {
                     id: card
-                    required property var modelData
-                    required property int index
-
-                    width: notifListView.width - (vbar.visible ? 8 : 0)
-                    implicitHeight: cardContent.implicitHeight + 16
-                    radius: 10
-                    color: cardMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
-                    border.color: cardMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
-                    border.width: 1
-
-                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                    MouseArea {
-                        id: cardMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                    }
-
-                    RowLayout {
-                        id: cardContent
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        spacing: 10
-
-                        // 1. أيقونة التطبيق (واضحة بحجم 30x30)
-                        Rectangle {
-                            implicitWidth: 30
-                            implicitHeight: 30
-                            radius: 8
-                            color: Theme.notchSurface
-                            border.color: Theme.notchBorderSubtle
-                            border.width: 1
-                            Layout.alignment: Qt.AlignTop
-
-                            AppIcon {
-                                anchors.centerIn: parent
-                                iconSize: 18
-                                source: card.modelData && card.modelData.appIcon ? card.modelData.appIcon : "dialog-information"
-                            }
-                        }
-
-                        // 2. النصوص والتفاصيل بتسلسل بصري عالي الوضوح
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 3
-
-                            // الصف الأول: اسم التطبيق + الوقت
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: 6
-
-                                Text {
-                                    text: card.modelData && card.modelData.appName ? card.modelData.appName : "System"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.DemiBold
-                                    color: Theme.notchText
-                                    elide: Text.ElideRight
-                                    Layout.maximumWidth: 160
-                                }
-
-                                Text {
-                                    text: "•"
-                                    font.pixelSize: Theme.fontSize(9)
-                                    color: Theme.notchTextTertiary
-                                }
-
-                                Text {
-                                    text: card.modelData && card.modelData.timeStr ? card.modelData.timeStr : ""
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(10)
-                                    color: Theme.notchTextSecondary
-                                    Layout.fillWidth: true
-                                }
-                            }
-
-                            // عنوان الإشعار (واضح وبارز)
-                            Text {
-                                text: card.modelData && card.modelData.summary ? card.modelData.summary : ""
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(12)
-                                font.weight: Font.DemiBold
-                                color: Theme.notchText
-                                wrapMode: Text.Wrap
-                                maximumLineCount: 2
-                                elide: Text.ElideRight
-                                Layout.fillWidth: true
-                            }
-
-                            // تفاصيل الإشعار (متعدد الأسطر بمسافة قراءة مريحة)
-                            Text {
-                                visible: card.modelData && (card.modelData.body || "").length > 0
-                                text: card.modelData && card.modelData.body ? card.modelData.body : ""
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                color: Theme.notchTextSecondary
-                                wrapMode: Text.Wrap
-                                maximumLineCount: 3
-                                elide: Text.ElideRight
-                                lineHeight: 1.25
-                                Layout.fillWidth: true
-                            }
-                        }
-
-                        // 3. معاينة مصغرة للقطات الشاشة (إذا وجدت)
-                        Rectangle {
-                            visible: Boolean(card.modelData && card.modelData.isScreenshot && card.modelData.imagePath && card.modelData.imagePath.length > 0)
-                            implicitWidth: 50
-                            implicitHeight: 34
-                            radius: 6
-                            clip: true
-                            color: Theme.notchSurface
-                            border.color: Theme.notchBorderSubtle
-                            border.width: 1
-                            Layout.alignment: Qt.AlignVCenter
-
-                            Image {
-                                anchors.fill: parent
-                                source: (card.modelData && card.modelData.imagePath) ? ("file://" + card.modelData.imagePath) : ""
-                                fillMode: Image.PreserveAspectCrop
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (card.modelData && card.modelData.imagePath) {
-                                        Qt.openUrlExternally("file://" + card.modelData.imagePath);
-                                    }
-                                }
-                            }
-                        }
-
-                        // 4. زر الحذف الفردي (✕)
-                        Rectangle {
-                            implicitWidth: 22
-                            implicitHeight: 22
-                            radius: 11
-                            color: delMa.pressed ? Theme.notchSurfaceActive : (delMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: delMa.containsMouse ? Theme.notchBorderHighlight : "transparent"
-                            border.width: 1
-                            Layout.alignment: Qt.AlignTop
-                            Layout.topMargin: 2
-
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: "✕"
-                                font.pixelSize: Theme.fontSize(9)
-                                color: delMa.containsMouse ? Theme.notchText : Theme.notchTextTertiary
-                            }
-
-                            MouseArea {
-                                id: delMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (card.modelData && card.modelData.id !== undefined) {
-                                        NotificationManager.dismiss(card.modelData.id);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    variant: "card"
+                    notif: row.modelData
+                    onCloseRequested: NotificationManager.dismiss(row.modelData.id)
                 }
             }
         }
