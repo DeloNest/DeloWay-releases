@@ -80,7 +80,7 @@ Item {
                         implicitWidth: isHorizontal ? (miniDockLayout.implicitWidth + 20) : previewDockH
                         width: implicitWidth
                         height: implicitHeight
-                        radius: Math.min(previewDockH / 2, 14)
+                        radius: Math.min(previewDockH / 2, Theme.radiusLarge)   // scales with the corner-radius setting, like the real Dock
                         color: Theme.dockGlass            // the real Dock's surface, in both modes
                         border.color: Theme.notchBorderHighlight
                         border.width: 1

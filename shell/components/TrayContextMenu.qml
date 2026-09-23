@@ -235,11 +235,8 @@ PopupWindow {
                                   ? Theme.notchSurfaceActive
                                   : (itemMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
 
-                        border.color: itemMouse.containsMouse && isEnabled ? Theme.notchBorderSubtle : "transparent"
-                        border.width: 1
 
                         Behavior on color { ColorAnimation { duration: 80 } }
-                        Behavior on border.color { ColorAnimation { duration: 80 } }
 
                         RowLayout {
                             id: itemRow
@@ -264,7 +261,7 @@ PopupWindow {
                                     radius: 6
                                     color: "transparent"
                                     border.color: itemBg.isChecked ? Theme.notchText : Theme.notchTextTertiary
-                                    border.width: 1.5
+                                    border.width: 1
 
                                     Rectangle {
                                         visible: itemBg.isChecked

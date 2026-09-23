@@ -35,16 +35,13 @@ Item {
         Layout.preferredHeight: 32
         Layout.leftMargin: 6
         Layout.rightMargin: 6
-        radius: 6
+        radius: Theme.radiusSmall
 
         color: cItem.isChecked
                ? Theme.notchSurfaceElevated
                : (itemMouse.pressed ? Theme.notchSurfaceActive : (itemMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
-        border.color: itemMouse.containsMouse ? Theme.notchBorderSubtle : "transparent"
-        border.width: 1
 
         Behavior on color { ColorAnimation { duration: 80 } }
-        Behavior on border.color { ColorAnimation { duration: 80 } }
 
         RowLayout {
             anchors.fill: parent
@@ -115,7 +112,7 @@ Item {
         Layout.preferredHeight: 30
         Layout.leftMargin: 6
         Layout.rightMargin: 6
-        radius: 6
+        radius: Theme.radiusSmall
 
         color: mItem.isActive
                ? Theme.notchSurfaceElevated
@@ -176,9 +173,9 @@ Item {
         y: Math.max(12, Math.min(DesktopManager.contextMenuY, root.height - height - 12))
         width: 232
         implicitHeight: menuCol.implicitHeight + 14
-        radius: 12
+        radius: Theme.radiusLarge
         color: Theme.notchBackground
-        border.color: Theme.notchBorderSubtle
+        border.color: Theme.notchBorder
         border.width: 1
 
         LayoutMirroring.enabled: I18n.isRTL
@@ -354,7 +351,7 @@ Item {
                     Layout.leftMargin: 6
                     Layout.rightMargin: 6
                     Layout.bottomMargin: 2
-                    radius: 6
+                    radius: Theme.radiusSmall
                     color: Theme.notchSurface
                     border.color: Theme.notchBorderSubtle
                     border.width: 1

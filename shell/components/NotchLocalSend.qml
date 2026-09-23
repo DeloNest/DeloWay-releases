@@ -78,13 +78,13 @@ Item {
             font.pixelSize: 11
             font.weight: Font.DemiBold
             renderType: Theme.renderType
-            color: Theme.colors.text
+            color: Theme.notchText
         }
 
         Text {
             text: "•"
             font.pixelSize: 10
-            color: Theme.colors.textTertiary
+            color: Theme.notchTextTertiary
         }
 
         Text {
@@ -123,7 +123,7 @@ Item {
                    ? Theme.colors.urgent
                    : (root.stage === "sending"
                       ? Theme.notchText
-                      : (root.stage === "sent" ? Theme.colors.success : (LocalSendService.isRunning ? Theme.colors.success : Theme.colors.textTertiary)))
+                      : (root.stage === "sent" ? Theme.colors.success : (LocalSendService.isRunning ? Theme.colors.success : Theme.notchTextTertiary)))
 
             SequentialAnimation on opacity {
                 running: root.stage === "sending" || LocalSendService.isScanning
@@ -251,7 +251,7 @@ Item {
                             radius: 4
                             color: Theme.notchSurfaceElevated
                             border.color: Theme.notchBorderHighlight
-                            border.width: 1.5
+                            border.width: 1
                             clip: true
                             Layout.alignment: Qt.AlignHCenter
 
@@ -375,13 +375,13 @@ Item {
                         implicitWidth: 22
                         implicitHeight: 22
                         radius: 11
-                        color: backHover.containsMouse ? Theme.colors.surfaceHover : "transparent"
+                        color: backHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                         Text {
                             anchors.centerIn: parent
                             text: I18n.isRTL ? "→" : "←"
                             font.pixelSize: 12
-                            color: Theme.colors.textSecondary
+                            color: Theme.notchTextSecondary
                         }
 
                         MouseArea {
@@ -398,7 +398,7 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: 11
                         font.weight: Font.Bold
-                        color: Theme.colors.text
+                        color: Theme.notchText
                     }
 
                     Rectangle {
@@ -425,8 +425,8 @@ Item {
                         implicitWidth: rescanTxt.implicitWidth + 14
                         implicitHeight: 20
                         radius: 10
-                        color: rescanHover.containsMouse ? Theme.colors.surfaceHover : "transparent"
-                        border.color: Theme.colors.borderSubtle
+                        color: rescanHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
 
                         Text {
@@ -435,7 +435,7 @@ Item {
                             text: LocalSendService.isScanning ? I18n.tr("notch_scanning") : "🔄 " + I18n.tr("notch_scan_network")
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 8
-                            color: Theme.colors.text
+                            color: Theme.notchText
                         }
 
                         MouseArea {
@@ -468,8 +468,8 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 radius: 8
-                                color: rdevHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                                border.color: rdevHover.containsMouse ? Theme.notchBorderHighlight : Theme.colors.borderSubtle
+                                color: rdevHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                                border.color: rdevHover.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                                 border.width: 1
 
                                 ColumnLayout {
@@ -481,7 +481,7 @@ Item {
                                         source: (realDeviceCard.modelData.deviceType === "mobile" || realDeviceCard.modelData.deviceType === "phone")
                                                 ? "phone-symbolic"
                                                 : "computer-symbolic"
-                                        iconColor: rdevHover.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
+                                        iconColor: rdevHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                                         Layout.alignment: Qt.AlignHCenter
                                     }
 
@@ -490,7 +490,7 @@ Item {
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 10
                                         font.weight: Font.DemiBold
-                                        color: Theme.colors.text
+                                        color: Theme.notchText
                                         elide: Text.ElideRight
                                         Layout.maximumWidth: 100
                                         Layout.alignment: Qt.AlignHCenter
@@ -500,7 +500,7 @@ Item {
                                         text: realDeviceCard.modelData.ip
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: 8
-                                        color: Theme.colors.textTertiary
+                                        color: Theme.notchTextTertiary
                                         Layout.alignment: Qt.AlignHCenter
                                     }
                                 }
@@ -520,8 +520,8 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         radius: 8
-                        color: Qt.alpha(Theme.colors.surface, 0.3)
-                        border.color: Theme.colors.borderSubtle
+                        color: Theme.notchSurface
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
                         visible: LocalSendService.discoveredDevices.length === 0
 
@@ -561,14 +561,14 @@ Item {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: 10
                                     font.weight: Font.DemiBold
-                                    color: Theme.colors.text
+                                    color: Theme.notchText
                                 }
 
                                 Text {
                                     text: I18n.tr("notch_no_devices_hint")
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: 8
-                                    color: Theme.colors.textSecondary
+                                    color: Theme.notchTextSecondary
                                     wrapMode: Text.WordWrap
                                     Layout.fillWidth: true
                                 }
@@ -579,8 +579,8 @@ Item {
                                 implicitWidth: fallbackOpenTxt.implicitWidth + 14
                                 implicitHeight: 24
                                 radius: 12
-                                color: fallbackOpenHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                                border.color: Theme.colors.borderHighlight
+                                color: fallbackOpenHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                                border.color: Theme.notchBorderHighlight
                                 border.width: 1
 
                                 Text {
@@ -590,7 +590,7 @@ Item {
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: 9
                                     font.weight: Font.Medium
-                                    color: Theme.colors.text
+                                    color: Theme.notchText
                                 }
 
                                 MouseArea {
@@ -631,7 +631,7 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: 12
                         font.weight: Font.Bold
-                        color: Theme.colors.text
+                        color: Theme.notchText
                     }
                 }
 
@@ -640,7 +640,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 6
                     radius: 3
-                    color: Theme.colors.surfaceVariant
+                    color: Theme.notchSurfaceElevated
 
                     Rectangle {
                         anchors.left: parent.left
@@ -693,7 +693,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 12
                     font.weight: Font.Bold
-                    color: Theme.colors.text
+                    color: Theme.notchText
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -701,8 +701,8 @@ Item {
                     implicitWidth: sendMoreTxt.implicitWidth + 18
                     implicitHeight: 22
                     radius: 11
-                    color: sendMoreHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                    border.color: Theme.colors.borderSubtle
+                    color: sendMoreHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                    border.color: Theme.notchBorderSubtle
                     border.width: 1
                     Layout.alignment: Qt.AlignHCenter
 
@@ -713,7 +713,7 @@ Item {
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: 9
                         font.weight: Font.Medium
-                        color: Theme.colors.text
+                        color: Theme.notchText
                     }
 
                     MouseArea {
@@ -738,7 +738,7 @@ Item {
                     implicitHeight: 32
                     radius: 16
                     color: Theme.notchSurfaceElevated
-                    border.color: Theme.colors.borderSubtle
+                    border.color: Theme.notchBorderSubtle
                     border.width: 1
                     Layout.alignment: Qt.AlignHCenter
 
@@ -756,7 +756,7 @@ Item {
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 12
                     font.weight: Font.Bold
-                    color: Theme.colors.text
+                    color: Theme.notchText
                     Layout.alignment: Qt.AlignHCenter
                 }
 
@@ -764,7 +764,7 @@ Item {
                     text: LocalSendService.lastSendError || ""
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 9
-                    color: Theme.colors.textSecondary
+                    color: Theme.notchTextSecondary
                     Layout.alignment: Qt.AlignHCenter
                     Layout.maximumWidth: parent.width
                     wrapMode: Text.WordWrap
@@ -780,8 +780,8 @@ Item {
                         implicitWidth: tryAgainTxt.implicitWidth + 18
                         implicitHeight: 22
                         radius: 11
-                        color: tryAgainHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                        border.color: Theme.colors.borderSubtle
+                        color: tryAgainHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
 
                         Text {
@@ -791,7 +791,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 9
                             font.weight: Font.Medium
-                            color: Theme.colors.text
+                            color: Theme.notchText
                         }
 
                         MouseArea {
@@ -815,8 +815,8 @@ Item {
                         implicitWidth: cancelTxt.implicitWidth + 18
                         implicitHeight: 22
                         radius: 11
-                        color: cancelHover.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surfaceVariant
-                        border.color: Theme.colors.borderSubtle
+                        color: cancelHover.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
 
                         Text {
@@ -826,7 +826,7 @@ Item {
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: 9
                             font.weight: Font.Medium
-                            color: Theme.colors.textSecondary
+                            color: Theme.notchTextSecondary
                         }
 
                         MouseArea {

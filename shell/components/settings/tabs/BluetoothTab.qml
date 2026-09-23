@@ -82,7 +82,7 @@ Item {
                         Layout.leftMargin: Theme.space16
                         Layout.rightMargin: Theme.space16
                         implicitHeight: 32
-                        radius: 8
+                        radius: Theme.notchRadiusPill
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorder
                         border.width: 1

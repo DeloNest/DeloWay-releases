@@ -82,7 +82,7 @@ Item {
                         Layout.leftMargin: Theme.space16
                         Layout.rightMargin: Theme.space16
                         implicitHeight: 32
-                        radius: 8
+                        radius: Theme.notchRadiusPill
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorder
                         border.width: 1
@@ -260,7 +260,7 @@ Item {
                                 Layout.rightMargin: Theme.space16
                                 Layout.bottomMargin: Theme.space8
                                 implicitHeight: 44
-                                radius: 8
+                                radius: Theme.notchRadiusPill
                                 color: Theme.notchSurfaceElevated
                                 border.color: Theme.notchBorderHighlight
                                 border.width: 1
@@ -391,7 +391,7 @@ Item {
                         Layout.leftMargin: Theme.space16
                         Layout.rightMargin: Theme.space16
                         implicitHeight: 32
-                        radius: 8
+                        radius: Theme.notchRadiusPill
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorder
                         border.width: 1
@@ -417,7 +417,7 @@ Item {
                         Layout.leftMargin: Theme.space16
                         Layout.rightMargin: Theme.space16
                         implicitHeight: hsFormCol.implicitHeight + Theme.space24
-                        radius: 10
+                        radius: Theme.radiusMedium
                         color: Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
@@ -521,7 +521,7 @@ Item {
                                 required property int index
                                 Layout.fillWidth: true
                                 implicitHeight: 36
-                                radius: 8
+                                radius: Theme.notchRadiusPill
                                 color: Theme.notchSurfaceElevated
                                 border.color: Theme.notchBorderSubtle
                                 border.width: 1

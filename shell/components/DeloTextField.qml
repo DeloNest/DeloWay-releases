@@ -45,7 +45,7 @@ Rectangle {
     border.color: customBorderColor !== null
            ? (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.notchBorderHighlight) : (mouseArea.containsMouse ? Theme.notchBorderHighlight : customBorderColor))
            : (input.activeFocus ? (customFocusBorderColor !== null ? customFocusBorderColor : Theme.colors.borderHighlight) : (mouseArea.containsMouse ? Theme.colors.borderHighlight : Theme.hairline))
-    border.width: input.activeFocus ? 1.5 : 1
+    border.width: 1   // focus is shown by the border colour, not a half-pixel width change
 
     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
     Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }

@@ -28,7 +28,7 @@ Rectangle {
 
     implicitHeight: 44 + (root.expanded ? extraHolder.childrenRect.height + 8 : 0)
     Behavior on implicitHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
-    radius: 12
+    radius: Theme.notchRadiusCard
     clip: true
     color: root.selected ? Theme.notchSurfaceActive
            : (ma.containsMouse || root.expanded ? Theme.qsTileBackgroundHover : "transparent")
