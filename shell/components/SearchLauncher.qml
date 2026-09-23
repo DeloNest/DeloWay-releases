@@ -127,15 +127,13 @@ PanelWindow {
             } else {
                 ShellState.openSettingsTab(item.id);
             }
-        } else if (item.type === "store") {
-            ShellState.openAppStore("all", item.data.query);
         } else if (item.type === "web") {
             Hyprland.dispatch("exec xdg-open 'https://duckduckgo.com/?q=" + encodeURIComponent(item.data.query) + "'");
         } else if (item.type === "action") {
             if (item.id === "lock") {
                 ShellState.lock();
             } else if (item.id === "logout") {
-                Hyprland.dispatch("exec hyprctl dispatch exit");
+                Hyprland.dispatch("exit");
             } else if (item.id === "restart") {
                 Hyprland.dispatch("exec systemctl reboot");
             } else if (item.id === "shutdown") {

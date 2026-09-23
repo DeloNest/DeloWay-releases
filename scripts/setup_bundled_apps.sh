@@ -10,59 +10,10 @@ mkdir -p "$HOME/.config/gtk-4.0"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# 1. Delo Terminal Desktop Override
-cat << EOF > "$APP_DIR/delo-terminal.desktop"
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Delo Terminal
-GenericName=Terminal Emulator
-Comment=Fast, GPU-accelerated Calm Mica terminal for DeloOS
-Exec=kitty --config $PROJECT_ROOT/config/kitty.conf
-Icon=terminal
-Terminal=false
-Categories=System;TerminalEmulator;Utility;
-StartupWMClass=kitty
-Keywords=terminal;shell;prompt;command;delo;
-EOF
-
-# 2. Delo Files Desktop Override
-cat << 'EOF' > "$APP_DIR/delo-files.desktop"
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Delo Files
-GenericName=File Manager
-Comment=Fast, modern file manager for DeloOS
-Exec=thunar %F
-Icon=system-file-manager
-Terminal=false
-Categories=System;FileManager;Utility;
-StartupWMClass=thunar
-Keywords=files;folders;explorer;delo;thunar;
-EOF
-
-
-# 4. Delo Store Desktop Entry
-cat << 'EOF' > "$APP_DIR/delo-store.desktop"
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Delo Store
-GenericName=App Store
-Comment=Discover, install, and manage applications and software packages
-Exec=pamac-manager %U
-Icon=software-store
-Terminal=false
-Categories=System;PackageManager;Settings;
-StartupWMClass=pamac-manager
-Keywords=store;apps;packages;install;software;delo;pamac;
-EOF
-
-chmod +x "$APP_DIR"/delo-*.desktop
+# Clean up any obsolete branded desktop entries if present
+rm -f "$APP_DIR/delo-terminal.desktop" "$APP_DIR/delo-files.desktop" "$APP_DIR/delo-store.desktop"
 update-desktop-database "$APP_DIR" 2>/dev/null || true
-
-echo "✓ Branded .desktop entries created in $APP_DIR"
+echo "✓ Native system applications preserved without fake stubs"
 
 # 5. GTK 3 & GTK 4 Theme Integration (§7.3)
 cat << 'EOF' > "$HOME/.config/gtk-3.0/gtk.css"

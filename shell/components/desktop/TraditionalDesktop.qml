@@ -188,25 +188,62 @@ Item {
                             source: deskItemWrapper.itemData.icon
                         }
 
-                        // Display Name (Normal) with subtle text outline for crystal-clear readability
-                        Text {
-                            id: nameText
+                        // Display Name with soft backdrop pill and clean text shadow
+                        Item {
+                            id: nameContainer
                             visible: !deskItemWrapper.isEditing
                             Layout.fillWidth: true
+                            Layout.preferredHeight: nameText.implicitHeight + 4
                             Layout.alignment: Qt.AlignHCenter
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignTop
-                            elide: Text.ElideRight
-                            maximumLineCount: 2
-                            wrapMode: Text.Wrap
-                            text: deskItemWrapper.itemData.name
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(11)
-                            font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
-                            color: "#ffffff"
-                            style: Text.Outline
-                            styleColor: Qt.rgba(0, 0, 0, 0.65)
-                            renderType: Theme.renderType
+
+                            // Soft subtle backdrop pill
+                            Rectangle {
+                                id: nameBackdrop
+                                anchors.centerIn: parent
+                                width: Math.min(parent.width, nameText.implicitWidth + 10)
+                                height: nameText.implicitHeight + 4
+                                radius: 4
+                                color: deskItemWrapper.isSelected
+                                       ? "transparent"
+                                       : (itemMouse.containsMouse ? Qt.rgba(0, 0, 0, 0.40) : Qt.rgba(0, 0, 0, 0.28))
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            }
+
+                            // Text shadow layer
+                            Text {
+                                anchors.centerIn: parent
+                                anchors.verticalCenterOffset: 1
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                maximumLineCount: 2
+                                wrapMode: Text.Wrap
+                                text: deskItemWrapper.itemData.name
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
+                                color: Qt.rgba(0, 0, 0, 0.70)
+                                renderType: Theme.renderType
+                            }
+
+                            // Main crisp text
+                            Text {
+                                id: nameText
+                                anchors.centerIn: parent
+                                width: parent.width
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                                maximumLineCount: 2
+                                wrapMode: Text.Wrap
+                                text: deskItemWrapper.itemData.name
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
+                                color: "#ffffff"
+                                renderType: Theme.renderType
+                            }
                         }
 
                         // Inline Rename TextField

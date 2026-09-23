@@ -1,18 +1,20 @@
 # DeloWay Shell — وثيقة المعمارية والحالة الفنية (STATUS.md)
 
-> **الغرض من الملف**: مرجع شامل وكافٍ بذاته لأي نموذج ذكاء اصطناعي "عقل تخطيط" (مثل Claude أو Kimi أو غيرهما) للعمل والتخطيط وتقديم حلول وتشخيصات تقنية دقيقة ومتسقة مع الكود الحالي دون الحاجة للوصول المباشر إلى ملفات المشروع على القرص.
-> **قاعدة التحديث الإلزامية**: في نهاية أي مهمة برمجية معتمدة ولها commit، يتم تحديث الأقسام (6، 7، 8، 9) فقط لتعكس واقع Git والقرص الفعلي. الأقسام (1 إلى 5) شبه ثابتة، ولا تُعدّل إلا عند حدوث قرار معماري أو تعديل جذري في نظام التصميم.
+> **الغرض من الملف**: مرجع شامل وكافٍ بذاته لأي نموذج ذكاء اصطناعي "عقل تخطيط" (مثل Claude Code أو غيره) للعمل والتخطيط وتقديم حلول وتشخيصات تقنية دقيقة ومتسقة مع الكود الحالي دون الحاجة للبحث المضني في كل ملفات المشروع على القرص.
+> **قاعدة التحديث الإلزامية**: في نهاية أي مهمة برمجية معتمدة ولها commit، يتم تحديث الأقسام (6، 7، 8، 9) لتعكس واقع Git والقرص الفعلي. الأقسام (1 إلى 5) شبه ثابتة، وتُعدّل عند حدوث قرار معماري أو تعديل جذري في نظام التصميم.
+> **آخر تحديث موثق**: سبتمبر 2026 — متطابق مع Commit HEAD (`6fdb1e1`) وما يليه من تحسينات قيد العمل.
 
 ---
 
 ## 1. نظرة عامة ورؤية المشروع (Project Overview & Vision)
 - **المشروع**: DeloWay Shell (DeloOS).
-- **الهدف**: بيئة سطح مكتب وقشرة نظام (Desktop Shell) عصرية ومتطورة لأنظمة لينكس مبنية على بروتوكول Wayland ومدير النوافذ Hyprland، تدمج بين أناقة macOS (مثل النوتش التفاعلي Smart Notch والكبسولة QuickSettings) وسرعة وخفة بيئة Arch Linux المستقلة.
+- **الهدف**: بيئة سطح مكتب وقشرة نظام (Desktop Shell) عصرية ومتطورة لأنظمة لينكس مبنية على بروتوكول Wayland ومدير النوافذ Hyprland، تدمج بين أناقة macOS (مثل النوتش التفاعلي Smart Notch والكبسولة QuickSettings) وسرعة وخفة بيئة Arch Linux المستقلة، مع هندسة سطح مكتب مستوحاة من Windows 11 Fluent Design.
 - **فلسفة الواجهة**: 
-  - لغة تصميم داكنة متباينة OLED Black (`#000000`) مع أسطح زجاجية خافتة وحدود دقيقة متناهية الصغر.
-  - دعم كامل وأصيل لاتجاه الكتابة من اليمين لليسار (RTL / اللغة العربية) جنباً إلى جنب مع الإنجليزية.
+  - **هوية أحادية مطلقة (Strict Monochrome OLED)**: سواد نقي كفحم OLED (`#000000`) مع أسطح زجاجية خافتة وتباين ناصع (`#ffffff` في الداكن و `#0f172a` في الفاتح). لا يوجد نظام لون تمييزي (No Accent Colors) مطلقاً.
+  - دعم كامل وأصيل لاتجاه الكتابة من اليمين لليسار (RTL / اللغة العربية) جنباً إلى جنب مع الإنجليزية عبر سنجلتون `I18n`.
   - تفاعل فيزيائي انسيابي يعتمد منحنيات تسارع حادة وسريعة (`OutCubic` / 120-220ms).
   - معيارية عالية وفصل صارم بين منطق الخدمات الخلفية (Services) ومكونات العرض البصري (Components).
+  - خط طباعي موحد للنظام (`Cairo`) بين واجهات QML وتطبيقات النظام الخارجية (GTK3/4 و Thunar).
 
 ---
 
@@ -21,395 +23,310 @@
 - **مدير النوافذ (Compositor)**: Hyprland (إصدار v0.56.2+).
 - **بروتوكول العرض**: Wayland (مع استخدام `wlr_layer_shell_v1` للأسطح الممتدة، و `xdg_popup` للقوائم المنبثقة).
 - **التكاملات والخدمات الخلفية**:
-  - `Quickshell.Hyprland`: لمراقبة الشاشات، مساحات العمل، والنوافذ وإدارة التركيز (`HyprlandFocusGrab`).
-  - `Quickshell.Services.SystemTray`: للتعامل مع بروتوكول StatusNotifierItem (D-Bus) لتطبيقات الخلفية.
-  - `Quickshell.Services.Mpris`: للتحكم في مشغلات الموسيقى والوسائط (Spotify وغيرها).
+  - `Quickshell.Hyprland`: لمراقبة الشاشات، مساحات العمل، والنوافذ وإدارة التركيز.
+  - `Quickshell.Services.SystemTray`: للتعامل مع بروتوكول StatusNotifierItem (D-Bus) لتطبيقات الخلفية مع عزل القوائم المنبثقة عبر `Loader`.
+  - `Quickshell.Services.Mpris`: للتحكم في مشغلات الموسيقى والوسائط (Spotify، المتصفحات، مشغلات محلية).
   - `Quickshell.Services.Notifications`: خادم إشعارات مدمج (`NotificationServer`).
   - **بايثون / سكربتات مساعدة**:
-    - `scripts/deloway-network.py`: الاتصال بالشبكات اللاسلكية، إدارة نقطة الاتصال (Hotspot) ونقطة الوصول عبر NetworkManager.
-    - `scripts/deloway-localsend.py`: وسيط لمشاركة ونقل الملفات عبر بروتوكول LocalSend المدمج بالنوتش.
-- **بيئة الاختبار والتشغيل**:
-  - **جلسة المضيف (Host)**: شاشة `DP-1` (`wayland-1`) تشغل بيئة المستخدم الأساسية (end-4 / illogical-impulse `qs -c ii`).
-  - **جلسة DeloWay المتداخلة (Nested)**: شاشة `WAYLAND-1` (`wayland-2`) بنافذة Aquamarine مستقلة لعزل التطوير والاختبار وحماية المضيف من الكراش.
+    - `scripts/deloway-network.py`: الاتصال بالشبكات اللاسلكية وإدارة نقطة الاتصال (Hotspot) عبر NetworkManager.
+    - `scripts/deloway-bluetooth.py`: فحص وإدارة أجهزة البلوتوث والاقتران عبر BlueZ.
+    - `scripts/deloway-theme-apply.py`: تطبيق الثيم وتوليد ملفات GTK3/4 و Qt6ct ومزامنة الخطوط.
+    - `scripts/deloway-hardware.py`: خدمة تدفقية حية لحساسات النظام (CPU, RAM, GPU, temps).
+    - `scripts/deloway-hotspot-rules.sh`: ضبط واستعادة قواعد iptables لنقطة الاتصال وتوافقها مع محرك Docker.
+- **حزم النظام المساعدة**:
+  - `localsend`: يعمل كخدمة خلفية خفية (`localsend --hidden`) لتغذية كبسولة النوتش ببروتوكول Direct v2.
+  - `pamac-manager`: المحرك الافتراضي لمتجر التطبيقات وإدارة الحزم.
+  - `cliphist` و `wl-clipboard`: لإدارة سجل الحافظة المركزي.
 
 ---
 
 ## 3. خريطة المعمارية والملفات الرئيسية (Architecture Map & Core Files)
 
 ### أ) ملفات النواة والإطار الهيكلي (Shell Core)
-1. **`shell/shell.qml` (287 سطراً)**:
-   - **الغرض**: نقطة الإدخال الرئيسية للواجهة (`ShellRoot`). يقوم بتهيئة الجلسة، تسجيل الاختصارات العالمية، وتوزيع الأسطح على كل شاشة متصلة.
-   - **الأقسام الداخلية**:
-     - `السطور 1-96`: الاستيرادات، المتغيرات العامة، والاختصارات العالمية (`GlobalShortcut`).
-     - `السطور 97-216`: موزع أوامر IPC الرئيسي (`IpcHandler { target: "deloway" }`) للتحكم بالشل من الخارج (فتح/إغلاق النوتش، الكبسولة، الإعدادات، مقياس الخط).
-     - `السطور 217-238`: العناصر الفردية العامة للجلسة مثل شاشة القفل (`LockScreen`).
-     - `السطور 239-275`: حلقة `Variants` للشاشات (`Quickshell.screens`)، تُنشئ لكل شاشة أسطحها المستقلة (`Background`, `Dock`, `Notch`, `QuickSettingsCapsule`, `AppDrawer`, `SettingsAppV2`).
-   - **الاعتماديات**: `ShellState`, `Theme`, `ConfigManager`, `DesktopManager`.
+1. **`shell/shell.qml` (327 سطراً)**:
+   - **الغرض**: نقطة الإدخال الرئيسية للواجهة (`ShellRoot`). يقوم بتهيئة الجلسة، تسجيل الاختصارات العالمية (`GlobalShortcut`)، موزع أوامر IPC، وتوزيع الأسطح على كل شاشة متصلة.
+   - **المكونات الأساسية**:
+     - تسجيل اختصارات: `shellToggle`, `drawerToggle`, `settingsToggle`, `clipboardToggle`, `sidebarLeftToggle`, `sidebarRightToggle`, `smartNotchToggle`, `cheatsheetToggle`.
+     - موزع أوامر IPC (`target: "deloway"`): التحكم البرمجي الكامل بالواجهة وتمرير الأوامر اللحظية.
+     - حلقة `Variants` للشاشات (`Quickshell.screens`): ربط مكونات `Dock`, `Notch`, `TimeCapsule`, `QuickSettingsCapsule`, `TraditionalDesktop`, `SearchLauncher`, `AppDrawer`, `SettingsAppV2`.
+   - **الاعتماديات**: `ShellState`, `Theme`, `ConfigManager`, `DesktopManager`, `LauncherIndex`.
 
-2. **`shell/theme/Theme.qml` (364 سطراً)**:
-   - **الغرض**: سنجلتون الثيم الشامل ومصدر الحقيقة لكافة الرموز البصرية (Colors, Tokens, Typography, Motion, Dimensions).
-   - **الأقسام الداخلية**:
-     - `السطور 13-23`: منطق تحجيم الخط الديناميكي `Theme.fontSize(baseSize)` وتتبعه لـ `ConfigManager.fontSizeScale`.
-     - `السطور 55-70`: ثوابت الحركة والزوايا (`motionFast`, `motionBase`, `radiusSmall`, `radiusMedium`, `radiusLarge`).
-     - `السطور 162-210`: لوحة الألوان الأساسية (`background`, `surface`, `border`, `accent`, `urgent`).
-     - `السطور 211-230`: رموز النوتش واللون الأسود الداكن (`notchBackground`, `notchSurface`, `notchBorder`, `notchRadius`).
-     - `السطور 231-250`: رموز الـ Dock المتخصصة (`dockGlass`, `dockDot`, `dockBorder`, `dockTooltipBg`).
-     - `السطور 290-340`: تعريفات الخطوط الأساسية والمقاييس (`scaleDisplay`, `scaleTitle`, `scaleBody`).
-   - **الاعتماديات**: `ConfigManager`.
+2. **`shell/theme/Theme.qml` (382 سطراً)**:
+   - **الغرض**: سنجلتون الثيم الشامل ومصدر الحقيقة لكافة الرموز البصرية (Tokens, Typography, Motion, Radii).
+   - **الخصائص المحورية**:
+     - `Theme.fontFamily`: يقرأ مباشرة من `ConfigManager.fontFamily` (القيمة الافتراضية: "Cairo").
+     - `Theme.fontSize(baseSize)`: تحجيم ديناميكي يتبع `ConfigManager.fontSizeScale` (0.85 / 1.00 / 1.15).
+     - توكنات OLED الأحادية الصارمة: `notchBackground`, `notchSurface`, `notchBorder`, `notchText` وغيرها، مع تطهير تام لأي درجات زرقة.
+     - الألوان الدلالية الحصرية والمقيدة: `urgent` (`#ef4444`), `warning` (`#f59e0b`), `success` (`#10b981`).
 
 ---
 
-### ب) أسطح العرض النشطة في التطوير (Active Surfaces)
+### ب) أسطح العرض النشطة في الشريط العلوي (TopBar Surfaces)
 3. **`shell/components/NotchFrame.qml` (124 سطراً)**:
-   - **الغرض**: المكوّن الهيكلي الموحد والمشترك لهندسة وشكل النوتش والكبسولة الموسعة؛ يوفر الأذنين العلويتين المنحنيتين (Concave fillet ears: 18px)، الزوايا السفلية المنحنية (26px)، خلفية OLED Black (`Theme.notchBackground`)، الظل المحيطي الناعم، ودعم `LayoutMirroring` التلقائي للعربية.
-   - **الاعتماديات**: `Theme`, `I18n`.
+   - **الغرض**: الحاوية الهيكلية المشتركة لكافة الكبسولات والنوتش؛ توفر الأذنين العلويتين المنحنيتين (Concave fillet ears: 18px)، الزوايا السفلية (26px)، خلفية OLED Black، والظلال المحيطية الناعمة مع دعم `LayoutMirroring` التلقائي للعربية.
 
-4. **`shell/components/Notch.qml` (369 سطراً)**:
-   - **الغرض**: حاوية النوتش الذكي في أعلى منتصف الشاشة (مستوحى من macOS NotchNook)، يعتمد على `NotchFrame` ويدعم التوسع الفيزيائي السلس مع تبويبات مُموضعة بالمنتصف الهندسي الدقيق.
-   - **الأقسام الداخلية**:
-     - `السطور 20-45`: أبعاد الحالات (`compactHeight: 44`, `expandedWidth: 600`, `expandedHeight: 176`, `earRadius: 18`) وتتبع العرض اللحظي بـ `ShellState`.
-     - `السطور 56-65`: استدعاء المكون الهيكلي الموحد `NotchFrame`.
-     - `السطور 66-140`: حاوية النوتش المصغر (تضم `NotchHome.qml` وتتعامل مع عجلة الفأرة للتوسيع وسحب الملفات).
-     - `السطور 170-329`: شريط التبويبات العلوي للوضع الموسع في المنتصف تماماً (Home, Share, Notifications مع ترجمة I18n)، وزر الترس للإعدادات مفصول ومثبت على الحافة الجانبية.
-     - `السطور 330-366`: حاوية محتوى التبويبات الموسعة عبر `SwipeView` (`NotchHome`, `NotchLocalSend`, `NotchNotifications`).
-   - **الاعتماديات**: `NotchFrame`, `NotchHome`, `ShellState`, `Theme`, `LocalSendService`, `I18n`.
+4. **`shell/components/Notch.qml` (464 سطراً)**:
+   - **الغرض**: النوتش الذكي في أعلى منتصف الشاشة (مستوحى من Dynamic Island / NotchNook).
+   - **الميزات الفنية**:
+     - أبعاد مضبوطة: `compactHeight: 44`, `expandedWidth: 600`, `baseExpandedHeight: 176 / 400`.
+     - تماثل فيزيائي كامل لحركة عجلة الفأرة (Scroll wheel expand/collapse) عبر كافة مناطق النوتش.
+     - تتبع العرض اللحظي وإبلاغ `ShellState.smartNotchCurrentWidth` لضبط موضع الكبسولات الجانبية بدقة متناهية.
+     - تبويبات علوية متموضعة بالمنتصف الهندسي: الرئيسية (Home)، المشاركة (Share / LocalSend)، والإشعارات (Notifications).
 
-5. **`shell/components/NotchHome.qml` (798 سطراً)**:
-   - **الغرض**: المحتوى الرئيسي للنوتش في الحالتين المصغرة والموسعة (مساحات العمل، مشغل الموسيقى، الإشعارات، والتقويم).
-   - **الأقسام الداخلية**:
-     - `السطور 1-118`: إدارة أولوية العرض (`viewMode`: الإشعار يتفوق على الموسيقى، والموسيقى تتفوق على الخمول).
-     - `السطور 119-186`: مظهر الإشعار المصغر مع شريط التناقص الزمني وزر الإلغاء.
-     - `السطور 187-364`: مظهر النوتش المصغر الافتراضي:
-       - `190-248`: مؤشرات مساحات العمل 1-5 (ظاهرة دائماً).
-       - `249-257`: فاصل رأسي خافت عند تشغيل الموسيقى.
-       - `258-364`: مشغل الموسيقى المصغر (غلاف 32x32 بزاوية 8، عنوان المقطع بخط 14 DemiBold، أزرار بأيقونات `SymbolicIcon` بحجم 14px).
-     - `السطور 365-485`: بطاقة الإشعار الموسعة بالكامل.
-     - `السطور 486-701`: الجانب الأيسر الموسع: مشغل الموسيقى الكبير أو الساعة والطقس عند الخمول.
-     - `السطور 702-798`: الجانب الأيمن الموسع: شريط التقويم الأسبوعي (اليوم، الشهر، والأيام السبعة).
-   - **الاعتماديات**: `Theme`, `MediaService`, `NotificationManager`, `I18n`.
+5. **`shell/components/NotchHome.qml` (815 سطراً)**:
+   - **الغرض**: المحتوى الرئيسي للنوتش في الحالتين المصغرة والموسعة.
+   - **الميزات**:
+     - مؤشرات مساحات العمل 1-5 المستقلة.
+     - مشغل وسائط تفاعلي ذكي يدعم المشغل المفضل، مع أزرار تشغيل خاملة أنيقة تدعم روابط المتصفح والتشغيل الفوري.
+     - ترتيب المشغلات زمنياً (Chronological Media Sorting) بحيث يتصدر المشغل النشط حديثاً.
+     - تقويم أسبوعي مدمج وعرض تفصيلي للإشعارات وحالات الطقس.
 
-6. **`shell/components/QuickSettingsCapsule.qml` (2575 سطراً)**:
-   - **الغرض**: كبسولة الإعدادات السريعة في الشريط العلوي؛ تلتصق بسقف الشاشة عند التوسع وتعتمد على `NotchFrame` لمطابقة هندسة النوتش بالكامل (الأذنان، الزوايا، والظلال).
-   - **الأقسام الداخلية**:
-     - `السطور 1-67`: تعريف النافذة (`PanelWindow`)، التموضع النسبي للنوتش، الالتصاق بالسقف (`margins.top: root.isExpanded ? 0 : 10`)، والأبعاد (`compactHeight: 44`, `expandedWidth: 440`).
-     - `السطور 662-672`: الحاوية الهيكلية المشتركة `NotchFrame`.
-     - `السطور 673-900`: المظهر المصغر (المرحلة 1): مؤشر البطارية، مؤشرات برامج الخلفية `SystemTrayIndicators`، الصوت، الشبكة، وشارة اللغة.
-     - `السطور 901-1750`: المظهر الموسع (المرحلة 2 - الشاشة الرئيسية `main`):
-       - الساعة الحية وكبسولة البطارية وزر الإغلاق.
-       - بطاقات الشبكة والبلوتوث ونقطة الاتصال والإضاءة الليلية.
-       - بطاقات التحكم بالصوت والسطوع مع مزلاجات محسنة ومقابض تفاعلية.
-     - `السطور 1751-2575`: الشاشات الفرعية التفصيلية (Wi-Fi Manager, Bluetooth Scanner, Hotspot Detail).
-   - **الاعتماديات**: `NotchFrame`, `Theme`, `ShellState`, `SystemTrayIndicators`, `SystemMonitor`, `NetworkManager`.
+6. **`shell/components/TimeCapsule.qml` (911 سطراً)**:
+   - **الغرض**: كبسولة الوقت والتاريخ في يسار الشريط العلوي (أو اليمين بحسب الاتجاه).
+   - **الوضع المصغر**: ساعة رقمية واضحة وتاريخ مختصر خفيف الاستهلاك (0% CPU).
+   - **الوضع الموسع**:
+     - شريط تقويم أسبوعي أفقي بـ 7 أيام (Horizontal 7-day calendar strip) متناسق مع هندسة النوتش.
+     - ترويسة متكاملة: ساعة رقمية كبيرة، تاريخ ميلادي كامل، وحسابات تقويم أم القرى الهجرية بدقة فلكية.
+     - قسم الهاردوير الحي (CPU, RAM, GPU) مع مخططات Sparklines حية تتوقف تلقائياً عند الإغلاق.
+     - **هامش هندسي ثابت (Static Margin)**: لمنع التصاق الكبسولة بالنوتش عند تمددهما معاً.
 
-7. **`shell/components/SystemTrayIndicators.qml` (112 سطراً)**:
-   - **الغرض**: قراءة وعرض أيقونات تطبيقات الخلفية (System Tray / Applets) داخل الكبسولة السريعة.
-   - **الأقسام الداخلية**:
-     - `السطور 1-23`: التحقق من وجود أيقونات نشطة وتحديث خاصية `hasVisibleItems`.
-     - `السطور 24-99`: مصفوفة التراي (`Repeater` على `SystemTray.items`)؛ توفر قرص تمييز عند التحويم، نقر يسار للتفعيل، نقر يمين لعرض قائمة D-Bus عبر `QsMenuAnchor`، وتمرير الفأرة (Wheel) للصوت/التحكم. (تمت إزالة الـ Tooltip المسبب لتشوه الخط الأسود نهائياً).
-     - `السطور 100-111`: فاصل رأسي خافت يعزل التطبيقات عن مؤشرات النظام.
-   - **الاعتماديات**: `Quickshell.Services.SystemTray`, `Theme`.
+7. **`shell/components/QuickSettingsCapsule.qml` (1211 سطراً)**:
+   - **الغرض**: كبسولة الإعدادات السريعة وصينية النظام (System Tray) في الطرف المقابل للنوتش.
+   - **المظهر المصغر**: مؤشرات البطارية، أيقونات تطبيقات الخلفية `SystemTrayIndicators`، الصوت، الشبكة، وشارة اللغة.
+   - **المظهر الموسع**: بطاقات التحكم بالشبكة، البلوتوث، نقطة الاتصال، الإضاءة الليلية، مزلاجات الصوت والسطوع، وأزرار الطاقة.
 
-8. **`shell/components/Dock.qml` (331 سطراً)**:
-   - **الغرض**: شريط التطبيقات السفلي العائم (Dock) بنمط OLED الأسود العميق والزجاج المصقول.
-   - **الأقسام الداخلية**:
-     - `السطور 1-85`: هندسة الكبسولة، التموضع السفلي، ارتفاع `dockH: 52`، والظلال الناعمة.
-     - `السطور 86-220`: مصفوفة أيقونات التطبيقات المثبتة والنشطة (`appRepeater`):
-       - تكبير الأيقونة 1.08x وارتفاع 2px عند التحويم.
-       - نقطة مضيئة سفلية (`Theme.dockDot`) للتطبيق النشط.
-       - النقر الأيمن يفتح `DockContextMenu` متموضعاً فوق الأيقونة بدقة.
-       - دوران عجلة الفأرة يفتح/يغلق درج التطبيقات (`AppDrawer`).
-     - `السطور 221-327`: ملحقات الـ Dock (سلة المهملات، الفاصل، وزر الدرج إن وُجد).
-     - `السطور 328-331`: استدعاء وربط قائمة الكلك يمين `DockContextMenu`.
-   - **الاعتماديات**: `ApplicationManager`, `Theme`, `ShellState`, `DockContextMenu`.
+8. **`shell/components/SystemTrayIndicators.qml` (125 سطراً)**:
+   - **الغرض**: قراءة وعرض أيقونات تطبيقات الخلفية (StatusNotifierItem عبر D-Bus).
+   - **الحماية والاستقرار**: عزل كامل لدورة حياة القوائم المنبثقة عبر `Loader` لتجنب كراش Quickshell عند إغلاق التطبيقات، مع قائمة سياق OLED أحادية أنيقة ومطابقة للمواصفات.
 
-9. **`shell/components/DockContextMenu.qml` (284 سطراً)**:
-   - **الغرض**: قائمة السياق (الكلك يمين) لتطبيقات الـ Dock (تثبيت، فتح، إغلاق).
-   - **الأقسام الداخلية**:
-     - `السطور 1-38`: نافذة منبثقة (`PopupWindow`) مع تمكين `grabFocus: true` وربط `HyprlandFocusGrab` لإغلاق القائمة فوراً عند النقر بالخارج.
-     - `السطور 39-55`: دوال `show()` و `hide()`. تستدعي `show()` دالة `menuCard.forceActiveFocus()`.
-     - `السطور 99-130`: بطاقة القائمة (`menuCard`) مفعلة بـ `focus: true` والتقاط مفتاح `Keys.onEscapePressed: root.hide()`.
-     - `السطور 131-165`: ترويسة التطبيق بحجم خط `Theme.fontSize(12)` ونقطة الحالة الخضراء.
-     - `السطور 166-255`: الخيارات الثلاثة (Pin, Open, Close) بارتفاع موحد 32px، حجم أيقونة 14px، وخط `Theme.fontSize(12)`.
-   - **الاعتماديات**: `Quickshell.Hyprland`, `Theme`, `ApplicationManager`, `I18n`.
-
-10. **`shell/components/SymbolicIcon.qml` (213 سطراً)**:
-   - **الغرض**: مكوّن الأيقونات الرمزية القياسي. يقوم بمطابقة أسماء الأيقونات القياسية مع مسارات SVG المحلية وتلوينها بدقة عبر قناع لوني.
-   - **الاعتماديات**: `Theme`.
-
-11. **`shell/components/settings/SettingsAppV2.qml` (598 سطراً)**:
-   - **الغرض**: نافذة إعدادات النظام الرئيسية المحدثة؛ نافذة عائمة قابلة للسحب والتحريك بحرية، تدعم تعدد المهام بالعمل جنباً إلى جنب مع التطبيقات الأخرى، وتوفر تكبيراً واستعادة سلسة لملء الشاشة.
-   - **الأقسام الداخلية**:
-     - `السطور 1-35`: إعدادات النافذة (`PanelWindow`)، قناع التفاعل `mask: Region { item: root.isOpen ? windowCard : null }` الذي يعزل تفاعل النافذة عن باقي الشاشة ويسمح بالنقرات على النوافذ الأخرى، وخصائص السحب والتموضع المقيد (`clampedX`, `clampedY`).
-     - `السطور 107-160`: اختصارات لوحة المفاتيح (`Escape`, `Super+Q`, `F11`, `Super+F`).
-     - `السطور 178-230`: بطاقة النافذة (`windowCard`) العائمة مع زوايا `Theme.notchRadiusWindow` (26px) في الوضع العائم وزوايا 0 في ملء الشاشة، وانتقالات انسيابية معطلة أثناء السحب لاستجابة فورية بدون أي تأخير.
-     - `السطور 231-315`: ترويسة النافذة (`windowHeader`) مع منطقة سحب متكاملة (`headerDragArea`)، مؤشر سحب اليد المقفلة، نقر مزدوج للتكبير، وأزرار التكبير والإغلاق.
-     - `السطور 316-598`: الشريط الجانبي للتبويبات (`SettingsSidebar`) وحاوية المحتوى الزجاجية العائمة.
-   - **الاعتماديات**: `Quickshell`, `Theme`, `ShellState`, `I18n`.
+9. **`shell/components/NotchLocalSend.qml` و `LocalSendService.qml` (245 سطراً)**:
+   - **الغرض**: تكامل أصيل ومباشر لبروتوكول LocalSend v2 لنقل الملفات من وإلى النوتش.
+   - **الميزات**: كشف فوري للأجهزة القريبة، إرسال تدفقي للملفات مع شريط تقدم حقيقي (Real streaming progress)، ومعالجة مراحل الفشل والتنبيهات.
 
 ---
 
-12. **`shell/components/TimeCapsule.qml` (1020 سطراً)**:
-    - **الغرض**: كبسولة الوقت والتاريخ التفاعلية في أقصى يسار الشريط العلوي، بنمط DeloWay OLED وتصميم النوتش الديناميكي.
-    - **الوضع المصغر (Compact)**: ساعة عريضة مع تاريخ مختصر، مدفوعة بـ `SystemClock` بدقة الدقيقة، باستهلاك معالج 0% في الخمول، مع حواف ناعمة وزوايا 26px.
-    - **الوضع الموسع (Expanded)**: تلتصق بأعلى الشاشة عبر `NotchFrame` بآذان مقعرة (18px) وظلال عميقة، وتضم:
-      - ترويسة متكاملة: ساعة رقمية كبيرة مع ثوانٍ تفاعلية، وتاريخ ميلادي كامل، وتاريخ هجري دقيق بحسابات تقويم أم القرى.
-      - تقويم شهري 6x7: تنقل سلس بين الشهور، إبراز اليوم الحالي، إمكانية تخصيص بداية الأسبوع (السبت/الأحد/الاثنين)، ودعم الأرقام المشرقية (٠١٢).
-      - قسم الهاردوير الحي: 3 بطاقات متساوية (CPU, RAM, GPU) مع نسب استهلاك، درجات حرارة، واستهلاك VRAM، ومخططات بيانية حية (Canvas Sparklines) لآخر 60 ثانية، مع انكماش تلقائي ذكي للارتفاع عند تعطيل الهاردوير.
-    - **الاعتماديات**: `Quickshell`, `Quickshell.Wayland`, `Quickshell.Hyprland`, `Theme`, `ConfigManager`, `HardwareService`, `I18n`.
+### ج) أسطح الإطلاق وسجل الحافظة (Launchers & Overlays)
+10. **`shell/components/SearchLauncher.qml` (414 سطراً)**:
+    - **الغرض**: نافذة بحث مركزية عائمة (Floating Spotlight Card) تفتح بمفتاح `Super + Space` (أو نقرة Super المنفردة بحسب الإعداد).
+    - **المواصفات البصرية**: تصميم أحادي مركزي خفيف بدون أي تعتيم لخلفية الشاشة (Zero backdrop dimming)، حاسبة آمنة فورية، تطبيع لغوي للبحث، إطلاق التطبيقات والأوامر، واستعراض روابط الويب.
+
+11. **`shell/components/AppDrawer.qml` (1678 سطراً)**:
+    - **الغرض**: درج التطبيقات الشامل ذو الكانفاس الواسع، يفتح بـ `Super + A` أو التمرير بالماوس على الـ Dock.
+    - **الميزات**: تصنيفات وظيفية للتطبيقات، تصفح كامل بالشبكة والقائمة، تحكم بإدارة النوافذ ومسارات التثبيت وإلغاء التثبيت.
+
+12. **`shell/services/LauncherIndex.qml` (718 سطراً)**:
+    - **الغرض**: سنجلتون الفهرسة المركزي المشترك بين `SearchLauncher` و `AppDrawer`.
+    - **الوظائف**: فهرسة كافة ملفات `.desktop`، تسجيل التطبيقات الأكثر استخداماً، تطبيع النصوص العربية والإنجليزية، وتطبيق خوارزميات الترتيب والتقييم السريع (Scoring & Ranking).
+
+13. **`shell/components/ClipboardManager.qml` و `ClipboardService.qml` (185 سطراً)**:
+    - **الغرض**: مدير الحافظة المركزي المستدعى بـ `Super + V`. يوفر تصفية للمحتوى الحساس، وتاريخاً لآخر 100 عنصر مع حذف فوري وبحث سريع.
 
 ---
 
-### ج) الخدمات السنجلتون والبيانات (Singletons & Services)
-13. **`shell/services/NotificationManager.qml` (124 سطراً)**:
-    - **الغرض**: سنجلتون استقبال وإدارة الإشعارات من النظام عبر `NotificationServer`.
-    - **الوظائف**: تتبع آخر 50 إشعاراً، إرسال تنبيه `toastRequested` للنافذة العائمة، ومزامنة الإشعارات مع النوتش.
-14. **`shell/services/ConfigManager.qml` (717 سطراً)**:
-    - **الغرض**: سنجلتون إدارة إعدادات وتفضيلات المستخدم، وحفظها وقراءتها من ملف JSON على القرص.
-    - **الوظائف**: مقياس الخط، الثيم، إعدادات مساحات العمل، وكافة تفضيلات كبسولة الوقت (بداية الأسبوع، الثواني، الهجري، الهاردوير، الأرقام المشرقية).
-15. **`shell/services/ShellState.qml` (285 سطراً)**:
-    - **الغرض**: سنجلتون إدارة الحالات اللحظية للشاشات (النوتش، كبسولة الوقت، كبسولة الإعدادات، الدرج، والإعدادات).
-16. **`shell/services/HardwareService.qml` (145 سطراً)**:
-    - **الغرض**: سنجلتون مراقبة موارد النظام اللحظية (CPU, RAM, GPU, Temperatures) وتغذية كبسولة الوقت.
-    - **الوظائف**: تشغيل عملية بايثون تدفقية واحدة خفيفة (`scripts/deloway-hardware.py`) دون أي تشعيب (subshell) كل ثانيتين، مع الاحتفاظ بذاكرة دائرية من 30 عينة (60 ثانية) لرسم الـ Sparklines. تُنشط حصراً عند فتح الكبسولة وتتوقف كلياً عند إغلاقها لضمان 0% استهلاك في الخمول.
-17. **`shell/services/DesktopManager.qml` (496 سطراً)**:
-    - **الغرض**: إدارة ملفات سطح المكتب، الأيقونات، وحالة القائمة المنبثقة لسطح المكتب.
+### د) سطح المكتب وشريط المهام (Desktop & Dock)
+14. **`shell/components/desktop/TraditionalDesktop.qml` (325 سطراً)** و **`DesktopManager.qml` (522 سطراً)**:
+    - **الغرض**: سطح مكتب عصري تفاعلي بهندسة Windows 11 Fluent Design.
+    - **المواصفات البصرية**:
+      - شبكة موحدة متساوية الأبعاد: **100×100 px** (أفقي ورأسي).
+      - بطاقات أيقونات محسوبة: **76×84 px** مع هامش فراغ تنفسي مريح (~24px) بين العناصر المتجاورة.
+      - إلغاء كبسولة النص السوداء؛ النص يعتمد على ظل ناعم (`Text.Outline` بتباين خفيف) لضمان القراءة على أي خلفية.
+      - تحديد ناعم متعدد وانتقالات سلسة عند التحويم (Hover & Selection).
+
+15. **`shell/components/Dock.qml` (434 سطراً)**:
+    - **الغرض**: شريط المهام السفلي العائم.
+    - **الميزات**: خيارات العرض الثلاثية (`always`, `autohide`, `disabled`)، شريط تحفيز 2px في الإخفاء التلقائي لتمدد النوافذ بالكامل (`exclusiveZone: 0`)، وقفل الإخفاء عند فتح `DockContextMenu`.
+
+16. **`shell/components/settings/SettingsAppV2.qml` (598 سطراً)**:
+    - **الغرض**: تطبيق إعدادات النظام الخماسي الشامل (المظهر، الكبسولة والشريط، النوافذ وسطح المكتب، الاتصالات والإشعارات، النظام وحول). نافذة عائمة تدعم تعدد المهام والسحب الحر واستعادة الحجم.
 
 ---
 
 ## 4. نظام التصميم والرموز البصرية المعتمدة (Design System & Visual Tokens)
 
-### أ) لوحة الألوان (Color Tokens - الهوية الأحادية Monochrome OLED)
-> **ملاحظة معمارية حاسمة**: تم إلغاء نظام "اللون التمييزي" (Accent Color) بالكامل من DeloWay. الواجهة أحادية اللون تماماً (OLED Dark & High-Contrast Light) مع تباين ناصع (أبيض على داكن، وأسود/كحلي داكن على فاتح).
+### أ) لوحة الألوان الأحادية (Monochrome OLED Palette)
+> **تنبيه حاسم**: النظام لا يحتوي على أي Accent Color. التدرجات حصراً بين الأسود الصرف، الرماديات المحايدة، والأبيض الناصع.
 
-| اسم التوكن البرمجي | القيمة الفعلية (الوضع الداكن) | القيمة الفعلية (الوضع الفاتح) | الاستخدام المعتمد |
+| الرمز البرمجي | الداكن (Dark OLED) | الفاتح (Light Mode) | الاستخدام |
 | :--- | :--- | :--- | :--- |
-| `Theme.notchBackground` | `#000000` (OLED Pure Black) | `#ffffff` | خلفية النوتش، الكبسولة، والـ Dock والقوائم |
-| `Theme.notchText` | `#ffffff` | `#0f172a` | النص الأساسي عالي التباين والأيقونات النشطة |
-| `Theme.notchTextSecondary`| `rgba(255, 255, 255, 0.70)` | `rgba(15, 23, 42, 0.70)` | النصوص الفرعية والتفاصيل الثانوية |
-| `Theme.notchTextTertiary` | `rgba(255, 255, 255, 0.45)` | `rgba(15, 23, 42, 0.45)` | التلميحات والأيقونات الخاملة والفواصل |
+| `Theme.notchBackground` | `#000000` | `#ffffff` | خلفيات النوافذ والكبسولات والـ Dock |
+| `Theme.notchText` | `#ffffff` | `#0f172a` | النصوص الأساسية والأيقونات الفعالة |
+| `Theme.notchTextSecondary`| `rgba(255, 255, 255, 0.70)` | `rgba(15, 23, 42, 0.70)` | التفاصيل والنصوص الفرعية |
+| `Theme.notchTextTertiary` | `rgba(255, 255, 255, 0.45)` | `rgba(15, 23, 42, 0.45)` | الفواصل والتلميحات الخاملة |
 | `Theme.notchSurface` | `rgba(255, 255, 255, 0.05)` | `rgba(0, 0, 0, 0.04)` | أسطح البطاقات والعناصر الافتراضية |
-| `Theme.notchSurfaceElevated` | `rgba(255, 255, 255, 0.08)` | `rgba(0, 0, 0, 0.06)` | الأسطح المرتفعة وحاويات الأيقونات |
-| `Theme.notchSurfaceHover` | `rgba(255, 255, 255, 0.12)` | `rgba(0, 0, 0, 0.08)` | لون الخلفية عند تحويم الفأرة (Hover) |
-| `Theme.notchSurfaceActive`| `rgba(255, 255, 255, 0.18)` | `rgba(0, 0, 0, 0.12)` | لون الخلفية عند الضغط أو التفعيل (Active) |
-| `Theme.notchBorder` | `rgba(255, 255, 255, 0.12)` | `rgba(0, 0, 0, 0.10)` | الحدود الخارجية للنوافذ والبطاقات (1px) |
-| `Theme.notchBorderHighlight`| `rgba(255, 255, 255, 0.28)` | `rgba(0, 0, 0, 0.20)` | حدود التركيز والتحويم عالي التباين |
-| `Theme.notchBorderSubtle` | `rgba(255, 255, 255, 0.06)` | `rgba(0, 0, 0, 0.05)` | الفواصل الداخلية الخافتة بين العناصر |
-| `Theme.notchShadow` | `rgba(0, 0, 0, 0.50)` | `rgba(0, 0, 0, 0.15)` | ظلال العمق تحت الأسطح العائمة |
-| `Theme.colors.primary` / `accent` | `#ffffff` (Dark) | `#0f172a` (Light) | مؤشرات التباين العالي (تعبئة نشطة بلون نقي متعاكس) |
-| `Theme.colors.urgent` / `danger` | `#ef4444` | `#dc2626` | مؤشرات دقيقة حصراً: أزرار الحذف ومؤشرات الخطر (>90%) |
-| `Theme.colors.warning` | `#f59e0b` | `#d97706` | مؤشرات دقيقة حصراً: تحذيرات النظام والهاردوير (>70%) |
-| `Theme.colors.success` | `#10b981` | `#059669` | مؤشرات دقيقة حصراً: نقاط الاتصال والتشغيل وحالات النجاح |
+| `Theme.notchSurfaceHover` | `rgba(255, 255, 255, 0.12)` | `rgba(0, 0, 0, 0.08)` | تفاعل تحويم الفأرة (Hover) |
+| `Theme.notchBorder` | `rgba(255, 255, 255, 0.12)` | `rgba(0, 0, 0, 0.10)` | الحدود القياسية للنوافذ والبطاقات |
+| `Theme.notchBorderHighlight`| `rgba(255, 255, 255, 0.28)` | `rgba(0, 0, 0, 0.20)` | حدود التركيز والتحديد الفعال |
+| `Theme.colors.urgent` | `#ef4444` | `#dc2626` | مؤشرات الخطر والحذف ($\le 8\text{px}$) |
+| `Theme.colors.warning` | `#f59e0b` | `#d97706` | مؤشرات التحذير والحرارة ($\le 8\text{px}$) |
+| `Theme.colors.success` | `#10b981` | `#059669` | مؤشرات الاتصال والتشغيل ($\le 8\text{px}$) |
 
-### ب) أبعاد الزوايا ومقاييس الحواف (Radii Tokens)
-- `Theme.notchRadiusWindow`: **26px** (الزوايا الخارجية الكبرى للنوافذ العائمة).
-- `Theme.notchRadius`: **22px** (الزوايا القياسية للكبسولة والنوتش).
-- `Theme.notchRadiusPanel`: **16px** (حاويات الأقسام والبطاقات الداخلية الكبيرة).
-- `Theme.notchRadiusCard`: **12px** (بطاقات الخدمات مثل Wi-Fi, Bluetooth، بطاقات الهاردوير).
-- `Theme.notchRadiusPill`: **8px** (أغلفة الألبومات والأزرار النحيفة).
-- `Theme.radiusSmall`: **6px** (خيارات قوائم الكلك يمين وعناصر القوائم المدمجة).
-
-### ج) معايير القوائم المنبثقة المشتركة (ContextMenu Sizing Standard)
-للحفاظ على التناسق التام بين `DesktopContextMenu` و `DockContextMenu`:
-- **ارتفاع العنصر الواحد (`Layout.preferredHeight`)**: **32px**.
-- **حجم الأيقونة الرمزية (`iconSize`)**: **14px**.
-- **حجم الخط (`font.pixelSize`)**: **`Theme.fontSize(12)`** (يرتبط تلقائياً بمقياس الخط العام).
-- **حجم خط الترويسة**: **`Theme.fontSize(12)`** بوزن `Font.DemiBold`.
-
-### د) نظام الخطوط والتحجيم الديناميكي (Typography & Font Scaling)
-- **عائلة الخط المعتمدة**: `Inter` للإنجليزية واللاتينية، مع `Cairo` / `Noto Kufi Arabic` كبدائل للعربية.
-- **معادلة التحجيم الإلزامية**: يُمنع استخدام `font.pixelSize: 12` أو `13` كقيمة ثابتة. يجب استخدام:
-  $$\text{font.pixelSize} = \text{Theme.fontSize}(\text{baseSize}) = \text{Math.round}(\text{baseSize} \times \text{Theme.fontScale})$$
-- **المقاييس المتاحة من `ConfigManager.fontSizeScale`**:
-  - `صغير (Small - 0.85)`: يحول قاعدة 12px إلى **10px**، وقاعدة 14px إلى **12px**.
-  - `قياسي (Standard - 1.00)`: يحافظ على القيم الأساسية (12px = **12px**).
-  - `كبير (Large - 1.15)`: يحول قاعدة 12px إلى **14px**، وقاعدة 14px إلى **16px**.
+### ب) مقاييس الخطوط والأبعاد (Typography & Sizing)
+- **الخط المعتمد الموحد**: `Cairo` كخط أساسي للنظام بالكامل عبر `Theme.fontFamily` و `ConfigManager.fontFamily`.
+- **معادلة التحجيم**:
+  $$\text{pixelSize} = \text{Theme.fontSize}(\text{baseSize}) = \text{Math.round}(\text{baseSize} \times \text{Theme.fontScale})$$
+- **المقاييس**: صغير (`0.85`)، قياسي (`1.00`)، كبير (`1.15`).
 
 ---
 
 ## 5. القواعد والمعايير المعمارية الإلزامية (Architectural Guidelines)
-1. **الهوية الأحادية ومنع الألوان التمييزية (Strict Monochrome Identity)**:
-   - واجهة DeloWay أحادية تماماً (Monochrome OLED). لا يوجد أي لون تمييزي (Accent) ولا يُقبل اقتراح أو تطبيق أي لون مفضّل (كالأرجواني، الأزرق، أو الأخضر الملون).
-   - يُمنع إدراج أكواد لونية عشوائية `#hex` خارج `Theme.qml`.
-   - التباين والتسلسل البصري يُبنى بالسطوع (Luminance) والأوزان الخطية والشفافيات، وليس بالألوان.
-   - الألوان الدلالية محصورة في: أحمر (خطر/حذف)، أصفر (تحذير)، أخضر (نجاح/اتصال)، وفقط في مؤشرات دقيقة ($\le 8\text{px}$) وليس كخلفيات.
-   - فحص الثيم إلزامي قبل أي commit عبر تشغيل `./scripts/check-theme.sh`.
+1. **سياسة الهوية الأحادية الصارمة (Strict Monochrome)**:
+   - فحص الثيم إلزامي قبل أي commit عبر تشغيل `./scripts/check-theme.sh`. يجب أن يخرج بـ `100% Monochrome compliance` وبدون أي مخالفات ألوان.
 2. **منع الـ Hot-reload وإعادة التشغيل النظيفة (Zero Hot-Reload Policy)**:
-   - ممنوع الاعتماد على الـ hot-reload أثناء تعديل ملفات QML بسبب كراش مسجل في مكتبات Quickshell أثناء إعادة تحميل الخيوط المتعددة.
-   - إعادة التشغيل تتم دوماً بأمر نظيف: `killall quickshell; sleep 1.5; hyprctl dispatch exec "quickshell -p ..."` مع فحص خلو `qs log` من أي أخطاء جديدة.
-3. **عزل جلسة التطوير ومنع المساس بالمضيف**:
-   - لا يجوز تشغيل أوامر تؤثر على Hyprland الأساسي للمستخدم (`wayland-1`). يجب حصر التجارب والشاشات في الجلسة المتداخلة (`wayland-2` / Aquamarine).
-   - تجنب إرسال أوامر مدخلات أجهزة افتراضية (`ydotool`) بشكل أعمى أثناء وجود المستخدم على شاشة أخرى.
-4. **التعامل مع نوافذ `PopupWindow` وإدارة التركيز**:
-   - `PopupWindow` في Quickshell هو نافذة من نوع `QQuickWindow` وليس `QQuickItem`. لذلك، يُمنع وضع `focus: true` مباشرة على جذر `PopupWindow` (يسبب خطأ تشغيلي).
-   - التركيز يجب أن يوضع على العنصر الداخلي (`Rectangle` أو `Item` الرئيسي) مع استدعاء `forceActiveFocus()` عند الفتح.
-   - لإغلاق القوائم المنبثقة عند النقر خارجها، يجب استخدام `grabFocus: true` مع `HyprlandFocusGrab { windows: [root]; active: root.visible; onCleared: root.hide() }`.
-5. **التكامل البصري وتجنب التلميحات المكسورة (Tooltips)**:
-   - يُمنع وضع عناصر `ToolTip` العادية داخل أسطح ذات حواف مقصوصة (`clip: true`) لأنها ستقتطع وتظهر كخطوط سوداء مشوهة.
-6. **الالتزام الكامل بتوكنز `Theme`**:
-   - تجنب استخدام قيم ألوان هيدروديكية مثل `#ffffff` أو `rgba(...)` مباشرة داخل المكونات العامة، بل استخدم توكنز `Theme.notch*` و `Theme.colors.*`.
+   - يُمنع حفظ الملفات والاعتماد على التحديث التلقائي لكويكشل (`qs -r`). يجب دائماً استخدام إعادة التشغيل النظيفة:
+     ```bash
+     killall quickshell; sleep 1.5; hyprctl dispatch exec "quickshell -p /home/waleed/Projects/Deloway/shell"
+     ```
+   - التأكد دائماً عبر `qs log -p ...` من خلو السجلات من أي انهيارات أو أخطاء.
+3. **عزل دورة حياة القوائم المنبثقة**:
+   - لا تضع `focus: true` على جذر `PopupWindow`. استخدم `Loader` مع القوائم المرتبطة بخدمات متقلبة (مثل System Tray) لمنع انهيار الواجهة عند حذف الكائنات.
+4. **ثبات النوافذ وتجنب تدمير الأسطح**:
+   - النوافذ التابعة لـ `PanelWindow` يجب ألا تُخفى عبر `visible: false` لأن تدمير أسطح Wayland ثم إعادة إنشائها قد يعلق أو يسبب فقداناً للتركيز. الإخفاء والتعتيم يتم عبر الشفافية `opacity` أو تحييد القناع `mask: Region`.
 
 ---
-
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
-*(مستخرج مباشرة من سجل Git الفعلي)*:
-* `857ba3f` - chore: final polish audit, documentation, and cleanup (2026-09-20)
-* `8849e48` - feat(settings): simplify settings app into 5 core sections with collapsible advanced groups (2026-09-20)
-* `c8682b5` - feat(clipboard): implement clipboard manager service and UI with privacy filter and Super+V support (2026-09-20)
-* `d48513b` - feat(launcher): implement unified central launcher with safe calculator and Arabic normalization (2026-09-20)
-* `fc8973f` - feat(dock): unify display modes, add autohide with zero-margin extension and disable unloading (2026-09-20)
-* `c509d1f` - feat(quicksettings): eliminate expand glitch, unify icons and animations (2026-09-20)
-* `634f818` - docs: add final polish roadmap (2026-09-20)
-* `d2266c2` - feat(theme): eliminate accent system and enforce monochrome identity (phase 1) (2026-09-20)
+*(مستخرج مباشرة من واقع سجل Git)*:
+* `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
+* `c4eccaf` - fix: eliminate TimeCapsule sticking to Notch on expand (static right margin)
+* `71c9014` - docs: remove Delo prefix from app names in documentation
+* `aec81e6` - refactor(default-apps): unify pinned defaults via ConfigManager.defaultPinnedApps
+* `258c796` - feat(store): register real App Store backed by pamac-manager
+* `f5660d7` - feat(desktop): apply Windows 11 Fluent styling to desktop icons and grid
+* `000c74f` - fix(capsules): resolve top bar collision and quicksettings font metric overflow
+* `193fcd9` - feat(theme): update Thunar GTK styling for OLED monochrome + Cairo font (light/dark aware)
+* `5ddcdc1` - feat(notch): wire real transfer progress and add failure stage to localsend capsule
+* `86a4638` - feat(localsend): implement direct protocol v2 transfer with streaming progress
+* `4d24903` - feat(hyprland): autostart localsend in hidden background mode
+* `d65180d` - style: neutralize inactive border color (pure grayscale, no blue undertone)
+* `2b616cf` - style: replace blue accent border with high-contrast white (monochrome identity)
+* `fb86173` - fix: replace hardcoded /home/waleed path with dynamic HOME resolution in ClipboardService
+* `7dd5533` - fix: add hyprpolkitagent to polkit dialog windowrules
+* `cb12cac` - fix: enable hyprpolkitagent with correct binary path
+* `cdb0ffb` - docs: add comprehensive system requirements and portability reference
+* `e6c3c1c` - fix(capsules): polish topbar capsules, dynamic width, mutual exclusivity and motion physics
+* `1139450` - fix(drawer): fix list view text-icon separation and remove card shadow/sheen
+* `c53e545` - feat(drawer): redesign app drawer with spacious canvas, no backdrop dimming, and refined monochrome contrast
+* `17e8a96` - fix(launcher): compact width, remove backdrop shadow, and fix name-icon proximity
+* `ed5b01f` - feat(launcher): implement dedicated floating Search Launcher on Super key
+* `6d65a10` - feat(time-capsule): adapt horizontal 7-day calendar strip matching Smart Notch design
+* `1184ea6` - fix(media): redesign solid playback icons and enforce chronological order in compact & expanded notch
+* `0f2d1e1` - fix(tray): prevent crash by isolating context menu lifecycle via Loader
+* `3061644` - fix(tray): implement monochrome OLED context menu and correct positioning
+* `66c1d14` - fix(screenshot): add screen freeze and single-instance toggle handling
+* `3be3b97` - style(quicksettings): improve compact capsule icons and enlarge system tray apps
+* `266a975` - refactor(launcher): shared index, ranking and surface components
+* `8955d05` - fix(notch): hide music player and launcher in compact capsule when idle
+* `c47b655` - feat(music): choose preferred player and launch target
 
 ---
 
-## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State & Uncommitted Changes)
-*(مفحوصة بالكامل من واقع القرص عبر `git status -s`)*:
-- **المهام المنجزة والمثبتة في HEAD (خارطة اللمسات النهائية Final Polish Phases P1..P7 — مكتملة 100%)**:
-  1. **P1: كبسولة الإعدادات السريعة (QuickSettingsCapsule)**:
-     - القضاء التام على glitch وبطء التوسع: تثبيت نافذة Layer-shell لمنع إعادة تخصيص Wayland buffers نهائياً.
-     - محرك حركة فيزيائي موحد `expandProgress` (220ms بـ `OutCubic`) يشتق منه العرض والارتفاع والموضع الرأسي بسلاسة.
-     - إيقاف كافة مؤشرات الخلفية و polling أثناء الطي، مما خفض استهلاك المعالج الخامل إلى **0.0%**.
-     - شبكة عناصر موحدة على وحدة 4px مع أيقونات متناسقة (20/24px) وزر سريع لتبديل الثيم الداكن/الفاتح.
-  2. **P2: شريط المهام (Dock) وتكامل أوضاع العرض**:
-     - خيار ثلاثي موحد (`always` / `autohide` / `disabled`) مع الحفاظ على التوافق الخلفي لـ `deloway.json`.
-     - تفريغ كامل لكائنات وموارد الـ Dock عبر `Loader { active: false }` عند وضع `disabled` لتوفير ~12MB من الذاكرة.
-     - وضع إخفاء تلقائي ذكي (`autohide`) بشريط تحفيز 2px على كامل عرض الشاشة (1920px) مع `exclusiveZone: 0` يسمح للنوافذ بالتمدد لأسفل الشاشة تماماً دون أي فراغ ميت.
-     - قفل الإخفاء أثناء فتح القائمة السياقية (Context Menu Lock).
-  3. **P3: المشغل المركزي الموحد (Unified Launcher)**:
-     - دمج شاشة البحث ودرج التطبيقات في نافذة OLED مركزية (~640px) بخلفية معتمة تفتح بـ `Super+Space` و IPC.
-     - حاسبة آمنة مدمجة 100% بنظام Recursive Descent Parser بدون `eval`، مع نسخ مباشر للحافظة بـ `wl-copy`.
-     - تطبيع ذكي للغة العربية (إزالة التشكيل، توحيد الهمزات والتاء المربوطة والألف المقصورة).
-     - تنقل كامل بالأسهم ولوحة المفاتيح وتبديل بين نمطي العرض (شبكة 5 أعمدة / قائمة تفصيلية).
-  4. **P4: مدير الحافظة المدمج (Clipboard Manager)**:
-     - خدمة `ClipboardService.qml` مدمجة كـ singleton تدير `cliphist` و `wl-paste` وتخزن حتى 100 عنصر.
-     - تصفية أمنية للمحتويات الحساسة وكلمات المرور (`x-kde-passwordManagerHint`).
-     - واجهة مركزية OLED (~580px) تفتح في <180ms بـ `Super+V` مع بحث فوري وتنقل سلس بالأسهم وحذف فردي أو مسح كامل.
-  5. **P5: تبسيط نافذة الإعدادات (Settings App Simplification)**:
-     - إعادة هيكلة الإعدادات من 13 تبويباً مشتتاً إلى **5 أقسام رئيسية وظيفية** (المظهر، شريط المهام والكبسولة، النوافذ ومساحات العمل، الاتصالات والإشعارات، النظام وحول).
-     - اعتماد نمط الإفصاح التدريجي (Progressive Disclosure): 5 خيارات بارزة كحد أقصى لكل قسم مع أقسام متقدمة قابلة للطي (`collapsible: true`).
-     - حماية الخيارات الحساسة كاستعادة ضبط المصنع بعلامة تحذير وتأكيد مزدوج.
-     - الحفاظ الصارم على كافة مفاتيح `ConfigManager` و `deloway.json` لمنع كسر التوافق.
-     - تباين نقي 100% في كلا الوضعين الداكن (OLED Dark) والفاتح (Clean Light).
-  6. **P6: الإغلاق والتدقيق اللوني النهائي (Final Audit & Polish)**:
-     - فحص شامل عبر `./scripts/check-theme.sh`: مسح 62 ملفاً وتحقيق **100% Monochrome Compliance** بصفر مخالفات.
-     - سجل `qs log` خالٍ تماماً من أي أخطاء أو تحذيرات جديدة.
-     - توثيق شامل للاختصارات في `CheatSheet.qml` و `STATUS.md`.
-  7. **P7: ثيم النظام الموحد (System-wide Theming — GTK3/4, Thunar, Qt)**:
-     - توليد `gtk-3.0/gtk.css` و `gtk-4.0/gtk.css` بهوية أحادية صارمة (OLED Black `#000000` في الداكن و `#ffffff` في الفاتح).
-     - تخصيص دقيق لـ Thunar (خلفية سوداء نقية، شريط جانبي بتباين خفيف `#0a0a0a`، تحديد أحادي عالي التباين، شريط أدوات ومسار بحدود متناسقة).
-     - توليد لوحة ألوان `qt6ct` في `~/.config/qt6ct/colors/deloway.conf`.
-     - دعم كامل لمقاييس الخط (`fontSizeScale`: 0.85/1.0/1.15) وتحديث `settings.ini` و `gsettings`.
-     - ربط الاستدعاء التلقائي عند الإقلاع وتغيير المظهر ومقياس الخط في `ConfigManager.qml`.
-     - إضافة فحص GTK CSS إلى `check-theme.py` لمسح 64 ملفاً بنسبة امتثال 100%.
+## 7. حالة العمل الحالية والتعديلات غير الملتزمة (Current Working State)
 
-### جدول اختصارات لوحة المفاتيح المعتمدة (DeloWay Keybindings)
-| الاختصار (Keybinding) | الوظيفة (Action) | الوصف البرمجي والتكامل |
+### أ) المهام المنجزة المعتمدة (Phases P8..P14)
+1. **P8: تكامل بروتوكول LocalSend المباشر (Direct Protocol v2)**:
+   - نقل الملفات المباشر عبر السوكيت مع شريط تقدم حقيقي ومعالجة حالات الخطأ.
+   - التشغيل الخفي التلقائي لـ `localsend --hidden` في الخلفية.
+2. **P9: حماية واستقرار صينية النظام (System Tray Loader Isolation)**:
+   - عزل قوائم D-Bus في كائنات `Loader` لتفادي انهيارات Quickshell عند تدمير العناصر.
+   - تطبيق هوية OLED الأحادية على قوائم التراي وضبط تموضعها الدقيق.
+3. **P10: هندسة كبسولات الشريط العلوي وحل مشاكل التصادم**:
+   - تثبيت الهامش الجانبي لـ `TimeCapsule` لمنع الالتصاق والاصطدام بالنوتش الموسع.
+   - توحيد تماثل عجلة الفأرة للتمدد والانكماش على كافة مناطق النوتش.
+   - تحويل تقويم كبسولة الوقت إلى شريط أسبوعي أفقي 7-Day Strip.
+   - ترتيب الوسائط زمنياً وإخفاء المشغلات الخاملة مع توفير أزرار إطلاق سريعة.
+4. **P11: المشغل المخصص Spotlight والفهرس المشترك (`SearchLauncher` & `LauncherIndex`)**:
+   - فصل شاشة البحث كبطاقة مركزية عائمة (`SearchLauncher.qml`) بدون تعتيم خلفية الشاشة.
+   - توحيد الفهرسة والتطبيع والتصنيف عبر سنجلتون `LauncherIndex.qml`.
+5. **P12: سطح المكتب بأسلوب Windows 11 Fluent**:
+   - شبكة هندسية 100×100 px وبطاقات 76×84 px بهوامش تباعد ~24px.
+   - إزالة كبسولة النص الداكنة واستبدالها بظل نص ناعم.
+6. **P13: توحيد خط النظام وتطهير الحدود الأحادية**:
+   - اعتماد `Cairo` كخط افتراضي للنظام عبر QML و GTK و Thunar.
+   - تنظيف ألوان الحدود من أي مسحة زرقاء وجعلها بيضاء/رمادية نقية 100%.
+7. **P14: متجر التطبيقات وإدارة الحزم الافتراضية**:
+   - ربط متجر التطبيقات بـ `pamac-manager`.
+   - توحيد التطبيقات الافتراضية المثبتة عبر `ConfigManager.defaultPinnedApps`.
+
+### ب) التعديلات قيد العمل غير الملتزمة (`git status -s`)
+- `config/hyprland.conf`: تحديث اختصار زر الويندوز (Super) لدعم إخفاء الكبسولات والشريط السفلي (Fullscreen / Immersion Mode) واختصار `Super + Space` للمشغل.
+- `shell/services/ShellState.qml`: إضافة خاصية `shellHidden` ودوال `toggleShell()`.
+- `shell/components/Notch.qml`, `TimeCapsule.qml`, `QuickSettingsCapsule.qml`, `Dock.qml`: منطق إخفاء الكبسولات والشريط السفلي للتمدد الكامل للنوافذ.
+- `shell/components/settings/tabs/*`: إعادة تنظيم تبويبات الإعدادات إلى ملفات فرعية متخصصة (`DesktopWindowsTab`, `NotificationsTab`, `TimeLanguageTab`).
+
+### ج) جدول اختصارات لوحة المفاتيح المعتمدة (Keybindings)
+| الاختصار | الوظيفة | الوصف البرمجي |
 |---|---|---|
-| `Super + Space` | المشغل الموحد (Unified Launcher) | فتح نافذة البحث المركزي ودرج التطبيقات والحاسبة الآمنة |
-| `Super + V` | مدير الحافظة (Clipboard Manager) | فتح واجهة سجل الحافظة وتصفية النصوص والروابط |
-| `Super + I` | إعدادات النظام (DeloWay Settings) | فتح نافذة الإعدادات الرئيسية الخماسية |
-| `Super + N` | لوحة الإشعارات / الكبسولة | تبديل إظهار لوحة الإشعارات والشريط الجانبي الأيمن |
-| `Super + /` | جدول الاختصارات (CheatSheet) | عرض نافذة المساعدة لكافة اختصارات Hyprland و DeloWay |
-| `Super + M` | مشغل الوسائط (Media Controls) | تبديل إظهار كبسولة التحكم بالموسيقى |
-| `Super + Return` | الطرفية (Terminal) | فتح محاكي الطرفية Kitty |
-| `Super + E` | مدير الملفات (File Manager) | فتح مدير ملفات Thunar |
-| `Super + W` | متصفح الويب (Browser) | فتح المتصفح الافتراضي |
-| `Super + Q` | إغلاق النافذة (Close Window) | إغلاق نافذة Hyprland النشطة |
-| `Super + F` | ملء الشاشة (Fullscreen) | تبديل وضع ملء الشاشة للنافذة النشطة |
-| `Super + L` | قفل الشاشة (Lock Screen) | قفل الجلسة عبر شاشة قفل DeloWay |
-
-### أرقام ومقاييس الأداء الموثقة (Performance Metrics)
-- **استهلاك المعالج أثناء الخمول (Idle CPU)**: انخفض من `1.0% - 5.5%` إلى **`0.0% - 0.2%`** بفضل إيقاف مؤشرات الخلفية و polling أثناء طي الكبسولات.
-- **زمن استجابة التوسيع (QuickSettings Expand Latency)**: تحسن من `~450ms` (مع تقطيع وإسقاط إطارات) إلى **`220ms`** انسيابي وثابت على 165Hz.
-- **زمن فتح المشغل والحافظة**: أقل من **`180ms`**.
-- **زمن تشغيل وفتح الإعدادات**: أقل من **`150ms`**.
-- **إعادة تخصيص أسطح Wayland (Buffer Re-allocations)**: **صفر (0)** بفضل تثبيت أبعاد النوافذ واستخدام أقنعة `mask: Region`.
-- **استهلاك الذاكرة عند تعطيل الـ Dock**: توفير فوري لـ **`~12MB`** بفضل التحرير الكامل عبر `Loader`.
-
-- **ملفات قيد التطوير / بانتظار commit مستقل (خارج نطاق Final Polish)**:
-  - `shell/components/SystemTrayIndicators.qml`: مكوّن أيقونات شريط النظام بدون tooltips مكسورة.
-  - `shell/components/NotchLocalSend.qml` وملحقاته: تكامل LocalSend.
+| `Super` (منفرداً) | وضع الانغماس (Immersion / Fullscreen) | إخفاء/إظهار الكبسولات الثلاث والـ Dock لتمدد النوافذ بالكامل |
+| `Super + Space` | مشغل البحث (Search Launcher / Spotlight) | فتح بطاقة البحث المركزية والحاسبة السريعة |
+| `Super + A` | درج التطبيقات (App Drawer) | فتح درج التطبيقات الشامل ذو الكانفاس الواسع |
+| `Super + V` | مدير الحافظة (Clipboard) | فتح سجل الحافظة المركزي المستند لـ cliphist |
+| `Super + I` | إعدادات النظام (Settings) | فتح تطبيق إعدادات DeloWay المطور |
+| `Super + M` | كبسولة الإعدادات السريعة | فتح كبسولة الصوت والشبكة والإعدادات |
+| `Super + N` | كبسولة الإشعارات | فتح لوحة الإشعارات في النوتش |
+| `Super + /` أو `Super + T`| جدول الاختصارات (CheatSheet) | عرض نافذة مساعدة الاختصارات |
+| `Super + Shift + S` | لقطة الشاشة (Screenshot) | أداة التقاط وقص الشاشة مع التجميد المؤقت |
 
 ---
 
-## 8. المشاكل المعروفة والتحديات التقنية وسجل القرارات المعمارية (Known Issues, Technical Constraints & ADR)
+## 8. سجل القرارات المعمارية المحدثة (ADRs)
 
-### أ) ADR-001: فصل محرك تطبيق الثيم إلى سكربت خارجي (`scripts/deloway-theme-apply.py`)
-- **القرار**: سكربت بايثون مستقل يستقبل `theme.json` ويكتب ملفات GTK ذرياً مع `--dry-run`.
+### أ) ADR-001 إلى ADR-016 (ملخصة)
+- **ADR-001 إلى ADR-004**: فصل تطبيق الثيم، عزل باليت الألوان، استخراج نوافذ مساحات العمل برمجياً، تصحيح نقطة الفراغ.
+- **ADR-005 إلى ADR-007**: خوارزمية أم القرى الفلكية في JS النقي، خدمة الهاردوير التدفقية بدون استهلاك خامل، عزل كبسولة الوقت في `PanelWindow`.
+- **ADR-008 إلى ADR-012**: ترسيخ الهوية الأحادية (Monochrome OLED)، المشغل الموحد، الحافظة المدمجة، دورة حياة الـ Dock التلقائية، وتبسيط الإعدادات بالإفصاح التدريجي.
+- **ADR-013 إلى ADR-016**: تطبيق الثيم الأحادي على Thunar و GTK، استقلالية الكبسولات ومنع سرقة التركيز، توحيد تعريب التطبيقات الخارجية، واختيار مشغل الموسيقى المفضل.
 
-### ب) ADR-002: عزل باليت الألوان في `Theme.qml`
-- **القرار**: `reloadTheme()` يختار `parsed.light` أو `parsed.dark` بناءً على `mode` النشط.
+### ب) القرارات المعمارية الجديدة (ADR-017 إلى ADR-023)
 
-### ج) ADR-003: استخدام `Hyprland.toplevels` لاستخراج النوافذ لكل مساحة عمل
-- **القرار المعماري**: الاعتماد على سنجلتون `Hyprland.toplevels.values` من كويكشل، واستخراج رقم المساحة وهوية التطبيق وربطها برمجياً.
-
-### د) ADR-004: تصحيح لون النقطة الفارغة `wsEmptyBg`
-- **القرار**: ضبط `wsEmptyBg` إلى `isDark ? Qt.rgba(1, 1, 1, 0.28) : Qt.rgba(0, 0, 0, 0.22)`.
-
-### هـ) ADR-005: خوارزمية أم القرى الفلكية في JavaScript النقي بدون كائن `Intl`
-- **القرار المعماري**: بناء خوارزمية فلكية خالصة بالاعتماد على مصفوفة أقنعة بتات (Bitmask lookup) لأطوال الشهور لسنوات 1440-1455 هـ، تطابق تقويم أم القرى الرسمي في المملكة العربية السعودية باليوم.
-
-### و) ADR-006: خدمة الهاردوير التدفقية وإلغاء الاستهلاك الخامل (`HardwareService` & `deloway-hardware.py`)
-- **القرار المعماري**: بناء سكربت بايثون تدفقي خفيف يقرأ مباشرة من `/proc/stat`, `/proc/meminfo`, وحساسات `hwmon` ومكتبة NVML، ويبث سطر JSON واحداً كل ثانيتين مع إيقاف العملية فور إغلاق الكبسولة.
-
-### ز) ADR-007: عزل كبسولة الوقت في نافذة `PanelWindow` بهندسة الـ `NotchFrame`
-- **القرار المعماري**: إنشاء `TimeCapsule` كنافذة `PanelWindow` مستقلة بنطاق طبقة `Top` بآذان نوتش مقعرة وانتقالات ناعمة.
-
-### ح) ADR-008: ترسيخ الهوية الأحادية المطلقة وإلغاء نظام اللون التمييزي (Strict Monochrome Identity)
-- **القرار المعماري**: الإلغاء الشامل لنظام الـ accent، اعتماد وضعين حصريين (Dark OLED / Crisp Light)، وحصر الألوان الدلالية في مؤشرات دقيقة ($\le 8\text{px}$).
-
-### ط) ADR-009: المشغل المركزي الموحد والحاسبة الآمنة (Unified Launcher & Safe Calculator)
-- **القرار المعماري**: دمج درج التطبيقات والبحث في نافذة مركزية OLED واحدة (~640px) مع حاسبة آمنة وتطبيع عربي.
-
-### ي) ADR-010: خدمة الحافظة المدمجة وتصفية الخصوصية (Native Clipboard Service & Privacy Filter)
-- **القرار المعماري**: بناء خدمة سنجلتون `ClipboardService.qml` مع تصفية أمنية لكلمات المرور وواجهة مركزية OLED تفتح بـ `Super+V`.
-
-### ك) ADR-011: دورة حياة شريط المهام والإخفاء التلقائي الموفر للموارد (Dock Lifecycle & Zero-Margin Autohide)
-- **القرار المعماري**: تفريغ كامل لذاكرة الـ Dock عند التعطيل عبر `Loader`، وضبط `exclusiveZone: 0` في وضع `autohide` مع شريط تحفيز 2px لتمدد النوافذ.
-
-### ل) ADR-012: تبسيط الإعدادات بالإفصاح التدريجي (Settings Simplification & Progressive Disclosure)
-- **القرار المعماري**: إعادة هيكلة الإعدادات إلى 5 أقسام رئيسية وظيفية فقط، وتطبيق مبدأ الإفصاح التدريجي مع الحفاظ الصارم على كافة مفاتيح الإعدادات.
-
-### م) ADR-013: ثيم النظام الموحد وتكامل Thunar و GTK3/4 و Qt (System-wide Monochrome Theming)
-- **السياق**: كان مدير الملفات Thunar وتطبيقات GTK3/4 تظهر بخلفية رمادية `#101318` وتفتقر للتحديد الأحادي الصارم وانحناءات النوافذ وتحديث مقياس الخط.
+#### ADR-017: فصل `SearchLauncher` كبطاقة Spotlight وتوحيد الفهرس مع `AppDrawer` عبر `LauncherIndex`
+- **السياق**: كان البحث ودرج التطبيقات مدمجين في واجهة واحدة ضخمة تسبب بطئاً وتعتيماً لشاشة المستخدم عند الرغبة في بحث سريع.
 - **القرار المعماري**:
-  1. ترقية `scripts/deloway-theme-apply.py` لتوليد قواعد GTK3 و GTK4 و Libadwaita كاملة مع توكنات OLED السوداء (`#000000`) وشريط جانبي متباين وتحديد أحادي ناصع.
-  2. توليد لوحة ألوان `qt6ct` متناسقة تلقائياً في `~/.config/qt6ct/colors/deloway.conf`.
-  3. ربط السكربت بمقياس الخط `fontSizeScale` في `ConfigManager.qml` واستدعاؤه ذرياً عند تغيير الخط أو النمط.
-  4. فحص ملفات GTK المولدة تلقائياً ضمن `check-theme.py` لضمان عدم تسلل أي ألوان زينة.
+  1. إفراد `SearchLauncher.qml` كنافذة Spotlight عائمة ومركزية تفتح في <150ms بدون تعتيم للخلفية.
+  2. إفراد `AppDrawer.qml` كدرج تطبيقات متكامل ذو كانفاس واسع.
+  3. بناء سنجلتون `LauncherIndex.qml` لتوحيد قراءة `.desktop`، خوارزميات الترتيب، وتطبيع النصوص العربية والإنجليزية المشتركة بينهما.
 
-### ن) ADR-014: استقلالية الكبسولات وإلغاء الاستحواذ الحصري للتركيز (Capsule Independence & Non-exclusive Focus)
-- **السياق**: كانت الكبسولات تغلق بعضها البعض قسرياً، وكان `HyprlandFocusGrab` يسرق تركيز النوافذ النشطة ويمنع النقر الحر المتعدد.
+#### ADR-018: تكامل بروتوكول LocalSend Direct v2 كخدمة خلفية وتدفق مباشر في النوتش
+- **السياق**: كانت مشاركة الملفات تتطلب فتح تطبيق LocalSend المستقل يدوياً والتعامل مع واجهته.
 - **القرار المعماري**:
-  1. فصل حالات التوسيع بالكامل في `ShellState.qml` بحيث يمكن فتح الكبسولات الثلاث (Notch, QuickSettings, TimeCapsule) في آن واحد وإغلاق أي منها باستقلالية.
-  2. إزالة `HyprlandFocusGrab` من كافة الكبسولات لمنع سرقة التركيز، واستخدام `WlrKeyboardFocus.OnDemand` مع `Shortcut { sequence: "Escape" }` وزر الترس/الطي للإغلاق.
-  3. تثبيت أبعاد النوافذ واستخدام `mask: Region` دقيق يمرر كافة النقرات الخارجية للنوافذ تحت المناطق الشفافة ويمنع إعادة تخصيص أسطح Wayland.
-  4. إزالة كافة تأثيرات الـ Hover من كبسولة الوقت، وتوحيد عائلة ومقاسات أيقونات الإعدادات السريعة (20px / 40px touch).
+  1. تشغيل `localsend --hidden` تلقائياً عبر `hyprland.conf`.
+  2. بناء `LocalSendService.qml` الذي يتخاطب مباشرة مع منفذ LocalSend عبر السوكيت (Direct Protocol v2) لكشف الأجهزة وإرسال الملفات مع شريط تقدم تدفقي حي.
 
-### س) ADR-015: لغة النظام وتوحيد التعريب للتطبيقات الخارجية (System-wide Localization & App Locale Orchestration)
-- **السياق**: عند تحويل لغة الشل إلى العربية، كانت التطبيقات الخارجية (مثل Thunar والمتصفحات) تظل بالإنجليزية لغياب تمرير المتغيرات لبيئة المستخدم والجلسة.
-- **القرار المعماري**:
-  1. بناء سكربت مركزي `scripts/deloway-locale-apply.py` يطبق اللغة على `~/.config/environment.d/90-deloway-locale.conf` ومتصفحات Chromium/Brave/Chrome ويدعم `--dry-run` و `--revert` دون صلاحيات جذر.
-  2. عزل كافة معالجات الشل وسكربتات استخراج البيانات بـ `LC_ALL=C` لمنع انكسار التحليل النصي.
-  3. إنشاء سكربت تدقيق وتغطية `scripts/deloway-lang-audit.sh` يولد تقرير `docs/LANGUAGE-COVERAGE.md`.
-  4. إطلاق إشعار توجيهي للمستخدم عند تغيير اللغة ينبهه لإعادة تسجيل الدخول لتطبيق اللغة على التطبيقات.
+#### ADR-019: عزل دورة حياة قوائم System Tray عبر `Loader`
+- **السياق**: عند إغلاق أو إعادة تشغيل تطبيقات شريط النظام، كانت قوائم D-Bus القديمة تسبب كراش فوري لمحرك Quickshell لمحاولته الوصول لمؤشرات ذاكرة ميتة.
+- **القرار المعماري**: عزل إنشاء وتدمير قائمة السياق داخل `Loader { active: menuOpen }`، وتطبيق واجهة أحادية OLED متناسقة بالكامل.
 
-### ع) ADR-016: اختيار مشغّل الموسيقى الأساسي وهدف الإطلاق (Preferred Music Player & Launch Target)
-- **السياق**: كان النوتش يختار عشوائياً أول مشغل في قائمة `Mpris.players` أو أول مشغل يعزف دون احترام لتفضيل المستخدم، وكان ودجت الموسيقى يختفي في حالة الخمول دون وسيلة لإطلاق المشغل بنقرة واحدة.
+#### ADR-020: التماثل الفيزيائي لتمدد النوتش وتثبيت هامش كبسولة الوقت (`TimeCapsule`)
+- **السياق**: كانت كبسولة الوقت تصطدم بالنوتش عند تمددهما معاً نتيجة اعتماد هامش ديناميكي مرتبط بعرض النوتش اللحظي.
 - **القرار المعماري**:
-  1. إضافة مفتاحي `music.preferredPlayer` و `music.launchTarget` في `deloway.json` و `ConfigManager.qml` دون حذف أي مفاتيح قديمة.
-  2. ترقية `updateActivePlayer()` في `NotchHome.qml` لمنح الأولوية للمشغل المفضل إذا كان نشطاً، والرجوع الآمن لـ `auto` عند غيابه.
-  3. إضافة أزرار إطلاق خاملة أنيقة في الوضعين المصغر والموسع تستدعي `ConfigManager.launchMusic()` مع حماية Debounce (3000ms) ودعم متصفحات Chromium براية `--app=URL`.
-  4. دمج خيارات التحكم ضمن قسم التطبيقات الافتراضية في `SystemTab.qml` بالهوية الأحادية ودعم RTL كامل.
+  1. تثبيت الهامش الجانبي لـ `TimeCapsule` بحساب هندسي استاتيكي يضمن ثباتها في أقصى الشاشة.
+  2. توحيد معامل التسارع وزمن التمدد والانكماش بعجلة الفأرة على كافة مناطق النوتش لتجربة فيزيائية متماثلة.
+
+#### ADR-021: شبكة سطح المكتب المتساوية (100×100) وظلال النصوص الناعمة (Windows 11 Fluent)
+- **السياق**: كانت أيقونات سطح المكتب متقاربة وغير متساوية الأبعاد وتحتوي على كبسولة نص سوداء غير جمالية خلف أسماء الملفات.
+- **القرار المعماري**:
+  1. توحيد خطوات الشبكة إلى 100×100 px وتصغير البطاقة إلى 76×84 px لتوفير هامش تباعد مريح (~24px).
+  2. إزالة كبسولة النص الداكنة واستبدالها بظل نص ناعم (`Text.Outline`) عالي الوضوح على كافة الخلفيات.
+
+#### ADR-022: توحيد خط النظام العام (Cairo) بين QML و GTK و Thunar
+- **السياق**: كان النظام يستخدم خطين مختلفين (Inter في QML و Cairo في GTK)، مما أحدث تفاوتاً بصرياً بين نوافذ الشل والتطبيقات.
+- **القرار المعماري**:
+  1. توحيد عائلة الخط الافتراضية إلى "Cairo" في `ConfigManager.fontFamily` و `Theme.fontFamily`.
+  2. تحديث `deloway-theme-apply.py` لقراءة نفس الخط من إعدادات المستخدم وتطبيقه على كافة ملفات `settings.ini` و CSS الخاصة بـ GTK3/4 و Thunar.
+
+#### ADR-023: توحيد التطبيقات المثبتة افتراضياً وربط متجر التطبيقات بـ `pamac-manager`
+- **السياق**: كانت قائمة التطبيقات المثبتة في الـ Dock مبعثرة، وكان متجر التطبيقات يفتقر للربط مع أداة حقيقية لإدارة الحزم.
+- **القرار المعماري**:
+  1. توحيد مصفوفة التطبيقات الافتراضية في `ConfigManager.defaultPinnedApps`.
+  2. ربط زر متجر التطبيقات بـ `pamac-manager` وتوفير معالجة آمنة للتثبيت والتشغيل عبر `PackageManager.qml`.
 
 ---
 
 ## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
-1. **اكتمال خارطة اللمسات النهائية (Final Polish Completed P1..P10)**: تم إنجاز المراحل P1 إلى P10 بنجاح تام وفق أعلى معايير الجودة والأداء والهوية الأحادية.
-2. **المعالم المستقبلية المقترحة (Future Milestones)**:
-   - دعم إيماءات لوحة اللمس (Touchpad Gestures) لفتح المشغل وتبديل مساحات العمل.
-   - إدارة ملفات تعريف الشاشات المتعددة (Multi-Monitor Profiles).
-   - تحسينات متقدمة لتكامل LocalSend في النوتش.
-
+1. **استقرار وضع الانغماس (Immersion Mode / Super Key Toggle)**:
+   - إنهاء ضبط إخفاء الكبسولات والـ Dock عبر مفتاح Super دون التأثير على استقرار دورة حياة أسطح Wayland.
+2. **إيماءات لوحة اللمس (Touchpad Gestures)**:
+   - إضافة دعم إيماءات التمرير بـ 3 و 4 أصابع لفتح المشغل وتبديل مساحات العمل بانسيابية.
+3. **إدارة الشاشات المتعددة (Multi-Monitor Profiles)**:
+   - حفظ واسترجاع أوضاع الكبسولات والشريط السفلي عند فصل ووصل الشاشات الخارجية.
+4. **تطوير ميزات LocalSend المتقدمة**:
+   - دعم استلام الملفات المباشر وتنزيلها في مجلد التنزيلات مع إشعار تفاعلي.

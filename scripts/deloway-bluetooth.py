@@ -118,6 +118,24 @@ def main():
             print(json.dumps({"success": True}))
         except Exception as e:
             print(json.dumps({"success": False, "error": str(e)}))
+    elif sys.argv[1] == "pair" and len(sys.argv) > 2:
+        addr = sys.argv[2].replace(":", "_")
+        adapter = get_adapter_path()
+        dev_path = f"{adapter}/dev_{addr}"
+        try:
+            subprocess.run(["busctl", "call", "org.bluez", dev_path, "org.bluez.Device1", "Pair"], timeout=15)
+            print(json.dumps({"success": True}))
+        except Exception as e:
+            print(json.dumps({"success": False, "error": str(e)}))
+    elif sys.argv[1] == "remove" and len(sys.argv) > 2:
+        addr = sys.argv[2].replace(":", "_")
+        adapter = get_adapter_path()
+        dev_path = f"{adapter}/dev_{addr}"
+        try:
+            subprocess.run(["busctl", "call", "org.bluez", adapter, "org.bluez.Adapter1", "RemoveDevice", "o", dev_path], timeout=5)
+            print(json.dumps({"success": True}))
+        except Exception as e:
+            print(json.dumps({"success": False, "error": str(e)}))
 
 if __name__ == "__main__":
     main()
