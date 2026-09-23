@@ -7,7 +7,7 @@ import "../../"
 
 // App details (Settings → Apps), opened from the shared AppContextMenu → "App Info".
 // Reads the live app state + the backend info (AppActions / deloway-app-info.py) and
-// offers Open · Pin · Software Center · Uninstall (with an inline confirmation).
+// offers View in Store and Uninstall (with an inline confirmation).
 ColumnLayout {
     id: root
 
@@ -203,73 +203,141 @@ ColumnLayout {
     }
 
     // ── Actions ──────────────────────────────────────────────────────────
+    // Only what belongs on a details page: View in Store (pamac can show system and AUR
+    // packages) and Uninstall. Open / Pin live in the Dock and App Drawer (click and
+    // right-click menu), next to the icon they act on.
+    readonly property bool canViewInStore: !!(root.info && (root.info.source === "pacman" || root.info.source === "aur"))
+    readonly property bool canUninstall: !!(root.info && root.info.ok && root.info.removable)
+    readonly property string storeIcon: Quickshell.hasThemeIcon("external-link-symbolic") ? "external-link-symbolic" : "go-jump-symbolic"
+
     RowLayout {
         Layout.fillWidth: true
         Layout.margins: Theme.space16
         spacing: Theme.space8
-        visible: !root.confirming
+        visible: !root.confirming && (root.canViewInStore || root.canUninstall)
 
-        DeloButton {
-            variant: "primary"
-            text: root.app && root.app.running ? I18n.tr("dock_new_window") : I18n.tr("open_app")
-            onClicked: AppActions.launch(root.app)
-        }
-        DeloButton {
-            variant: "secondary"
-            text: root.app && root.app.pinned ? I18n.tr("unpin_from_dock") : I18n.tr("pin_to_dock")
-            onClicked: AppActions.togglePin(root.app)
-        }
-        DeloButton {
-            visible: !!(root.info && (root.info.source === "pacman" || root.info.source === "aur"))
-            variant: "secondary"
-            text: I18n.tr("app_open_store")
+        ActionButton {
+            visible: root.canViewInStore
+            variant: "quiet"
+            iconSource: root.storeIcon
+            text: I18n.tr("app_view_in_store")
             onClicked: AppActions.openInSoftwareCenter(root.info)
         }
         Item { Layout.fillWidth: true }
-        DeloButton {
-            visible: !!(root.info && root.info.ok && root.info.removable)
-            variant: "secondary"
+        // Destructive action alone at the far end.
+        ActionButton {
+            visible: root.canUninstall
+            variant: "standard"
             iconSource: "user-trash-symbolic"
             text: root.busy ? I18n.tr("app_uninstalling") : I18n.tr("app_uninstall")
-            disabled: root.busy
+            enabled: !root.busy
             onClicked: root.confirming = true
         }
     }
 
-    // Inline confirmation
+    // Inline confirmation: what will be removed + Cancel / Uninstall
     RowLayout {
         Layout.fillWidth: true
         Layout.margins: Theme.space16
         spacing: Theme.space8
         visible: root.confirming
 
-        SymbolicIcon {
-            source: "user-trash-symbolic"
-            iconSize: 14
-            iconColor: Theme.colors.urgent
-            Layout.alignment: Qt.AlignVCenter
-        }
-        Text {
+        ColumnLayout {
             Layout.fillWidth: true
-            text: NotificationManager.bidi(I18n.tr("app_uninstall_confirm").replace("%1", root.app ? root.app.name : "")
-                                           + "  " + AppActions.uninstallSummary(root.info))
-            textFormat: Text.PlainText
-            wrapMode: Text.Wrap
-            font.family: Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(12)
-            color: Theme.notchText
-            horizontalAlignment: Text.AlignLeft
-            renderType: Theme.renderType
+            Layout.alignment: Qt.AlignVCenter
+            spacing: -2
+            Text {
+                Layout.fillWidth: true
+                text: NotificationManager.bidi(I18n.tr("app_uninstall_confirm").replace("%1", root.app ? (root.app.name || root.app.id) : ""))
+                textFormat: Text.PlainText
+                elide: Text.ElideRight
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(13)
+                font.weight: Font.DemiBold
+                color: Theme.notchText
+                horizontalAlignment: Text.AlignLeft
+                renderType: Theme.renderType
+            }
+            Text {
+                Layout.fillWidth: true
+                text: NotificationManager.bidi(AppActions.uninstallSummary(root.info))
+                textFormat: Text.PlainText
+                wrapMode: Text.Wrap
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(12)
+                color: Theme.notchTextMeta
+                horizontalAlignment: Text.AlignLeft
+                renderType: Theme.renderType
+            }
         }
-        DeloButton {
-            variant: "secondary"
+        ActionButton {
+            variant: "quiet"
             text: I18n.tr("app_cancel")
             onClicked: root.confirming = false
         }
-        DeloButton {
+        ActionButton {
             variant: "primary"
+            iconSource: "user-trash-symbolic"
             text: I18n.tr("app_uninstall_action")
             onClicked: { root.confirming = false; AppActions.uninstall(root.app); }
+        }
+    }
+
+    // Compact pill button built only from Notch tokens (matches the Settings pills and the
+    // app menu): quiet = borderless, standard = 1px border, primary = inverted.
+    component ActionButton: Rectangle {
+        id: ab
+        property string text: ""
+        property string iconSource: ""
+        property string variant: "standard"          // quiet | standard | primary
+        signal clicked()
+
+        readonly property bool isPrimary: variant === "primary"
+        implicitHeight: 30
+        implicitWidth: abRow.implicitWidth + 24
+        radius: height / 2
+        opacity: enabled ? 1 : 0.45
+        color: ab.isPrimary ? (abMa.pressed ? Theme.notchTextSecondary : Theme.notchText)
+             : abMa.pressed ? Theme.notchSurfaceActive
+             : abMa.containsMouse ? Theme.notchSurfaceHover
+             : (variant === "standard" ? Theme.notchSurface : "transparent")
+        border.color: variant === "standard" ? (abMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorder) : "transparent"
+        border.width: 1
+        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+        readonly property color fg: ab.isPrimary ? Theme.notchBackground
+                                  : (abMa.containsMouse || variant === "standard") ? Theme.notchText
+                                  : Theme.notchTextSecondary
+
+        Row {
+            id: abRow
+            anchors.centerIn: parent
+            spacing: 6
+            SymbolicIcon {
+                visible: ab.iconSource.length > 0
+                anchors.verticalCenter: parent.verticalCenter
+                source: ab.iconSource
+                iconSize: 13
+                iconColor: ab.fg
+            }
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: ab.text
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(12)
+                font.weight: ab.isPrimary ? Font.DemiBold : Font.Medium
+                color: ab.fg
+                renderType: Theme.renderType
+            }
+        }
+        MouseArea {
+            id: abMa
+            anchors.fill: parent
+            enabled: ab.enabled
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: ab.clicked()
         }
     }
 }
