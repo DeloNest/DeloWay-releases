@@ -243,7 +243,7 @@ PanelWindow {
         if (item.type === "app") { root.launchApp(item.data); return; }
         ShellState.closeAppDrawer();
         if (item.type === "calc") {
-            if (item.data && item.data.value !== undefined) Quickshell.execDetached(["wl-copy", String(item.data.value)]);
+            if (item.data && item.data.value !== undefined) Quickshell.execDetached(["wl-copy", "--", String(item.data.value)]);
         } else if (item.type === "setting") {
             if (item.id === "settings-main") ShellState.toggleSettingsApp();
             else ShellState.openSettingsTab(item.id);

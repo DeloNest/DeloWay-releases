@@ -507,7 +507,10 @@ Item {
         interval: 1000
         repeat: false
         onTriggered: {
-            saveNotesProc.exec(["bash", "-c", "mkdir -p " + ConfigManager.userConfigDir + " && cat << 'EOF' > " + ConfigManager.userConfigDir + "/notes.txt\n" + noteArea.text + "\nEOF"]);
+            // Text is passed as an argument, never spliced into the script: a line
+            // reading "EOF" (or anything else) in the note cannot run as a command.
+            saveNotesProc.exec(["sh", "-c", 'mkdir -p "$1" && printf "%s\\n" "$2" > "$1/notes.txt"',
+                                "sh", ConfigManager.userConfigDir, noteArea.text]);
         }
     }
 }

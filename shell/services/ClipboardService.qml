@@ -106,7 +106,7 @@ Item {
 
     function copyItem(item) {
         if (!item || !item.id) return;
-        copyProcess.exec(["sh", "-c", "cliphist decode " + item.id + " | wl-copy"]);
+        copyProcess.exec(["sh", "-c", 'cliphist decode "$1" | wl-copy', "sh", String(item.id)]);
     }
 
     function deleteItem(item) {

@@ -113,9 +113,16 @@ def is_hotspot_active():
         pass
     return False
 
+def generate_hotspot_password(length=12):
+    """Random WPA2 passphrase for a NEW hotspot profile (never a fixed default).
+    Unambiguous characters only (no 0/O, 1/l/I) so it can be typed from the screen."""
+    import secrets
+    alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
 def get_hotspot_details():
     ssid = socket.gethostname()
-    password = "01234567"
+    password = ""      # unknown until a profile exists (created with a random passphrase)
     if hotspot_profile_exists():
         try:
             res = subprocess.run(["nmcli", "-s", "-t", "-f", "802-11-wireless.ssid,802-11-wireless-security.psk", "con", "show", "Deloway-Hotspot"], capture_output=True, text=True, timeout=2).stdout
@@ -167,19 +174,22 @@ def hotspot_start():
     if not dev:
         return {"success": False, "enabled": False, "error": "No Wi-Fi device found"}
     
-    if hotspot_profile_exists():
-        res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
-    else:
-        ssid = socket.gethostname()
-        password = "01234567"
-        res = subprocess.run([
-            "nmcli", "dev", "wifi", "hotspot",
-            "ifname", dev,
-            "con-name", "Deloway-Hotspot",
-            "ssid", ssid,
-            "password", password
-        ], capture_output=True, text=True, timeout=15)
-        
+    try:
+        if hotspot_profile_exists():
+            res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+        else:
+            ssid = socket.gethostname()
+            password = generate_hotspot_password()
+            res = subprocess.run([
+                "nmcli", "dev", "wifi", "hotspot",
+                "ifname", dev,
+                "con-name", "Deloway-Hotspot",
+                "ssid", ssid,
+                "password", password
+            ], capture_output=True, text=True, timeout=15)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return {"success": False, "enabled": is_hotspot_active(), "error": str(e)}
+
     success = (res.returncode == 0)
     return {
         "success": success,
@@ -188,7 +198,10 @@ def hotspot_start():
     }
 
 def hotspot_stop():
-    res = subprocess.run(["nmcli", "con", "down", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+    try:
+        res = subprocess.run(["nmcli", "con", "down", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return {"success": False, "enabled": is_hotspot_active(), "error": str(e)}
     success = (res.returncode == 0)
     return {
         "success": success,
@@ -197,6 +210,12 @@ def hotspot_stop():
     }
 
 def hotspot_configure(ssid, password):
+    try:
+        return _hotspot_configure(ssid, password)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return {"success": False, "enabled": is_hotspot_active(), "error": str(e)}
+
+def _hotspot_configure(ssid, password):
     if not ssid or not ssid.strip():
         return {"success": False, "enabled": is_hotspot_active(), "error": "SSID cannot be empty"}
     ssid = ssid.strip()

@@ -752,10 +752,16 @@ Item {
         musicLaunchDebounce.restart();
 
         const target = root.musicLaunchTarget || ({ "type": "app", "value": "spotify", "webApp": false });
+        // Values come from a free-text Settings field: they are passed to sh as
+        // positional arguments ("$1"), never concatenated into the script.
         if (target.type === "url" && target.value) {
-            const url = target.value.trim();
+            let url = target.value.trim();
+            if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) url = "https://" + url;
             if (target.webApp) {
-                root.run(["bash", "-c", "for b in brave chromium google-chrome google-chrome-stable thorium-browser; do if command -v $b >/dev/null 2>&1; then exec $b --app=" + url + "; exit 0; fi; done; xdg-open " + url]);
+                root.run(["sh", "-c",
+                    'for b in brave chromium google-chrome google-chrome-stable thorium-browser; do ' +
+                    'command -v "$b" >/dev/null 2>&1 && exec "$b" --app="$1"; done; exec xdg-open "$1"',
+                    "sh", url]);
             } else {
                 root.run(["xdg-open", url]);
             }
@@ -764,8 +770,10 @@ Item {
             const app = ApplicationManager.findApp(val);
             if (app && typeof app.execute === "function") {
                 app.execute();
+            } else if (/^[A-Za-z0-9._-]+$/.test(val)) {
+                root.run(["sh", "-c", 'gtk-launch "$1" 2>/dev/null || exec "$1"', "sh", val]);
             } else {
-                root.run(["bash", "-c", "gtk-launch " + val + " 2>/dev/null || hyprctl dispatch exec " + val]);
+                console.warn("[ConfigManager] music launch target is not an app id:", val);
             }
         }
     }

@@ -108,7 +108,7 @@ PanelWindow {
 
         if (item.type === "calc") {
             if (item.data && item.data.value !== undefined) {
-                wlCopyProcess.exec(["wl-copy", String(item.data.value)]);
+                wlCopyProcess.exec(["wl-copy", "--", String(item.data.value)]);
             }
         } else if (item.type === "app") {
             if (item.data) {
