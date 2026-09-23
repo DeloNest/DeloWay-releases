@@ -376,6 +376,51 @@ Item {
         return list;
     }
 
+    // ── App Drawer folders ─────────────────────────────────────────────
+    // freedesktop `Categories=` → one folder per app. Order matters: the FIRST folder
+    // whose key set intersects the app's categories wins (e.g. an IDE that is also a
+    // "TextEditor" lands in Development, a game launcher tagged "Network" in Games).
+    // Display order in the drawer is the order below; empty folders are hidden.
+    readonly property var categoryDefs: [
+        { id: "internet",    icon: "web-browser-symbolic",
+          keys: ["Network", "WebBrowser", "Email", "Chat", "InstantMessaging", "IRCClient", "FileTransfer", "P2P", "News"] },
+        { id: "media",       icon: "applications-multimedia-symbolic",
+          keys: ["AudioVideo", "Audio", "Video", "Player", "Recorder", "Music", "Tuner", "TV"] },
+        { id: "office",      icon: "x-office-document-symbolic",
+          keys: ["Office", "WordProcessor", "Spreadsheet", "Presentation", "Calendar", "ContactManagement", "Finance", "Viewer"] },
+        { id: "graphics",    icon: "applications-graphics-symbolic",
+          keys: ["Graphics", "2DGraphics", "3DGraphics", "RasterGraphics", "VectorGraphics", "Photography", "Scanning"] },
+        { id: "development", icon: "applications-engineering-symbolic",
+          keys: ["Development", "IDE", "Debugger", "RevisionControl", "WebDevelopment", "GUIDesigner", "Profiling"] },
+        { id: "games",       icon: "applications-games-symbolic",
+          keys: ["Game", "Emulator"] },
+        { id: "education",   icon: "applications-science-symbolic",
+          keys: ["Education", "Science", "Math", "Languages", "Dictionary"] },
+        { id: "system",      icon: "applications-system-symbolic",
+          keys: ["System", "Settings", "Monitor", "PackageManager", "TerminalEmulator", "FileManager",
+                 "HardwareSettings", "DesktopSettings", "Security"] },
+        { id: "utilities",   icon: "applications-utilities-symbolic",
+          keys: ["Utility", "Accessories", "Archiving", "Compression", "TextEditor", "Calculator", "Clock"] },
+        { id: "other",       icon: "folder-symbolic", keys: [] }
+    ]
+    // Classification priority (differs from display order on purpose).
+    readonly property var _categoryPriority: ["games", "development", "graphics", "media", "office",
+                                              "internet", "education", "system", "utilities"]
+
+    function categoryOf(app) {
+        if (!app) return "other";
+        const cats = (app.categories || []).map(c => String(c));
+        if (cats.length > 0) {
+            for (const id of root._categoryPriority) {
+                const def = root.categoryDefs.find(d => d.id === id);
+                if (def && def.keys.some(k => cats.indexOf(k) >= 0)) return id;
+            }
+        }
+        // Browser web apps (PWAs) rarely declare categories — they're internet apps.
+        if (app.isWebApp || /^(brave|chrome|chromium|msedge)-/i.test(String(app.id || ""))) return "internet";
+        return "other";
+    }
+
     // Filtered apps for drawer categories
     function getFilteredApps(category, filterQuery) {
         const q = filterQuery ? filterQuery.trim() : "";

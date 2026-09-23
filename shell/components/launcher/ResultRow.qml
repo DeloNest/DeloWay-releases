@@ -68,7 +68,9 @@ Rectangle {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            spacing: 1
+            // Cairo carries tall built-in leading; tighten so title + subtitle sit inside
+            // the 48px row instead of crowding the next result.
+            spacing: -4
 
             Text {
                 Layout.fillWidth: true
