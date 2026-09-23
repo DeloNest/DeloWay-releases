@@ -32,7 +32,6 @@ PopupWindow {
     id: root
 
     property var hostWindow: null
-    property var grabWindows: []           // extra surfaces whose clicks must not dismiss
     signal actionTriggered(string action)  // host hook (the drawer closes itself on launch)
 
     // ── State ────────────────────────────────────────────────────────────
@@ -55,8 +54,11 @@ PopupWindow {
     visible: false
     grabFocus: true
 
+    // Grab ONLY the popup. Adding the host surface (dock / drawer layer) makes Hyprland
+    // clear the grab the instant it activates, so the menu would never be seen.
+    // Any click outside — including on the host — closes the menu.
     HyprlandFocusGrab {
-        windows: [ root ].concat(root.grabWindows || [])
+        windows: [ root ]
         active: root.visible
         onCleared: root.hide()
     }

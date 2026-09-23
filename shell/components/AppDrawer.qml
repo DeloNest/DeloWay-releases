@@ -195,7 +195,6 @@ PanelWindow {
     AppContextMenu {
         id: contextMenu
         hostWindow: root
-        grabWindows: [ root ]
         onActionTriggered: (action) => {
             // Anything that brings a window or Settings forward also dismisses the menu's host.
             if (["open", "new", "window", "info", "max", "min"].indexOf(action) >= 0)

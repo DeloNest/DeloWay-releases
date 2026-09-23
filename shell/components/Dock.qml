@@ -63,10 +63,10 @@ PanelWindow {
     // Follows Settings → Appearance → corner radius, capped at a full pill.
     readonly property int cardRadius: Math.round(Math.min(dockH / 2, Theme.radiusDock * Theme.radiusScale))
 
-    // The surface is taller (or wider) than the card so tooltips never clip; the input
-    // mask keeps the extra area click-through.
-    implicitHeight: dockH + 20 + Theme.dockTooltipRoom
-    implicitWidth: root.isVertical ? dockH + 20 + 280 : 0
+    // Card + edge gap + a little headroom for the magnified icon's lift. (No hover
+    // labels: the dock shows no floating text; the app menu is its own popup surface.)
+    implicitHeight: dockH + 24
+    implicitWidth: root.isVertical ? dockH + 24 : 0
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:dock"
@@ -106,7 +106,6 @@ PanelWindow {
     onIsMenuOpenChanged: {
         if (!isMenuOpen && !root.dockHovered && !triggerHover.hovered) hideTimer.restart();
     }
-    onDockVisibleChanged: if (!dockVisible) root.hideTip(true)
 
     // ── Intellihide: window-overlap detection ────────────────────────────
     readonly property var hyprMonitor: Hyprland.monitorFor(root.screen)
@@ -231,40 +230,6 @@ PanelWindow {
         if (on) root.hoveredKey = key;
         else if (root.hoveredKey === key) root.hoveredKey = "";
     }
-
-    // ── Shared tooltip (one bubble that glides between icons) ────────────
-    property Item tipOwner: null
-    property string tipText: ""
-    property string tipMeta: ""
-    property bool tipShown: false
-    property real tipAnchorX: 0
-    property real tipAnchorY: 0
-
-    function requestTip(owner, text, meta) {
-        root.tipOwner = owner;
-        root.tipText = text || "";
-        root.tipMeta = meta || "";
-        const p = owner.mapToItem(root.contentItem, owner.width / 2, owner.height / 2);
-        root.tipAnchorX = p.x;
-        root.tipAnchorY = p.y;
-        tipGrace.stop();
-        if (!root.tipShown) tipDelay.restart();
-    }
-    function releaseTip(owner) {
-        if (root.tipOwner !== owner) return;
-        root.tipOwner = null;
-        tipDelay.stop();
-        tipGrace.restart();
-    }
-    function hideTip(now) {
-        tipDelay.stop();
-        tipGrace.stop();
-        root.tipOwner = null;
-        if (now) root.tipShown = false;
-        else tipGrace.restart();
-    }
-    Timer { id: tipDelay; interval: 380; onTriggered: if (root.tipOwner && !root.isMenuOpen) root.tipShown = true }
-    Timer { id: tipGrace; interval: 120; onTriggered: if (!root.tipOwner) root.tipShown = false }
 
     // ── Reveal strip on the docked edge ──────────────────────────────────
     Item {
@@ -446,79 +411,10 @@ PanelWindow {
         }
     }
 
-    // ── Tooltip bubble ───────────────────────────────────────────────────
-    Rectangle {
-        id: tip
-        readonly property real cardLeft: slideWrapper.x + dockCard.x
-        readonly property real cardTop: slideWrapper.y + dockCard.y
-
-        width: Math.min(tipRow.implicitWidth + 22, 300)
-        height: tipRow.implicitHeight + 10
-        radius: Math.min(height / 2, Theme.radiusMedium)
-        color: Theme.dockTooltipBg
-        border.color: Theme.dockTooltipBorder
-        border.width: 1
-        z: 50
-
-        x: root.edge === "left" ? tip.cardLeft + dockCard.width + 12
-         : root.edge === "right" ? tip.cardLeft - width - 12
-         : Math.max(8, Math.min(root.width - width - 8, Math.round(root.tipAnchorX - width / 2)))
-        y: root.isVertical ? Math.max(8, Math.min(root.height - height - 8, Math.round(root.tipAnchorY - height / 2)))
-                           : tip.cardTop - height - 14
-        // Glide between icons once visible; appear in place otherwise.
-        Behavior on x { enabled: tip.opacity > 0.5 && !root.isVertical; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-        Behavior on y { enabled: tip.opacity > 0.5 && root.isVertical; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
-        opacity: root.tipShown && root.dockVisible ? 1 : 0
-        visible: opacity > 0.01
-        Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        transform: Translate {
-            x: root.tipShown ? 0 : 4 * -root.inwardX
-            y: root.tipShown ? 0 : 4 * -root.inwardY
-            Behavior on x { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-            Behavior on y { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-        }
-
-        Row {
-            id: tipRow
-            anchors.centerIn: parent
-            spacing: 8
-            LayoutMirroring.enabled: I18n.isRTL
-            LayoutMirroring.childrenInherit: true
-
-            Text {
-                id: tipName
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(implicitWidth, 220)
-                text: NotificationManager.bidi(root.tipText)
-                textFormat: Text.PlainText
-                elide: Text.ElideRight
-                horizontalAlignment: Text.AlignLeft
-                color: Theme.notchText
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(12)
-                font.weight: Font.DemiBold
-                renderType: Theme.renderType
-            }
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: root.tipMeta.length > 0
-                text: NotificationManager.bidi(root.tipMeta)
-                textFormat: Text.PlainText
-                color: Theme.notchTextMeta
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                renderType: Theme.renderType
-            }
-        }
-    }
-
-    // Shared app menu (same component as the App Drawer). The dock is part of its focus
-    // grab so clicking another icon while it's open still works.
+    // Shared app menu (same component as the App Drawer).
     AppContextMenu {
         id: dockContextMenu
         hostWindow: root
-        grabWindows: [ root ]
     }
 
     // ═════════════════════════════════════════════════════════════════════
@@ -555,13 +451,6 @@ PanelWindow {
 
         onRunningChanged: if (running) launching = false
         Timer { id: launchTimeout; interval: 6000; onTriggered: slot.launching = false }
-
-        function tooltipMeta() {
-            if (!slot.isApp) return "";
-            if (slot.allMinimized) return I18n.tr("dock_minimized");
-            if (slot.windowCount > 1) return I18n.windowsCount(slot.windowCount);
-            return "";
-        }
 
         // Focused-app well (Windows 11 style tonal plate)
         Rectangle {
@@ -718,20 +607,16 @@ PanelWindow {
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             cursorShape: Qt.PointingHandCursor
 
-            onContainsMouseChanged: {
-                root.setHovered(slot.appKey, containsMouse);
-                if (containsMouse) {
-                    const name = slot.isTrash ? I18n.tr("trash_title")
-                               : slot.isLauncher ? I18n.tr("app_menu_title")
-                               : (slot.entry ? (slot.entry.name || slot.entry.id) : "");
-                    root.requestTip(slot, name, slot.tooltipMeta());
-                } else {
-                    root.releaseTip(slot);
-                }
-            }
+            // Hover = magnification only (no floating labels). The name stays available
+            // to assistive tech.
+            Accessible.role: Accessible.Button
+            Accessible.name: slot.isTrash ? I18n.tr("trash_title")
+                           : slot.isLauncher ? I18n.tr("app_menu_title")
+                           : (slot.entry ? (slot.entry.name || slot.entry.id) : "")
+
+            onContainsMouseChanged: root.setHovered(slot.appKey, containsMouse)
             onPositionChanged: (mouse) => root.trackPointer(slotMouse, mouse)
             onEntered: root.trackPointer(slotMouse, { x: mouseX, y: mouseY })
-            onPressed: root.hideTip(true)
 
             onClicked: (mouse) => {
                 if (slot.isTrash) {
@@ -766,14 +651,6 @@ PanelWindow {
             }
         }
 
-        // Keep the tooltip text live (e.g. window count changes while hovered).
-        onEntryChanged: {
-            if (root.tipOwner === slot && slot.entry)
-                root.tipMeta = slot.tooltipMeta();
-        }
-        Component.onDestruction: {
-            if (root.hoveredKey === slot.appKey) root.hoveredKey = "";
-            if (root.tipOwner === slot) root.hideTip(true);
-        }
+        Component.onDestruction: if (root.hoveredKey === slot.appKey) root.hoveredKey = ""
     }
 }

@@ -246,7 +246,6 @@ Item {
     readonly property color dockIndicatorIdle: isDark ? Qt.rgba(1, 1, 1, 0.50) : Qt.rgba(0, 0, 0, 0.42)
     readonly property color dockIndicatorHalo: isDark ? Qt.rgba(1, 1, 1, 0.18) : Qt.rgba(0, 0, 0, 0.12)
     readonly property color dockActiveWell: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.06)
-    readonly property int dockTooltipRoom: 64                             // headroom so tooltips never clip
     readonly property color dockTooltipBg: notchBackground
     readonly property color dockTooltipBorder: notchBorder
 
