@@ -123,30 +123,9 @@ Item {
         return null;
     }
 
-    // ── Wheel scroll — consume event, no propagation to notch ─────────────
-    property real _lastScrollTime: 0
-
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons:        Qt.NoButton
-        propagateComposedEvents: false
-        onWheel: (wheel) => {
-            wheel.accepted = true;
-            const now = Date.now();
-            if (now - root._lastScrollTime < 300) return;
-            root._lastScrollTime = now;
-
-            const ids = root.displayIds;
-            const idx = ids.indexOf(root.activeWsId);
-            if (wheel.angleDelta.y < 0) {
-                const next = (idx >= 0 && idx < ids.length - 1) ? ids[idx + 1] : ids[ids.length - 1];
-                Hyprland.dispatch("workspace " + next);
-            } else {
-                const prev = idx > 0 ? ids[idx - 1] : ids[0];
-                Hyprland.dispatch("workspace " + prev);
-            }
-        }
-    }
+    // No wheel handler here on purpose: scrolling over the workspace dots falls through to
+    // the Notch, where scroll-down expands and scroll-up collapses (same as every capsule).
+    // Workspaces switch by clicking a dot (or Super+number).
 
     // ── Row ───────────────────────────────────────────────────────────────
     RowLayout {
