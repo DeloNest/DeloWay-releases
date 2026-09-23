@@ -12,42 +12,29 @@ import "../services"
 import "./quicksettings"
 import "./quicksettings/pages"
 
-PanelWindow {
+// Lives inside the unified TopBar window (TopBar.qml) as a plain Item, so its container is
+// composed in the same buffer as the Notch: reflow is a pure scene-graph animation with
+// no layer-shell margins, no cross-surface repaint timing and no collision.
+Item {
     id: root
 
     required property ShellScreen targetScreen
-    screen: targetScreen
+    anchors.fill: parent
 
-    anchors {
-        top: true
-        left: true
-    }
+    // Exposed to TopBar for the unified input mask.
+    readonly property alias maskItem: capsuleContainer
 
-    readonly property real earRadius: 18
+    readonly property real earRadius: Theme.notchEarRadius
     readonly property real bottomRadius: 26
-    readonly property real capsuleGap: Theme.space20
+    readonly property real capsuleGap: Theme.capsuleGap
 
-    // Fixed PanelWindow bounds to eliminate dynamic Wayland surface reallocations
-    readonly property real fixedWindowWidth: 500
-    readonly property real fixedWindowHeight: 460
-
-    implicitWidth: fixedWindowWidth
-    implicitHeight: fixedWindowHeight
-
-    margins {
-        top: 0
-        left: Math.round(targetScreen.width / 2 + ShellState.smartNotchCurrentWidth / 2 + capsuleGap - earRadius)
-    }
-
-    color: "transparent"
-
-    WlrLayershell.namespace: "deloway:quicksettings-capsule"
-    WlrLayershell.layer: WlrLayer.Top
-    WlrLayershell.keyboardFocus: root.isExpanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
-    exclusionMode: ExclusionMode.Ignore
-
-    mask: Region {
-        item: capsuleContainer
+    // Distance from the screen centre to the capsule body's leading edge. Tracks the
+    // Notch's live outer width every animation frame, clamped to the screen edge.
+    readonly property real notchSlotOffset: {
+        const desired = ShellState.smartNotchCurrentWidth / 2 + root.capsuleGap;
+        const bodyWidth = root.currentWidth + root.earRadius * 2 * root.expandProgress;
+        const maxOffset = root.width / 2 - Theme.capsuleEdgeMargin - bodyWidth;
+        return Math.round(Math.max(0, Math.min(desired, maxOffset)));
     }
 
     // Escape dismissal (active when capsule has focus)
@@ -71,8 +58,23 @@ PanelWindow {
 
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(108, compactRow.implicitWidth + 36)
-    readonly property real expandedWidth: 440
-    readonly property real expandedHeight: 436
+    readonly property real expandedWidth: 456
+    readonly property int contentTopMargin: 16
+    readonly property int contentBottomMargin: 14
+
+    // ── Page model ───────────────────────────────────────────────────────
+    // "main" sizes to its content; detail pages share one fixed, scrollable height.
+    // pageHeight is the single animated number that morphs the capsule between pages,
+    // in lock-step with the horizontal slide (no jumps, no Loader churn).
+    readonly property int detailPageHeight: 420
+    readonly property real targetPageHeight: root.currentView === "main" ? mainPage.implicitHeight : root.detailPageHeight
+    property real pageHeight: targetPageHeight
+    Behavior on pageHeight {
+        enabled: root.isExpanded
+        NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter }
+    }
+    readonly property real expandedHeight: root.contentTopMargin + root.contentBottomMargin + root.pageHeight
+    readonly property real slideSign: I18n.isRTL ? -1 : 1
 
     // Single unified motion driver (200ms open, 160ms close)
     property real expandProgress: root.isExpanded ? 1.0 : 0.0
@@ -224,6 +226,7 @@ PanelWindow {
             ShellState.closeTimeCapsule();
             NetworkService.refresh();
             BluetoothService.refresh();
+            ControlCenterService.refresh();
             if (root.brightnessBackend === "kernel") {
                 backlightReadProcess.running = true;
             } else if (root.brightnessBackend === "ddc") {
@@ -320,6 +323,25 @@ PanelWindow {
             return;
 
         root.audioSink.audio.muted = !root.audioSink.audio.muted;
+    }
+
+    // ── Microphone (default PipeWire source) ─────────────────────────────
+    property var audioSource: Pipewire.defaultAudioSource
+    PwObjectTracker {
+        objects: root.audioSource ? [root.audioSource] : []
+    }
+    readonly property real micVolume: (audioSource && audioSource.audio) ? audioSource.audio.volume : 0
+    readonly property bool micMuted: (audioSource && audioSource.audio) ? audioSource.audio.muted : false
+
+    function setMicVolume(value) {
+        if (!root.audioSource || !root.audioSource.audio || !root.audioSource.ready) return;
+        const v = Math.max(0, Math.min(1, value));
+        root.audioSource.audio.volume = v;
+        if (v > 0 && root.audioSource.audio.muted) root.audioSource.audio.muted = false;
+    }
+    function toggleMicMute() {
+        if (!root.audioSource || !root.audioSource.audio || !root.audioSource.ready) return;
+        root.audioSource.audio.muted = !root.audioSource.audio.muted;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -478,7 +500,9 @@ PanelWindow {
     // ─────────────────────────────────────────────────────────────────────────
     Item {
         id: capsuleContainer
-        x: Math.round(root.earRadius * (1.0 - root.expandProgress))
+        // Body leading edge stays at notchSlotOffset; the ear (earRadius wide) grows
+        // toward the notch as this capsule itself expands, exactly as before.
+        x: Math.round(root.width / 2 + root.notchSlotOffset - root.earRadius * root.expandProgress)
         y: root.currentY
         width: Math.round(root.currentWidth + root.earRadius * 2 * root.expandProgress)
         height: Math.round(root.currentHeight + 8 * root.expandProgress)
@@ -491,9 +515,9 @@ PanelWindow {
             anchors.leftMargin: -2
             anchors.rightMargin: -2
             radius: capsuleBody.bottomLeftRadius + 2
-            color: Qt.rgba(0, 0, 0, 0.40)
+            color: Theme.notchShadow            // theme-aware (was a fixed 40% black)
             opacity: root.expandProgress
-            visible: opacity > 0.01
+            visible: opacity > 0.01 && Theme.enableShadows
             z: 0
         }
 
@@ -551,6 +575,57 @@ PanelWindow {
             }
         }
 
+        // ──────────────────────────────────────────────────────────────────────
+        // LIGHT-MODE OUTLINE (attached state)
+        // One continuous stroke: left ear arc → left side → bottom → right side → right ear
+        // arc. Never along the screen edge, and no seam where the ears meet the body — a
+        // plain rectangle border drew both, which read as black lines/corners in light mode.
+        // ──────────────────────────────────────────────────────────────────────
+        Shape {
+            id: attachedOutline
+            visible: !Theme.isDark && opacity > 0.01
+            opacity: Math.max(0, (root.expandProgress - 0.5) * 2)
+            z: 3
+            preferredRendererType: Shape.CurveRenderer
+            readonly property real er: root.earRadius
+            readonly property real bx: capsuleBody.x
+            readonly property real bw: capsuleBody.width
+            readonly property real bh: capsuleBody.height
+            readonly property real br: capsuleBody.bottomLeftRadius
+
+            ShapePath {
+                strokeColor: Theme.notchBorder
+                strokeWidth: 1
+                fillColor: "transparent"
+                joinStyle: ShapePath.RoundJoin
+                startX: attachedOutline.bx - attachedOutline.er
+                startY: 0.5
+                PathArc {
+                    x: attachedOutline.bx + 0.5; y: attachedOutline.er
+                    radiusX: attachedOutline.er; radiusY: attachedOutline.er
+                    direction: PathArc.Clockwise
+                }
+                PathLine { x: attachedOutline.bx + 0.5; y: attachedOutline.bh - attachedOutline.br }
+                PathArc {
+                    x: attachedOutline.bx + attachedOutline.br; y: attachedOutline.bh - 0.5
+                    radiusX: attachedOutline.br; radiusY: attachedOutline.br
+                    direction: PathArc.Counterclockwise
+                }
+                PathLine { x: attachedOutline.bx + attachedOutline.bw - attachedOutline.br; y: attachedOutline.bh - 0.5 }
+                PathArc {
+                    x: attachedOutline.bx + attachedOutline.bw - 0.5; y: attachedOutline.bh - attachedOutline.br
+                    radiusX: attachedOutline.br; radiusY: attachedOutline.br
+                    direction: PathArc.Counterclockwise
+                }
+                PathLine { x: attachedOutline.bx + attachedOutline.bw - 0.5; y: attachedOutline.er }
+                PathArc {
+                    x: attachedOutline.bx + attachedOutline.bw + attachedOutline.er; y: 0.5
+                    radiusX: attachedOutline.er; radiusY: attachedOutline.er
+                    direction: PathArc.Clockwise
+                }
+            }
+        }
+
         // Main Capsule Body (Retina/OLED deep surface)
         Rectangle {
             id: capsuleBody
@@ -560,7 +635,8 @@ PanelWindow {
             height: root.currentHeight
             color: Theme.notchBackground
             border.color: Theme.notchBorderSubtle
-            border.width: Theme.isDark ? 0 : 1
+            // Full border only while (mostly) floating; attached state uses attachedOutline.
+            border.width: (!Theme.isDark && root.expandProgress < 0.5) ? 1 : 0
             clip: true
             z: 2
 
@@ -834,374 +910,88 @@ PanelWindow {
                 anchors.fill: parent
                 anchors.leftMargin: Theme.qsPadding
                 anchors.rightMargin: Theme.qsPadding
-                anchors.topMargin: 10
-                anchors.bottomMargin: 12
+                anchors.topMargin: root.contentTopMargin
+                anchors.bottomMargin: root.contentBottomMargin
                 opacity: Math.max(0, (root.expandProgress - 0.2) / 0.8)
                 visible: opacity > 0.01
 
-                // ═════════════════════════════════════════════════════════════
-                // VIEW A: MAIN CONTROLS (Header, Tiles, Sliders)
-                // ═════════════════════════════════════════════════════════════
-                ColumnLayout {
+                MouseArea {
                     anchors.fill: parent
-                    spacing: Theme.qsSpacing
-                    visible: root.currentView === "main"
-
-                    // ── Rich Header: Clock + Date + Session Actions ──
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Math.max(52, headerTimeCol.implicitHeight)
-
-                        Timer {
-                            id: clockTimer
-                            interval: 30000
-                            repeat: true
-                            running: root.isExpanded
-                            triggeredOnStart: true
-                            onTriggered: {
-                                const now = new Date();
-                                headerTimeText.text = Qt.formatDateTime(now, "hh:mm");
-                                if (I18n.isRTL) {
-                                    const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-                                    const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
-                                    headerDayText.text = days[now.getDay()] + "، " + now.getDate() + " " + months[now.getMonth()];
-                                } else {
-                                    headerDayText.text = Qt.formatDateTime(now, "dddd, MMMM d");
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onWheel: (wheel) => {
-                                if (wheel.angleDelta.y > 0) {
-                                    wheel.accepted = true;
-                                    ShellState.closeQuickSettingsCapsule();
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            anchors.fill: parent
-                            LayoutMirroring.enabled: I18n.isRTL
-                            LayoutMirroring.childrenInherit: true
-
-                            // Start: Time & Date stack
-                            ColumnLayout {
-                                id: headerTimeCol
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignVCenter
-                                spacing: 1
-
-                                Text {
-                                    id: headerTimeText
-                                    text: Qt.formatDateTime(new Date(), "hh:mm")
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(20)
-                                    font.weight: Font.Bold
-                                    color: Theme.notchText
-                                    renderType: Theme.renderType
-                                    lineHeight: 1.0
-                                }
-
-                                Text {
-                                    id: headerDayText
-                                    text: Qt.formatDateTime(new Date(), I18n.isRTL ? "dddd, d MMMM" : "dddd, MMMM d")
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.Normal
-                                    color: Theme.notchTextTertiary
-                                    renderType: Theme.renderType
-                                }
-                            }
-
-                            // End: Battery + Lock + Settings + Power
-                            RowLayout {
-                                spacing: Theme.qsSpacing
-                                Layout.alignment: Qt.AlignVCenter
-
-                                // Battery indicator (laptop)
-                                RowLayout {
-                                    visible: SystemMonitor.hasBattery
-                                    spacing: 4
-                                    Layout.alignment: Qt.AlignVCenter
-
-                                    SymbolicIcon {
-                                        iconSize: 14
-                                        source: {
-                                            const p = SystemMonitor.batteryPercent;
-                                            if (SystemMonitor.batteryStatusText === "Charging") return "battery-good-charging-symbolic";
-                                            if (p <= 10) return "battery-empty-symbolic";
-                                            if (p <= 25) return "battery-low-symbolic";
-                                            if (p <= 60) return "battery-good-symbolic";
-                                            return "battery-full-symbolic";
-                                        }
-                                        iconColor: {
-                                            if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
-                                            if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
-                                            return Theme.notchTextSecondary;
-                                        }
-                                    }
-
-                                    Text {
-                                        text: SystemMonitor.batteryPercent + "%"
-                                        font.family: Theme.typography.fontFamily
-                                        font.pixelSize: Theme.fontSize(11)
-                                        font.weight: Font.Medium
-                                        color: {
-                                            if (SystemMonitor.batteryStatusText === "Charging") return Theme.colors.success;
-                                            if (SystemMonitor.batteryPercent <= 20) return Theme.colors.danger;
-                                            return Theme.notchTextSecondary;
-                                        }
-                                        renderType: Theme.renderType
-                                    }
-                                }
-
-                                // Lock Screen button (36px)
-                                QSRoundButton {
-                                    buttonSize: Theme.qsRoundButtonSize
-                                    iconSize: 16
-                                    icon: "lock-symbolic"
-                                    normalColor: Theme.qsTileBackground
-                                    hoverColor: Theme.qsTileBackgroundHover
-                                    textColor: Theme.notchTextSecondary
-                                    hoverTextColor: Theme.notchText
-                                    onClicked: {
-                                        ShellState.closeQuickSettingsCapsule();
-                                        ShellState.lockScreenActive = true;
-                                    }
-                                }
-
-                                // Settings button (36px)
-                                QSRoundButton {
-                                    buttonSize: Theme.qsRoundButtonSize
-                                    iconSize: 16
-                                    icon: "settings-symbolic"
-                                    normalColor: Theme.qsTileBackground
-                                    hoverColor: Theme.qsTileBackgroundHover
-                                    textColor: Theme.notchTextSecondary
-                                    hoverTextColor: Theme.notchText
-                                    onClicked: {
-                                        ShellState.closeQuickSettingsCapsule();
-                                        ShellState.openSettingsApp();
-                                    }
-                                }
-
-                                // Power / Session Menu button (36px)
-                                QSRoundButton {
-                                    buttonSize: Theme.qsRoundButtonSize
-                                    iconSize: 16
-                                    icon: "system-shutdown-symbolic"
-                                    normalColor: Theme.qsTileBackground
-                                    hoverColor: Theme.qsTileBackgroundHover
-                                    textColor: Theme.notchTextSecondary
-                                    hoverTextColor: Theme.colors.danger
-                                    onClicked: {
-                                        ShellState.closeQuickSettingsCapsule();
-                                        ShellState.openSessionMenu();
-                                    }
-                                }
-                            }
+                    enabled: root.isExpanded
+                    acceptedButtons: Qt.NoButton
+                    onWheel: (wheel) => {
+                        wheel.accepted = true;
+                        if (wheel.angleDelta.y < 0) {
+                            ShellState.openQuickSettingsCapsule("main");
+                        } else if (wheel.angleDelta.y > 0) {
+                            ShellState.closeQuickSettingsCapsule();
                         }
                     }
+                }
 
-                    // ── Row 1: Wi-Fi Card + Bluetooth Card + Dark/Light Theme Button ──
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Theme.qsTileHeight
-                        spacing: Theme.qsSpacing
-                        LayoutMirroring.enabled: I18n.isRTL
-                        LayoutMirroring.childrenInherit: true
+                // ═════════════════════════════════════════════════════════════
+                // PAGE VIEWPORT — main + detail pages slide horizontally (RTL-aware)
+                // ═════════════════════════════════════════════════════════════
+                Item {
+                    id: pageViewport
+                    anchors.fill: parent
+                    clip: true
 
-                        QSToggleTile {
-                            title: "Wi-Fi"
-                            subtitle: !root.wifiAvailable
-                                      ? (I18n.isRTL ? "غير متوفر" : "Unavailable")
-                                      : (!root.wifiEnabled
-                                         ? (I18n.isRTL ? "معطل" : "Off")
-                                         : (root.wifiSsid.length > 0 ? root.wifiSsid : (I18n.isRTL ? "غير متصل" : "Disconnected")))
-                            icon: "network-wireless-symbolic"
-                            active: root.wifiAvailable && root.wifiEnabled
-                            connected: root.wifiEnabled && root.wifiSsid.length > 0
-                            toggleEnabled: root.wifiAvailable
-                            hasChevron: root.wifiAvailable
-                            onClicked: {
-                                if (root.wifiAvailable) {
-                                    ShellState.quickSettingsCapsuleView = "wifi";
-                                    root.rescanWifi();
-                                }
-                            }
-                            onToggleClicked: if (root.wifiAvailable) root.toggleWifi()
-                        }
-
-                        QSToggleTile {
-                            title: "Bluetooth"
-                            subtitle: !root.bluetoothEnabled
-                                      ? (I18n.isRTL ? "معطل" : "Off")
-                                      : (root.bluetoothConnectedDevice.length > 0
-                                         ? root.bluetoothConnectedDevice
-                                         : (I18n.isRTL ? "لا يوجد جهاز" : "On"))
-                            icon: root.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
-                            active: root.bluetoothEnabled
-                            connected: root.bluetoothConnectedDevice.length > 0
-                            hasChevron: true
-                            onClicked: {
-                                ShellState.quickSettingsCapsuleView = "bluetooth";
-                                root.refreshBluetooth();
-                            }
-                            onToggleClicked: root.toggleBluetooth()
-                        }
-
-                        // Dark / Light Theme Mode Toggle Button (36px)
-                        QSRoundButton {
-                            buttonSize: Theme.qsRoundButtonSize
-                            iconSize: 18
-                            icon: ConfigManager.themeMode === "dark" ? "weather-sunny-symbolic" : "weather-moon-symbolic"
-                            active: ConfigManager.themeMode === "light"
-                            activeColor: Theme.qsTileActive
-                            activeIconColor: Theme.qsTileIconActive
-                            normalColor: Theme.qsTileBackground
-                            hoverColor: Theme.qsTileBackgroundHover
-                            textColor: Theme.notchText
-                            onClicked: ConfigManager.setThemeMode(ConfigManager.themeMode === "dark" ? "light" : "dark")
-                        }
+                    component PageSlot: Item {
+                        property string view: ""
+                        readonly property bool current: root.currentView === view
+                        readonly property bool isMain: view === "main"
+                        width: pageViewport.width
+                        height: isMain ? implicitHeight : root.detailPageHeight
+                        enabled: current
+                        opacity: current ? 1 : 0
+                        visible: opacity > 0.01
+                        // Main exits toward the reading start; details enter from the reading end.
+                        x: current ? 0 : (isMain ? -root.slideSign : root.slideSign) * 36
+                        Behavior on x { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
+                        Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
                     }
 
-                    // ── Row 2: Focus Card + Hotspot Card + Night Light Button ──
-                    RowLayout {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: Theme.qsTileHeight
-                        spacing: Theme.qsSpacing
-                        LayoutMirroring.enabled: I18n.isRTL
-                        LayoutMirroring.childrenInherit: true
-
-                        QSToggleTile {
-                            title: I18n.isRTL ? "عدم الإزعاج" : "Focus"
-                            subtitle: ConfigManager.notificationsDnd
-                                      ? (I18n.isRTL ? "مفعّل" : "On")
-                                      : (I18n.isRTL ? "معطل" : "Off")
-                            icon: "focus-symbolic"
-                            active: ConfigManager.notificationsDnd
-                            connected: ConfigManager.notificationsDnd
-                            hasChevron: false
-                            onClicked: ConfigManager.setNotificationsDnd(!ConfigManager.notificationsDnd)
-                            onToggleClicked: ConfigManager.setNotificationsDnd(!ConfigManager.notificationsDnd)
-                        }
-
-                        QSToggleTile {
-                            title: I18n.isRTL ? "نقطة اتصال" : "Hotspot"
-                            subtitle: !root.hotspotAvailable
-                                      ? (I18n.isRTL ? "غير متوفرة" : "Unavailable")
-                                      : (root.hotspotEnabled
-                                         ? (root.hotspotClients.length > 0
-                                            ? (root.hotspotClients.length + (I18n.isRTL ? " متصل" : " connected"))
-                                            : (I18n.isRTL ? "مفعّلة" : "Active"))
-                                         : (I18n.isRTL ? "معطلة" : "Off"))
-                            icon: "network-wireless-hotspot-symbolic"
-                            active: root.hotspotEnabled
-                            connected: root.hotspotEnabled
-                            hasChevron: true
-                            toggleEnabled: root.hotspotAvailable && !NetworkService.hotspotActionRunning
-                            onClicked: {
-                                ShellState.quickSettingsCapsuleView = "hotspot";
-                            }
+                    PageSlot {
+                        view: "main"
+                        implicitHeight: mainPage.implicitHeight
+                        MainPage { id: mainPage; width: parent.width; qs: root }
+                    }
+                    PageSlot {
+                        view: "wifi"
+                        WifiPage { anchors.fill: parent; qs: root }
+                    }
+                    PageSlot {
+                        view: "bluetooth"
+                        BluetoothPage { anchors.fill: parent; qs: root }
+                    }
+                    PageSlot {
+                        view: "audio"
+                        AudioPage { anchors.fill: parent; qs: root }
+                    }
+                    PageSlot {
+                        view: "power"
+                        PowerPage { anchors.fill: parent; qs: root }
+                    }
+                    PageSlot {
+                        view: "hotspot"
+                        HotspotPage {
+                            anchors.fill: parent
+                            hotspotAvailable: root.hotspotAvailable
+                            hotspotEnabled: root.hotspotEnabled
+                            hotspotSsid: root.hotspotSsid
+                            hotspotPassword: root.hotspotPassword
+                            hotspotError: root.hotspotError
+                            hotspotSaveSuccess: root.hotspotSaveSuccess
+                            hotspotClients: root.hotspotClients
+                            actionRunning: NetworkService.hotspotActionRunning
+                            configureRunning: NetworkService.hotspotConfigureRunning
+                            onBackClicked: ShellState.quickSettingsCapsuleView = "main"
+                            onRefreshClicked: NetworkService.refresh()
                             onToggleClicked: root.toggleHotspot()
-                        }
-
-                        QSRoundButton {
-                            buttonSize: Theme.qsRoundButtonSize
-                            iconSize: 18
-                            icon: "night-light-symbolic"
-                            active: root.nightLightEnabled
-                            activeColor: Theme.qsTileActive
-                            activeIconColor: Theme.qsTileIconActive
-                            normalColor: Theme.qsTileBackground
-                            hoverColor: Theme.qsTileBackgroundHover
-                            textColor: Theme.notchText
-                            onClicked: root.toggleNightLight()
+                            onSaveClicked: (ssid, pwd) => root.configureHotspot(ssid, pwd)
                         }
                     }
-
-                    // ── Row 3: Sound Card (68px) ──
-                    QSSliderCard {
-                        title: I18n.isRTL ? "الصوت" : "Sound"
-                        icon: root.volumeIconName + "-symbolic"
-                        iconClickable: true
-                        isMuted: root.isMuted
-                        value: root.currentVolume
-                        hasSubpage: false
-                        onSliderMoved: (newVal) => root.setVolume(newVal)
-                        onIconClicked: root.toggleMute()
-                    }
-
-                    // ── Row 4: Display Card (68px) ──
-                    QSSliderCard {
-                        visible: root.brightnessBackend !== "none"
-                        title: I18n.isRTL ? "السطوع" : "Display"
-                        icon: "display-brightness-symbolic"
-                        value: root.screenBrightness
-                        hasSubpage: false
-                        onSliderMoved: (newVal) => root.setBrightness(newVal)
-                        onSliderReleased: {
-                            if (root.brightnessBackend === "ddc")
-                                root.applyDdcBrightness();
-                        }
-                    }
-
-                    Item { Layout.fillHeight: true }
-                }
-
-                // ═════════════════════════════════════════════════════════════
-                // VIEW B: WI-FI NETWORKS LIST (Sub-view)
-                // ═════════════════════════════════════════════════════════════
-                WifiPage {
-                    anchors.fill: parent
-                    visible: root.currentView === "wifi"
-                    networks: root.wifiNetworks
-                    wifiAvailable: root.wifiAvailable
-                    wifiEnabled: root.wifiEnabled
-                    connectingSsid: root.connectingSsid
-                    networkError: root.networkError
-                    onBackClicked: ShellState.quickSettingsCapsuleView = "main"
-                    onRescanClicked: root.rescanWifi()
-                    onConnectClicked: (ssid, pwd) => root.connectWifi(ssid, pwd)
-                }
-
-                // ═════════════════════════════════════════════════════════════
-                // VIEW C: BLUETOOTH DEVICE LIST (Sub-view)
-                // ═════════════════════════════════════════════════════════════
-                BluetoothPage {
-                    anchors.fill: parent
-                    visible: root.currentView === "bluetooth"
-                    devices: root.bluetoothDevices
-                    bluetoothEnabled: root.bluetoothEnabled
-                    connectingBtAddress: root.connectingBtAddress
-                    bluetoothError: root.bluetoothError
-                    onBackClicked: ShellState.quickSettingsCapsuleView = "main"
-                    onRefreshClicked: root.refreshBluetooth()
-                    onConnectClicked: (addr) => root.connectBluetooth(addr)
-                    onDisconnectClicked: (addr) => root.disconnectBluetooth(addr)
-                }
-
-                // ═════════════════════════════════════════════════════════════
-                // VIEW D: HOTSPOT CONFIGURATION & CLIENTS (Sub-view)
-                // ═════════════════════════════════════════════════════════════
-                HotspotPage {
-                    anchors.fill: parent
-                    visible: root.currentView === "hotspot"
-                    hotspotAvailable: root.hotspotAvailable
-                    hotspotEnabled: root.hotspotEnabled
-                    hotspotSsid: root.hotspotSsid
-                    hotspotPassword: root.hotspotPassword
-                    hotspotError: root.hotspotError
-                    hotspotSaveSuccess: root.hotspotSaveSuccess
-                    hotspotClients: root.hotspotClients
-                    actionRunning: NetworkService.hotspotActionRunning
-                    configureRunning: NetworkService.hotspotConfigureRunning
-                    onBackClicked: ShellState.quickSettingsCapsuleView = "main"
-                    onRefreshClicked: NetworkService.refresh()
-                    onToggleClicked: root.toggleHotspot()
-                    onSaveClicked: (ssid, pwd) => root.configureHotspot(ssid, pwd)
                 }
             }
         }

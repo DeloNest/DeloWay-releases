@@ -158,6 +158,7 @@ def get_hotspot_status():
         "ssid": ssid,
         "password": password,
         "wifi_connected": wifi_connected,
+        "clients": get_hotspot_clients() if active else [],
         "error": "" if dev else ( "لا توجد واجهة واي فاي" )
     }
 
@@ -195,16 +196,151 @@ def hotspot_stop():
         "error": "" if success else (res.stderr.strip() or res.stdout.strip())
     }
 
+def hotspot_configure(ssid, password):
+    if not ssid or not ssid.strip():
+        return {"success": False, "enabled": is_hotspot_active(), "error": "SSID cannot be empty"}
+    ssid = ssid.strip()
+    if not password or len(password) < 8:
+        return {"success": False, "enabled": is_hotspot_active(), "error": "Password must be at least 8 characters"}
+    
+    dev = get_wifi_device()
+    active = is_hotspot_active()
+    
+    if hotspot_profile_exists():
+        res = subprocess.run([
+            "nmcli", "con", "modify", "Deloway-Hotspot",
+            "802-11-wireless.ssid", ssid,
+            "802-11-wireless-security.psk", password
+        ], capture_output=True, text=True, timeout=10)
+    else:
+        cmd = [
+            "nmcli", "con", "add",
+            "type", "wifi",
+            "con-name", "Deloway-Hotspot",
+            "autoconnect", "no",
+            "ssid", ssid,
+            "802-11-wireless.mode", "ap",
+            "802-11-wireless-security.key-mgmt", "wpa-psk",
+            "802-11-wireless-security.psk", password,
+            "ipv4.method", "shared",
+            "ipv6.method", "ignore"
+        ]
+        if dev:
+            cmd.extend(["ifname", dev])
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+
+    if res.returncode != 0:
+        return {
+            "success": False,
+            "enabled": is_hotspot_active(),
+            "error": res.stderr.strip() or res.stdout.strip()
+        }
+
+    if active:
+        subprocess.run(["nmcli", "con", "down", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+        up_res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+        if up_res.returncode != 0:
+            return {
+                "success": False,
+                "enabled": is_hotspot_active(),
+                "error": up_res.stderr.strip() or up_res.stdout.strip()
+            }
+
+    return {
+        "success": True,
+        "enabled": is_hotspot_active(),
+        "ssid": ssid,
+        "password": password,
+        "error": ""
+    }
+
+def get_hotspot_clients():
+    clients = []
+    dev = get_wifi_device()
+    if not dev:
+        return clients
+
+    stations = {}
+
+    # 1. Query station dump via iw
+    try:
+        iw_res = subprocess.run(["iw", "dev", dev, "station", "dump"], capture_output=True, text=True, timeout=2)
+        current_mac = None
+        for line in iw_res.stdout.splitlines():
+            line = line.strip()
+            if line.startswith("Station"):
+                parts = line.split()
+                if len(parts) >= 2:
+                    current_mac = parts[1].lower()
+                    stations[current_mac] = {"mac": current_mac, "ip": "", "hostname": "", "signal": ""}
+            elif current_mac and "signal:" in line:
+                sig = line.split("signal:")[1].strip().split()[0]
+                stations[current_mac]["signal"] = sig
+    except Exception:
+        pass
+
+    # 2. Query /proc/net/arp
+    try:
+        with open("/proc/net/arp", "r") as f:
+            for line in f.readlines()[1:]:
+                parts = line.split()
+                if len(parts) >= 6:
+                    ip, flags, mac, device = parts[0], parts[2], parts[3].lower(), parts[5]
+                    if device == dev and flags != "0x0" and mac != "00:00:00:00:00:00":
+                        if mac not in stations:
+                            stations[mac] = {"mac": mac, "ip": ip, "hostname": "", "signal": ""}
+                        else:
+                            stations[mac]["ip"] = ip
+    except Exception:
+        pass
+
+    # 3. Query ip neigh show dev <dev>
+    try:
+        neigh_res = subprocess.run(["ip", "neigh", "show", "dev", dev], capture_output=True, text=True, timeout=2)
+        for line in neigh_res.stdout.splitlines():
+            parts = line.strip().split()
+            if len(parts) >= 4 and "lladdr" in parts:
+                ip = parts[0]
+                idx = parts.index("lladdr")
+                if idx + 1 < len(parts):
+                    mac = parts[idx + 1].lower()
+                    if mac not in stations:
+                        stations[mac] = {"mac": mac, "ip": ip, "hostname": "", "signal": ""}
+                    elif not stations[mac].get("ip"):
+                        stations[mac]["ip"] = ip
+    except Exception:
+        pass
+
+    # 4. Resolve hostnames where possible
+    for mac, info in stations.items():
+        if info["ip"]:
+            try:
+                host = socket.gethostbyaddr(info["ip"])[0]
+                info["hostname"] = host
+            except Exception:
+                info["hostname"] = info["ip"]
+        else:
+            info["hostname"] = info["mac"]
+        clients.append(info)
+
+    return clients
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
     if cmd == "status":
         print(json.dumps(get_network_info()))
     elif cmd == "hotspot-status":
         print(json.dumps(get_hotspot_status()))
+    elif cmd == "hotspot-clients":
+        print(json.dumps(get_hotspot_clients()))
     elif cmd == "hotspot-start":
         print(json.dumps(hotspot_start()))
     elif cmd == "hotspot-stop":
         print(json.dumps(hotspot_stop()))
+    elif cmd == "hotspot-configure":
+        new_ssid = sys.argv[2] if len(sys.argv) > 2 else ""
+        new_pwd = sys.argv[3] if len(sys.argv) > 3 else ""
+        print(json.dumps(hotspot_configure(new_ssid, new_pwd)))
     elif cmd == "toggle-wifi":
         try:
             cur = subprocess.run(["nmcli", "radio", "wifi"], capture_output=True, text=True).stdout.strip()
@@ -227,8 +363,13 @@ def main():
         if pwd:
             c_cmd += ["password", pwd]
         try:
-            res = subprocess.run(c_cmd, capture_output=True, text=True, timeout=15)
-            print(json.dumps({"success": res.returncode == 0, "output": res.stdout + res.stderr}))
+            res = subprocess.run(c_cmd, capture_output=True, text=True, timeout=25)
+            out = (res.stdout + res.stderr).strip()
+            low = out.lower()
+            needs_pw = res.returncode != 0 and any(k in low for k in (
+                "secrets were required", "password", "psk", "802-1x", "no secrets", "802-11-wireless-security"))
+            err = out.splitlines()[-1].replace("Error: ", "") if (res.returncode != 0 and out) else ""
+            print(json.dumps({"success": res.returncode == 0, "needsPassword": needs_pw, "error": err, "output": out}))
         except Exception as e:
             print(json.dumps({"success": False, "error": str(e)}))
 

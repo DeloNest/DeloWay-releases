@@ -2,55 +2,77 @@ import QtQuick
 import QtQuick.Layouts
 import "../../theme"
 import "../../services"
+import "../timecapsule"
 
+// QSPageHeader — sub-page header: [back] Title ··· [action] [switch]
+// The back glyph points toward the reading start (→ in Arabic, ← in English).
+// API is backward compatible with the previous header (title/hasAction/actionText).
 RowLayout {
     id: root
 
     property string title: ""
+    property string subtitle: ""
     property bool hasAction: false
-    property string actionIcon: ""
-    property string actionText: ""
+    property string actionIcon: "view-refresh-symbolic"
+    property string actionText: ""          // legacy; ignored in favour of actionIcon
+    property bool actionBusy: false
+    property bool hasSwitch: false
+    property bool switchOn: false
 
     signal backClicked()
     signal actionClicked()
+    signal switchToggled(bool on)
 
     Layout.fillWidth: true
-    Layout.preferredHeight: 28
-    spacing: 6
+    spacing: 10
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
 
-    // Back Button
-    QSRoundButton {
-        buttonSize: 28
-        text: I18n.isRTL ? "›" : "‹"
-        iconSize: 16
-        normalColor: "transparent"
-        hoverColor: Theme.notchSurfaceHover
-        textColor: Theme.notchText
+    QSIconButton {
+        size: 30
+        iconName: I18n.isRTL ? "go-next-symbolic" : "go-previous-symbolic"
         onClicked: root.backClicked()
     }
 
-    // Title
-    Text {
-        text: root.title
-        font.family: Theme.typography.fontFamily
-        font.pixelSize: Theme.fontSize(12)
-        font.weight: Font.DemiBold
-        color: Theme.notchText
-        elide: Text.ElideRight
+    ColumnLayout {
         Layout.fillWidth: true
+        spacing: -2
+        Text {
+            Layout.fillWidth: true
+            text: root.title
+            horizontalAlignment: Text.AlignLeft
+            elide: Text.ElideRight
+            font.family: Theme.typography.fontFamily
+            font.pixelSize: Theme.fontSize(14)
+            font.weight: Font.Bold
+            color: Theme.notchText
+            renderType: Theme.renderType
+        }
+        Text {
+            Layout.fillWidth: true
+            visible: text.length > 0
+            text: NotificationManager.bidi(root.subtitle)
+            horizontalAlignment: Text.AlignLeft
+            elide: Text.ElideRight
+            font.family: Theme.typography.fontFamily
+            font.pixelSize: Theme.fontSize(10)
+            color: Theme.notchTextTertiary
+            renderType: Theme.renderType
+        }
     }
 
-    // Action Button
-    QSRoundButton {
+    QSIconButton {
         visible: root.hasAction
-        buttonSize: 28
-        icon: root.actionIcon
-        text: root.actionText
-        iconSize: 14
-        normalColor: "transparent"
-        hoverColor: Theme.notchSurfaceHover
-        textColor: Theme.notchTextSecondary
-        hoverTextColor: Theme.notchText
+        size: 30
+        iconName: root.actionIcon
+        spinning: root.actionBusy
         onClicked: root.actionClicked()
+    }
+
+    MonoSwitch {
+        visible: root.hasSwitch
+        Layout.alignment: Qt.AlignVCenter
+        checked: root.switchOn
+        onToggled: (on) => root.switchToggled(on)
     }
 }

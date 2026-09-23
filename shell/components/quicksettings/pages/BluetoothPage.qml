@@ -5,146 +5,143 @@ import "../../../theme"
 import "../../../services"
 import "../.."
 import ".."
+import "../../timecapsule"
 
+// BluetoothPage — paired devices first, then discoverable ones.
+// Row tap: connected → disconnect · paired → connect · new → pair.
 ColumnLayout {
     id: root
 
-    property var devices: []
-    property bool bluetoothEnabled: false
-    property string connectingBtAddress: ""
-    property string bluetoothError: ""
+    required property var qs
+    spacing: 10
 
-    signal backClicked()
-    signal refreshClicked()
-    signal connectClicked(string address)
-    signal disconnectClicked(string address)
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
+    function t(ar, en) { return I18n.isRTL ? ar : en; }
 
-    spacing: 8
-
-    // Header: Back button + Title + Refresh button
-    QSPageHeader {
-        title: I18n.isRTL ? "أجهزة Bluetooth" : "Bluetooth Devices"
-        hasAction: true
-        actionText: "⟳"
-        onBackClicked: root.backClicked()
-        onActionClicked: root.refreshClicked()
+    function activate(d) {
+        if (d.connected) BluetoothService.disconnectDevice(d.address);
+        else if (d.paired) BluetoothService.connectDevice(d.address);
+        else BluetoothService.pairDevice(d.address);
     }
 
-    // Available Bluetooth Devices List
-    ListView {
-        id: btListView
+    QSPageHeader {
+        title: root.t("بلوتوث", "Bluetooth")
+        subtitle: !BluetoothService.powered ? root.t("متوقف", "Off")
+                  : (BluetoothService.connectedDeviceName ? root.t("متصل بـ ", "Connected to ") + BluetoothService.connectedDeviceName
+                     : root.t("مشغّل", "On"))
+        hasAction: BluetoothService.powered
+        actionBusy: BluetoothService.isScanning
+        hasSwitch: BluetoothService.available
+        switchOn: BluetoothService.powered
+        onBackClicked: ShellState.quickSettingsCapsuleView = "main"
+        onActionClicked: BluetoothService.scan()
+        onSwitchToggled: root.qs.toggleBluetooth()
+    }
+
+    Flickable {
+        id: flick
         Layout.fillWidth: true
         Layout.fillHeight: true
         clip: true
-        spacing: 4
-        model: root.devices
-
+        contentHeight: col.implicitHeight
         boundsBehavior: Flickable.StopAtBounds
-
+        visible: BluetoothService.powered
         ScrollBar.vertical: ScrollBar {
-            policy: btListView.contentHeight > btListView.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+            policy: flick.contentHeight > flick.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
             width: 4
-            contentItem: Rectangle {
-                radius: 2
-                color: Theme.notchBorderHighlight
-            }
+            contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
         }
 
-        delegate: Rectangle {
-            id: btItem
-            required property var modelData
-            required property int index
+        ColumnLayout {
+            id: col
+            width: flick.width - (flick.contentHeight > flick.height ? 8 : 0)
+            spacing: 2
 
-            readonly property bool isCurrent: btItem.modelData && btItem.modelData.connected
-            readonly property bool isConnecting: root.connectingBtAddress.length > 0 && btItem.modelData && root.connectingBtAddress === btItem.modelData.address
-            readonly property bool isPaired: btItem.modelData && btItem.modelData.paired
-
-            width: btListView.width - (btListView.contentHeight > btListView.height ? 6 : 0)
-            implicitHeight: 34
-            radius: Theme.notchRadiusPill
-            color: isCurrent
-                   ? Theme.notchSurfaceActive
-                   : (btItemMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-
-            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                spacing: 8
-
-                SymbolicIcon {
-                    source: btItem.modelData && btItem.modelData.icon ? btItem.modelData.icon : "bluetooth-active-symbolic"
-                    iconSize: 14
-                    iconColor: btItem.isCurrent ? Theme.notchText : Theme.notchTextSecondary
-                }
-
-                Text {
-                    text: btItem.modelData && btItem.modelData.name ? btItem.modelData.name : ""
-                    font.family: Theme.typography.fontFamily
-                    font.pixelSize: Theme.fontSize(11)
-                    font.weight: btItem.isCurrent ? Font.DemiBold : Font.Normal
-                    color: Theme.notchText
-                    elide: Text.ElideRight
+            Repeater {
+                model: [
+                    { key: "paired", label: root.t("الأجهزة المقترنة", "Paired devices"), items: BluetoothService.pairedDevices },
+                    { key: "avail",  label: root.t("أجهزة قريبة", "Nearby devices"),     items: BluetoothService.availableDevices }
+                ]
+                delegate: ColumnLayout {
+                    required property var modelData
                     Layout.fillWidth: true
-                }
+                    spacing: 2
+                    visible: modelData.items.length > 0
 
-                Text {
-                    text: btItem.isConnecting
-                          ? (I18n.isRTL ? "جارٍ الاتصال..." : "Connecting...")
-                          : (btItem.isCurrent
-                             ? "✓"
-                             : (btItem.isPaired
-                                ? (I18n.isRTL ? "مقترن" : "Paired")
-                                : (I18n.isRTL ? "يحتاج اقتران من الإعدادات" : "Pair in Settings")))
-                    font.family: Theme.typography.fontFamily
-                    font.pixelSize: Theme.fontSize(10)
-                    color: btItem.isCurrent ? Theme.notchText : Theme.notchTextTertiary
-                }
-            }
+                    Text {
+                        Layout.fillWidth: true
+                        Layout.topMargin: 6
+                        Layout.bottomMargin: 2
+                        Layout.leftMargin: 10
+                        text: parent.modelData.label
+                        horizontalAlignment: Text.AlignLeft
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(10)
+                        font.weight: Font.DemiBold
+                        color: Theme.notchTextTertiary
+                        renderType: Theme.renderType
+                    }
 
-            MouseArea {
-                id: btItemMa
-                anchors.fill: parent
-                cursorShape: btItem.isPaired ? Qt.PointingHandCursor : Qt.ArrowCursor
-                hoverEnabled: true
-                onClicked: {
-                    if (!btItem.modelData) return;
-                    if (btItem.modelData.connected) {
-                        root.disconnectClicked(btItem.modelData.address);
-                    } else if (btItem.modelData.paired) {
-                        root.connectClicked(btItem.modelData.address);
+                    Repeater {
+                        model: parent.modelData.items
+                        delegate: QSRow {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            iconName: modelData.icon || "bluetooth-active-symbolic"
+                            title: modelData.name || modelData.address
+                            subtitle: BluetoothService.connectingAddress === modelData.address ? root.t("جارٍ الاتصال…", "Connecting…")
+                                      : (modelData.connected ? root.t("متصل · اضغط لقطع الاتصال", "Connected · tap to disconnect")
+                                         : (modelData.paired ? root.t("مقترن", "Paired") : root.t("اضغط للاقتران", "Tap to pair")))
+                            selected: modelData.connected
+                            busy: BluetoothService.connectingAddress === modelData.address
+                            onClicked: root.activate(modelData)
+                        }
                     }
                 }
             }
         }
+    }
 
-        // Empty State if bluetooth off or no devices
-        ColumnLayout {
+    Item {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        visible: !BluetoothService.powered || (BluetoothService.pairedDevices.length + BluetoothService.availableDevices.length === 0)
+        Column {
             anchors.centerIn: parent
-            spacing: 6
-            visible: !root.bluetoothEnabled || root.devices.length === 0
-
+            spacing: 8
             SymbolicIcon {
-                Layout.alignment: Qt.AlignHCenter
-                visible: root.bluetoothError.length > 0
-                source: "dialog-warning-symbolic"
-                iconSize: 18
+                anchors.horizontalCenter: parent.horizontalCenter
+                iconSize: 26
+                source: BluetoothService.powered ? "bluetooth-active-symbolic" : "bluetooth-disabled-symbolic"
                 iconColor: Theme.notchTextTertiary
             }
-
             Text {
-                Layout.alignment: Qt.AlignHCenter
-                text: root.bluetoothError.length > 0
-                      ? root.bluetoothError
-                      : (!root.bluetoothEnabled
-                         ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is disabled")
-                         : (I18n.isRTL ? "لا توجد أجهزة مقترنة" : "No paired devices"))
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: !BluetoothService.powered ? root.t("البلوتوث متوقف", "Bluetooth is off")
+                      : (BluetoothService.isScanning ? root.t("جارٍ البحث…", "Searching…") : root.t("لا توجد أجهزة · اضغط بحث", "No devices · tap scan"))
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                color: Theme.notchTextTertiary
+                font.pixelSize: Theme.fontSize(12)
+                color: Theme.notchTextSecondary
+                renderType: Theme.renderType
             }
+        }
+    }
+
+    RowLayout {
+        visible: BluetoothService.error.length > 0
+        Layout.fillWidth: true
+        spacing: 8
+        StatusDot { level: 2; Layout.alignment: Qt.AlignVCenter }
+        Text {
+            Layout.fillWidth: true
+            text: NotificationManager.bidi(BluetoothService.error)
+            horizontalAlignment: Text.AlignLeft
+            elide: Text.ElideRight
+            font.family: Theme.typography.fontFamily
+            font.pixelSize: Theme.fontSize(10)
+            color: Theme.notchTextSecondary
+            renderType: Theme.renderType
         }
     }
 }
