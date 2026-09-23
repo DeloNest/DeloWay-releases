@@ -42,6 +42,36 @@ def write_managed_file(path: Path, content: str, dry_run: bool = False) -> None:
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
 
+
+def available_arabic_locale():
+    """Return an installed Arabic UTF-8 locale name (e.g. ar_SA.UTF-8) or None.
+
+    Setting LANG to a locale that is NOT generated makes glibc fall back to "C",
+    and in the C locale gettext ignores LANGUAGE — apps then lose their Arabic
+    translations and, with them, their RTL layout. So only use one that exists.
+    """
+    try:
+        out = subprocess.run(["locale", "-a"], capture_output=True, text=True, timeout=3).stdout.split()
+    except Exception:
+        return None
+    norm = {l.lower().replace("utf8", "utf-8"): l for l in out}
+    for cand in ("ar_sa.utf-8", "ar_ae.utf-8", "ar_eg.utf-8"):
+        if cand in norm:
+            return cand.split(".")[0][:3] + cand.split(".")[0][3:].upper() + ".UTF-8"
+    for k in norm:
+        if k.startswith("ar_") and k.endswith(".utf-8"):
+            base = k.split(".")[0]
+            return base[:3] + base[3:].upper() + ".UTF-8"
+    return None
+
+
+def main_locale_for(lang: str) -> str:
+    """LANG for the requested UI language. Arabic UI works through LANGUAGE=ar:en
+    (translations → RTL) even when LANG stays en_US.UTF-8."""
+    if lang == "ar":
+        return available_arabic_locale() or "en_US.UTF-8"
+    return "en_US.UTF-8"
+
 def apply_environment_d(lang: str, dry_run: bool = False) -> None:
     env_dir = Path.home() / ".config" / "environment.d"
     target_file = env_dir / "90-deloway-locale.conf"
@@ -49,7 +79,7 @@ def apply_environment_d(lang: str, dry_run: bool = False) -> None:
     if lang == "ar":
         content = (
             MANAGED_HEADER
-            + "LANG=ar_SA.UTF-8\n"
+            + f"LANG={main_locale_for('ar')}\n"
             + "LANGUAGE=ar:en\n"
             + "LC_NUMERIC=en_US.UTF-8\n"
             + "LC_TIME=en_US.UTF-8\n"
@@ -156,7 +186,7 @@ def apply_flatpak(lang: str, dry_run: bool = False) -> None:
 
 def update_running_session(lang: str, dry_run: bool = False) -> None:
     lang_val = "ar:en" if lang == "ar" else "en_US:en"
-    main_lang = "ar_SA.UTF-8" if lang == "ar" else "en_US.UTF-8"
+    main_lang = main_locale_for(lang)
 
     log(f"Updating running session: LANG={main_lang}, LANGUAGE={lang_val}")
     if not dry_run:

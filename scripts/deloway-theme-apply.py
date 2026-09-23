@@ -692,6 +692,54 @@ def reload_thunar_safely():
         print(f"[deloway-theme] Note on Thunar reload: {e}", file=sys.stderr)
 
 
+def configure_thunar_defaults(dry_run: bool = False):
+    """Ensure Thunar menubar is hidden permanently and toolbar hamburger menu is enabled."""
+    try:
+        # 1. Hide menubar permanently
+        if dry_run:
+            print("[dry-run] xfconf-query -c thunar -p /last-menubar-visible -t bool -s false --create")
+        else:
+            subprocess.run(
+                ["xfconf-query", "-c", "thunar", "-p", "/last-menubar-visible", "-t", "bool", "-s", "false", "--create"],
+                capture_output=True,
+                check=False
+            )
+
+        # 2. Enable hamburger menu button in toolbar (menu:0 -> menu:1)
+        proc = subprocess.run(
+            ["xfconf-query", "-c", "thunar", "-p", "/last-toolbar-items"],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if proc.returncode == 0:
+            current_items = proc.stdout.strip()
+            if "menu:0" in current_items:
+                new_items = current_items.replace("menu:0", "menu:1", 1)
+                if dry_run:
+                    print(f"[dry-run] xfconf-query -c thunar -p /last-toolbar-items -s '{new_items}'")
+                else:
+                    subprocess.run(
+                        ["xfconf-query", "-c", "thunar", "-p", "/last-toolbar-items", "-s", new_items],
+                        capture_output=True,
+                        check=False
+                    )
+                    print("[deloway-theme] Enabled Thunar toolbar hamburger menu.")
+            elif "menu:1" not in current_items:
+                new_items = f"menu:1,{current_items}"
+                if dry_run:
+                    print(f"[dry-run] xfconf-query -c thunar -p /last-toolbar-items -s '{new_items}'")
+                else:
+                    subprocess.run(
+                        ["xfconf-query", "-c", "thunar", "-p", "/last-toolbar-items", "-s", new_items],
+                        capture_output=True,
+                        check=False
+                    )
+                    print("[deloway-theme] Prepended Thunar toolbar hamburger menu.")
+    except Exception as e:
+        print(f"[deloway-theme] Note configuring Thunar defaults: {e}", file=sys.stderr)
+
+
 def get_font_name_with_scale(scale: float, base_font_descriptor: str) -> str:
     """Compute font string reflecting scale factor (0.85, 1.0, 1.15)."""
     base_size = 11
@@ -716,7 +764,8 @@ def get_font_name_with_scale(scale: float, base_font_descriptor: str) -> str:
 
 def sync_system_language(ui_lang: str, dry_run: bool = False):
     """Sync session language environment (Hyprland, D-Bus, systemd) with DeloWay UI language."""
-    lang_val = "ar" if ui_lang == "ar" else "en_US:en"
+    # Same value as deloway-locale-apply.py (keeps an English fallback for untranslated strings)
+    lang_val = "ar:en" if ui_lang == "ar" else "en_US:en"
     if dry_run:
         print(f"[deloway-theme] [DRY RUN] Would set LANGUAGE={lang_val}")
         return
@@ -745,22 +794,245 @@ def sync_system_language(ui_lang: str, dry_run: bool = False):
         print(f"[deloway-theme] Note writing environment.d: {e}", file=sys.stderr)
 
 
+# =============================================================================
+# DeloWay unified toolkit theming (live dark/light switching)
+# =============================================================================
+#  GTK4 / libadwaita : ONE ~/.config/gtk-4.0/gtk.css holding BOTH palettes; dark lives
+#                      under @media (prefers-color-scheme: dark), so running apps flip
+#                      the instant the portal announces the new colour scheme.
+#  GTK3              : two real themes (DeloWay-Dark / DeloWay-Light) = adw-gtk3 + our
+#                      overrides. Switching gsettings gtk-theme reloads running apps.
+#  Qt5 / Qt6         : QT_QPA_PLATFORMTHEME=gtk3 → Qt takes palette + fonts from the
+#                      active DeloWay GTK theme (Qt6 follows changes live).
+#  Fonts             : gsettings (interface/document/monospace) + a managed fontconfig
+#                      file (rendering quality, Cairo for Arabic text).
+# Strict monochrome: every "accent" slot is the neutral high-contrast colour.
+
+DELOWAY_THEME_NAMES = {"dark": "DeloWay-Dark", "light": "DeloWay-Light"}
+
+PALETTES = {
+    "dark": {
+        "window_bg": "#000000", "window_fg": "#ffffff",
+        "view_bg": "#000000", "view_fg": "#ffffff",
+        "headerbar_bg": "#0a0a0a", "headerbar_fg": "#ffffff", "headerbar_border": "#222222",
+        "sidebar_bg": "#0a0a0a", "sidebar_fg": "#ffffff", "sidebar_border": "#1a1a1a",
+        "card_bg": "#111111", "card_fg": "#ffffff",
+        "dialog_bg": "#0a0a0a", "popover_bg": "#111111",
+        "border": "#222222", "shade": "rgba(0, 0, 0, 0.36)",
+        "accent_bg": "#ffffff", "accent_fg": "#000000", "accent": "#ffffff",
+        "destructive": "#ef4444", "warning": "#f59e0b", "success": "#10b981",
+    },
+    "light": {
+        "window_bg": "#ffffff", "window_fg": "#0f172a",
+        "view_bg": "#ffffff", "view_fg": "#0f172a",
+        "headerbar_bg": "#f8fafc", "headerbar_fg": "#0f172a", "headerbar_border": "#e2e8f0",
+        "sidebar_bg": "#f8fafc", "sidebar_fg": "#0f172a", "sidebar_border": "#e2e8f0",
+        "card_bg": "#ffffff", "card_fg": "#0f172a",
+        "dialog_bg": "#ffffff", "popover_bg": "#ffffff",
+        "border": "#d5dbe6", "shade": "rgba(0, 0, 0, 0.07)",
+        "accent_bg": "#0f172a", "accent_fg": "#ffffff", "accent": "#0f172a",
+        "destructive": "#dc2626", "warning": "#d97706", "success": "#059669",
+    },
+}
+
+
+def radius_tokens(element_radius: float) -> dict:
+    """Mirror Theme.qml: 8px setting = 1.0; 4px ≈ sharp; 14px = rounded."""
+    f = max(0.5, min(1.6, 1 + (element_radius - 8) / 12))
+    return {"small": round(6 * f), "medium": round(10 * f), "large": round(14 * f)}
+
+
+def _adw_vars(pal: dict) -> str:
+    v = {
+        "window-bg-color": pal["window_bg"], "window-fg-color": pal["window_fg"],
+        "view-bg-color": pal["view_bg"], "view-fg-color": pal["view_fg"],
+        "headerbar-bg-color": pal["headerbar_bg"], "headerbar-fg-color": pal["headerbar_fg"],
+        "headerbar-border-color": pal["headerbar_border"], "headerbar-backdrop-color": pal["window_bg"],
+        "headerbar-shade-color": pal["shade"],
+        "sidebar-bg-color": pal["sidebar_bg"], "sidebar-fg-color": pal["sidebar_fg"],
+        "sidebar-backdrop-color": pal["sidebar_bg"], "sidebar-border-color": pal["sidebar_border"],
+        "sidebar-shade-color": pal["shade"],
+        "secondary-sidebar-bg-color": pal["sidebar_bg"], "secondary-sidebar-fg-color": pal["sidebar_fg"],
+        "secondary-sidebar-backdrop-color": pal["sidebar_bg"], "secondary-sidebar-border-color": pal["sidebar_border"],
+        "card-bg-color": pal["card_bg"], "card-fg-color": pal["card_fg"], "card-shade-color": pal["shade"],
+        "dialog-bg-color": pal["dialog_bg"], "dialog-fg-color": pal["window_fg"],
+        "popover-bg-color": pal["popover_bg"], "popover-fg-color": pal["window_fg"], "popover-shade-color": pal["shade"],
+        "thumbnail-bg-color": pal["card_bg"], "thumbnail-fg-color": pal["window_fg"],
+        "shade-color": pal["shade"], "border-color": pal["border"],
+        "accent-bg-color": pal["accent_bg"], "accent-fg-color": pal["accent_fg"], "accent-color": pal["accent"],
+        "destructive-bg-color": pal["destructive"], "destructive-fg-color": "#ffffff", "destructive-color": pal["destructive"],
+        "error-bg-color": pal["destructive"], "error-fg-color": "#ffffff", "error-color": pal["destructive"],
+        "warning-bg-color": pal["warning"], "warning-fg-color": "rgba(0, 0, 0, 0.8)", "warning-color": pal["warning"],
+        "success-bg-color": pal["success"], "success-fg-color": "#ffffff", "success-color": pal["success"],
+    }
+    return "\n".join(f"    --{k}: {val};" for k, val in v.items())
+
+
+def build_gtk4_css(radius: dict) -> str:
+    """Mode-agnostic libadwaita stylesheet: light by default, dark via media query."""
+    r = radius
+    return f"""/* ========================================================================== */
+/* DeloWay GTK4 / libadwaita stylesheet — generated by deloway-theme-apply.py  */
+/* Both palettes live here; the active one follows the portal colour scheme,   */
+/* so running apps switch instantly with the shell (no restart).               */
+/* Strict monochrome: accent = neutral high contrast. Do not edit by hand.     */
+/* ========================================================================== */
+
+:root {{
+{_adw_vars(PALETTES["light"])}
+}}
+
+@media (prefers-color-scheme: dark) {{
+    :root {{
+{_adw_vars(PALETTES["dark"]).replace("    --", "        --")}
+    }}
+}}
+
+/* --- Shape language (Settings → Appearance → Shell Corner Radius) --- */
+button, entry, spinbutton, dropdown > button, combobox > box > button,
+switch, .linked > button, searchbar entry {{ border-radius: {r["small"]}px; }}
+switch > slider {{ border-radius: {max(r["small"] - 2, 2)}px; }}
+.card, list.boxed-list, .boxed-list, row.expander, preferencesgroup .boxed-list,
+listview.card, .navigation-sidebar > row, popover > contents,
+popover.menu > contents, toast, .osd {{ border-radius: {r["medium"]}px; }}
+window.dialog, dialog-host > dialog > sheet, .dialog-sheet, window.messagedialog,
+floating-sheet > sheet, bottom-sheet > sheet {{ border-radius: {r["large"]}px; }}
+
+/* Selection + focus in neutral contrast (never a hue) */
+selection, *:selected {{ background-color: alpha(currentColor, 0.18); }}
+*:focus-visible {{ outline-color: alpha(currentColor, 0.55); }}
+"""
+
+
+def build_gtk3_theme(mode: str, radius: dict, base_theme_dir: Path) -> str:
+    """GTK3 theme CSS: adw-gtk3 variant + DeloWay monochrome overrides + shape tokens."""
+    r = radius
+    return (f'@import url("file://{base_theme_dir}/gtk-3.0/gtk.css");\n\n'
+            + build_gtk_css(mode)
+            + f"""
+/* --- Shape language (Settings → Appearance → Shell Corner Radius) --- */
+button, entry, spinbutton, combobox button, .linked > button {{ border-radius: {r["small"]}px; }}
+.linked > button:not(:first-child):not(:last-child) {{ border-radius: 0; }}
+popover, popover.background, menu, .menu, .context-menu, tooltip.background {{ border-radius: {r["medium"]}px; }}
+window.csd.dialog, messagedialog.csd {{ border-radius: {r["large"]}px; }}
+""")
+
+
+def write_gtk3_themes(radius: dict, dry_run: bool = False):
+    """Install ~/.local/share/themes/DeloWay-{Dark,Light} (index.theme + gtk-3.0)."""
+    themes_root = Path.home() / ".local" / "share" / "themes"
+    for mode, name in DELOWAY_THEME_NAMES.items():
+        base = Path("/usr/share/themes") / ("adw-gtk3-dark" if mode == "dark" else "adw-gtk3")
+        if not base.exists():
+            base = Path("/usr/share/themes") / ("Adwaita-dark" if mode == "dark" else "Adwaita")
+        tdir = themes_root / name
+        index = (f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={name}\n"
+                 f"Comment=DeloWay strict monochrome ({mode}) on top of {base.name}\n"
+                 f"Encoding=UTF-8\n\n[X-GNOME-Metatheme]\nGtkTheme={name}\n")
+        if not dry_run:
+            (tdir / "gtk-3.0").mkdir(parents=True, exist_ok=True)
+        atomic_write_if_changed(tdir / "index.theme", index, dry_run=dry_run)
+        atomic_write_if_changed(tdir / "gtk-3.0" / "gtk.css", build_gtk3_theme(mode, radius, base), dry_run=dry_run)
+
+
+GTK3_USER_CSS = """/* DeloWay: GTK3 styling lives in the DeloWay-Dark / DeloWay-Light themes
+   (~/.local/share/themes). This user stylesheet is intentionally mode-agnostic:
+   GTK3 loads it only once at startup, so mode-specific colours here would stick
+   after a live dark/light switch. */
+"""
+
+
+def write_fontconfig(dry_run: bool = False):
+    """Managed fontconfig: rendering quality + Cairo for Arabic generic sans text.
+    Latin generic families keep the user's own fonts.conf preferences."""
+    conf = """<?xml version="1.0"?>
+<!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+<!-- Managed by DeloWay (deloway-theme-apply.py). -->
+<fontconfig>
+  <!-- Legibility: grayscale AA (no colour fringes on OLED), slight hinting -->
+  <match target="font">
+    <edit name="antialias" mode="assign"><bool>true</bool></edit>
+    <edit name="hinting" mode="assign"><bool>true</bool></edit>
+    <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>
+    <edit name="rgba" mode="assign"><const>none</const></edit>
+    <edit name="lcdfilter" mode="assign"><const>lcddefault</const></edit>
+    <edit name="embeddedbitmap" mode="assign"><bool>false</bool></edit>
+  </match>
+  <!-- Arabic text in generic sans/serif resolves to Cairo (the shell's typeface) -->
+  <match target="pattern">
+    <test name="lang" compare="contains"><string>ar</string></test>
+    <test name="family"><string>sans-serif</string></test>
+    <edit name="family" mode="prepend" binding="strong"><string>Cairo</string></edit>
+  </match>
+  <match target="pattern">
+    <test name="lang" compare="contains"><string>ar</string></test>
+    <test name="family"><string>serif</string></test>
+    <edit name="family" mode="prepend" binding="strong"><string>Cairo</string></edit>
+  </match>
+</fontconfig>
+"""
+    target = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "fontconfig" / "conf.d" / "60-deloway.conf"
+    if not dry_run:
+        target.parent.mkdir(parents=True, exist_ok=True)
+    return atomic_write_if_changed(target, conf, dry_run=dry_run)
+
+
+QT_ENV = {"QT_QPA_PLATFORMTHEME": "gtk3"}
+
+
+def apply_qt_environment(dry_run: bool = False):
+    """Qt5/Qt6 → gtk3 platform theme (palette + fonts from the DeloWay GTK theme).
+    Persisted for new sessions (environment.d) and pushed into the running one."""
+    env_file = Path.home() / ".config" / "environment.d" / "80-deloway-toolkits.conf"
+    body = "# Managed by DeloWay: Qt apps take palette/fonts from the DeloWay GTK theme\n" + \
+           "".join(f"{k}={v}\n" for k, v in QT_ENV.items())
+    if not dry_run:
+        env_file.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_if_changed(env_file, body, dry_run=dry_run)
+    if dry_run:
+        return
+    for k, v in QT_ENV.items():
+        subprocess.run(["hyprctl", "keyword", "env", f"{k},{v}"], capture_output=True, timeout=3)
+    subprocess.run(["dbus-update-activation-environment", "--systemd"] + [f"{k}={v}" for k, v in QT_ENV.items()],
+                   capture_output=True, timeout=5)
+
+
+def set_gsettings_raw(schema: str, key: str, val: str, dry_run: bool = False):
+    """Set any schema/key (skips missing keys on older GNOME schemas)."""
+    try:
+        cur = subprocess.run(["gsettings", "get", schema, key], capture_output=True, text=True, timeout=3)
+        if cur.returncode != 0:
+            return
+        if cur.stdout.strip().strip("'") == val:
+            return
+        if dry_run:
+            print(f"[dry-run] gsettings set {schema} {key} '{val}'")
+            return
+        subprocess.run(["gsettings", "set", schema, key, val], capture_output=True, timeout=3)
+        print(f"[deloway-theme] gsettings set {key} -> {val}")
+    except Exception as e:
+        print(f"[deloway-theme] gsettings {key} failed: {e}", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="DeloWay Dynamic System Theme Engine")
     parser.add_argument("--dry-run", action="store_true", help="Preview changes without writing files or setting gsettings")
     parser.add_argument("--theme-json", type=str, default="", help="Path to theme.json (defaults to project theme.json)")
     parser.add_argument("--mode", type=str, default="", choices=["dark", "light"], help="Force theme mode")
     parser.add_argument("--font-scale", type=float, default=0.0, help="Override font size scale factor (e.g. 0.85, 1.0, 1.15)")
+    parser.add_argument("--radius", type=float, default=-1.0, help="Shell corner radius setting in px (Settings → Appearance)")
     args = parser.parse_args()
 
     project_dir = Path(__file__).resolve().parent.parent
     theme_json_path = Path(args.theme_json) if args.theme_json else project_dir / "shell" / "theme" / "theme.json"
     user_config_path = Path.home() / ".config" / "deloway" / "deloway.json"
 
-    # 1. Determine theme mode, font scale, and system language
+    # 1. Determine theme mode, font scale, system language, and font family
     mode = "dark"
     font_scale = 1.0
     ui_language = "ar"
+    font_family = "Cairo"
+    element_radius = 8.0
 
     if user_config_path.exists():
         try:
@@ -769,12 +1041,14 @@ def main():
             t_cfg = u_cfg.get("theme", {})
             mode = t_cfg.get("mode", mode)
             font_scale = float(t_cfg.get("fontSizeScale", font_scale))
+            font_family = t_cfg.get("fontFamily", font_family)
+            element_radius = float(t_cfg.get("elementRadius", 8))
             s_cfg = u_cfg.get("system", {})
             ui_language = s_cfg.get("uiLanguage", ui_language)
         except Exception as e:
             print(f"[deloway-theme] Warning reading {user_config_path}: {e}", file=sys.stderr)
 
-    if theme_json_path.exists():
+    if theme_json_path.exists() and not args.mode:
         try:
             with open(theme_json_path, "r", encoding="utf-8") as f:
                 t_data = json.load(f)
@@ -786,26 +1060,34 @@ def main():
         mode = args.mode
     if args.font_scale > 0.0:
         font_scale = args.font_scale
+    if args.radius >= 0:
+        element_radius = args.radius
 
     is_dark = (mode == "dark")
 
-    # 2. Check adw-gtk3 availability with Adwaita fallback
-    adw_theme_dark = "adw-gtk3-dark" if Path("/usr/share/themes/adw-gtk3-dark").exists() else "Adwaita-dark"
-    adw_theme_light = "adw-gtk3" if Path("/usr/share/themes/adw-gtk3").exists() else "Adwaita"
-    gtk_theme = adw_theme_dark if is_dark else adw_theme_light
+    # 2. DeloWay GTK3 themes (adw-gtk3 + overrides) — switching them reloads apps live
+    gtk_theme = DELOWAY_THEME_NAMES["dark" if is_dark else "light"]
     color_scheme = "prefer-dark" if is_dark else "prefer-light"
+    radius = radius_tokens(element_radius)
 
     # 3. Read authoritative system settings from gsettings
-    icon_theme = get_gsettings_value("icon-theme") or "Reversal-dark"
+    icon_theme_default = "Reversal-black-dark" if is_dark else "Reversal-black"
+    cur_icon = get_gsettings_value("icon-theme")
+    if not cur_icon or cur_icon in ["Reversal", "Reversal-dark", "Reversal-blue", "Reversal-blue-dark"]:
+        icon_theme = icon_theme_default
+    else:
+        icon_theme = cur_icon
     cursor_theme = get_gsettings_value("cursor-theme") or "default"
-    base_font = "Cairo Medium 11"
+    if font_family == "Cairo":
+        base_font = f"{font_family} Medium 11"
+    else:
+        base_font = f"{font_family} 11"
     font_name = get_font_name_with_scale(font_scale, base_font)
 
     print(f"[deloway-theme] Mode: {mode} | Identity: Monochrome | GTK Theme: {gtk_theme}")
     print(f"[deloway-theme] Language: {ui_language} | Font: '{font_name}' (scale: {font_scale}) | Icons: '{icon_theme}'")
 
-    # 4. Build CSS, INI, and Qt contents
-    gtk_css_content = build_gtk_css(mode)
+    # 4. Build INI contents (CSS is generated per toolkit below)
     settings_ini_content = build_settings_ini(gtk_theme, icon_theme, cursor_theme, font_name, is_dark)
 
     # 5. Target config directories (support XDG_CONFIG_HOME)
@@ -813,24 +1095,42 @@ def main():
     gtk3_dir = config_home / "gtk-3.0"
     gtk4_dir = config_home / "gtk-4.0"
 
-    # 6. Atomic write to GTK 3.0, GTK 4.0, and Qt6ct
-    atomic_write_if_changed(gtk3_dir / "gtk.css", gtk_css_content, dry_run=args.dry_run)
-    atomic_write_if_changed(gtk4_dir / "gtk.css", gtk_css_content, dry_run=args.dry_run)
+    # 6. Toolkit files: GTK3 themes, mode-agnostic GTK4 CSS, settings.ini, fonts, Qt
+    if not args.dry_run:
+        gtk3_dir.mkdir(parents=True, exist_ok=True)
+        gtk4_dir.mkdir(parents=True, exist_ok=True)
+    write_gtk3_themes(radius, dry_run=args.dry_run)
+    atomic_write_if_changed(gtk3_dir / "gtk.css", GTK3_USER_CSS, dry_run=args.dry_run)
+    atomic_write_if_changed(gtk4_dir / "gtk.css", build_gtk4_css(radius), dry_run=args.dry_run)
     atomic_write_if_changed(gtk3_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     atomic_write_if_changed(gtk4_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
-    generate_qt6ct_palette(mode, config_home, dry_run=args.dry_run)
+    generate_qt6ct_palette(mode, config_home, dry_run=args.dry_run)   # used if qt6ct is installed
+    fonts_changed = write_fontconfig(dry_run=args.dry_run)
+    apply_qt_environment(dry_run=args.dry_run)
 
-    # 7. Apply gsettings
-    set_gsettings_value("color-scheme", color_scheme, dry_run=args.dry_run)
+    # 7. Apply gsettings — these are what running apps react to (via the portal):
+    #    color-scheme → libadwaita/GTK4 + Qt6; gtk-theme → GTK3 (+ Qt via gtk3 theme)
+    ifc = "org.gnome.desktop.interface"
     set_gsettings_value("gtk-theme", gtk_theme, dry_run=args.dry_run)
+    set_gsettings_value("color-scheme", color_scheme, dry_run=args.dry_run)
     set_gsettings_value("font-name", font_name, dry_run=args.dry_run)
+    set_gsettings_value("icon-theme", icon_theme, dry_run=args.dry_run)
+    set_gsettings_raw(ifc, "document-font-name", get_font_name_with_scale(font_scale, f"{font_family} 11"), dry_run=args.dry_run)
+    set_gsettings_raw(ifc, "monospace-font-name", get_font_name_with_scale(font_scale, "JetBrainsMono Nerd Font 11"), dry_run=args.dry_run)
+    set_gsettings_raw(ifc, "font-antialiasing", "grayscale", dry_run=args.dry_run)
+    set_gsettings_raw(ifc, "font-hinting", "slight", dry_run=args.dry_run)
+    set_gsettings_raw(ifc, "accent-color", "slate", dry_run=args.dry_run)   # neutral fallback; CSS overrides it
+    if fonts_changed and not args.dry_run:
+        subprocess.run(["fc-cache", "-f"], capture_output=True, timeout=60)
 
     # 8. Sync system language environment (Hyprland, D-Bus, environment.d)
     sync_system_language(ui_language, dry_run=args.dry_run)
 
-    # 9. Reload Thunar daemon safely if applicable
-    if not args.dry_run:
-        reload_thunar_safely()
+    # 9. Configure Thunar defaults (hidden menubar, hamburger menu fallback)
+    configure_thunar_defaults(dry_run=args.dry_run)
+
+    # 10. No Thunar restart needed any more: GTK3 reloads the DeloWay theme live on
+    #     the gtk-theme switch above. (reload_thunar_safely kept for manual use.)
 
     print("[deloway-theme] Completed successfully.")
 
