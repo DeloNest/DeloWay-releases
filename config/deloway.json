@@ -1,33 +1,16 @@
 {
   "theme": {
     "mode": "dark",
-    "wallpaper": "/home/waleed/Wallpapers/_ (1)_upscayl_4x_upscayl-standard-4x.png",
+    "wallpaper": "",
     "fontSizeScale": 1.25,
     "transparencyLevel": 3,
     "elementRadius": 8,
     "performanceTier": 1
   },
   "desktop": {
-    "mode": "widgets",
+    "mode": "clean",
     "showIcons": true,
-    "widgetPositions": {
-      "clock": {
-        "x": 1129,
-        "y": 48
-      },
-      "weather": {
-        "x": 1129,
-        "y": 442
-      },
-      "system_monitor": {
-        "x": 2115,
-        "y": 462
-      },
-      "notes": {
-        "x": 380,
-        "y": 280
-      }
-    },
+    "widgetPositions": {},
     "enabledWidgets": [
       "clock",
       "weather",
@@ -35,14 +18,14 @@
     ]
   },
   "dock": {
-    "position": "right",
+    "position": "bottom",
     "autoHide": false,
     "iconSize": 56,
     "showUnderline": true,
     "pinnedApps": [
-      "antigravity",
-      "ai.opencode",
-      "antigravity-ide"
+      "brave-browser",
+      "kitty",
+      "thunar"
     ]
   },
   "topBar": {
@@ -53,7 +36,7 @@
   },
   "windows": {
     "activeBorder": "#ffffff",
-    "inactiveBorder": "#2a3142",
+    "inactiveBorder": "#444444",
     "gapsIn": 6,
     "gapsOut": 10,
     "rounding": 8
@@ -88,5 +71,5 @@
       "webApp": false
     }
   },
-  "setupCompleted": true
+  "setupCompleted": false
 }

@@ -50,11 +50,14 @@ if has_bat:
 try:
     net_out = subprocess.check_output(["ip", "-j", "route", "get", "1.1.1.1"], text=True, env=dict(os.environ, LC_ALL="C"))
     net_data = json.loads(net_out)[0]
-    dev = net_data.get("dev", "eno1")
+    dev = net_data.get("dev", "")
     ip = net_data.get("prefsrc", "")
+    online = bool(dev)
 except Exception:
-    dev = "eno1"
-    ip = "192.168.100.9"
+    # No default route (offline): report that, never a made-up device/IP.
+    dev = ""
+    ip = ""
+    online = False
 
 is_wifi = dev.startswith("wl")
 
@@ -77,6 +80,7 @@ res = {
     "netDevice": dev,
     "netIp": ip,
     "isWifi": is_wifi,
+    "online": online,
     "bluetoothOn": bt_on
 }
 

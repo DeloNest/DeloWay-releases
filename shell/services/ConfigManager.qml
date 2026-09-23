@@ -771,19 +771,13 @@ Item {
         const langVal = (lang === "ar") ? "ar" : "en_US:en";
         root.run(["hyprctl", "keyword", "env", "LANGUAGE," + langVal]);
         root.run(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + langVal]);
+        localeApplyProcess.lang = lang;
         localeApplyProcess.exec(["python3", root.projectDir + "/scripts/deloway-locale-apply.py", "--lang", lang]);
         if (root.applySystemTheme) {
             updateGtkThemes();
         }
-        const notifMsg = (lang === "ar" || I18n.isRTL)
-            ? "تُطبَّق اللغة على البرامج بعد إعادة تسجيل الدخول، والمفتوحة منها بعد إعادة تشغيلها"
-            : "Language will be applied to applications after re-login, and to running apps after restarting them";
-        NotificationManager.postNotification(
-            lang === "ar" ? "إعدادات اللغة" : "Language Settings",
-            lang === "ar" ? "تم تغيير لغة النظام" : "System Language Changed",
-            notifMsg,
-            "preferences-desktop-locale"
-        );
+        // The result notification is posted by localeApplyProcess.onExited, so a failed
+        // apply no longer announces success.
     }
 
     function setKeyboardLayouts(layouts) {
@@ -910,6 +904,25 @@ Item {
 
     Process {
         id: localeApplyProcess
+        property string lang: "en"
+        stderr: StdioCollector { id: localeApplyErr }
+        onExited: (exitCode) => {
+            const ar = localeApplyProcess.lang === "ar";
+            if (exitCode === 0) {
+                NotificationManager.postNotification(
+                    ar ? "إعدادات اللغة" : "Language Settings",
+                    ar ? "تم تغيير لغة النظام" : "System Language Changed",
+                    ar ? "تُطبَّق اللغة على البرامج بعد إعادة تسجيل الدخول، والمفتوحة منها بعد إعادة تشغيلها"
+                       : "Language will be applied to applications after re-login, and to running apps after restarting them",
+                    "preferences-desktop-locale");
+            } else {
+                const tail = (localeApplyErr.text || "").trim().split("\n").slice(-1)[0] || ("exit " + exitCode);
+                NotificationManager.postNotification(
+                    ar ? "إعدادات اللغة" : "Language Settings",
+                    ar ? "تعذّر تطبيق لغة النظام" : "Could not apply the system language",
+                    tail, "dialog-warning-symbolic");
+            }
+        }
     }
 
     Process {

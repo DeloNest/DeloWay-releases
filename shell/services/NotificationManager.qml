@@ -57,10 +57,7 @@ Item {
     // ── Localised time ───────────────────────────────────────────────────
     function clockLabel(ts) {
         const d = new Date(ts);
-        if (ConfigManager.clockFormat === "24h") return Qt.formatTime(d, "hh:mm");
-        const hm = Qt.formatTime(d, "h:mm");
-        if (I18n.isRTL) return hm + " " + (d.getHours() < 12 ? "ص" : "م");
-        return hm + " " + (d.getHours() < 12 ? "AM" : "PM");
+        return I18n.clockText(d, false);   // explicit 12h digits ("h:mm" alone stays 24h in Qt)
     }
     function timeLabel(ts) {
         if (!ts) return "";

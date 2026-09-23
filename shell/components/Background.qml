@@ -30,9 +30,16 @@ PanelWindow {
     Image {
         id: bgImage
         anchors.fill: parent
-        source: (ConfigManager.wallpaper && ConfigManager.wallpaper.length > 0)
+        readonly property string bundled: "file://" + ConfigManager.projectDir + "/assets/wallpaper.jpg"
+        readonly property string configured: (ConfigManager.wallpaper && ConfigManager.wallpaper.length > 0)
                 ? (ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper))
-                : ("file://" + ConfigManager.projectDir + "/assets/wallpaper.jpg")
+                : ""
+        // A configured path that no longer exists falls back to the bundled wallpaper
+        // instead of leaving a black desktop.
+        property bool configuredFailed: false
+        onConfiguredChanged: configuredFailed = false
+        onStatusChanged: if (status === Image.Error && source.toString() === configured) configuredFailed = true
+        source: (configured.length > 0 && !configuredFailed) ? configured : bundled
         fillMode: Image.PreserveAspectCrop
         // Decode at the output's pixel size (a 4K JPEG on a 1440p screen was ~33 MB decoded).
         sourceSize.width: Math.round(width * Screen.devicePixelRatio)

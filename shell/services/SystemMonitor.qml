@@ -8,37 +8,41 @@ QtObject {
     id: root
 
     // Real CPU Metrics
-    property real cpuUsage: 0.15
-    property string cpuPercentText: "15%"
+    // Neutral placeholders until the first real sample (these used to be the
+    // developer machine's numbers and stayed on screen if the helper failed).
+    property real cpuUsage: 0
+    property string cpuPercentText: "—"
     readonly property alias cpuText: root.cpuPercentText
 
     // Real RAM Metrics
-    property real ramTotalGb: 31.3
-    property real ramUsedGb: 10.4
-    property real ramUsage: 0.33
-    property string ramText: "10.4 / 31.3 GB"
+    property real ramTotalGb: 0
+    property real ramUsedGb: 0
+    property real ramUsage: 0
+    property string ramText: "—"
 
     // Real Battery Metrics (false on Desktop PC)
     property bool hasBattery: false
     property int batteryPercent: 100
-    property string batteryStatusText: "AC Connected"
+    property string batteryStatusText: ""    // raw sysfs status: "Charging" / "Discharging" / "Full"
 
     // Real Network Metrics
-    property string netDevice: "eno1"
-    property string netIp: "192.168.100.9"
+    property string netDevice: ""
+    property string netIp: ""
     property bool isWifi: false
-    property bool isOnline: true
+    property bool isOnline: false
 
     // Real Bluetooth Metrics
     property bool bluetoothOn: true
 
     // Real Live Weather Metrics
-    property string weatherCity: "Al Madina"
-    property string weatherTemp: "32°C"
-    property string weatherDesc: "Sunny"
-    property string weatherHumidity: "16%"
-    property string weatherWind: "4 km/h"
-    property string weatherUv: "3"
+    // Empty until a real reading arrives; a failed fetch keeps the last good values.
+    property bool weatherOk: false
+    property string weatherCity: ""
+    property string weatherTemp: "—"
+    property string weatherDesc: ""
+    property string weatherHumidity: "—"
+    property string weatherWind: "—"
+    property string weatherUv: "—"
 
     // Background Process for Sysinfo
     property var sysProcess: Process {
@@ -61,13 +65,15 @@ QtObject {
                     if (data.hasBattery !== undefined) {
                         root.hasBattery = data.hasBattery;
                         root.batteryPercent = data.batteryPercent;
-                        root.batteryStatusText = data.hasBattery ? (data.batteryPercent + "% • " + data.batteryStatus) : "AC Connected";
+                        // Raw status — QuickSettings compares it with "Charging" (the old
+                        // "84% • Charging" string never matched, so the charging glyph never showed).
+                        root.batteryStatusText = data.hasBattery ? (data.batteryStatus || "") : "";
                     }
                     if (data.netDevice !== undefined) {
                         root.netDevice = data.netDevice;
                         root.netIp = data.netIp;
                         root.isWifi = data.isWifi;
-                        root.isOnline = true;
+                        root.isOnline = (data.online !== undefined) ? data.online : data.netDevice.length > 0;
                     }
                     if (data.bluetoothOn !== undefined) {
                         root.bluetoothOn = data.bluetoothOn;
@@ -87,6 +93,8 @@ QtObject {
             onRead: function(line) {
                 try {
                     const data = JSON.parse(line.trim());
+                    if (data.ok === false) return;   // keep the last good reading
+                    root.weatherOk = true;
                     if (data.city) root.weatherCity = data.city;
                     if (data.tempC) root.weatherTemp = data.tempC + "°C";
                     if (data.desc) root.weatherDesc = data.desc;

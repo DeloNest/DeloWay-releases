@@ -155,9 +155,10 @@ ShellRoot {
         function closeSmartNotch()     { ShellState.closeSmartNotch(); }
         function setSmartNotchTab(tab: string) { ShellState.setSmartNotchTab(tab); }
         function stageLocalSend(path: string) {
+            if (!path) return;   // no test-fixture fallback
             ShellState.setSmartNotchTab(2);
             ShellState.openSmartNotch();
-            LocalSendService.stageFiles([path || "/tmp/deloway_test.txt"]);
+            LocalSendService.stageFiles([path]);
         }
         function resetLocalSend() {
             LocalSendService.resetStage();

@@ -23,6 +23,15 @@ Item {
 
     Connections {
         target: LocalSendService
+        // Files staged from outside this panel (collapsed-notch drop, desktop menu,
+        // drag onto the notch, IPC) used to be emitted into the void.
+        function onFilesStaged(files) {
+            root.droppedUrls = files;
+            root.selectedDevice = null;
+            root.stage = "selecting";
+            LocalSendService.scanNetwork();
+        }
+        function onResetRequested() { root.resetToIdle(); }
         function onSendStatusChanged() {
             if (LocalSendService.sendStatus === "sent") {
                 root.stage = "sent";

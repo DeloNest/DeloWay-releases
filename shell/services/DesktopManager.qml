@@ -155,15 +155,18 @@ Item {
     // ----------------------------------------------------
     function createFolder(baseName) {
         const name = (baseName && baseName.trim().length > 0) ? baseName.trim() : (I18n.isRTL ? "مجلد جديد" : "New Folder");
-        const cmd = "cd '" + root.desktopDir + "' && name='" + name + "'; i=1; while [ -e \"$name\" ]; do name=\"" + name + " ($i)\"; i=$((i+1)); done; mkdir -p \"$name\"";
-        Quickshell.execDetached(["bash", "-c", cmd]);
+        // Directory and name travel as positional args, never spliced into the script.
+        Quickshell.execDetached(["sh", "-c",
+            'cd "$1" || exit 1; n="$2"; i=1; while [ -e "$n" ]; do n="$2 ($i)"; i=$((i+1)); done; mkdir -p -- "$n"',
+            "sh", root.desktopDir, name]);
         refreshTimer.restart();
     }
 
     function createDocument(baseName) {
         const name = (baseName && baseName.trim().length > 0) ? baseName.trim() : (I18n.isRTL ? "مستند جديد.txt" : "New Document.txt");
-        const cmd = "cd '" + root.desktopDir + "' && name='" + name + "'; i=1; while [ -e \"$name\" ]; do name=\"" + name.replace(/\.txt$/, "") + " ($i).txt\"; i=$((i+1)); done; touch \"$name\"";
-        Quickshell.execDetached(["bash", "-c", cmd]);
+        Quickshell.execDetached(["sh", "-c",
+            'cd "$1" || exit 1; n="$2"; i=1; while [ -e "$n" ]; do n="$3 ($i).txt"; i=$((i+1)); done; touch -- "$n"',
+            "sh", root.desktopDir, name, name.replace(/\.txt$/, "")]);
         refreshTimer.restart();
     }
 

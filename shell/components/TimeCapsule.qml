@@ -172,53 +172,21 @@ Item {
         return (hijriMonthsEn[h.month - 1] || "") + " " + h.day + ", " + h.year + " AH";
     }
 
-    readonly property string formattedTime: {
-        const d = sysClock.date;
-        if (!d) return "--:--";
-        if (ConfigManager.clockFormat === "24h") {
-            return Qt.formatDateTime(d, "hh:mm");
-        }
-        const timeStr = Qt.formatDateTime(d, "h:mm");
-        if (I18n.isRTL) {
-            const ap = d.getHours() < 12 ? "ص" : "م";
-            return timeStr + " " + ap;
-        }
-        return Qt.formatDateTime(d, "h:mm ap");
-    }
+    // Qt's "h"/"hh" never produce 12-hour digits without an AP marker in the same format,
+    // so "h:mm" showed "13:19 م". The I18n helpers compute 12h digits explicitly.
+    readonly property string formattedTime: I18n.clockText(sysClock.date, false)
 
-    readonly property string formattedExpandedTime: {
-        const d = sysClock.date;
-        if (!d) return "--:--:--";
-        const withSec = ConfigManager.timeCapsuleShowSeconds;
-        if (ConfigManager.clockFormat === "24h") {
-            return Qt.formatDateTime(d, withSec ? "hh:mm:ss" : "hh:mm");
-        }
-        const timeStr = Qt.formatDateTime(d, withSec ? "h:mm:ss" : "h:mm");
-        if (I18n.isRTL) {
-            const ap = d.getHours() < 12 ? "ص" : "م";
-            return timeStr + " " + ap;
-        }
-        return Qt.formatDateTime(d, withSec ? "h:mm:ss ap" : "h:mm ap");
-    }
+    readonly property string formattedExpandedTime: I18n.clockText(sysClock.date, ConfigManager.timeCapsuleShowSeconds)
 
     readonly property string expandedClockDigits: {
         const d = sysClock.date;
         if (!d) return "--:--";
-        const withSec = ConfigManager.timeCapsuleShowSeconds;
-        const fmt = (ConfigManager.clockFormat === "24h")
-                    ? (withSec ? "hh:mm:ss" : "hh:mm")
-                    : (withSec ? "h:mm:ss" : "h:mm");
-        return Qt.formatDateTime(d, fmt);
+        const hh = (ConfigManager.clockFormat === "24h") ? String(d.getHours()).padStart(2, "0") : String(d.getHours() % 12 || 12);
+        const ss = ConfigManager.timeCapsuleShowSeconds ? ":" + String(d.getSeconds()).padStart(2, "0") : "";
+        return I18n.digits(hh + ":" + String(d.getMinutes()).padStart(2, "0") + ss);
     }
 
-    readonly property string formattedAmPm: {
-        const d = sysClock.date;
-        if (!d || ConfigManager.clockFormat === "24h") return "";
-        if (I18n.isRTL) {
-            return d.getHours() < 12 ? "ص" : "م";
-        }
-        return Qt.formatDateTime(d, "ap");
-    }
+    readonly property string formattedAmPm: I18n.meridiem(sysClock.date)
 
     readonly property string formattedShortDate: {
         const d = sysClock.date;

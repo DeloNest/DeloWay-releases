@@ -15,13 +15,7 @@ try:
             "uv": c.get("uvIndex", "1")
         }
 except Exception:
-    res = {
-        "city": "Al Madina",
-        "tempC": "32",
-        "desc": "Sunny",
-        "humidity": "16",
-        "wind": "4",
-        "uv": "3"
-    }
+    # Offline / service down: say so instead of printing plausible fake weather.
+    res = {"ok": False}
 
 print(json.dumps(res))

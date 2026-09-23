@@ -313,7 +313,7 @@ Item {
 
                             if (isOverNotch && deskItemWrapper.itemData.path) {
                                 // Stage file into Central Notch LocalSend tray tab
-                                ShellState.setSmartNotchTab(1);
+                                ShellState.setSmartNotchTab(2);   // Share tab
                                 ShellState.openSmartNotch();
                                 LocalSendService.stageFiles([deskItemWrapper.itemData.path]);
 

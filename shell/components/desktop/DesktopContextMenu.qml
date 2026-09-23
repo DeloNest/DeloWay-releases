@@ -321,7 +321,7 @@ Item {
                     title: I18n.isRTL ? "تغيير الخلفية..." : "Change Wallpaper..."
                     iconSource: "image"
                     onTriggered: {
-                        ShellState.openSettingsTab("appearance");
+                        ShellState.openSettingsTab("wallpaper");
                         DesktopManager.closeContextMenu();
                     }
                 }
@@ -395,7 +395,7 @@ Item {
                     iconSource: "send"
                     onTriggered: {
                         if (DesktopManager.contextMenuTargetItem && DesktopManager.contextMenuTargetItem.path) {
-                            ShellState.setSmartNotchTab(1);
+                            ShellState.setSmartNotchTab(2);   // Share tab
                             ShellState.openSmartNotch();
                             LocalSendService.stageFiles([DesktopManager.contextMenuTargetItem.path]);
                         }
@@ -404,12 +404,20 @@ Item {
                 }
 
                 ContextMenuItem {
-                    title: I18n.isRTL ? "تثبيت في الشريط (Dock)" : "Pin to Dock"
+                    // Only .desktop shortcuts map to an installed app; pin that app's real id
+                    // (the desktop item id "user_…" could never be pinned).
+                    readonly property var targetApp: {
+                        const it = DesktopManager.contextMenuTargetItem;
+                        if (!it || !it.isDesktopEntry || !it.fileName) return null;
+                        return ApplicationManager.findApp(it.fileName.replace(/\.desktop$/, ""));
+                    }
+                    visible: targetApp !== null
+                    title: (targetApp && ApplicationManager.isPinned(targetApp.id))
+                           ? (I18n.isRTL ? "إلغاء التثبيت من الشريط (Dock)" : "Unpin from Dock")
+                           : (I18n.isRTL ? "تثبيت في الشريط (Dock)" : "Pin to Dock")
                     iconSource: "view-paged"
                     onTriggered: {
-                        if (DesktopManager.contextMenuTargetItem) {
-                            ApplicationManager.togglePin(DesktopManager.contextMenuTargetItem.id);
-                        }
+                        if (targetApp) ApplicationManager.togglePin(targetApp.id);
                         DesktopManager.closeContextMenu();
                     }
                 }

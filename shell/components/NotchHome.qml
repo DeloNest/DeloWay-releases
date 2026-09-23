@@ -40,6 +40,11 @@ Item {
     property var activePlayer: null
     readonly property bool hasPlayer: activePlayer !== null && (activePlayer.isPlaying || (activePlayer.trackTitle && activePlayer.trackTitle.trim().length > 0))
     readonly property bool isMusicPlaying: hasPlayer && activePlayer.isPlaying
+    // Transport controls follow what the player actually supports (calling previous()/next()
+    // on a player that can't do it only logged a warning).
+    readonly property bool canPrev: hasPlayer && activePlayer.canGoPrevious
+    readonly property bool canNext: hasPlayer && activePlayer.canGoNext
+    readonly property bool canToggle: hasPlayer && activePlayer.canTogglePlaying
 
     function playerHasMedia(p) {
         if (!p) return false;
@@ -338,11 +343,12 @@ Item {
                             anchors.centerIn: parent
                             iconSize: 13
                             source: "media-skip-backward-symbolic"
-                            iconColor: prevHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            iconColor: !prevHover.enabled ? Theme.notchTextTertiary : (prevHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
                         }
 
                         MouseArea {
                             id: prevHover
+                            enabled: root.canPrev
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
@@ -372,6 +378,7 @@ Item {
 
                         MouseArea {
                             id: playPauseHover
+                            enabled: root.canToggle
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
@@ -397,11 +404,12 @@ Item {
                             anchors.centerIn: parent
                             iconSize: 13
                             source: "media-skip-forward-symbolic"
-                            iconColor: nextHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                            iconColor: !nextHover.enabled ? Theme.notchTextTertiary : (nextHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
                         }
 
                         MouseArea {
                             id: nextHover
+                            enabled: root.canNext
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
@@ -561,11 +569,12 @@ Item {
                                     anchors.centerIn: parent
                                     source: "media-skip-backward-symbolic"
                                     iconSize: 15
-                                    iconColor: prevExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                    iconColor: !prevExpHover.enabled ? Theme.notchTextTertiary : (prevExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
                                 }
 
                                 MouseArea {
                                     id: prevExpHover
+                                    enabled: root.canPrev
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
@@ -594,6 +603,7 @@ Item {
 
                                 MouseArea {
                                     id: playExpHover
+                                    enabled: root.canToggle
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
@@ -622,11 +632,12 @@ Item {
                                     anchors.centerIn: parent
                                     source: "media-skip-forward-symbolic"
                                     iconSize: 15
-                                    iconColor: nextExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                    iconColor: !nextExpHover.enabled ? Theme.notchTextTertiary : (nextExpHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
                                 }
 
                                 MouseArea {
                                     id: nextExpHover
+                                    enabled: root.canNext
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor

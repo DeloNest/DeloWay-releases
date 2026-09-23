@@ -383,7 +383,8 @@ Item {
                 }
 
                 Text {
-                    text: SystemMonitor.hasBattery ? ("Battery " + SystemMonitor.batteryPercent + "%") : "Power: AC Connected"
+                    text: SystemMonitor.hasBattery ? ((I18n.isRTL ? "البطارية " : "Battery ") + I18n.digits(SystemMonitor.batteryPercent) + "%")
+                                                : (I18n.isRTL ? "متصل بالتيار" : "Power: AC Connected")
                     font.pixelSize: 11
                     color: Theme.colors.textSecondary
                 }

@@ -53,7 +53,8 @@ Item {
     function getApp(appId) {
         if (!appId) return null;
         const clean = appId.toLowerCase().replace(/\.desktop$/, "");
-        return rawCatalog.find(a => a.id === clean) || null;
+        // Catalog ids are mixed-case (org.gnome.TextEditor); callers pass lower-case ids.
+        return rawCatalog.find(a => a.id.toLowerCase() === clean) || null;
     }
 
     // Dynamic catalog view enriched with live installation flags
@@ -202,7 +203,11 @@ Item {
         if (!appId || isInstalled(appId) || isInstalling(appId)) return;
         const clean = appId.toLowerCase().replace(/\.desktop$/, "");
         const app = getApp(clean);
-        if (!app) return;
+        if (!app) {
+            NotificationManager.postNotification("System", I18n.isRTL ? "تعذّر التثبيت" : "Installation Failed",
+                (I18n.isRTL ? "تطبيق غير معروف: " : "Unknown application: ") + appId, "dialog-warning-symbolic");
+            return;
+        }
 
         const pkgName = app.package || clean;
 
