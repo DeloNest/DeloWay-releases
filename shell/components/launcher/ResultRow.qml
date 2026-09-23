@@ -10,6 +10,9 @@ Rectangle {
     property var resultData: null
     property bool isSelected: false
     property bool isHovered: false
+    // Overridable type scale (App Drawer uses larger text than the Spotlight launcher).
+    property real nameSize: 13.5
+    property real descSize: 11.5
 
     signal clicked(var mouse)
     signal hovered()
@@ -77,7 +80,7 @@ Rectangle {
                 text: (root.resultData && root.resultData.name) ? root.resultData.name : ""
                 horizontalAlignment: Text.AlignLeft
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(13.5)
+                font.pixelSize: Theme.fontSize(root.nameSize)
                 font.weight: root.isSelected ? Font.DemiBold : Font.Medium
                 color: Theme.notchText
                 renderType: Theme.renderType
@@ -89,7 +92,7 @@ Rectangle {
                 text: (root.resultData && root.resultData.desc) ? root.resultData.desc : ""
                 horizontalAlignment: Text.AlignLeft
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11.5)
+                font.pixelSize: Theme.fontSize(root.descSize)
                 font.weight: Font.Normal
                 color: Theme.notchTextSecondary
                 renderType: Theme.renderType

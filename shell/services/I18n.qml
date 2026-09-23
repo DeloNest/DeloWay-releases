@@ -965,6 +965,15 @@ Item {
     })
 
     // "3 windows" / Arabic dual & plural forms (١ نافذة، نافذتان، ٣ نوافذ، ١١ نافذة).
+    // "8 apps" / Arabic: تطبيق واحد، تطبيقان، ٣–١٠ تطبيقات، ١١+ تطبيقًا
+    function appsCount(n) {
+        if (!root.isRTL) return n + (n === 1 ? " app" : " apps");
+        if (n === 1) return "تطبيق واحد";
+        if (n === 2) return "تطبيقان";
+        if (n >= 3 && n <= 10) return n + " تطبيقات";
+        return n + " تطبيقًا";
+    }
+
     function windowsCount(n) {
         if (!root.isRTL) return n + (n === 1 ? " window" : " windows");
         if (n === 1) return "نافذة واحدة";

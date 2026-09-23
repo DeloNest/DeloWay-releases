@@ -8,9 +8,12 @@ Item {
 
     property string text: ""
     property int count: -1
+    // Sizes are overridable per host (the App Drawer uses a larger scale).
+    property real labelSize: 11
+    property real countSize: 10
 
     implicitWidth: labelRow.implicitWidth
-    implicitHeight: 28
+    implicitHeight: Math.max(28, labelSize + 16)
 
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
@@ -24,7 +27,7 @@ Item {
             Layout.alignment: Qt.AlignVCenter
             text: root.text
             font.family: Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(11)
+            font.pixelSize: Theme.fontSize(root.labelSize)
             font.weight: Font.DemiBold
             color: Theme.notchTextTertiary
             renderType: Theme.renderType
@@ -33,8 +36,8 @@ Item {
         Rectangle {
             Layout.alignment: Qt.AlignVCenter
             visible: root.count >= 0
-            height: 18
-            implicitWidth: countText.implicitWidth + 10
+            height: Math.round(root.countSize + 8)
+            implicitWidth: countText.implicitWidth + 12
             radius: Theme.notchRadiusPill
             color: Theme.notchSurface
 
@@ -43,7 +46,7 @@ Item {
                 anchors.centerIn: parent
                 text: root.count.toString()
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(10)
+                font.pixelSize: Theme.fontSize(root.countSize)
                 font.weight: Font.Medium
                 color: Theme.notchTextTertiary
                 renderType: Theme.renderType

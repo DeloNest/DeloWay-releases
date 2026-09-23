@@ -16,9 +16,9 @@ import "./launcher"
 //   │  ▦ ▦ ▦ ▦ ▦ ▦                                   │  6-column grid, ≤3 rows then scroll
 //   │  ─────────────────────────────────────────── │
 //   │  All apps                               143   │
-//   │  ▣ Internet · · · 5  ›                        │  collapsible category folders
-//   │  ▣ Media    · · · 9  ⌄                        │  (or A–Z with letter headers)
-//   │     ▸ Spotify                                 │
+//   │  ┌Internet┐ ┌Media ┐ ┌System┐                │  category cards → open in place
+//   │  │◉◉◉ +5 │ │◉◉◉ +8│ │◉◉◉+15│                │  as a folder page (back button,
+//   │  └───────┘ └──────┘ └──────┘                  │  app grid); or A–Z list
 //   │  ─────────────────────────────────────────── │
 //   │  (W) waleed                       ⚙    ⏻      │  footer
 //   └──────────────────────────────────────────────┘
@@ -50,8 +50,8 @@ PanelWindow {
     readonly property int panelWidth: Math.min(660, root.width - 32)
     readonly property int panelHeight: Math.min(740, root.height - Theme.topBarReserved - bottomGap - 24)
     readonly property int gridColumns: 6
-    readonly property int tileHeight: 90
-    readonly property int rowHeight: 40
+    readonly property int tileHeight: 104
+    readonly property int rowHeight: 46
 
     // ── Data ─────────────────────────────────────────────────────────────
     property string filterQuery: ""
@@ -82,14 +82,15 @@ PanelWindow {
         return c.toUpperCase();
     }
 
-    // ── All-apps rows ────────────────────────────────────────────────────
-    // Folders (default): one collapsible folder per freedesktop category
-    //   (LauncherIndex.categoryOf), in LauncherIndex.categoryDefs order, empty ones hidden.
-    // A–Z: the classic alphabetical list with letter headers.
-    // Every row has a stable `key` so the ScriptModel below diffs instead of resetting:
-    // expanding/collapsing animates in place and never jumps the scroll position.
+    // ── All apps: category cards (default) or A–Z ────────────────────────
+    // Folders: a grid of category cards (LauncherIndex.categoryOf, categoryDefs order,
+    // empty categories hidden). Clicking a card opens that folder in place: back button
+    // + a grid of app tiles. A–Z: the classic alphabetical list with letter headers.
     readonly property bool byCategory: ConfigManager.drawerGroupBy !== "alpha"
-    property var expandedCats: ({})          // session memory of open folders
+    property string openFolder: ""              // category id shown as a folder page, "" = cards
+    readonly property int cardColumns: 3
+    readonly property int folderColumns: 5
+    readonly property int cardHeight: 112
 
     readonly property var categoryGroups: {
         const buckets = {};
@@ -101,33 +102,34 @@ PanelWindow {
             .filter(d => buckets[d.id] && buckets[d.id].length > 0)
             .map(d => ({ id: d.id, icon: d.icon, apps: buckets[d.id] }));
     }
-    readonly property var groupById: {
-        const m = {};
-        for (const g of root.categoryGroups) m[g.id] = g;
-        return m;
+    readonly property var openGroup: {
+        if (!root.openFolder) return null;
+        return root.categoryGroups.find(g => g.id === root.openFolder) || null;
     }
-    function toggleFolder(cat, open) {
-        const m = Object.assign({}, root.expandedCats);
-        const next = open === undefined ? !m[cat] : open;
-        if (next) m[cat] = true; else delete m[cat];
-        root.expandedCats = m;
+    function openFolderPage(cat) {
+        contextMenu.hide();
+        root.openFolder = cat;
+        root.cursor = root.pinnedApps.length;          // first app in the folder
+        folderGrid.positionViewAtBeginning();
     }
+    function closeFolderPage() {
+        const cat = root.openFolder;
+        root.openFolder = "";
+        const idx = root.categoryGroups.findIndex(g => g.id === cat);
+        root.cursor = idx >= 0 ? root.pinnedApps.length + idx : -1;   // back on its card
+        if (idx >= 0) cardGrid.positionViewAtIndex(idx, GridView.Contain);
+    }
+    onByCategoryChanged: root.openFolder = ""
 
+    // A–Z rows (stable keys → the ScriptModel diffs instead of resetting)
     readonly property var listRows: {
+        if (root.byCategory) return [];
         const rows = [];
-        if (root.byCategory) {
-            for (const g of root.categoryGroups) {
-                rows.push({ key: "f:" + g.id, kind: "folder", cat: g.id });
-                if (root.expandedCats[g.id])
-                    for (const app of g.apps) rows.push({ key: "a:" + g.id + ":" + app.id, kind: "app", app: app, nested: true });
-            }
-        } else {
-            let last = "";
-            for (const app of root.sortedApps) {
-                const L = root.letterOf(app.name);
-                if (L !== last) { rows.push({ key: "h:" + L, kind: "header", letter: L }); last = L; }
-                rows.push({ key: "a:" + app.id, kind: "app", app: app, nested: false });
-            }
+        let last = "";
+        for (const app of root.sortedApps) {
+            const L = root.letterOf(app.name);
+            if (L !== last) { rows.push({ key: "h:" + L, kind: "header", letter: L }); last = L; }
+            rows.push({ key: "a:" + app.id, kind: "app", app: app });
         }
         return rows;
     }
@@ -136,20 +138,23 @@ PanelWindow {
         values: root.listRows
         objectProp: "key"
     }
-    // Rows the keyboard cursor can land on (apps and folders; letter headers are skipped).
     readonly property var selectableIndexes: {
         const idx = [];
         for (let i = 0; i < root.listRows.length; i++)
             if (root.listRows[i].kind !== "header") idx.push(i);
         return idx;
     }
-    readonly property var cursorRow: (!root.searching && root.cursor >= root.pinnedApps.length)
-        ? (root.listRows[root.selectableIndexes[root.cursor - root.pinnedApps.length]] || null) : null
 
     // ── Keyboard selection ───────────────────────────────────────────────
-    // Browse mode: one cursor over [pinned…, all apps…]. Search mode: over results.
+    // Browse: one cursor over [pinned…, section…] where section is the category cards,
+    // the open folder's apps, or the A–Z apps. Search: over results.
     property int cursor: -1
-    readonly property int browseCount: pinnedApps.length + selectableIndexes.length
+    readonly property string sectionKind: !root.byCategory ? "list" : (root.openFolder ? "folder" : "cards")
+    readonly property int sectionCount: sectionKind === "list" ? selectableIndexes.length
+                                      : sectionKind === "folder" ? (openGroup ? openGroup.apps.length : 0)
+                                      : categoryGroups.length
+    readonly property int sectionColumns: sectionKind === "cards" ? cardColumns : (sectionKind === "folder" ? folderColumns : 1)
+    readonly property int browseCount: pinnedApps.length + sectionCount
 
     function resetCursor() { root.cursor = root.searching ? (searchResults.length > 0 ? 0 : -1) : -1; }
     function moveCursor(delta) {
@@ -161,19 +166,36 @@ PanelWindow {
     function moveVertical(dir) {
         if (root.searching) { moveCursor(dir); return; }
         const p = root.pinnedApps.length;
-        if (root.cursor >= 0 && root.cursor < p) {
+        if (root.cursor < 0) { moveCursor(dir); return; }
+        if (root.cursor < p) {                                   // pinned grid
             const next = root.cursor + dir * root.gridColumns;
-            root.cursor = next < 0 ? root.cursor : (next >= p ? p : next);   // fall through into the list
-            root.revealCursor();
-        } else {
-            moveCursor(dir);
+            root.cursor = next < 0 ? root.cursor : (next >= p ? (root.sectionCount > 0 ? p : root.cursor) : next);
+        } else {                                                 // cards / folder grid / list
+            const i = root.cursor - p, c = root.sectionColumns;
+            const next = i + dir * c;
+            if (next < 0) root.cursor = p > 0 ? p - 1 : root.cursor;       // up into the pinned grid
+            else if (next < root.sectionCount) root.cursor = p + next;
+            else if (c > 1 && Math.floor(i / c) < Math.floor((root.sectionCount - 1) / c)) root.cursor = p + root.sectionCount - 1;
         }
+        root.revealCursor();
+    }
+    // Left/Right inside grids (reading-direction aware). Returns false when not in a grid.
+    function moveHorizontal(physicalDir) {
+        if (root.searching || root.cursor < 0) return false;
+        const inPinned = root.cursor < root.pinnedApps.length;
+        if (!inPinned && root.sectionColumns <= 1) return false;
+        moveCursor(I18n.isRTL ? -physicalDir : physicalDir);
+        return true;
     }
     function revealCursor() {
         if (root.searching) { searchList.positionViewAtIndex(root.cursor, ListView.Contain); return; }
         const p = root.pinnedApps.length;
-        if (root.cursor >= 0 && root.cursor < p) pinnedGrid.positionViewAtIndex(root.cursor, GridView.Contain);
-        else if (root.cursor >= p) appList.positionViewAtIndex(root.selectableIndexes[root.cursor - p], ListView.Contain);
+        if (root.cursor >= 0 && root.cursor < p) { pinnedGrid.positionViewAtIndex(root.cursor, GridView.Contain); return; }
+        if (root.cursor < p) return;
+        const i = root.cursor - p;
+        if (root.sectionKind === "cards") cardGrid.positionViewAtIndex(i, GridView.Contain);
+        else if (root.sectionKind === "folder") folderGrid.positionViewAtIndex(i, GridView.Contain);
+        else appList.positionViewAtIndex(root.selectableIndexes[i], ListView.Contain);
     }
     function activateCursor() {
         if (root.searching) {
@@ -182,13 +204,12 @@ PanelWindow {
             return;
         }
         const p = root.pinnedApps.length;
-        if (root.cursor >= 0 && root.cursor < p) root.launchApp(root.pinnedApps[root.cursor]);
-        else if (root.cursor >= p) {
-            const row = root.listRows[root.selectableIndexes[root.cursor - p]];
-            if (!row) return;
-            if (row.kind === "folder") root.toggleFolder(row.cat);
-            else root.launchApp(row.app);
-        }
+        if (root.cursor >= 0 && root.cursor < p) { root.launchApp(root.pinnedApps[root.cursor]); return; }
+        if (root.cursor < p) return;
+        const i = root.cursor - p;
+        if (root.sectionKind === "cards") { const g = root.categoryGroups[i]; if (g) root.openFolderPage(g.id); }
+        else if (root.sectionKind === "folder") { if (root.openGroup && root.openGroup.apps[i]) root.launchApp(root.openGroup.apps[i]); }
+        else { const row = root.listRows[root.selectableIndexes[i]]; if (row) root.launchApp(row.app); }
     }
 
     // Shared app menu (same component as the Dock), opened at the pointer.
@@ -244,6 +265,7 @@ PanelWindow {
         function onAppDrawerOpenChanged() {
             contextMenu.hide();
             if (ShellState.appDrawerOpen) {
+                root.openFolder = "";
                 searchInput.text = ShellState.searchQuery || "";
                 root.filterQuery = searchInput.text;
                 root.resetCursor();
@@ -324,8 +346,8 @@ PanelWindow {
                 // ── Search pill ──────────────────────────────────────────
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: 44
-                    radius: 22
+                    implicitHeight: 48
+                    radius: 24
                     color: Theme.notchSurface
                     border.color: searchInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                     border.width: 1
@@ -339,7 +361,7 @@ PanelWindow {
 
                         SymbolicIcon {
                             Layout.alignment: Qt.AlignVCenter
-                            iconSize: 16
+                            iconSize: 18
                             source: "system-search-symbolic"
                             iconColor: Theme.notchTextSecondary
                         }
@@ -351,7 +373,7 @@ PanelWindow {
                             clip: true
                             horizontalAlignment: I18n.isRTL ? TextInput.AlignRight : TextInput.AlignLeft
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(14)
+                            font.pixelSize: Theme.fontSize(16)
                             color: Theme.notchText
                             selectionColor: Theme.notchSurfaceActive
                             selectedTextColor: Theme.notchText
@@ -369,7 +391,15 @@ PanelWindow {
 
                             Keys.onEscapePressed: {
                                 if (contextMenu.visible) contextMenu.hide();
+                                else if (root.openFolder && !root.searching) root.closeFolderPage();
                                 else ShellState.closeAppDrawer();
+                            }
+                            // Backspace on an empty search box goes back from a folder.
+                            Keys.onPressed: (e) => {
+                                if (e.key === Qt.Key_Backspace && searchInput.text.length === 0 && root.openFolder) {
+                                    root.closeFolderPage();
+                                    e.accepted = true;
+                                }
                             }
                             Keys.onReturnPressed: root.activateCursor()
                             Keys.onEnterPressed: root.activateCursor()
@@ -377,18 +407,10 @@ PanelWindow {
                             Keys.onUpPressed: root.moveVertical(-1)
                             Keys.onTabPressed: root.moveCursor(1)
                             Keys.onBacktabPressed: root.moveCursor(-1)
-                            // Left/Right move within the pinned grid when not editing text
-                            // …or open/close the folder under the cursor ("forward" opens; RTL-aware)
-                            Keys.onLeftPressed: (e) => {
-                                if (!root.searching && root.cursor >= 0 && root.cursor < root.pinnedApps.length) root.moveCursor(I18n.isRTL ? 1 : -1);
-                                else if (root.cursorRow && root.cursorRow.kind === "folder") root.toggleFolder(root.cursorRow.cat, I18n.isRTL);
-                                else e.accepted = false;
-                            }
-                            Keys.onRightPressed: (e) => {
-                                if (!root.searching && root.cursor >= 0 && root.cursor < root.pinnedApps.length) root.moveCursor(I18n.isRTL ? -1 : 1);
-                                else if (root.cursorRow && root.cursorRow.kind === "folder") root.toggleFolder(root.cursorRow.cat, !I18n.isRTL);
-                                else e.accepted = false;
-                            }
+                            // Left/Right move within the pinned grid, the cards and folder grids
+                            // (reading-direction aware); elsewhere they edit the search text.
+                            Keys.onLeftPressed: (e) => { if (!root.moveHorizontal(-1)) e.accepted = false; }
+                            Keys.onRightPressed: (e) => { if (!root.moveHorizontal(1)) e.accepted = false; }
                         }
 
                         // Clear
@@ -435,6 +457,8 @@ PanelWindow {
                             Layout.fillWidth: true
                             text: I18n.tr("pinned")
                             count: root.pinnedApps.length
+                            labelSize: 13
+                            countSize: 12
                         }
 
                         GridView {
@@ -492,89 +516,188 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 text: I18n.tr("all_apps")
                                 count: root.sortedApps.length
+                                labelSize: 13
+                                countSize: 12
                             }
                             ViewSwitch { Layout.alignment: Qt.AlignVCenter }
                         }
 
-                        ListView {
-                            id: appList
+                        Item {
+                            id: allAppsArea
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            clip: true
-                            boundsBehavior: Flickable.StopAtBounds
-                            model: listModel
-                            cacheBuffer: 400
-                            ScrollBar.vertical: ScrollBar {
-                                policy: appList.contentHeight > appList.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                                width: 4
-                                contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
+
+                            // ── Folders: category cards ─────────────────────────
+                            GridView {
+                                id: cardGrid
+                                anchors.fill: parent
+                                visible: opacity > 0.01
+                                opacity: root.sectionKind === "cards" ? 1 : 0
+                                enabled: root.sectionKind === "cards"
+                                scale: root.sectionKind === "cards" ? 1 : 0.97
+                                Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                                Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                                clip: true
+                                boundsBehavior: Flickable.StopAtBounds
+                                interactive: contentHeight > height
+                                cellWidth: Math.floor(width / root.cardColumns)
+                                cellHeight: root.cardHeight + 8
+                                model: root.categoryGroups
+                                ScrollBar.vertical: ScrollBar {
+                                    policy: cardGrid.contentHeight > cardGrid.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                                    width: 4
+                                    contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
+                                }
+                                delegate: FolderCard {
+                                    required property var modelData
+                                    required property int index
+                                    width: cardGrid.cellWidth
+                                    height: cardGrid.cellHeight
+                                    group: modelData
+                                    selected: root.sectionKind === "cards" && root.cursor === root.pinnedApps.length + index
+                                }
                             }
 
-                            // Folder contents fade in; everything below glides down/up.
-                            add: Transition {
-                                NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 170; easing.type: Easing.OutCubic }
-                            }
-                            remove: Transition {
-                                NumberAnimation { property: "opacity"; to: 0; duration: 110; easing.type: Easing.InCubic }
-                            }
-                            displaced: Transition {
-                                NumberAnimation { property: "y"; duration: 190; easing.type: Easing.OutCubic }
-                                NumberAnimation { property: "opacity"; to: 1; duration: 120 }
-                            }
+                            // ── Folders: an open folder page ───────────────────
+                            ColumnLayout {
+                                id: folderPage
+                                anchors.fill: parent
+                                spacing: Theme.space8
+                                visible: opacity > 0.01
+                                opacity: root.sectionKind === "folder" ? 1 : 0
+                                enabled: root.sectionKind === "folder"
+                                // Slides in from the reading direction's "forward" side.
+                                transform: Translate {
+                                    x: root.sectionKind === "folder" ? 0 : (I18n.isRTL ? -24 : 24)
+                                    Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                                }
+                                Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
 
-                            delegate: Item {
-                                id: rowItem
-                                required property var modelData
-                                required property int index
-                                readonly property string kind: modelData.kind
-                                readonly property bool isSelected: !root.searching && root.cursor >= root.pinnedApps.length
-                                    && root.selectableIndexes[root.cursor - root.pinnedApps.length] === rowItem.index
-                                width: appList.width - 8
-                                height: kind === "header" ? 30 : (kind === "folder" ? 46 : root.rowHeight)
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 10
 
-                                // Letter header (A–Z view)
-                                Text {
-                                    visible: rowItem.kind === "header"
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 12
-                                    anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 4
-                                    text: rowItem.modelData.letter || ""
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: Font.Bold
-                                    color: Theme.notchTextTertiary
-                                    renderType: Theme.renderType
+                                    // Back
+                                    Rectangle {
+                                        implicitWidth: 32
+                                        implicitHeight: 32
+                                        radius: 16
+                                        color: backMa.pressed ? Theme.notchSurfaceActive : (backMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
+                                        border.color: Theme.notchBorderSubtle
+                                        border.width: 1
+                                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                        SymbolicIcon {
+                                            anchors.centerIn: parent
+                                            iconSize: 15
+                                            // "Back" points against the reading direction.
+                                            source: I18n.isRTL ? "go-next-symbolic" : "go-previous-symbolic"
+                                            iconColor: Theme.notchText
+                                        }
+                                        MouseArea {
+                                            id: backMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.closeFolderPage()
+                                        }
+                                    }
+                                    Text {
+                                        text: root.openGroup ? I18n.tr("drawer_cat_" + root.openGroup.id) : ""
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(17)
+                                        font.weight: Font.DemiBold
+                                        color: Theme.notchText
+                                        renderType: Theme.renderType
+                                    }
+                                    Rectangle {
+                                        height: 22
+                                        implicitWidth: folderCount.implicitWidth + 14
+                                        radius: 11
+                                        color: Theme.notchSurface
+                                        Text {
+                                            id: folderCount
+                                            anchors.centerIn: parent
+                                            text: root.openGroup ? String(root.openGroup.apps.length) : ""
+                                            font.family: Theme.typography.fontFamily
+                                            font.pixelSize: Theme.fontSize(12)
+                                            color: Theme.notchTextSecondary
+                                            renderType: Theme.renderType
+                                        }
+                                    }
+                                    Item { Layout.fillWidth: true }
                                 }
 
-                                // Folder (Folders view)
-                                FolderRow {
-                                    visible: rowItem.kind === "folder"
-                                    anchors.fill: parent
-                                    anchors.topMargin: 2
-                                    anchors.bottomMargin: 2
-                                    group: rowItem.kind === "folder" ? (root.groupById[rowItem.modelData.cat] || null) : null
-                                    expanded: rowItem.kind === "folder" && !!root.expandedCats[rowItem.modelData.cat]
-                                    selected: rowItem.isSelected
+                                GridView {
+                                    id: folderGrid
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    clip: true
+                                    boundsBehavior: Flickable.StopAtBounds
+                                    interactive: contentHeight > height
+                                    cellWidth: Math.floor(width / root.folderColumns)
+                                    cellHeight: root.tileHeight
+                                    model: root.openGroup ? root.openGroup.apps : []
+                                    ScrollBar.vertical: ScrollBar {
+                                        policy: folderGrid.contentHeight > folderGrid.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                                        width: 4
+                                        contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
+                                    }
+                                    delegate: PinnedTile {
+                                        required property var modelData
+                                        required property int index
+                                        width: folderGrid.cellWidth
+                                        height: folderGrid.cellHeight
+                                        app: modelData
+                                        selected: root.sectionKind === "folder" && root.cursor === root.pinnedApps.length + index
+                                    }
+                                }
+                            }
+
+                            // ── A–Z list ────────────────────────────────────────
+                            ListView {
+                                id: appList
+                                anchors.fill: parent
+                                visible: root.sectionKind === "list"
+                                clip: true
+                                boundsBehavior: Flickable.StopAtBounds
+                                model: listModel
+                                cacheBuffer: 400
+                                ScrollBar.vertical: ScrollBar {
+                                    policy: appList.contentHeight > appList.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                                    width: 4
+                                    contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
                                 }
 
-                                // Guide line for apps inside an open folder
-                                Rectangle {
-                                    visible: rowItem.kind === "app" && !!rowItem.modelData.nested
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 25
-                                    anchors.top: parent.top
-                                    anchors.bottom: parent.bottom
-                                    width: 1
-                                    color: Theme.notchBorderSubtle
-                                }
+                                delegate: Item {
+                                    id: rowItem
+                                    required property var modelData
+                                    required property int index
+                                    readonly property string kind: modelData.kind
+                                    width: appList.width - 8
+                                    height: kind === "header" ? 34 : root.rowHeight
 
-                                AppRow {
-                                    visible: rowItem.kind === "app"
-                                    anchors.fill: parent
-                                    anchors.leftMargin: rowItem.modelData.nested ? 36 : 0
-                                    app: rowItem.kind === "app" ? rowItem.modelData.app : null
-                                    selected: rowItem.isSelected
+                                    Text {
+                                        visible: rowItem.kind === "header"
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 12
+                                        anchors.bottom: parent.bottom
+                                        anchors.bottomMargin: 4
+                                        text: rowItem.modelData.letter || ""
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(14)
+                                        font.weight: Font.Bold
+                                        color: Theme.notchTextTertiary
+                                        renderType: Theme.renderType
+                                    }
+
+                                    AppRow {
+                                        visible: rowItem.kind === "app"
+                                        anchors.fill: parent
+                                        app: rowItem.kind === "app" ? rowItem.modelData.app : null
+                                        selected: !root.searching && root.sectionKind === "list"
+                                                  && root.cursor >= root.pinnedApps.length
+                                                  && root.selectableIndexes[root.cursor - root.pinnedApps.length] === rowItem.index
+                                    }
                                 }
                             }
                         }
@@ -594,6 +717,8 @@ PanelWindow {
                             Layout.fillWidth: true
                             text: I18n.isRTL ? "النتائج" : "Results"
                             count: root.searchResults.length
+                            labelSize: 13
+                            countSize: 12
                         }
 
                         ListView {
@@ -609,6 +734,9 @@ PanelWindow {
                                 required property var modelData
                                 required property int index
                                 width: searchList.width
+                                height: 54
+                                nameSize: 15
+                                descSize: 12.5
                                 resultData: modelData
                                 isSelected: root.cursor === index
                                 isHovered: resultMa.containsMouse
@@ -679,7 +807,7 @@ PanelWindow {
                         horizontalAlignment: Text.AlignLeft
                         elide: Text.ElideRight
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(13)
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         color: Theme.notchText
                         renderType: Theme.renderType
@@ -700,115 +828,108 @@ PanelWindow {
     // ═════════════════════════════════════════════════════════════════════
     // Components
     // ═════════════════════════════════════════════════════════════════════
-    // Collapsible folder row: [glyph] Name ··· [icon peek] count ›
-    component FolderRow: Rectangle {
-        id: fr
+    // Category card: app-icon preview (3 + "+N"), name, localized app count.
+    component FolderCard: Item {
+        id: fc
         property var group: null
-        property bool expanded: false
         property bool selected: false
+        readonly property int total: group ? group.apps.length : 0
+        readonly property int shown: total > 4 ? 3 : total
 
-        radius: Theme.notchRadiusCard
-        color: fr.selected ? Theme.notchSurfaceActive : (frMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-        border.color: fr.selected ? Theme.notchBorderHighlight : "transparent"
-        border.width: 1
-        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-        RowLayout {
+        Rectangle {
+            id: fcBg
             anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 12
-            spacing: 12
+            anchors.margins: 4
+            radius: Theme.notchRadiusCard + 2
+            color: fc.selected ? Theme.notchSurfaceActive
+                 : (fcMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
+            border.color: fc.selected ? Theme.notchBorderHighlight
+                        : (fcMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+            border.width: 1
+            scale: fcMa.pressed ? 0.97 : 1
+            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+            Behavior on scale { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
 
-            // Folder glyph on a small tonal tile
-            Rectangle {
-                Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 30
-                implicitHeight: 30
-                radius: Theme.radiusSmall
-                color: fr.expanded ? Theme.notchSurfaceActive : Theme.notchSurface
-                border.color: Theme.notchBorderSubtle
-                border.width: 1
-                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                SymbolicIcon {
-                    anchors.centerIn: parent
-                    iconSize: 15
-                    source: fr.group ? fr.group.icon : "folder-symbolic"
-                    iconColor: fr.expanded || frMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                }
-            }
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 0
 
-            Text {
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-                text: fr.group ? I18n.tr("drawer_cat_" + fr.group.id) : ""
-                horizontalAlignment: Text.AlignLeft
-                elide: Text.ElideRight
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(13)
-                font.weight: Font.DemiBold
-                color: Theme.notchText
-                renderType: Theme.renderType
-            }
-
-            // Peek at the first apps while collapsed (fades out when open)
-            Row {
-                Layout.alignment: Qt.AlignVCenter
-                spacing: -5
-                opacity: fr.expanded ? 0 : 1
-                visible: opacity > 0.01
-                Behavior on opacity { NumberAnimation { duration: 140 } }
-                Repeater {
-                    model: fr.group ? fr.group.apps.slice(0, 3) : []
-                    delegate: Rectangle {
-                        required property var modelData
-                        width: 22
-                        height: 22
-                        radius: 7
+                // Icon preview
+                Row {
+                    spacing: 6
+                    Repeater {
+                        model: fc.group ? fc.group.apps.slice(0, fc.shown) : []
+                        delegate: Item {
+                            required property var modelData
+                            width: 30
+                            height: 30
+                            AppIcon { anchors.fill: parent; iconSize: 30; source: parent.modelData ? parent.modelData.icon : "" }
+                        }
+                    }
+                    Rectangle {
+                        visible: fc.total > 4
+                        width: 30
+                        height: 30
+                        radius: 9
                         color: Theme.notchBackground
-                        AppIcon {
+                        border.color: Theme.notchBorder
+                        border.width: 1
+                        Text {
                             anchors.centerIn: parent
-                            iconSize: 18
-                            source: parent.modelData ? parent.modelData.icon : ""
+                            text: "+" + (fc.total - fc.shown)
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(12)
+                            font.weight: Font.DemiBold
+                            color: Theme.notchTextSecondary
+                            renderType: Theme.renderType
                         }
                     }
                 }
-            }
 
-            Text {
-                Layout.alignment: Qt.AlignVCenter
-                text: fr.group ? String(fr.group.apps.length) : ""
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                color: Theme.notchTextTertiary
-                renderType: Theme.renderType
-            }
+                Item { Layout.fillHeight: true }
 
-            // Chevron: points "forward" (reading direction) when closed, down when open
-            SymbolicIcon {
-                Layout.alignment: Qt.AlignVCenter
-                iconSize: 12
-                source: I18n.isRTL ? "pan-start-symbolic" : "pan-end-symbolic"
-                iconColor: Theme.notchTextSecondary
-                rotation: fr.expanded ? (I18n.isRTL ? -90 : 90) : 0
-                Behavior on rotation { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Text {
+                    Layout.fillWidth: true
+                    text: fc.group ? I18n.tr("drawer_cat_" + fc.group.id) : ""
+                    horizontalAlignment: Text.AlignLeft
+                    elide: Text.ElideRight
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: Theme.fontSize(15)
+                    font.weight: Font.DemiBold
+                    color: Theme.notchText
+                    renderType: Theme.renderType
+                }
+                Text {
+                    Layout.fillWidth: true
+                    Layout.topMargin: -3
+                    text: I18n.appsCount(fc.total)
+                    horizontalAlignment: Text.AlignLeft
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: Theme.fontSize(12)
+                    color: Theme.notchTextMeta
+                    renderType: Theme.renderType
+                }
             }
         }
 
         MouseArea {
-            id: frMa
+            id: fcMa
             anchors.fill: parent
+            anchors.margins: 4
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            onClicked: { contextMenu.hide(); if (fr.group) root.toggleFolder(fr.group.id); }
+            onClicked: if (fc.group) root.openFolderPage(fc.group.id)
         }
     }
 
     // Folders / A–Z segmented switch (persists in ConfigManager.drawerGroupBy)
     component ViewSwitch: Rectangle {
         id: vs
-        implicitHeight: 26
+        implicitHeight: 30
         implicitWidth: vsRow.implicitWidth + 4
-        radius: 13
+        radius: 15
         color: Theme.notchSurface
         border.color: Theme.notchBorderSubtle
         border.width: 1
@@ -826,9 +947,9 @@ PanelWindow {
                     id: seg
                     required property var modelData
                     readonly property bool on: (ConfigManager.drawerGroupBy || "category") === modelData.id
-                    height: 22
-                    width: segRow.implicitWidth + 18
-                    radius: 11
+                    height: 26
+                    width: segRow.implicitWidth + 20
+                    radius: 13
                     color: seg.on ? Theme.notchSurfaceActive : (segMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                     Row {
@@ -837,7 +958,7 @@ PanelWindow {
                         spacing: 5
                         SymbolicIcon {
                             anchors.verticalCenter: parent.verticalCenter
-                            iconSize: 11
+                            iconSize: 13
                             source: seg.modelData.icon
                             iconColor: seg.on ? Theme.notchText : Theme.notchTextSecondary
                         }
@@ -845,7 +966,7 @@ PanelWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             text: seg.modelData.label
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(11)
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: seg.on ? Font.DemiBold : Font.Normal
                             color: seg.on ? Theme.notchText : Theme.notchTextSecondary
                             renderType: Theme.renderType
@@ -859,8 +980,10 @@ PanelWindow {
                         onClicked: {
                             contextMenu.hide();
                             ConfigManager.setDrawerGroupBy(seg.modelData.id);
+                            root.openFolder = "";
                             root.resetCursor();
                             appList.positionViewAtBeginning();
+                            cardGrid.positionViewAtBeginning();
                         }
                     }
                 }
@@ -890,10 +1013,10 @@ PanelWindow {
 
             Item {
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: 40; height: 40
+                width: 46; height: 46
                 scale: tileMa.pressed ? 0.92 : 1
                 Behavior on scale { NumberAnimation { duration: Theme.motionFast } }
-                AppIcon { anchors.fill: parent; iconSize: 40; source: tile.app ? tile.app.icon : "" }
+                AppIcon { anchors.fill: parent; iconSize: 46; source: tile.app ? tile.app.icon : "" }
                 Rectangle {
                     visible: root.isRunning(tile.app)
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -910,7 +1033,7 @@ PanelWindow {
                 elide: Text.ElideRight
                 maximumLineCount: 1
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
+                font.pixelSize: Theme.fontSize(13)
                 color: Theme.notchText
                 renderType: Theme.renderType
             }
@@ -948,7 +1071,7 @@ PanelWindow {
 
             AppIcon {
                 Layout.alignment: Qt.AlignVCenter
-                iconSize: 26
+                iconSize: 30
                 source: row.app ? row.app.icon : ""
             }
             Text {
@@ -958,7 +1081,7 @@ PanelWindow {
                 horizontalAlignment: Text.AlignLeft
                 elide: Text.ElideRight
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(13)
+                font.pixelSize: Theme.fontSize(15)
                 font.weight: row.selected ? Font.DemiBold : Font.Normal
                 color: Theme.notchText
                 renderType: Theme.renderType
