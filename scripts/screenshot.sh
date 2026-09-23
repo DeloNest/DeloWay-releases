@@ -74,6 +74,7 @@ FILE_PATH="$SAVE_DIR/Screenshot_${TIMESTAMP}.png"
 
 notify_success() {
     local path="$1"
+    local copied="${2:-1}"   # 1 only when wl-copy really succeeded
     if command -v notify-send >/dev/null 2>&1; then
         local is_ar=0
         if [[ "${LANGUAGE:-$LANG}" == ar* ]]; then
@@ -81,10 +82,12 @@ notify_success() {
         fi
 
         local title="Screenshot Captured"
-        local body="Saved to ${path##*/}\nCopied to clipboard"
+        local body="Saved to ${path##*/}"
+        [ "$copied" = 1 ] && body="$body\nCopied to clipboard"
         if [ $is_ar -eq 1 ]; then
             title="تم التقاط لقطة الشاشة"
-            body="تم الحفظ في ${path##*/}\nونُسخت إلى الحافظة"
+            body="تم الحفظ في ${path##*/}"
+            [ "$copied" = 1 ] && body="$body\nونُسخت إلى الحافظة"
         fi
 
         notify-send -a "DeloWay" \
@@ -101,7 +104,7 @@ case "$MODE" in
         rm -f "$LOCK_FILE"
         # Toggle Quickshell on-screen Screenshot Toolbar
         if command -v qs >/dev/null 2>&1; then
-            qs ipc call deloway toggleScreenshot 2>/dev/null && exit 0
+            qs ipc -p "$(dirname "$(readlink -f "$0")")/../shell" call deloway toggleScreenshot 2>/dev/null && exit 0
         fi
         exec "$0" area
         ;;
@@ -133,8 +136,8 @@ case "$MODE" in
         # Unfreeze display immediately after capture
         unfreeze_screen
 
-        wl-copy --type image/png < "$FILE_PATH" 2>/dev/null
-        notify_success "$FILE_PATH"
+        COPIED=1; wl-copy --type image/png < "$FILE_PATH" 2>/dev/null || COPIED=0
+        notify_success "$FILE_PATH" "$COPIED"
         echo "$FILE_PATH"
         ;;
 
@@ -144,22 +147,23 @@ case "$MODE" in
         GEOM=$(hyprctl activewindow -j 2>/dev/null | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
         if [ -z "$GEOM" ] || [ "$GEOM" = "null,null nullxnull" ] || [ "$GEOM" = "0,0 0x0" ]; then
             unfreeze_screen
+            rm -f "$LOCK_FILE"   # exec keeps our PID, which the lock check would read as "running"
             exec "$0" area
         fi
 
         grim -g "$GEOM" "$FILE_PATH" || exit 1
         unfreeze_screen
 
-        wl-copy --type image/png < "$FILE_PATH" 2>/dev/null
-        notify_success "$FILE_PATH"
+        COPIED=1; wl-copy --type image/png < "$FILE_PATH" 2>/dev/null || COPIED=0
+        notify_success "$FILE_PATH" "$COPIED"
         echo "$FILE_PATH"
         ;;
 
     full|screen|fullscreen)
         sleep 0.05
         grim "$FILE_PATH" || exit 1
-        wl-copy --type image/png < "$FILE_PATH" 2>/dev/null
-        notify_success "$FILE_PATH"
+        COPIED=1; wl-copy --type image/png < "$FILE_PATH" 2>/dev/null || COPIED=0
+        notify_success "$FILE_PATH" "$COPIED"
         echo "$FILE_PATH"
         ;;
 

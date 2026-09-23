@@ -8,7 +8,8 @@ CATEGORY="${1:-terminal}"
 shift || true
 
 CONFIG_FILE="${DELOWAY_CONFIG:-$HOME/.config/deloway/deloway.json}"
-DELOWAY_DIR="${DELOWAY_DIR:-$HOME/Projects/Deloway}"
+# Repo root: env first, else this script's real location (it is symlinked into ~/.local/bin).
+DELOWAY_DIR="${DELOWAY_DIR:-$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)}"
 
 get_default_app() {
     local cat="$1"
@@ -93,16 +94,16 @@ case "$CATEGORY" in
         APP=$(get_default_app "browser" "brave")
         case "$APP" in
             brave|brave-browser)
-                exec brave "$@" 2>/dev/null || exec brave-browser "$@" 2>/dev/null || exec xdg-open "${1:-https://}"
+                launch brave "$@" || launch brave-browser "$@" || exec xdg-open "${1:-https://}"
                 ;;
             firefox)
                 exec firefox "$@"
                 ;;
             zen|zen-browser)
-                exec zen-browser "$@" 2>/dev/null || exec zen "$@" 2>/dev/null || exec xdg-open "${1:-https://}"
+                launch zen-browser "$@" || launch zen "$@" || exec xdg-open "${1:-https://}"
                 ;;
             chromium|chrome)
-                exec chromium "$@" 2>/dev/null || exec google-chrome-stable "$@" 2>/dev/null || exec xdg-open "${1:-https://}"
+                launch chromium "$@" || launch google-chrome-stable "$@" || exec xdg-open "${1:-https://}"
                 ;;
             *)
                 launch "$APP" "$@" || exec xdg-open "${1:-https://}"

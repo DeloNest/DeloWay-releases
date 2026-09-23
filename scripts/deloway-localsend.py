@@ -19,7 +19,10 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
 PREFS_FILE = os.path.expanduser('~/.local/share/org.localsend.localsend_app/shared_preferences.json')
-LOCALSEND_BIN = os.path.expanduser('~/.local/bin/localsend')
+import shutil
+# Packaged installs ship /usr/bin/localsend(_app); the AppImage lives in ~/.local/bin.
+LOCALSEND_BIN = (shutil.which('localsend') or shutil.which('localsend_app')
+                 or os.path.expanduser('~/.local/bin/localsend'))
 PORT = 53317
 
 def get_local_ip():
@@ -204,6 +207,8 @@ def discover_devices():
 def launch_localsend():
     if is_localsend_running():
         return True
+    if not (os.path.isfile(LOCALSEND_BIN) and os.access(LOCALSEND_BIN, os.X_OK)):
+        return False   # not installed
     try:
         env = os.environ.copy()
         env['GDK_BACKEND'] = 'wayland'

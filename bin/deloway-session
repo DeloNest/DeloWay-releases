@@ -6,7 +6,9 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks (~/.local/bin and /usr/local/bin hold links to this file), so the
+# repo is found wherever it was cloned.
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 if [ -d "$SCRIPT_DIR/../shell" ]; then
     PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 elif [ -d "/usr/share/deloway/shell" ]; then
@@ -35,7 +37,8 @@ export CLUTTER_BACKEND="wayland"
 export ELECTRON_OZONE_PLATFORM_HINT="auto"
 
 # Deloway Paths
-export DELOWAY_HOME="${DELOWAY_HOME:-$PROJECT_ROOT}"
+export DELOWAY_DIR="${DELOWAY_DIR:-$PROJECT_ROOT}"   # read by the shell, delo-app and helpers
+export DELOWAY_HOME="${DELOWAY_HOME:-$DELOWAY_DIR}"  # legacy alias
 export DELOWAY_CONFIG="${DELOWAY_CONFIG:-$HOME/.config/deloway/deloway.json}"
 
 # Ensure user directories exist
@@ -46,7 +49,7 @@ mkdir -p "$HOME/.config/deloway" "$HOME/.local/share/applications" "$HOME/Deskto
 # ------------------------------------------------------------------------------
 HYPR_CONF="$HOME/.config/deloway/hyprland.conf"
 if [ ! -f "$HYPR_CONF" ]; then
-    HYPR_CONF="$DELOWAY_HOME/config/hyprland.conf"
+    HYPR_CONF="$DELOWAY_DIR/config/hyprland.conf"
 fi
 
 # ------------------------------------------------------------------------------

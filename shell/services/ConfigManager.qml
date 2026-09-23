@@ -10,7 +10,16 @@ Item {
     id: root
 
     readonly property string homeDir: Quickshell.env("HOME") || "/home"
-    readonly property string projectDir: Quickshell.env("DELOWAY_DIR") || Quickshell.env("DELOWAY_ROOT") || (homeDir + "/Projects/Deloway")
+    // Repo root: DELOWAY_DIR (hyprland.conf / deloway-session), older aliases, then the
+    // parent of the loaded shell dir unless it is the ~/.config/deloway/shell link.
+    readonly property string projectDir: {
+        const env = Quickshell.env("DELOWAY_DIR") || Quickshell.env("DELOWAY_ROOT") || Quickshell.env("DELOWAY_HOME");
+        if (env) return env;
+        const shellDir = String(Quickshell.shellDir || "").replace(/\/+$/, "");
+        if (shellDir.endsWith("/shell") && !shellDir.startsWith(homeDir + "/.config/"))
+            return shellDir.slice(0, -"/shell".length);
+        return homeDir + "/Projects/Deloway";
+    }
     readonly property string userConfigDir: homeDir + "/.config/deloway"
     readonly property string markerPath: userConfigDir + "/setup_done"
     readonly property string fallbackConfigPath: projectDir + "/config/deloway.json"

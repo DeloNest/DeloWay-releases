@@ -15,6 +15,10 @@ import "services"
 ShellRoot {
     id: root
 
+    // Zero hot-reload policy (CLAUDE.md): a live QML reload can crash Quickshell, and a
+    // `git pull` used to trigger one through the file watcher. Restart the shell instead.
+    settings.watchFiles: false
+
     // ═══════════════════════════════════════════════════════════════════════
     //  GLOBAL SHORTCUTS
     //  Registered at shell level so they work regardless of focus.

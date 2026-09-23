@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-OUTPUT_FILE="/home/waleed/Projects/Deloway/docs/LANGUAGE-COVERAGE.md"
+OUTPUT_FILE="${OUTPUT_FILE:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)/docs/LANGUAGE-COVERAGE.md}"
 
 echo "Running DeloWay language coverage audit..."
 
