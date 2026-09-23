@@ -9,6 +9,13 @@ import "../"
 
 Item {
     id: root
+
+    // Widget contents follow the reading direction (widgets themselves are placed by
+    // saved/explicit x; the defaults below start on the reading side).
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
+    property var now: new Date()
+    function defaultX(physicalX, w) { return I18n.isRTL ? root.width - w - physicalX : physicalX; }
     anchors.fill: parent
 
     // Click handler on wallpaper
@@ -41,7 +48,7 @@ Item {
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.clock && ConfigManager.widgetPositions.clock.x !== undefined) ? ConfigManager.widgetPositions.clock.x : 60
+        x: (ConfigManager.widgetPositions.clock && ConfigManager.widgetPositions.clock.x !== undefined) ? ConfigManager.widgetPositions.clock.x : root.defaultX(60, width)
         y: (ConfigManager.widgetPositions.clock && ConfigManager.widgetPositions.clock.y !== undefined) ? ConfigManager.widgetPositions.clock.y : 70
 
         // Drag Handle
@@ -76,7 +83,7 @@ Item {
                 }
 
                 Text {
-                    text: "TIME & DATE"
+                    text: I18n.tr("widget_time_date")
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
@@ -97,7 +104,7 @@ Item {
 
                 Text {
                     id: clockTimeTxt
-                    text: Qt.formatTime(new Date(), ConfigManager.clockFormat === "24h" ? "hh:mm" : "hh:mm")
+                    text: I18n.clockDigits(root.now)
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 38
                     font.weight: Font.DemiBold
@@ -105,8 +112,8 @@ Item {
                 }
 
                 Text {
-                    visible: ConfigManager.clockFormat !== "24h"
-                    text: Qt.formatTime(new Date(), "AP")
+                    visible: text.length > 0
+                    text: I18n.meridiem(root.now)
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
@@ -115,19 +122,20 @@ Item {
             }
 
             Text {
-                text: Qt.formatDate(new Date(), "dddd, MMMM d, yyyy")
+                text: I18n.fullDateText(root.now)
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: 13
                 color: Theme.colors.textSecondary
             }
 
+            // Only while the widgets desktop is shown (the date used to never update,
+            // and the timer ran in every desktop mode).
             Timer {
                 interval: 1000
-                running: true
+                running: root.visible
                 repeat: true
-                onTriggered: {
-                    clockTimeTxt.text = Qt.formatTime(new Date(), ConfigManager.clockFormat === "24h" ? "hh:mm" : "hh:mm");
-                }
+                triggeredOnStart: true
+                onTriggered: root.now = new Date()
             }
         }
     }
@@ -146,7 +154,7 @@ Item {
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.weather && ConfigManager.widgetPositions.weather.x !== undefined) ? ConfigManager.widgetPositions.weather.x : 370
+        x: (ConfigManager.widgetPositions.weather && ConfigManager.widgetPositions.weather.x !== undefined) ? ConfigManager.widgetPositions.weather.x : root.defaultX(370, width)
         y: (ConfigManager.widgetPositions.weather && ConfigManager.widgetPositions.weather.y !== undefined) ? ConfigManager.widgetPositions.weather.y : 70
 
         MouseArea {
@@ -179,7 +187,7 @@ Item {
                 }
 
                 Text {
-                    text: "WEATHER & FORECAST"
+                    text: I18n.tr("widget_weather")
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
@@ -226,17 +234,17 @@ Item {
                 Layout.fillWidth: true
                 spacing: 16
                 Text {
-                    text: "Humidity: " + SystemMonitor.weatherHumidity
+                    text: I18n.tr("widget_humidity") + " " + I18n.ltr(SystemMonitor.weatherHumidity)
                     font.pixelSize: 11
                     color: Theme.colors.textTertiary
                 }
                 Text {
-                    text: "Wind: " + SystemMonitor.weatherWind
+                    text: I18n.tr("widget_wind") + " " + I18n.ltr(SystemMonitor.weatherWind)
                     font.pixelSize: 11
                     color: Theme.colors.textTertiary
                 }
                 Text {
-                    text: "UV Index: " + SystemMonitor.weatherUv
+                    text: I18n.tr("widget_uv") + " " + I18n.ltr(SystemMonitor.weatherUv)
                     font.pixelSize: 11
                     color: Theme.colors.textTertiary
                 }
@@ -258,7 +266,7 @@ Item {
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.system_monitor && ConfigManager.widgetPositions.system_monitor.x !== undefined) ? ConfigManager.widgetPositions.system_monitor.x : 60
+        x: (ConfigManager.widgetPositions.system_monitor && ConfigManager.widgetPositions.system_monitor.x !== undefined) ? ConfigManager.widgetPositions.system_monitor.x : root.defaultX(60, width)
         y: (ConfigManager.widgetPositions.system_monitor && ConfigManager.widgetPositions.system_monitor.y !== undefined) ? ConfigManager.widgetPositions.system_monitor.y : 240
 
         MouseArea {
@@ -291,7 +299,7 @@ Item {
                 }
 
                 Text {
-                    text: "SYSTEM MONITOR"
+                    text: I18n.tr("widget_system")
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
@@ -314,7 +322,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "CPU Load"; font.pixelSize: 11; color: Theme.colors.textSecondary }
+                    Text { text: I18n.tr("widget_cpu"); font.pixelSize: 11; color: Theme.colors.textSecondary }
                     Item { Layout.fillWidth: true }
                     Text { text: SystemMonitor.cpuPercentText; font.weight: Font.DemiBold; font.pixelSize: 11; color: Theme.colors.text }
                 }
@@ -326,6 +334,7 @@ Item {
                     color: Theme.colors.surfaceVariant
 
                     Rectangle {
+                        anchors.left: parent.left   // fills from the reading start (mirrored)
                         width: parent.width * SystemMonitor.cpuUsage
                         height: parent.height
                         radius: 3
@@ -341,7 +350,7 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "Memory Usage"; font.pixelSize: 11; color: Theme.colors.textSecondary }
+                    Text { text: I18n.tr("widget_memory"); font.pixelSize: 11; color: Theme.colors.textSecondary }
                     Item { Layout.fillWidth: true }
                     Text { text: SystemMonitor.ramText; font.weight: Font.DemiBold; font.pixelSize: 11; color: Theme.colors.text }
                 }
@@ -353,6 +362,7 @@ Item {
                     color: Theme.colors.surfaceVariant
 
                     Rectangle {
+                        anchors.left: parent.left
                         width: parent.width * SystemMonitor.ramUsage
                         height: parent.height
                         radius: 3
@@ -395,7 +405,7 @@ Item {
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.notes && ConfigManager.widgetPositions.notes.x !== undefined) ? ConfigManager.widgetPositions.notes.x : 370
+        x: (ConfigManager.widgetPositions.notes && ConfigManager.widgetPositions.notes.x !== undefined) ? ConfigManager.widgetPositions.notes.x : root.defaultX(370, width)
         y: (ConfigManager.widgetPositions.notes && ConfigManager.widgetPositions.notes.y !== undefined) ? ConfigManager.widgetPositions.notes.y : 240
 
         // Drag bar on header
@@ -433,7 +443,7 @@ Item {
                 }
 
                 Text {
-                    text: "QUICK NOTES"
+                    text: I18n.tr("widget_notes")
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: 10
                     font.weight: Font.DemiBold
@@ -464,7 +474,7 @@ Item {
 
                     TextArea {
                         id: noteArea
-                        placeholderText: "Type thoughts, tasks or commands here..."
+                        placeholderText: I18n.tr("widget_notes_placeholder")
                         placeholderTextColor: Theme.colors.textTertiary
                         text: ""
                         font.family: Theme.typography.fontFamily

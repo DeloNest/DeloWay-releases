@@ -340,6 +340,7 @@ PanelWindow {
                 // Description Text
                 Text {
                     Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignLeft   // reading start in both languages
                     text: rowDel.modelData.desc
                     font.family: Theme.typography.fontFamily
                     font.hintingPreference: Theme.hintingPreference

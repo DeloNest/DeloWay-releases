@@ -361,7 +361,7 @@ PanelWindow {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
                             clip: true
-                            horizontalAlignment: I18n.isRTL ? TextInput.AlignRight : TextInput.AlignLeft
+                            horizontalAlignment: TextInput.AlignLeft   // mirrored to the right in Arabic by the inherited LayoutMirroring
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(16)
                             color: Theme.notchText
@@ -663,7 +663,9 @@ PanelWindow {
                                     required property var modelData
                                     required property int index
                                     readonly property string kind: modelData.kind
-                                    width: appList.width - 8
+                                    // Full width; the 8px scrollbar gutter is an anchor margin
+                                    // below, so mirroring puts it on the scrollbar's side.
+                                    width: appList.width
                                     height: kind === "header" ? 34 : root.rowHeight
 
                                     Text {
@@ -683,6 +685,7 @@ PanelWindow {
                                     AppRow {
                                         visible: rowItem.kind === "app"
                                         anchors.fill: parent
+                                        anchors.rightMargin: 8
                                         app: rowItem.kind === "app" ? rowItem.modelData.app : null
                                         selected: !root.searching && root.sectionKind === "list"
                                                   && root.cursor >= root.pinnedApps.length

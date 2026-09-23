@@ -210,7 +210,8 @@ PanelWindow {
                     // 3. Log Out
                     SessionTile {
                         Layout.fillWidth: true
-                        icon: "system-log-out-symbolic"
+                        // Directional exit arrow: the theme ships an -rtl variant.
+                        icon: I18n.isRTL ? "system-log-out-rtl-symbolic" : "system-log-out-symbolic"
                         title: I18n.isRTL ? "خروج" : "Logout"
                         keyHint: "3"
                         onTriggered: root.logoutSession()

@@ -146,11 +146,11 @@ Item {
                                     // Active window indicator dot
                                     Rectangle {
                                         visible: ConfigManager.showUnderline && (previewItem.index < 2)
-                                        anchors.bottom: miniDock.isHorizontal ? parent.bottom : undefined
-                                        anchors.verticalCenter: !miniDock.isHorizontal ? parent.verticalCenter : undefined
-                                        anchors.horizontalCenter: miniDock.isHorizontal ? parent.horizontalCenter : undefined
-                                        anchors.right: (!miniDock.isHorizontal && ConfigManager.dockPosition === "left") ? parent.right : undefined
-                                        anchors.left: (!miniDock.isHorizontal && ConfigManager.dockPosition === "right") ? parent.left : undefined
+                                        // Physical x/y (like Dock.qml): conditional anchors flip at
+                                        // runtime and are swapped by the tab's RTL mirroring.
+                                        x: miniDock.isHorizontal ? Math.round((parent.width - width) / 2)
+                                           : (ConfigManager.dockPosition === "left" ? parent.width - width : 0)
+                                        y: miniDock.isHorizontal ? parent.height - height : Math.round((parent.height - height) / 2)
                                         width: 3
                                         height: 3
                                         radius: 1.5
@@ -291,15 +291,17 @@ Item {
                 icon: "view-fullscreen-symbolic"
                 showDivider: true
 
+                // Physical screen edges: laid out Left · Bottom · Right in both languages
+                // (mirroring put "Right" on the left in Arabic).
                 RowLayout {
                     spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
+                    LayoutMirroring.enabled: false
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
                         model: [
-                            { val: "bottom", label: I18n.isRTL ? "أسفل الشاشة" : "Bottom" },
                             { val: "left",   label: I18n.isRTL ? "اليسار" : "Left" },
+                            { val: "bottom", label: I18n.isRTL ? "أسفل الشاشة" : "Bottom" },
                             { val: "right",  label: I18n.isRTL ? "اليمين" : "Right" }
                         ]
                         delegate: Rectangle {

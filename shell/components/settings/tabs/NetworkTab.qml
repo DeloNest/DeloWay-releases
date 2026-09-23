@@ -45,7 +45,7 @@ Item {
                 subtitle: !NetworkService.wifiEnabled
                     ? (I18n.isRTL ? "الواي فاي معطل" : "Wi-Fi is turned off")
                     : (NetworkService.wifiSsid.length > 0
-                        ? (I18n.isRTL ? ("متصل بشبكة: " + NetworkService.wifiSsid) : ("Connected to: " + NetworkService.wifiSsid))
+                        ? (I18n.isRTL ? ("متصل بشبكة: " + I18n.isolate(NetworkService.wifiSsid)) : ("Connected to: " + I18n.isolate(NetworkService.wifiSsid)))
                         : (I18n.isRTL ? "مفعّل — غير متصل بأي شبكة" : "Enabled — Not connected"))
                 icon: NetworkService.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-offline-symbolic"
                 showDivider: NetworkService.wifiEnabled
@@ -539,7 +539,8 @@ Item {
                                     }
 
                                     Text {
-                                        text: clientCard.modelData.ip ? ("(" + clientCard.modelData.ip + ")") : ""
+                                        horizontalAlignment: Text.AlignLeft   // hug the hostname (mirrored in Arabic)
+                                        text: clientCard.modelData.ip ? ("(" + I18n.ltr(clientCard.modelData.ip) + ")") : ""
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(10)
                                         color: Theme.notchTextTertiary

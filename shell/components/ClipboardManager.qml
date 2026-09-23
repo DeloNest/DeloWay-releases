@@ -312,6 +312,7 @@ PanelWindow {
 
                                     Text {
                                         Layout.fillWidth: true
+                                        horizontalAlignment: Text.AlignLeft   // reading start, even for Latin/code entries
                                         text: clipItem.modelData.text || ""
                                         font.family: clipItem.modelData.isBinary ? Theme.typography.fontFamily : "monospace"
                                         font.pixelSize: Theme.fontSize(12)

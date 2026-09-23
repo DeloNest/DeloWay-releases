@@ -6,6 +6,11 @@ import "../services"
 Rectangle {
     id: root
 
+    // Own mirroring (icon · text · clear follow the reading direction wherever it is
+    // hosted); text and placeholder start at the reading start, not by first letter.
+    LayoutMirroring.enabled: I18n.isRTL
+    LayoutMirroring.childrenInherit: true
+
     property alias text: input.text
     property alias placeholderText: placeholder.text
     property alias echoMode: input.echoMode
@@ -76,6 +81,7 @@ Rectangle {
                 id: input
                 anchors.fill: parent
                 verticalAlignment: TextInput.AlignVCenter
+                horizontalAlignment: TextInput.AlignLeft
                 color: Theme.colors.text
                 selectionColor: Theme.isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.20)
                 selectedTextColor: Theme.colors.text
@@ -93,6 +99,7 @@ Rectangle {
                 id: placeholder
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignLeft
                 color: Theme.colors.textMuted
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference

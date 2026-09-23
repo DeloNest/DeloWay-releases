@@ -163,7 +163,7 @@ Item {
 
             SettingsRow {
                 title: "DeloWay Desktop Shell"
-                subtitle: (I18n.isRTL ? "نواة لينكس: " : "Linux Kernel: ") + (root.osKernel || "Arch Linux") + " • " + (root.osHostname || "localhost")
+                subtitle: (I18n.isRTL ? "نواة لينكس: " : "Linux Kernel: ") + I18n.ltr((root.osKernel || "Arch Linux") + " • " + (root.osHostname || "localhost"))
                 icon: "distributor-logo-symbolic"
                 showDivider: true
 
@@ -190,7 +190,7 @@ Item {
             // Keyboard Shortcuts Cheat Sheet Launcher
             SettingsRow {
                 title: I18n.isRTL ? "دليل اختصارات لوحة المفاتيح" : "Keyboard Shortcuts Cheat Sheet"
-                subtitle: I18n.isRTL ? "استعراض كافة اختصارات النظام ومجموعات المفاتيح (Super + ?)" : "View all desktop keybindings and commands (Super + ?)"
+                subtitle: I18n.isRTL ? "استعراض كافة اختصارات النظام ومجموعات المفاتيح (" + I18n.ltr("Super + ?") + ")" : "View all desktop keybindings and commands (Super + ?)"
                 icon: "preferences-desktop-keyboard-shortcuts-symbolic"
                 showDivider: false
                 clickable: true

@@ -45,7 +45,7 @@ Item {
                 subtitle: !BluetoothService.powered
                     ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is turned off")
                     : (BluetoothService.connectedDeviceName.length > 0
-                        ? (I18n.isRTL ? ("متصل بجهاز: " + BluetoothService.connectedDeviceName) : ("Connected to: " + BluetoothService.connectedDeviceName))
+                        ? (I18n.isRTL ? ("متصل بجهاز: " + I18n.isolate(BluetoothService.connectedDeviceName)) : ("Connected to: " + I18n.isolate(BluetoothService.connectedDeviceName)))
                         : (I18n.isRTL ? "مفعّل — جاهز للاقتران" : "Enabled — Ready to pair"))
                 icon: BluetoothService.powered ? "bluetooth-active-symbolic" : "bluetooth-symbolic"
                 showDivider: BluetoothService.powered

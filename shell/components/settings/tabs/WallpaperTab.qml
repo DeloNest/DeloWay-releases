@@ -143,7 +143,8 @@ Item {
                     anchors.fill: parent
                     anchors.margins: Theme.space16
                     spacing: Theme.space16
-                    layoutDirection: I18n.isRTL ? Qt.RightToLeft : Qt.LeftToRight
+                    // Default LeftToRight + mirroring = RightToLeft in Arabic (a RightToLeft
+                    // layoutDirection on top of mirroring flipped it back to LTR).
                     LayoutMirroring.enabled: I18n.isRTL
                     LayoutMirroring.childrenInherit: true
                     Repeater {

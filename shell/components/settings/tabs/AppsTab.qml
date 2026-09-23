@@ -493,7 +493,7 @@ Item {
             // Advanced Music Launch Target
             SettingsRow {
                 title: I18n.isRTL ? "تخصيص رابط أو أمر تشغيل الموسيقى" : "Custom Music Target & Flag"
-                subtitle: I18n.isRTL ? "تحديد رابط URL يدوي أو تشغيل كنافذة تطبيق مستقلة (--app)" : "Define a custom URL or standalone app mode (--app)"
+                subtitle: I18n.isRTL ? "تحديد رابط URL يدوي أو تشغيل كنافذة تطبيق مستقلة (" + I18n.ltr("--app") + ")" : "Define a custom URL or standalone app mode (--app)"
                 icon: "media-optical-audio-symbolic"
                 showDivider: true
 
@@ -532,7 +532,7 @@ Item {
                         Text {
                             id: webAppText
                             anchors.centerIn: parent
-                            text: I18n.isRTL ? "تطبيق مستقل (--app)" : "Web App (--app)"
+                            text: I18n.isRTL ? "تطبيق مستقل (" + I18n.ltr("--app") + ")" : "Web App (--app)"
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(10)
                             font.weight: webAppToggle.isEnabled ? Font.DemiBold : Font.Normal

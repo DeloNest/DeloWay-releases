@@ -444,6 +444,12 @@ PanelWindow {
 
                                 ScrollBar.vertical: ScrollBar {
                                     id: vBar
+                                    // Placed explicitly: a replaced ScrollBar gets no position
+                                    // from the style; `mirrored` follows the inherited RTL.
+                                    parent: contentScroll
+                                    x: contentScroll.mirrored ? 0 : contentScroll.width - width
+                                    y: contentScroll.topPadding
+                                    height: contentScroll.availableHeight
                                     policy: contentScroll.contentHeight > contentScroll.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                                     width: 6
                                     contentItem: Rectangle {

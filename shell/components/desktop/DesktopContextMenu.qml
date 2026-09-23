@@ -173,7 +173,8 @@ Item {
     // Outer card: flat OLED surface, 1px border (no shadow or glow)
     Rectangle {
         id: menuCard
-        x: Math.max(12, Math.min(DesktopManager.contextMenuX, root.width - width - 12))
+        // Opens toward the reading end of the pointer (left of it in Arabic).
+        x: Math.max(12, Math.min(I18n.isRTL ? DesktopManager.contextMenuX - width : DesktopManager.contextMenuX, root.width - width - 12))
         y: Math.max(12, Math.min(DesktopManager.contextMenuY, root.height - height - 12))
         width: 232
         implicitHeight: menuCol.implicitHeight + 14
@@ -374,6 +375,7 @@ Item {
                         Text {
                             Layout.fillWidth: true
                             elide: Text.ElideRight
+                            horizontalAlignment: Text.AlignLeft   // next to the icon, whatever the name's script
                             text: DesktopManager.contextMenuTargetItem ? DesktopManager.contextMenuTargetItem.name : ""
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(11)

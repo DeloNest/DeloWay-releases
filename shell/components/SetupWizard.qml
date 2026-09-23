@@ -533,13 +533,15 @@ PanelWindow {
                                     color: ConfigManager.dockAutoHide ? (Theme.isDark ? "#ffffff" : "#0f172a") : Theme.colors.surfaceHover
 
                                     Rectangle {
-                                        x: ConfigManager.dockAutoHide ? 22 : 2
+                                        // Anchored so "on" is at the reading end (mirrored in Arabic)
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: ConfigManager.dockAutoHide ? 22 : 2
                                         y: 2
                                         width: 20
                                         height: 20
                                         radius: 10
                                         color: ConfigManager.dockAutoHide ? (Theme.isDark ? "#000000" : "#ffffff") : Theme.colors.text
-                                        Behavior on x { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                                        Behavior on anchors.leftMargin { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                                     }
 
                                     MouseArea {
@@ -688,6 +690,7 @@ PanelWindow {
                                             spacing: 2
 
                                             Text {
+                                                horizontalAlignment: Text.AlignLeft   // reading start (mirrored)
                                                 text: appCard.modelData.name
                                                 font.family: Theme.typography.fontFamily
                                                 font.pixelSize: 12
@@ -699,6 +702,7 @@ PanelWindow {
                                             }
 
                                             Text {
+                                                horizontalAlignment: Text.AlignLeft
                                                 text: appCard.modelData.desc
                                                 font.family: Theme.typography.fontFamily
                                                 font.pixelSize: 10
