@@ -679,9 +679,9 @@ class Sender(threading.Thread):
             if not self.cancelled:
                 self.status('failed', error='timeout')
                 return
-        except (OSError, http.client.HTTPException):
-            if not self.cancelled:
-                self.status('failed', error='unreachable')
+        except (OSError, http.client.HTTPException) as exc:
+            if not self.cancelled:   # detail: refused, TLS, no route… (the shell logs it)
+                self.status('failed', error='unreachable', detail=f'{type(exc).__name__}: {exc}'[:200])
                 return
         finally:
             self.conn.close()
@@ -698,7 +698,7 @@ class Sender(threading.Thread):
             return
         if status != 200 or not isinstance(body, dict) or not isinstance(body.get('files'), dict):
             error = {401: 'pin', 403: 'declined', 409: 'busy', 429: 'busy'}.get(status, 'failed')
-            self.status('failed', error=error)
+            self.status('failed', error=error, detail=f'HTTP {status}')
             return
         session = body.get('sessionId', '')
         sent, last = 0, 0.0
@@ -738,8 +738,8 @@ class Sender(threading.Thread):
                     pass
                 self.status('cancelled')
                 return
-            except (OSError, http.client.HTTPException):
-                self.status('failed', error='interrupted')
+            except (OSError, http.client.HTTPException) as exc:
+                self.status('failed', error='interrupted', detail=f'{type(exc).__name__}: {exc}'[:200])
                 return
             finally:
                 conn.close()

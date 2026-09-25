@@ -199,6 +199,8 @@ Item {
             if (ev.status === "sent") root.sendProgress = 1;
             if (ev.file) root.currentSendingFile = ev.file;
             root.sendError = ev.error || "";
+            if (ev.status === "failed")
+                console.warn("[share] sending to " + (ev.device || "?") + " failed: " + ev.error + (ev.detail ? " (" + ev.detail + ")" : ""));
             break;
         case "incoming":
             root.incoming = ev;
