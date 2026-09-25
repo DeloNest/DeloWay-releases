@@ -61,27 +61,22 @@ PanelWindow {
     // Desktop content hidden: an empty desktop (wallpaper only, right-click still works)
     CleanDesktop {
         anchors.fill: parent
+        screenName: root.targetScreen ? root.targetScreen.name : ""
         visible: !ConfigManager.showDesktopContent
     }
 
     // Widgets Desktop (draggable Fluent widgets)
     WidgetsDesktop {
         anchors.fill: parent
+        screenName: root.targetScreen ? root.targetScreen.name : ""
         visible: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "widgets"
     }
 
     // Traditional Desktop (icons grid & rubber-band select)
     TraditionalDesktop {
         anchors.fill: parent
+        screenName: root.targetScreen ? root.targetScreen.name : ""
         visible: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "traditional"
-    }
-
-    // ----------------------------------------------------
-    // 3. DESKTOP CONTEXT MENU OVERLAY
-    // ----------------------------------------------------
-    DesktopContextMenu {
-        anchors.fill: parent
-        z: 90
     }
 
     // ----------------------------------------------------

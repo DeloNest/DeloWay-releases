@@ -98,6 +98,13 @@ Item {
     property real contextMenuX: 0
     property real contextMenuY: 0
     property var contextMenuTargetItem: null // null = desktop wallpaper, object = specific item
+    // The screen (ShellScreen name) the menu is open on — each screen has its own menu
+    // surface, and only this one shows it.
+    property string contextMenuScreen: ""
+
+    function _menuScreen(screenName) {
+        return screenName || (Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : "");
+    }
 
     // ----------------------------------------------------
     // SELECTION HELPERS
@@ -128,17 +135,21 @@ Item {
     // ----------------------------------------------------
     // CONTEXT MENU HANDLERS
     // ----------------------------------------------------
-    function showWallpaperContextMenu(x, y) {
+    // x, y are screen-local (the desktop spans its screen); screenName defaults to the
+    // focused monitor (IPC).
+    function showWallpaperContextMenu(x, y, screenName) {
         contextMenuTargetItem = null;
         contextMenuX = x;
         contextMenuY = y;
+        contextMenuScreen = _menuScreen(screenName);
         contextMenuVisible = true;
     }
 
-    function showItemContextMenu(item, x, y) {
+    function showItemContextMenu(item, x, y, screenName) {
         contextMenuTargetItem = item;
         contextMenuX = x;
         contextMenuY = y;
+        contextMenuScreen = _menuScreen(screenName);
         if (item && item.id && !isItemSelected(item.id)) {
             selectedItemIds = [item.id];
         }

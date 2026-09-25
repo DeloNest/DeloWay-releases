@@ -9,6 +9,7 @@ import "../"
 
 Item {
     id: root
+    property string screenName: ""   // this desktop's screen: the context menu opens there
 
     // Widget contents follow the reading direction (widgets themselves are placed by
     // saved/explicit x; the defaults below start on the reading side).
@@ -26,7 +27,7 @@ Item {
 
         onClicked: function(mouse) {
             if (mouse.button === Qt.RightButton) {
-                DesktopManager.showWallpaperContextMenu(mouse.x, mouse.y);
+                DesktopManager.showWallpaperContextMenu(mouse.x, mouse.y, root.screenName);
             } else {
                 ShellState.closeAll();
                 DesktopManager.closeContextMenu();

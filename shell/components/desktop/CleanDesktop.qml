@@ -5,6 +5,7 @@ import "../../services"
 
 Item {
     id: root
+    property string screenName: ""   // this desktop's screen: the context menu opens there
     anchors.fill: parent
 
     // Click handler for wallpaper
@@ -14,7 +15,7 @@ Item {
 
         onClicked: function(mouse) {
             if (mouse.button === Qt.RightButton) {
-                DesktopManager.showWallpaperContextMenu(mouse.x, mouse.y);
+                DesktopManager.showWallpaperContextMenu(mouse.x, mouse.y, root.screenName);
             } else {
                 ShellState.closeAll();
                 DesktopManager.closeContextMenu();

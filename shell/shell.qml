@@ -9,6 +9,7 @@ import Quickshell.Hyprland
 // ── Local modules ───────────────────────────────────────────────────────────
 import "components"
 import "components/settings"
+import "components/desktop"
 import "theme"
 import "services"
 
@@ -389,6 +390,7 @@ ShellRoot {
 
             // ── Always-on surfaces ──────────────────────────────────────────
             Background   { targetScreen: screenScope.modelData }
+            DesktopContextMenu { targetScreen: screenScope.modelData }
             Loader {
                 active: ConfigManager.dockMode !== "disabled"
                 sourceComponent: Component {

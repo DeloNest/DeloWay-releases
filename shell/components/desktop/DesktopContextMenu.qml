@@ -2,19 +2,46 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
+import Quickshell.Wayland
 import "../../theme"
 import "../../services"
 import "../"
 
-Item {
+// The desktop's right-click menu, in its own surface on the Top layer.
+// It used to be drawn inside the wallpaper surface (Background layer), i.e. below every
+// window: a menu opened next to a window slid under it, a click inside a window did not
+// close it, Escape did nothing, and with several monitors it opened on all of them.
+// One per screen; only the screen the menu was opened on shows it. While open, the
+// transparent full-screen surface takes the click that dismisses it.
+PanelWindow {
     id: root
 
-    anchors.fill: parent
-    visible: DesktopManager.contextMenuVisible
+    required property ShellScreen targetScreen
+    screen: targetScreen
 
-    // Dismiss context menu on clicking outside
+    readonly property bool shown: DesktopManager.contextMenuVisible
+                                  && !!targetScreen && DesktopManager.contextMenuScreen === targetScreen.name
+
+    anchors { top: true; bottom: true; left: true; right: true }
+    exclusionMode: ExclusionMode.Ignore
+    color: "transparent"
+    visible: root.shown || menuCard.opacity > 0.01
+
+    WlrLayershell.namespace: "deloway:desktop-menu"
+    WlrLayershell.layer: WlrLayer.Top
+    WlrLayershell.keyboardFocus: root.shown ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    // Escape closes, like every other menu
+    Item {
+        anchors.fill: parent
+        focus: root.shown
+        Keys.onEscapePressed: DesktopManager.closeContextMenu()
+    }
+
+    // Dismiss on any click outside the card (either button), over windows too
     MouseArea {
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
         cursorShape: Qt.ArrowCursor
         onClicked: DesktopManager.closeContextMenu()
         onWheel: function(wheel) { wheel.accepted = true; }
@@ -184,8 +211,8 @@ Item {
         LayoutMirroring.childrenInherit: true
 
         // Smooth fade & scale entrance
-        opacity: DesktopManager.contextMenuVisible ? 1.0 : 0.0
-        scale: DesktopManager.contextMenuVisible ? 1.0 : 0.96
+        opacity: root.shown ? 1.0 : 0.0
+        scale: root.shown ? 1.0 : 0.96
         Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
         Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
 

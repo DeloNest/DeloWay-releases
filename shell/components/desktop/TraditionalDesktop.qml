@@ -8,6 +8,7 @@ import "../"
 
 Item {
     id: root
+    property string screenName: ""   // this desktop's screen: the context menu opens there
     anchors.fill: parent
 
     // ----------------------------------------------------
@@ -56,7 +57,7 @@ Item {
                 root.selectCurrentX = mouse.x;
                 root.selectCurrentY = mouse.y;
             } else if (mouse.button === Qt.RightButton) {
-                DesktopManager.showWallpaperContextMenu(mouse.x, mouse.y);
+                DesktopManager.showWallpaperContextMenu(mouse.x, mouse.y, root.screenName);
             }
         }
 
@@ -300,7 +301,7 @@ Item {
                             const isMulti = (mouse.modifiers & Qt.ControlModifier);
                             DesktopManager.selectItem(deskItemWrapper.itemData.id, isMulti);
                         } else if (mouse.button === Qt.RightButton) {
-                            DesktopManager.showItemContextMenu(deskItemWrapper.itemData, deskItemWrapper.x + mouse.x, deskItemWrapper.y + mouse.y);
+                            DesktopManager.showItemContextMenu(deskItemWrapper.itemData, deskItemWrapper.x + mouse.x, deskItemWrapper.y + mouse.y, root.screenName);
                         }
                     }
 
