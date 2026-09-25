@@ -148,7 +148,7 @@ check_aur_helper() {
         log_success "Found AUR helper: ${BOLD}yay${NC}"
     else
         log_warn "No AUR helper (paru/yay) was found in PATH."
-        echo -e "Essential DeloWay packages (e.g. Reversal icon theme) require an AUR helper."
+        echo -e "Some DeloWay packages (Cairo font, LocalSend, pamac) come from the AUR and need a helper."
         
         if [ "$AUTO_YES" = true ]; then
             CHOICE=1
@@ -208,6 +208,9 @@ SELECTED_MONITOR="mission-center"
 
 PKGS_TO_INSTALL=()
 AUR_PKGS_TO_INSTALL=()
+# Built from packaging/<name>/PKGBUILD with makepkg: pinned upstream sources DeloWay
+# needs that no repo or AUR package ships in the required form.
+LOCAL_PKGS_TO_BUILD=()
 
 interactive_app_selection() {
     log_step "3. Default Applications Selection"
@@ -466,6 +469,8 @@ queue_core_packages() {
         "pavucontrol"
         # Called unconditionally by the shell / helpers (missing = silently broken feature):
         "python"                 # every scripts/*.py helper (stdlib only)
+        "base-devel"             # makepkg: packaging/* (icon theme, drivers) and AUR builds
+        "git"                    #   … and their git sources
         "hyprsunset"             # Quick Settings → Night Light
         "power-profiles-daemon"  # Quick Settings → power profile
         "hyprpolkitagent"        # polkit prompts (hyprland.conf exec-once, package actions)
@@ -503,11 +508,15 @@ queue_core_packages() {
         PKGS_TO_INSTALL+=("quickshell")
     fi
 
-    # Reversal Icon Theme
-    # The session uses Reversal-black / Reversal-black-dark (theme-apply switches them by mode).
-    if [ ! -d "/usr/share/icons/Reversal-black-dark" ] && [ ! -d "$HOME/.local/share/icons/Reversal-black-dark" ]; then
-        log_info "Queuing 'reversal-icon-theme-git' from AUR."
-        AUR_PKGS_TO_INSTALL+=("reversal-icon-theme-git")   # its PKGBUILD installs every color variant
+    # Icon theme: the session uses Reversal-black / Reversal-black-dark (QS_ICON_THEME,
+    # theme-apply switches them by mode). The AUR's reversal-icon-theme-git installs only
+    # the default blue variant (its PKGBUILD passes -a, "--alternative"), so without this
+    # every app icon falls back to a letter; packaging/deloway-icon-theme builds the black one.
+    if ! pacman -Q deloway-icon-theme &>/dev/null \
+       && [ ! -f "/usr/share/icons/Reversal-black-dark/index.theme" ] \
+       && [ ! -f "$HOME/.local/share/icons/Reversal-black-dark/index.theme" ]; then
+        log_info "Queuing 'deloway-icon-theme' (Reversal, black variant) to build locally."
+        LOCAL_PKGS_TO_BUILD+=("deloway-icon-theme")
     fi
 
     # AUR packages the shell depends on:
@@ -575,6 +584,8 @@ install_packages() {
         fi
     fi
 
+    build_local_packages
+
     # Enable essential system services
     if [ "$DRY_RUN" = false ]; then
         log_info "Enabling essential system services..."
@@ -590,6 +601,29 @@ install_packages() {
             sudo usermod -aG i2c "$USER" 2>/dev/null || true
         fi
     fi
+}
+
+# Build and install each queued packaging/<name>/PKGBUILD. makepkg -s pulls the repo
+# dependencies; pacman then owns the files, so removal and updates work normally.
+build_local_packages() {
+    [ ${#LOCAL_PKGS_TO_BUILD[@]} -eq 0 ] && return
+    local name dir work
+    for name in "${LOCAL_PKGS_TO_BUILD[@]}"; do
+        dir="$DELOWAY_DIR/packaging/$name"
+        log_info "Building $name from packaging/$name..."
+        if [ "$DRY_RUN" = true ]; then
+            echo -e "${CYAN}[DRY-RUN]${NC} (cd $dir && makepkg -si --needed --noconfirm)"
+            continue
+        fi
+        work=$(mktemp -d)
+        cp -r "$dir/." "$work/"
+        if (cd "$work" && makepkg -si --needed --noconfirm); then
+            log_success "Installed $name."
+        else
+            log_error "Building $name failed (see the makepkg output above)."
+        fi
+        rm -rf "$work"
+    done
 }
 
 # ── 7. Centralized Configuration & Dispatcher Deployment ──────────────────────
@@ -732,9 +766,17 @@ EOF
         log_warn "Could not install /etc/pam.d/deloway (the lock screen will use the 'login' PAM service)."
     fi
 
-    # 7. Apply Icon Theme
-    if command -v gsettings &>/dev/null && [ "$DRY_RUN" = false ]; then
-        gsettings set org.gnome.desktop.interface icon-theme "Reversal-black-dark" 2>/dev/null || true
+    # 7. Icon theme: verify it really landed (apps show letters instead of icons without
+    # it), then set it for GTK.
+    if [ "$DRY_RUN" = false ]; then
+        if [ -f "/usr/share/icons/Reversal-black-dark/index.theme" ] \
+           || [ -f "$HOME/.local/share/icons/Reversal-black-dark/index.theme" ]; then
+            command -v gsettings &>/dev/null \
+                && gsettings set org.gnome.desktop.interface icon-theme "Reversal-black-dark" 2>/dev/null || true
+        elif [ "$SKIP_DEPS" = false ]; then
+            log_error "Icon theme Reversal-black-dark is missing: app icons will show as letters."
+            log_error "Build it with: (cd $DELOWAY_DIR/packaging/deloway-icon-theme && makepkg -si)"
+        fi
     fi
 }
 

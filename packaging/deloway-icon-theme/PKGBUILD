@@ -1,0 +1,27 @@
+# DeloWay icon theme: the black variant of Reversal (Reversal-black, Reversal-black-dark).
+#
+# The AUR package reversal-icon-theme-git runs upstream's install.sh with -a, which is
+# "--alternative", not "all": it installs only the default blue Reversal / Reversal-dark.
+# DeloWay's monochrome identity uses the black variant, so it is packaged here, pinned to
+# a tested upstream commit. install.sh builds it with makepkg; pacman owns the files.
+pkgname=deloway-icon-theme
+_commit=2c8122287e3bad5a6bf860ddd8c7e3b78cf4d451
+pkgver=r278.2c81222
+pkgrel=1
+pkgdesc="Reversal icon theme, black variant (light and dark), as used by the DeloWay shell"
+arch=('any')
+url="https://github.com/yeyushengfan258/Reversal-icon-theme"
+license=('GPL-3.0-only')
+depends=('hicolor-icon-theme' 'breeze-icons')   # index.theme: Inherits=hicolor,breeze
+makedepends=('git')
+options=('!strip')
+source=("Reversal-icon-theme::git+${url}.git#commit=${_commit}")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}/Reversal-icon-theme"
+    install -dm755 "${pkgdir}/usr/share/icons"
+    ./install.sh -t black -d "${pkgdir}/usr/share/icons"
+    # Icon caches are generated on the target by the gtk-update-icon-cache hook.
+    rm -f "${pkgdir}"/usr/share/icons/*/icon-theme.cache
+}
