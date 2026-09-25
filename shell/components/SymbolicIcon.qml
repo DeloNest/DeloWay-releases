@@ -99,8 +99,6 @@ Item {
         "focus-symbolic": "status/focus-symbolic.svg",
         "dnd": "status/focus-symbolic.svg",
         "dnd-symbolic": "status/focus-symbolic.svg",
-        "view-fullscreen": "status/search.svg",
-        "view-fullscreen-symbolic": "status/search.svg",
         "expand": "status/search.svg",
         "audio-x-generic": "status/audio-x-generic.svg",
         "audio-x-generic-symbolic": "status/audio-x-generic.svg",
