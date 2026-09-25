@@ -178,12 +178,37 @@ reload_shell() {
     fi
 }
 
+# New versions can depend on packages or system setup an older install.sh never added
+# (icon theme, fonts, hotspot tools, the Arabic locale). update.sh changes nothing on the
+# system; it lists what is missing and points at install.sh, which is safe to re-run.
+check_dependencies() {
+    log_info "Checking dependencies..."
+    local missing=() pkgs
+    # The core package list is read from install.sh, so there is one list to maintain.
+    pkgs=$(sed -n '/local core_tools=(/,/^    )/p' "$DELOWAY_DIR/install.sh" | grep -o '^ *"[^"]*"' | tr -d ' "')
+    if command -v pacman &>/dev/null && [ -n "$pkgs" ]; then
+        # pacman -T prints the dependencies that are not satisfied (exit 127 when some are)
+        # shellcheck disable=SC2086
+        mapfile -t missing < <(pacman -T $pkgs 2>/dev/null || true)
+    fi
+    [ -f /usr/share/icons/Reversal-black-dark/index.theme ] || [ -f "$HOME/.local/share/icons/Reversal-black-dark/index.theme" ] \
+        || missing+=("deloway-icon-theme (packaging/deloway-icon-theme)")
+    grep -qE '^ar_SA\.UTF-8[[:space:]]' /etc/locale.gen 2>/dev/null || missing+=("ar_SA.UTF-8 locale")
+    if [ ${#missing[@]} -eq 0 ]; then
+        log_success "All dependencies are installed."
+    else
+        log_warn "Missing since your last install: ${missing[*]}"
+        log_warn "Install them with: (cd \"$DELOWAY_DIR\" && ./install.sh -y)  — it keeps your settings."
+    fi
+}
+
 main() {
     print_header
     sync_git_repo
     backup_config
     migrate_schema
     sync_assets
+    check_dependencies
     reload_shell "${1:-}"
     echo ""
     if [ "$UPDATE_OK" = true ]; then
