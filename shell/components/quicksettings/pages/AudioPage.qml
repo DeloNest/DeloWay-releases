@@ -29,7 +29,7 @@ ColumnLayout {
         const s = ((n.name || "") + " " + (n.description || "")).toLowerCase();
         if (s.indexOf("headphone") >= 0 || s.indexOf("headset") >= 0 || s.indexOf("bluez") >= 0) return "audio-headphones-symbolic";
         if (s.indexOf("hdmi") >= 0 || s.indexOf("displayport") >= 0) return "video-display-symbolic";
-        return "audio-speakers-symbolic";
+        return IconResolver.directional("audio-speakers-symbolic");
     }
 
     QSPageHeader {
@@ -98,7 +98,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.bottomMargin: 4
                 visible: root.qs.audioSource !== null
-                iconName: root.qs.micMuted ? "microphone-sensitivity-muted-symbolic" : "audio-input-microphone-symbolic"
+                iconName: root.qs.micMuted ? IconResolver.directional("microphone-sensitivity-muted-symbolic") : "audio-input-microphone-symbolic"
                 value: root.qs.micVolume
                 muted: root.qs.micMuted
                 onMoved: (v) => root.qs.setMicVolume(v)

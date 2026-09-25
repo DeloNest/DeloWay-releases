@@ -39,7 +39,7 @@ ColumnLayout {
     readonly property var actions: [
         { id: "lock",     icon: "system-lock-screen-symbolic", label: root.t("قفل الشاشة", "Lock"),        confirm: false },
         { id: "suspend",  icon: "system-suspend-symbolic",     label: root.t("سكون", "Suspend"),           confirm: false, cmd: ["systemctl", "suspend"] },
-        { id: "logout",   icon: "system-log-out-symbolic",     label: root.t("تسجيل الخروج", "Log Out"),   confirm: true },
+        { id: "logout",   icon: IconResolver.directional("system-log-out-symbolic"),     label: root.t("تسجيل الخروج", "Log Out"),   confirm: true },
         { id: "reboot",   icon: "system-reboot-symbolic",      label: root.t("إعادة التشغيل", "Restart"),  confirm: true,  cmd: ["systemctl", "reboot"] },
         { id: "poweroff", icon: "system-shutdown-symbolic",    label: root.t("إيقاف التشغيل", "Shut Down"), confirm: true, cmd: ["systemctl", "poweroff"] }
     ]

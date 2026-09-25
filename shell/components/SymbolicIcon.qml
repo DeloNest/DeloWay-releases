@@ -222,7 +222,7 @@ Item {
     // the theme's baked-in colour. Mirroring is intentionally NOT applied here: callers
     // that pick a direction per locale for unmapped icons keep working unchanged.
     readonly property bool themeSymbolic: !root.resolvedSource && root.source.length > 0
-                                          && /-symbolic$/.test(root.source) && IconResolver.has(root.source)
+                                          && /-symbolic(-rtl)?$/.test(root.source) && IconResolver.has(root.source)
 
     Image {
         id: themeIcon

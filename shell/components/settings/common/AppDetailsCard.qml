@@ -208,8 +208,8 @@ ColumnLayout {
     // right-click menu), next to the icon they act on.
     readonly property bool canViewInStore: !!(root.info && (root.info.source === "pacman" || root.info.source === "aur"))
     readonly property bool canUninstall: !!(root.info && root.info.ok && root.info.removable)
-    readonly property string storeIcon: Quickshell.hasThemeIcon("external-link-symbolic") ? "external-link-symbolic"
-                                      : (I18n.isRTL && Quickshell.hasThemeIcon("go-jump-symbolic-rtl") ? "go-jump-symbolic-rtl" : "go-jump-symbolic")
+    readonly property string storeIcon: IconResolver.has("external-link-symbolic") ? IconResolver.directional("external-link-symbolic")
+                                                                                 : IconResolver.directional("go-jump-symbolic")
 
     RowLayout {
         Layout.fillWidth: true

@@ -446,7 +446,7 @@ PanelWindow {
 
                         Text {
                             text: I18n.isRTL
-                                  ? "↑ / ↓ للتنقل • ↵ للنسخ • Esc للإغلاق"
+                                  ? "↑ / ↓ للتنقل • ↲ للنسخ • Esc للإغلاق"   // Enter glyph pointing the RTL way
                                   : "↑ / ↓ navigate • ↵ copy • Esc close"
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(10)

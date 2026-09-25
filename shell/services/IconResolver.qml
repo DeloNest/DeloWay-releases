@@ -26,6 +26,19 @@ Item {
         return "";
     }
 
+    // Icons that point somewhere (log out, external link, speaker…) have "-rtl" variants in
+    // icon themes; in Arabic the variant is used when the theme has it. Themes spell it
+    // both ways (system-log-out-rtl-symbolic, audio-volume-high-symbolic-rtl). Opt-in per
+    // call: arrows the caller already swaps (go-previous/go-next) must not flip twice.
+    function directional(name) {
+        if (!name || !I18n.isRTL) return name;
+        const candidates = /-symbolic$/.test(name)
+            ? [name.replace(/-symbolic$/, "-rtl-symbolic"), name + "-rtl"]
+            : [name + "-rtl"];
+        for (const c of candidates) if (root.has(c)) return c;
+        return name;
+    }
+
     // Any icon source a D-Bus client or a caller may hand us — "image://icon/NAME",
     // "image://icon/NAME?fallback=OTHER", a plain theme name, a path or another image
     // provider URL (tray pixmaps: image://qsimage/…) — made safe to display. Theme lookups

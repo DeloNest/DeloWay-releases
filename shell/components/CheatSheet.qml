@@ -269,9 +269,13 @@ PanelWindow {
                 Layout.fillWidth: true
                 spacing: Theme.space8
 
-                // Key Combo (badges with '+' between them)
+                // Key Combo (badges with '+' between them). Written left-to-right in both
+                // languages (Super + Shift + S), as keyboards and the About tab show it; the
+                // row itself still mirrors, so the combo sits at the reading start.
                 RowLayout {
                     spacing: 3
+                    LayoutMirroring.enabled: false
+                    LayoutMirroring.childrenInherit: true
 
                     Repeater {
                         model: rowDel.modelData.keys
