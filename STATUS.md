@@ -199,6 +199,8 @@
 * `701a438` - perf(share): stop keeping the LocalSend app running hidden
 * `c90602e` - fix(share): cancel works while waiting for the receiver to accept
 * `3e443ae` - feat(share): open the LocalSend app from the Share tab
+* `a855b7e` - fix(share): log why a send failed
+* `160c907` - fix(share): present our certificate to LocalSend 2.2 receivers
 
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
@@ -316,7 +318,7 @@
 ### و) خطوات معلّقة تحتاج صاحب الجهاز (sudo أو الجلسة الحقيقية)
 1. ✅ (25 سبتمبر 17:10) ثُبّت خطاف الهوتسبوت وقاعدة `ufw allow LocalSend` على الجهاز؛ البث المتعدد لـ LocalSend يمر الآن (مقيس).
 2. ✅ الهوتسبوت: الجوال (S22) اتصل بـ `myarch` وأخذ `10.42.0.169` عبر DHCP وله إنترنت — المشكلة الأصلية محلولة ومتحقق منها.
-3. ⏳ LocalSend مع الجوال الحقيقي: الشيل الحقيقي يشغّل التبويب الجديد، S22 Ultra مستورد، والحاسوب اكتشف الجوال على الهوتسبوت (حدّث عنوانه تلقائياً)، لكن أول إرسال فشل لأن تطبيق LocalSend على الجوال كان في الخلفية (المنفذ صامت). يلزم إعادة الاختبار والتطبيق ظاهر على شاشة الجوال، وإعادة تشغيل الشيل لتحميل زر «فتح LocalSend».
+3. ⏳ LocalSend مع الجوال الحقيقي: من الجوال إلى الحاسوب يعمل (مُتحقَّق). من الحاسوب إلى الجوال كان يفشل لأن LocalSend 2.2 على الجوال يشترط شهادة العميل (mutual TLS: `certificate required`)؛ أُصلح (النظير يقدّم شهادته) ونجح `register` مع الجوال الحقيقي، وبقي إرسال ملف فعلي بعد إعادة تشغيل الشيل.
 
 ---
 
