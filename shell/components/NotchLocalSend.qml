@@ -84,7 +84,7 @@ Item {
         Text {
             text: LocalSendService.localAlias || "LocalSend"
             font.family: Theme.typography.fontFamily
-            font.pixelSize: 11
+            font.pixelSize: Theme.fontSize(11)
             font.weight: Font.DemiBold
             renderType: Theme.renderType
             color: Theme.notchText
@@ -92,7 +92,7 @@ Item {
 
         Text {
             text: "•"
-            font.pixelSize: 10
+            font.pixelSize: Theme.fontSize(10)
             color: Theme.notchTextTertiary
         }
 
@@ -114,7 +114,7 @@ Item {
                 return LocalSendService.localIp;
             }
             font.family: Theme.typography.fontFamily
-            font.pixelSize: 10
+            font.pixelSize: Theme.fontSize(10)
             renderType: Theme.renderType
             // State colour lives on the 8px dot beside this text.
             color: (root.stage === "failed" || root.stage === "sent" || LocalSendService.isRunning)
@@ -218,14 +218,14 @@ Item {
                     Text {
                         text: I18n.isRTL ? "اسحب الملفات هنا للحفظ أو الإرسال السريع" : "Drop files here to hold or share via LocalSend"
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         font.weight: Font.Medium
                         color: Theme.notchText
                     }
                     Text {
                         text: "LocalSend: " + LocalSendService.localAlias + " • " + (LocalSendService.isRunning ? I18n.tr("notch_status_ready") : I18n.tr("notch_status_stopped"))
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fontSize(10)
                         color: LocalSendService.isRunning ? Theme.notchTextSecondary : Theme.notchTextTertiary
                     }
                 }
@@ -298,7 +298,7 @@ Item {
                                         if (s.endsWith(".zip") || s.endsWith(".tar") || s.endsWith(".gz")) return "📦";
                                         return "📁";
                                     }
-                                    font.pixelSize: 16
+                                    font.pixelSize: Theme.fontSize(16)
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
@@ -313,7 +313,7 @@ Item {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "PDF"
-                                        font.pixelSize: 7
+                                        font.pixelSize: Theme.fontSize(7)
                                         font.bold: true
                                         color: Theme.notchText
                                     }
@@ -330,7 +330,7 @@ Item {
                                 return name;
                             }
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fontSize(10)
                             font.weight: Font.Medium
                             color: Theme.notchText
                             elide: Text.ElideMiddle
@@ -391,7 +391,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: I18n.isRTL ? "→" : "←"
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             color: Theme.notchTextSecondary
                         }
 
@@ -407,7 +407,7 @@ Item {
                     Text {
                         text: I18n.tr("notch_select_device")
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize(11)
                         font.weight: Font.Bold
                         color: Theme.notchText
                     }
@@ -423,7 +423,7 @@ Item {
                             anchors.centerIn: parent
                             text: (root.droppedUrls.length || 1) + " " + (root.droppedUrls.length === 1 ? I18n.tr("notch_file_ready") : I18n.tr("notch_files_ready"))
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 8
+                            font.pixelSize: Theme.fontSize(8)
                             font.weight: Font.DemiBold
                             color: Theme.notchText
                         }
@@ -445,7 +445,7 @@ Item {
                             anchors.centerIn: parent
                             text: LocalSendService.isScanning ? I18n.tr("notch_scanning") : "🔄 " + I18n.tr("notch_scan_network")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 8
+                            font.pixelSize: Theme.fontSize(8)
                             color: Theme.notchText
                         }
 
@@ -499,7 +499,7 @@ Item {
                                     Text {
                                         text: realDeviceCard.modelData.alias || realDeviceCard.modelData.ip
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize(10)
                                         font.weight: Font.DemiBold
                                         color: Theme.notchText
                                         elide: Text.ElideRight
@@ -510,7 +510,7 @@ Item {
                                     Text {
                                         text: realDeviceCard.modelData.ip
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 8
+                                        font.pixelSize: Theme.fontSize(8)
                                         color: Theme.notchTextTertiary
                                         Layout.alignment: Qt.AlignHCenter
                                     }
@@ -570,7 +570,7 @@ Item {
                                 Text {
                                     text: I18n.tr("notch_no_devices")
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.DemiBold
                                     color: Theme.notchText
                                 }
@@ -578,7 +578,7 @@ Item {
                                 Text {
                                     text: I18n.tr("notch_no_devices_hint")
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 8
+                                    font.pixelSize: Theme.fontSize(8)
                                     color: Theme.notchTextSecondary
                                     wrapMode: Text.WordWrap
                                     Layout.fillWidth: true
@@ -599,7 +599,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: I18n.tr("notch_open_app")
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 9
+                                    font.pixelSize: Theme.fontSize(9)
                                     font.weight: Font.Medium
                                     color: Theme.notchText
                                 }
@@ -640,7 +640,7 @@ Item {
                     Text {
                         text: I18n.tr("notch_sending_to") + " " + (root.selectedDevice ? (root.selectedDevice.alias || root.selectedDevice.ip) : "")
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         font.weight: Font.Bold
                         color: Theme.notchText
                     }
@@ -668,7 +668,7 @@ Item {
                 Text {
                     text: Math.round(root.sendProgress * 100) + "%"
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.DemiBold
                     color: Theme.notchText
                     Layout.alignment: Qt.AlignHCenter
@@ -693,7 +693,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: "✓"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.Bold
                         color: Theme.colors.success
                     }
@@ -702,7 +702,7 @@ Item {
                 Text {
                     text: I18n.tr("notch_sent_success")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     font.weight: Font.Bold
                     color: Theme.notchText
                     Layout.alignment: Qt.AlignHCenter
@@ -722,7 +722,7 @@ Item {
                         anchors.centerIn: parent
                         text: I18n.tr("notch_send_more")
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 9
+                        font.pixelSize: Theme.fontSize(9)
                         font.weight: Font.Medium
                         color: Theme.notchText
                     }
@@ -756,7 +756,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: "✕"
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.Bold
                         color: Theme.colors.urgent
                     }
@@ -765,7 +765,7 @@ Item {
                 Text {
                     text: I18n.tr("notch_sent_failed")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     font.weight: Font.Bold
                     color: Theme.notchText
                     Layout.alignment: Qt.AlignHCenter
@@ -774,7 +774,7 @@ Item {
                 Text {
                     text: LocalSendService.lastSendError || ""
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.fontSize(9)
                     color: Theme.notchTextSecondary
                     Layout.alignment: Qt.AlignHCenter
                     Layout.maximumWidth: parent.width
@@ -800,7 +800,7 @@ Item {
                             anchors.centerIn: parent
                             text: I18n.tr("notch_try_again")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fontSize(9)
                             font.weight: Font.Medium
                             color: Theme.notchText
                         }
@@ -835,7 +835,7 @@ Item {
                             anchors.centerIn: parent
                             text: I18n.tr("common_cancel")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fontSize(9)
                             font.weight: Font.Medium
                             color: Theme.notchTextSecondary
                         }

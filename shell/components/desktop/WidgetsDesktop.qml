@@ -85,7 +85,7 @@ Item {
                 Text {
                     text: I18n.tr("widget_time_date")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.DemiBold
                     color: Theme.colors.textSecondary
                 }
@@ -94,7 +94,7 @@ Item {
 
                 Text {
                     text: "⋮⋮"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
                 }
             }
@@ -106,7 +106,7 @@ Item {
                     id: clockTimeTxt
                     text: I18n.clockDigits(root.now)
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 38
+                    font.pixelSize: Theme.fontSize(38)
                     font.weight: Font.DemiBold
                     color: Theme.colors.text
                 }
@@ -115,7 +115,7 @@ Item {
                     visible: text.length > 0
                     text: I18n.meridiem(root.now)
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.fontSize(14)
                     font.weight: Font.DemiBold
                     color: Theme.colors.textSecondary
                 }
@@ -124,7 +124,7 @@ Item {
             Text {
                 text: I18n.fullDateText(root.now)
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 13
+                font.pixelSize: Theme.fontSize(13)
                 color: Theme.colors.textSecondary
             }
 
@@ -189,7 +189,7 @@ Item {
                 Text {
                     text: I18n.tr("widget_weather")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.DemiBold
                     color: Theme.colors.textSecondary
                 }
@@ -198,7 +198,7 @@ Item {
 
                 Text {
                     text: "⋮⋮"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
                 }
             }
@@ -217,14 +217,14 @@ Item {
                     Text {
                         text: SystemMonitor.weatherTemp
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 30
+                        font.pixelSize: Theme.fontSize(30)
                         font.weight: Font.DemiBold
                         color: Theme.colors.text
                     }
                     Text {
                         text: SystemMonitor.weatherDesc + " • " + SystemMonitor.weatherCity
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         color: Theme.colors.textSecondary
                     }
                 }
@@ -235,17 +235,17 @@ Item {
                 spacing: 16
                 Text {
                     text: I18n.tr("widget_humidity") + " " + I18n.ltr(SystemMonitor.weatherHumidity)
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textTertiary
                 }
                 Text {
                     text: I18n.tr("widget_wind") + " " + I18n.ltr(SystemMonitor.weatherWind)
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textTertiary
                 }
                 Text {
                     text: I18n.tr("widget_uv") + " " + I18n.ltr(SystemMonitor.weatherUv)
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textTertiary
                 }
             }
@@ -301,7 +301,7 @@ Item {
                 Text {
                     text: I18n.tr("widget_system")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.DemiBold
                     color: Theme.colors.textSecondary
                 }
@@ -310,7 +310,7 @@ Item {
 
                 Text {
                     text: "⋮⋮"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
                 }
             }
@@ -322,9 +322,9 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: I18n.tr("widget_cpu"); font.pixelSize: 11; color: Theme.colors.textSecondary }
+                    Text { text: I18n.tr("widget_cpu"); font.pixelSize: Theme.fontSize(11); color: Theme.colors.textSecondary }
                     Item { Layout.fillWidth: true }
-                    Text { text: SystemMonitor.cpuPercentText; font.weight: Font.DemiBold; font.pixelSize: 11; color: Theme.colors.text }
+                    Text { text: SystemMonitor.cpuPercentText; font.weight: Font.DemiBold; font.pixelSize: Theme.fontSize(11); color: Theme.colors.text }
                 }
 
                 Rectangle {
@@ -350,9 +350,9 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: I18n.tr("widget_memory"); font.pixelSize: 11; color: Theme.colors.textSecondary }
+                    Text { text: I18n.tr("widget_memory"); font.pixelSize: Theme.fontSize(11); color: Theme.colors.textSecondary }
                     Item { Layout.fillWidth: true }
-                    Text { text: SystemMonitor.ramText; font.weight: Font.DemiBold; font.pixelSize: 11; color: Theme.colors.text }
+                    Text { text: SystemMonitor.ramText; font.weight: Font.DemiBold; font.pixelSize: Theme.fontSize(11); color: Theme.colors.text }
                 }
 
                 Rectangle {
@@ -385,7 +385,7 @@ Item {
                 Text {
                     text: SystemMonitor.hasBattery ? ((I18n.isRTL ? "البطارية " : "Battery ") + I18n.digits(SystemMonitor.batteryPercent) + "%")
                                                 : (I18n.isRTL ? "متصل بالتيار" : "Power: AC Connected")
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textSecondary
                 }
             }
@@ -446,7 +446,7 @@ Item {
                 Text {
                     text: I18n.tr("widget_notes")
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.DemiBold
                     color: Theme.colors.textSecondary
                 }
@@ -455,7 +455,7 @@ Item {
 
                 Text {
                     text: "⋮⋮"
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
                 }
             }
@@ -479,7 +479,7 @@ Item {
                         placeholderTextColor: Theme.colors.textTertiary
                         text: ""
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         color: Theme.colors.text
                         wrapMode: Text.WordWrap
                         background: null

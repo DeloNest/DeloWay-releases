@@ -158,7 +158,7 @@ PopupWindow {
                     Text {
                         text: I18n.isRTL ? "›" : "‹"
                         font.family: Theme.typography.fontFamily
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.Bold
                         color: Theme.notchTextSecondary
                     }
@@ -279,7 +279,7 @@ PopupWindow {
                                     anchors.centerIn: parent
                                     text: itemBg.isChecked ? (modelData.checkState === Qt.PartiallyChecked ? "–" : "✓") : ""
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.Bold
                                     color: Theme.notchText
                                 }
@@ -314,7 +314,7 @@ PopupWindow {
                                 visible: modelData && modelData.hasChildren
                                 text: I18n.isRTL ? "‹" : "›"
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.fontSize(13)
                                 font.weight: Font.DemiBold
                                 color: itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
                                 Layout.alignment: Qt.AlignVCenter

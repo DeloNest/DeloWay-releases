@@ -102,7 +102,7 @@ Rectangle {
                         Text {
                             anchors.centerIn: parent
                             text: "─"
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize(11)
                             color: Theme.colors.textSecondary
                         }
 
@@ -127,7 +127,7 @@ Rectangle {
                         Text {
                             anchors.centerIn: parent
                             text: root.isMaximized ? "❐" : "□"
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             color: Theme.colors.textSecondary
                         }
 
@@ -152,7 +152,7 @@ Rectangle {
                         Text {
                             anchors.centerIn: parent
                             text: "✕"
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize(11)
                             color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.textSecondary
                         }
 

@@ -74,7 +74,7 @@ Item {
                 visible: cItem.isCheckable && cItem.isChecked
                 text: "✓"
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 12
+                font.pixelSize: Theme.fontSize(12)
                 font.weight: Font.Bold
                 color: Theme.notchText
             }
@@ -84,7 +84,7 @@ Item {
                 visible: cItem.hasSubmenu
                 text: I18n.isRTL ? "‹" : "›"
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 14
+                font.pixelSize: Theme.fontSize(14)
                 font.weight: Font.DemiBold
                 color: itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
             }
@@ -147,7 +147,7 @@ Item {
                 visible: mItem.isActive
                 text: "✓"
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize(11)
                 font.weight: Font.Bold
                 color: Theme.notchText
             }
@@ -285,7 +285,7 @@ Item {
                     Layout.bottomMargin: 1
                     text: I18n.isRTL ? "وضع سطح المكتب" : "DESKTOP MODE"
                     font.family: Theme.typography.fontFamily
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.DemiBold
                     color: Theme.notchTextTertiary
                     renderType: Theme.renderType

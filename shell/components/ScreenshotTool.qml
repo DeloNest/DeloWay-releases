@@ -107,7 +107,7 @@ PanelWindow {
 
                         Text {
                             text: "󰆞"
-                            font.pixelSize: 17
+                            font.pixelSize: Theme.fontSize(17)
                             font.family: Theme.typography.fontFamily
                             color: Theme.colors.text
                             renderType: Theme.renderType
@@ -116,7 +116,7 @@ PanelWindow {
                         Text {
                             text: I18n.tr("screenshot_selection")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.colors.text
                             renderType: Theme.renderType
@@ -153,7 +153,7 @@ PanelWindow {
 
                         Text {
                             text: "󰖲"
-                            font.pixelSize: 17
+                            font.pixelSize: Theme.fontSize(17)
                             font.family: Theme.typography.fontFamily
                             color: Theme.colors.text
                             renderType: Theme.renderType
@@ -162,7 +162,7 @@ PanelWindow {
                         Text {
                             text: I18n.tr("screenshot_window")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.colors.text
                             renderType: Theme.renderType
@@ -199,7 +199,7 @@ PanelWindow {
 
                         Text {
                             text: "󰍹"
-                            font.pixelSize: 17
+                            font.pixelSize: Theme.fontSize(17)
                             font.family: Theme.typography.fontFamily
                             color: Theme.colors.text
                             renderType: Theme.renderType
@@ -208,7 +208,7 @@ PanelWindow {
                         Text {
                             text: I18n.tr("screenshot_fullscreen")
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fontSize(12)
                             font.weight: Font.DemiBold
                             color: Theme.colors.text
                             renderType: Theme.renderType
@@ -248,7 +248,7 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: "✕"
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fontSize(12)
                         font.weight: Font.Bold
                         color: closeMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
                         renderType: Theme.renderType

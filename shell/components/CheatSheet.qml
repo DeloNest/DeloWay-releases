@@ -324,7 +324,7 @@ PanelWindow {
                                     text: keyDel.modelData
                                     font.family: Theme.typography.fontFamily
                                     font.hintingPreference: Theme.hintingPreference
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     font.weight: Font.Medium
                                     renderType: Theme.renderType
                                     color: Theme.colors.text
@@ -337,7 +337,7 @@ PanelWindow {
                                 text: "+"
                                 font.family: Theme.typography.fontFamily
                                 font.hintingPreference: Theme.hintingPreference
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.Normal
                                 renderType: Theme.renderType
                                 color: Theme.colors.textTertiary
@@ -353,7 +353,7 @@ PanelWindow {
                     text: rowDel.modelData.desc
                     font.family: Theme.typography.fontFamily
                     font.hintingPreference: Theme.hintingPreference
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fontSize(11)
                     font.weight: Font.Normal
                     renderType: Theme.renderType
                     color: Theme.colors.textSecondary

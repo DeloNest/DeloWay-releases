@@ -91,7 +91,7 @@ WlSessionLock {
                             Layout.alignment: Qt.AlignHCenter
                             text: I18n.clockText(root.now, false)
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 68
+                            font.pixelSize: Theme.fontSize(68)
                             font.weight: Font.Light
                             color: Theme.colors.text
                         }
@@ -229,7 +229,7 @@ WlSessionLock {
                             id: errorMsg
                             text: ""
                             font.family: Theme.typography.fontFamily
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fontSize(11)
                             color: Theme.colors.textSecondary
                         }
                     }

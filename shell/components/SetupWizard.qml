@@ -108,7 +108,7 @@ PanelWindow {
                         text: I18n.tr("welcome_deloos")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 18
+                        font.pixelSize: Theme.fontSize(18)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -117,7 +117,7 @@ PanelWindow {
                         text: I18n.tr("setup_wizard_desc")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fontSize(11)
                         renderType: Theme.renderType
                         color: Theme.colors.textSecondary
                     }
@@ -164,7 +164,7 @@ PanelWindow {
                         text: I18n.tr("step_language")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -207,7 +207,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         text: "EN"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.Bold
                                         color: ConfigManager.uiLanguage === "en" ? Theme.inverseText : Theme.colors.text
                                     }
@@ -217,7 +217,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: "English (United States)"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 13
+                                    font.pixelSize: Theme.fontSize(13)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: Theme.colors.text
@@ -227,7 +227,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: "Default desktop interface (LTR)"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     renderType: Theme.renderType
                                     color: Theme.colors.textSecondary
                                 }
@@ -258,7 +258,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         text: "ع"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 14
+                                        font.pixelSize: Theme.fontSize(14)
                                         font.weight: Font.Bold
                                         color: ConfigManager.uiLanguage === "ar" ? Theme.inverseText : Theme.colors.text
                                     }
@@ -268,7 +268,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: "العربية (المملكة العربية السعودية)"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 13
+                                    font.pixelSize: Theme.fontSize(13)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: Theme.colors.text
@@ -278,7 +278,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: "واجهة سطح مكتب عربية متكاملة (RTL)"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 11
+                                    font.pixelSize: Theme.fontSize(11)
                                     renderType: Theme.renderType
                                     color: Theme.colors.textSecondary
                                 }
@@ -299,7 +299,7 @@ PanelWindow {
                         text: I18n.tr("step_theme")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -339,7 +339,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: "Dark Mica (Default)"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: Theme.colors.text
@@ -369,7 +369,7 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignHCenter
                                     text: "Light Mode"
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: Theme.fontSize(12)
                                     font.weight: Font.DemiBold
                                     renderType: Theme.renderType
                                     color: Theme.colors.text
@@ -391,7 +391,7 @@ PanelWindow {
                         text: I18n.tr("step_desktop")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -443,7 +443,7 @@ PanelWindow {
                                     Text {
                                         text: dCard.modelData.title
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 13
+                                        font.pixelSize: Theme.fontSize(13)
                                         font.weight: Font.DemiBold
                                         renderType: Theme.renderType
                                         color: dCard.isSelected ? Theme.colors.text : Theme.colors.textSecondary
@@ -453,7 +453,7 @@ PanelWindow {
                                         Layout.fillWidth: true
                                         text: dCard.modelData.desc
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 11
+                                        font.pixelSize: Theme.fontSize(11)
                                         renderType: Theme.renderType
                                         color: Theme.colors.textSecondary
                                         wrapMode: Text.WordWrap
@@ -476,7 +476,7 @@ PanelWindow {
                         text: I18n.tr("step_dock")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -512,7 +512,7 @@ PanelWindow {
                                     Text {
                                         text: "Dock Auto-Hide"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
                                         renderType: Theme.renderType
                                         color: Theme.colors.text
@@ -570,7 +570,7 @@ PanelWindow {
                                     Text {
                                         text: "Clock Format"
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 12
+                                        font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
                                         renderType: Theme.renderType
                                         color: Theme.colors.text
@@ -608,7 +608,7 @@ PanelWindow {
                         text: I18n.tr("step_apps")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -693,7 +693,7 @@ PanelWindow {
                                                 horizontalAlignment: Text.AlignLeft   // reading start (mirrored)
                                                 text: appCard.modelData.name
                                                 font.family: Theme.typography.fontFamily
-                                                font.pixelSize: 12
+                                                font.pixelSize: Theme.fontSize(12)
                                                 font.weight: Font.DemiBold
                                                 renderType: Theme.renderType
                                                 color: Theme.colors.text
@@ -705,7 +705,7 @@ PanelWindow {
                                                 horizontalAlignment: Text.AlignLeft
                                                 text: appCard.modelData.desc
                                                 font.family: Theme.typography.fontFamily
-                                                font.pixelSize: 10
+                                                font.pixelSize: Theme.fontSize(10)
                                                 renderType: Theme.renderType
                                                 color: Theme.colors.textSecondary
                                                 elide: Text.ElideRight
@@ -728,14 +728,14 @@ PanelWindow {
                                                 spacing: 4
                                                 Text {
                                                     text: "✓"
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: Theme.fontSize(10)
                                                     font.weight: Font.Bold
                                                     color: Theme.colors.success
                                                 }
                                                 Text {
                                                     text: I18n.tr("installed_btn")
                                                     font.family: Theme.typography.fontFamily
-                                                    font.pixelSize: 10
+                                                    font.pixelSize: Theme.fontSize(10)
                                                     font.weight: Font.DemiBold
                                                     color: Theme.colors.textSecondary
                                                 }
@@ -791,7 +791,7 @@ PanelWindow {
                         text: I18n.tr("step_windows")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -840,7 +840,7 @@ PanelWindow {
                                     Text {
                                         text: styleCard.modelData.title
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 13
+                                        font.pixelSize: Theme.fontSize(13)
                                         font.weight: Font.DemiBold
                                         renderType: Theme.renderType
                                         color: styleCard.isSelected ? Theme.colors.text : Theme.colors.textSecondary
@@ -849,7 +849,7 @@ PanelWindow {
                                     Text {
                                         text: "Gaps: " + styleCard.modelData.gapsIn + "px / " + styleCard.modelData.gapsOut + "px  •  Corner: " + styleCard.modelData.rounding + "px"
                                         font.family: Theme.typography.terminalFont
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fontSize(10)
                                         color: Theme.colors.textSecondary
                                     }
 
@@ -857,7 +857,7 @@ PanelWindow {
                                         Layout.fillWidth: true
                                         text: styleCard.modelData.desc
                                         font.family: Theme.typography.fontFamily
-                                        font.pixelSize: 11
+                                        font.pixelSize: Theme.fontSize(11)
                                         renderType: Theme.renderType
                                         color: Theme.colors.textSecondary
                                         wrapMode: Text.WordWrap
@@ -880,7 +880,7 @@ PanelWindow {
                         text: I18n.tr("step_review")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.fontSize(14)
                         font.weight: Font.DemiBold
                         renderType: Theme.renderType
                         color: Theme.colors.text
@@ -949,7 +949,7 @@ PanelWindow {
                                         text: modelData.desc
                                         font.family: Theme.typography.fontFamily
                                         font.hintingPreference: Theme.hintingPreference
-                                        font.pixelSize: 11
+                                        font.pixelSize: Theme.fontSize(11)
                                         renderType: Theme.renderType
                                         color: Theme.colors.text
                                         elide: Text.ElideRight

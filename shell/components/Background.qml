@@ -116,7 +116,7 @@ PanelWindow {
             Text {
                 text: SystemMonitor.batteryPercent + "%"
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize(11)
                 font.weight: Font.DemiBold
                 color: Theme.colors.text
             }
@@ -124,7 +124,7 @@ PanelWindow {
             Text {
                 text: "⌄"
                 font.family: Theme.typography.fontFamily
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize(11)
                 color: Theme.colors.textTertiary
             }
         }

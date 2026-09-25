@@ -158,7 +158,7 @@ PanelWindow {
                             color: Theme.colors.text
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: 18
+                            font.pixelSize: Theme.fontSize(18)
                             font.weight: Font.Bold
                             renderType: Theme.renderType
                         }
@@ -273,7 +273,7 @@ PanelWindow {
                             color: Theme.colors.textTertiary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fontSize(10)
                             renderType: Theme.renderType
                         }
                     }
@@ -321,7 +321,7 @@ PanelWindow {
                 color: tileMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
                 font.family: Theme.typography.fontFamily
                 font.hintingPreference: Theme.hintingPreference
-                font.pixelSize: 11
+                font.pixelSize: Theme.fontSize(11)
                 font.weight: Font.Medium
                 renderType: Theme.renderType
             }
@@ -344,7 +344,7 @@ PanelWindow {
                 anchors.centerIn: parent
                 text: tileRoot.keyHint
                 color: Theme.colors.textTertiary
-                font.pixelSize: 9
+                font.pixelSize: Theme.fontSize(9)
                 font.weight: Font.Bold
             }
         }
