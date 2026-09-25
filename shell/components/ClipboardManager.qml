@@ -369,8 +369,11 @@ PanelWindow {
                                 }
                             }
 
+                            // Under the row's content (z -1): declared last, it sat on top of the
+                            // delete button, so clicking the trash icon copied the entry instead.
                             MouseArea {
                                 id: itemMa
+                                z: -1
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
