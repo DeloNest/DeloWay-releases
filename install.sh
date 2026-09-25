@@ -390,6 +390,15 @@ interactive_app_selection() {
 }
 
 # ── 4. Hardware-Conditional Dependency Detection ──────────────────────────────
+# Headers for every installed kernel (DKMS builds a module per kernel). Arch kernels record
+# their package name in /usr/lib/modules/<version>/pkgbase (linux, linux-lts, linux-zen…).
+queue_kernel_headers() {
+    local f
+    for f in /usr/lib/modules/*/pkgbase; do
+        [ -r "$f" ] && PKGS_TO_INSTALL+=("$(<"$f")-headers")
+    done
+}
+
 detect_hardware_deps() {
     log_step "4. Inspecting Hardware & Drivers"
 
@@ -411,20 +420,29 @@ detect_hardware_deps() {
         fi
     fi
 
-    # 2. GPU: Nvidia Proprietary Check
-    if command -v lspci &>/dev/null; then
-        if lspci -nn | grep -E "VGA|3D" | grep -qi "10de"; then
-            log_info "Nvidia GPU detected."
-            if ! pacman -Qs nvidia &>/dev/null; then
-                log_info "Queuing 'nvidia-dkms' and 'nvidia-utils' for Wayland hardware acceleration."
-                PKGS_TO_INSTALL+=("nvidia-dkms" "nvidia-utils" "linux-headers")
-            else
-                log_success "Nvidia drivers already installed."
-            fi
+    # 2. GPU: NVIDIA needs a kernel module package. Arch ships the open modules
+    # (nvidia-open / nvidia-open-dkms, Turing and newer); nvidia-dkms is no longer in the
+    # repos, and queuing it aborted the whole pacman transaction. `pacman -Qs nvidia` also
+    # matched unrelated packages (egl-wayland), so an installed driver is checked by name.
+    local gpu has_nvidia=false
+    for gpu in /sys/bus/pci/devices/*; do
+        [[ "$(<"$gpu/class")" == 0x03* ]] && [ "$(<"$gpu/vendor")" = "0x10de" ] && has_nvidia=true
+    done
+    if [ "$has_nvidia" = true ]; then
+        log_info "NVIDIA GPU detected."
+        # (process substitution, not a pipe: under pipefail `pacman … | grep -q` fails
+        #  whenever pacman exits non-zero or grep closes the pipe early)
+        if grep -qE '^(nvidia-open|nvidia-open-dkms|nvidia-open-lts|nvidia|nvidia-dkms|nvidia-lts|nvidia-[0-9]+xx-dkms)$' \
+                <(pacman -Qq 2>/dev/null); then
+            log_success "NVIDIA kernel driver already installed."
         else
-            log_info "Non-Nvidia (AMD/Intel) GPU detected; ensuring standard Mesa drivers."
-            PKGS_TO_INSTALL+=("mesa")
+            log_info "Queuing 'nvidia-open-dkms' and 'nvidia-utils' (GPUs older than Turing need a legacy driver from the AUR)."
+            PKGS_TO_INSTALL+=("nvidia-open-dkms" "nvidia-utils")
+            queue_kernel_headers
         fi
+    else
+        log_info "Non-NVIDIA (AMD/Intel) GPU detected; ensuring standard Mesa drivers."
+        PKGS_TO_INSTALL+=("mesa")
     fi
 
     # 3. Brightness: Laptop vs Desktop DDC/CI
