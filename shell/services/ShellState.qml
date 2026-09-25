@@ -11,7 +11,7 @@ QtObject {
     property bool sessionMenuOpen: false
     property bool lockScreenActive: false
     property bool setupWizardOpen: false
-    property int setupWizardStartStep: 0   // step the wizard opens at (IPC showSetupStep)
+    signal setupWizardStepRequested(int step)   // open (or move) the wizard to a step
     property bool smartNotchExpanded: false
     property int smartNotchTab: 0
     property real smartNotchCurrentWidth: 200
@@ -126,8 +126,8 @@ QtObject {
 
 
     function openSetupWizard(step) {
-        setupWizardStartStep = step || 0;
         setupWizardOpen = true;
+        setupWizardStepRequested(step || 0);
     }
 
     function closeSetupWizard() {

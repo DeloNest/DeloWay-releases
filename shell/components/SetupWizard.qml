@@ -31,7 +31,12 @@ PanelWindow {
 
     property int currentStep: 0
     readonly property int totalSteps: 7
-    onIsActiveChanged: if (isActive) currentStep = Math.max(0, Math.min(totalSteps - 1, ShellState.setupWizardStartStep))
+    Connections {
+        target: ShellState
+        function onSetupWizardStepRequested(step) {
+            root.currentStep = Math.max(0, Math.min(root.totalSteps - 1, step));
+        }
+    }
 
     // Full-Screen Dark Acrylic Backdrop (Blocks desktop interaction completely until setup is done)
     Rectangle {
