@@ -447,20 +447,8 @@ window.thunar toolbar button:active,
     color: @headerbar_fg_color;
 }}
 
-/* Treeview column headers in RTL & LTR */
-window.thunar treeview.view:dir(rtl),
-.thunar treeview.view:dir(rtl),
-window.thunar treeview.view header button:dir(rtl),
-.thunar treeview.view header button:dir(rtl) {{
-    text-align: right;
-}}
-
-window.thunar treeview.view:dir(ltr),
-.thunar treeview.view:dir(ltr),
-window.thunar treeview.view header button:dir(ltr),
-.thunar treeview.view header button:dir(ltr) {{
-    text-align: left;
-}}
+/* RTL: GTK mirrors widgets and aligns text by direction itself (text-align and
+   direction are not GTK CSS properties; they only produced warnings). */
 
 /* Entries (Search & Path Input) */
 window.thunar entry,
@@ -471,20 +459,6 @@ window.thunar .location-bar entry {{
     border-radius: 6px;
     color: @theme_fg_color;
     padding: 4px 8px;
-}}
-
-window.thunar entry:dir(rtl),
-.thunar entry:dir(rtl),
-window.thunar .location-bar entry:dir(rtl) {{
-    text-align: right;
-    direction: rtl;
-}}
-
-window.thunar entry:dir(ltr),
-.thunar entry:dir(ltr),
-window.thunar .location-bar entry:dir(ltr) {{
-    text-align: left;
-    direction: ltr;
 }}
 
 window.thunar entry:focus,
@@ -532,17 +506,10 @@ window.thunar statusbar,
     padding: 2px 8px;
 }}
 
-window.thunar statusbar:dir(rtl),
-.thunar statusbar:dir(rtl) {{
-    direction: rtl;
-    padding: 2px 8px;
-}}
-
-/* Menus & Popovers in RTL */
+/* Menus in RTL */
 window.thunar menuitem:dir(rtl),
 .thunar menuitem:dir(rtl) {{
     padding: 4px 8px;
-    text-align: right;
 }}
 
 /* Scrollbars */
@@ -935,10 +902,10 @@ selection, *:selected {{ background-color: alpha(currentColor, 0.18); }}
 """
 
 
-def build_gtk3_theme(mode: str, radius: dict, base_theme_dir: Path) -> str:
-    """GTK3 theme CSS: adw-gtk3 variant + DeloWay monochrome overrides + shape tokens."""
+def build_gtk3_theme(mode: str, radius: dict, base_url: str) -> str:
+    """GTK3 theme CSS: adw-gtk3 (or GTK's own Adwaita) + DeloWay monochrome overrides + shape tokens."""
     r = radius
-    return (f'@import url("file://{base_theme_dir}/gtk-3.0/gtk.css");\n\n'
+    return (f'@import url("{base_url}");\n\n'
             + build_gtk_css(mode)
             + f"""
 /* --- Shape language (Settings → Appearance → Shell Corner Radius) --- */
@@ -953,17 +920,24 @@ def write_gtk3_themes(radius: dict, dry_run: bool = False):
     """Install ~/.local/share/themes/DeloWay-{Dark,Light} (index.theme + gtk-3.0)."""
     themes_root = Path.home() / ".local" / "share" / "themes"
     for mode, name in DELOWAY_THEME_NAMES.items():
-        base = Path("/usr/share/themes") / ("adw-gtk3-dark" if mode == "dark" else "adw-gtk3")
-        if not base.exists():
-            base = Path("/usr/share/themes") / ("Adwaita-dark" if mode == "dark" else "Adwaita")
+        # Base: adw-gtk3 (adw-gtk-theme) when installed, else the Adwaita GTK3 compiles in.
+        # There is no /usr/share/themes/Adwaita-dark/gtk-3.0/gtk.css file to import — that
+        # path made GTK3 apps render the DeloWay overrides with no base theme at all.
+        adw = Path("/usr/share/themes") / ("adw-gtk3-dark" if mode == "dark" else "adw-gtk3") / "gtk-3.0" / "gtk.css"
+        if adw.is_file():
+            base_url, base_name = f"file://{adw}", adw.parent.parent.name
+        else:
+            base_url = ("resource:///org/gtk/libgtk/theme/Adwaita/"
+                        + ("gtk-contained-dark.css" if mode == "dark" else "gtk-contained.css"))
+            base_name = "Adwaita"
         tdir = themes_root / name
         index = (f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={name}\n"
-                 f"Comment=DeloWay strict monochrome ({mode}) on top of {base.name}\n"
+                 f"Comment=DeloWay strict monochrome ({mode}) on top of {base_name}\n"
                  f"Encoding=UTF-8\n\n[X-GNOME-Metatheme]\nGtkTheme={name}\n")
         if not dry_run:
             (tdir / "gtk-3.0").mkdir(parents=True, exist_ok=True)
         atomic_write_if_changed(tdir / "index.theme", index, dry_run=dry_run)
-        atomic_write_if_changed(tdir / "gtk-3.0" / "gtk.css", build_gtk3_theme(mode, radius, base), dry_run=dry_run)
+        atomic_write_if_changed(tdir / "gtk-3.0" / "gtk.css", build_gtk3_theme(mode, radius, base_url), dry_run=dry_run)
 
 
 GTK3_USER_CSS = """/* DeloWay: GTK3 styling lives in the DeloWay-Dark / DeloWay-Light themes

@@ -405,6 +405,7 @@ queue_core_packages() {
         "hyprlock"               # Super+L fallback when the shell is not running
         "xdg-utils"              # xdg-open / xdg-mime / xdg-settings (default apps)
         "gtk3"                   # gtk-launch (delo-app, desktop shortcuts)
+        "adw-gtk-theme"          # adw-gtk3: the base the DeloWay GTK3 themes are built on
         "zenity"                 # "Browse…" file picker for wallpapers
         # Fonts: Arabic coverage and the Settings → Appearance font choices
         "noto-fonts"
