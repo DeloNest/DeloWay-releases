@@ -9,7 +9,6 @@ Item {
 
     // Signals for application lifecycle
     signal appInstalled(string appId)
-    signal appUninstalled(string appId)
     signal installProgress(string appId, real progress, string statusText)
     signal updatesChecked(int count)
 
@@ -225,6 +224,8 @@ Item {
         processNextQueueItem();
     }
 
+    // The package is installed; its desktop entry reaches the Dock, App Drawer and search
+    // through DesktopEntries' own rescan (no stand-in entry that could outlive a failure).
     function completeInstallation(cleanId) {
         if (!installedIds.includes(cleanId)) {
             installedIds = installedIds.concat([cleanId]);
@@ -232,15 +233,6 @@ Item {
 
         const app = getApp(cleanId);
         if (app) {
-            ApplicationManager.registerInstalledApp({
-                id: app.id,
-                name: app.name,
-                icon: app.icon,
-                category: app.category,
-                exec: app.id,
-                comment: app.summary
-            });
-
             NotificationManager.postNotification(
                 "System",
                 app.name + " Installed",
@@ -250,32 +242,5 @@ Item {
 
             root.appInstalled(cleanId);
         }
-    }
-
-    function uninstallApp(appId) {
-        if (!appId || !isInstalled(appId)) return;
-        const clean = appId.toLowerCase().replace(/\.desktop$/, "");
-        const app = getApp(clean);
-
-        installedIds = installedIds.filter(id => id !== clean);
-        updatableIds = updatableIds.filter(id => id !== clean);
-
-        if (ApplicationManager.isPinned(clean)) {
-            ApplicationManager.unpinApp(clean);
-        }
-
-        ApplicationManager.unregisterApp(clean);
-
-        if (app) {
-            NotificationManager.postNotification(
-                "System",
-                app.name + " Uninstalled",
-                "The application has been removed from your system.",
-                app.icon
-            );
-        }
-
-        root.appUninstalled(clean);
-        console.log("[PackageManager] Successfully uninstalled app:", clean);
     }
 }

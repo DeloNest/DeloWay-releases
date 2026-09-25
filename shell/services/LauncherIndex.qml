@@ -275,62 +275,30 @@ Item {
         const seen = new Set();
         const list = [];
 
-        // Internal DeloWay System Applications (Settings & App Store)
-        list.push({
-            id: "settings",
-            name: "Settings",
-            genericName: "System Settings",
-            icon: "settings",
-            categories: ["System", "All"],
-            comment: "DeloWay System Settings",
-            keywords: ["settings", "preferences", "config", "control", "اعدادات", "إعدادات", "تفضيلات", "ضبط"],
-            startupClass: "deloway-settings",
-            execBasename: "settings",
-            isWebApp: false,
-            isSubSetting: false,
-            execute: function() { ShellState.toggleSettingsApp(); }
-        });
-        seen.add("settings");
-
-        // App Store backed by pamac (the real system package manager)
-        list.push({
-            id: "store",
-            name: "App Store",
-            genericName: "Package Manager",
-            icon: "store",
-            categories: ["System", "All"],
-            comment: "Install, remove and update packages with pamac",
-            keywords: ["store", "apps", "software", "packages", "install", "pamac", "pkg", "متجر", "تطبيقات", "برامج"],
-            startupClass: "pamac-manager",
-            execBasename: "pamac-manager",
-            isWebApp: false,
-            isSubSetting: false,
-            execute: function() { Hyprland.dispatch("exec pamac-manager"); }
-        });
-        seen.add("store");
-
-        // Real installed applications registered by system tools
-        if (ApplicationManager.dynamicApps) {
-            for (let i = 0; i < ApplicationManager.dynamicApps.length; i++) {
-                const da = ApplicationManager.dynamicApps[i];
-                if (!da || !da.id || seen.has(da.id)) continue;
-                seen.add(da.id);
-                list.push({
-                    id: da.id,
-                    name: da.name || da.id,
-                    genericName: da.genericName || "",
-                    icon: da.icon || "application-x-executable",
-                    categories: da.category ? [da.category, "All"] : ["All"],
-                    comment: da.comment || da.name || "",
-                    keywords: da.keywords || [],
-                    startupClass: da.startupClass || "",
-                    execBasename: (da.exec || da.id).split(/\s+/)[0].replace(/.*\//, "").toLowerCase(),
-                    isWebApp: false,
-                    isSubSetting: false,
-                    execute: function() { ApplicationManager.launchApp(da); }
-                });
-            }
+        // DeloWay built-ins (Settings; the App Store while pamac-manager is installed,
+        // standing in for pamac's own entry), defined once in ApplicationManager.
+        const builtinKeywords = {
+            "settings": ["settings", "preferences", "config", "control", "اعدادات", "إعدادات", "تفضيلات", "ضبط"],
+            "store": ["store", "apps", "software", "packages", "install", "pamac", "pkg", "متجر", "تطبيقات", "برامج"]
+        };
+        for (const b of ApplicationManager.builtinApps) {
+            list.push({
+                id: b.id,
+                name: b.name,
+                genericName: b.comment,
+                icon: b.icon,
+                categories: b.categories,
+                comment: b.comment,
+                keywords: builtinKeywords[b.id] || [],
+                startupClass: b.startupClass,
+                execBasename: b.id === "store" ? "pamac-manager" : "settings",
+                isWebApp: false,
+                isSubSetting: false,
+                execute: b.execute
+            });
+            seen.add(b.id);
         }
+        if (ApplicationManager.storeAvailable) seen.add(ApplicationManager.storeEntryId.toLowerCase());
 
         // All system desktop entries actually installed on disk
         for (let i = 0; i < raw.length; i++) {

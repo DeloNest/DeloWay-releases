@@ -20,6 +20,9 @@ Item {
 
             // Common
             "settings": "Settings",
+            "settings_app_desc": "System settings and desktop configuration",
+            "app_store": "App Store",
+            "app_store_desc": "Install, remove and update apps",
             "search_settings": "Search settings...",
             "system_overview": "System Overview",
             "active": "Active",
@@ -435,6 +438,9 @@ Item {
 
             // Common
             "settings": "الإعدادات",
+            "settings_app_desc": "إعدادات النظام وتخصيص سطح المكتب",
+            "app_store": "متجر التطبيقات",
+            "app_store_desc": "تثبيت التطبيقات وإزالتها وتحديثها",
             "search_settings": "بحث في الإعدادات...",
             "system_overview": "نظرة عامة على النظام",
             "active": "نشط",

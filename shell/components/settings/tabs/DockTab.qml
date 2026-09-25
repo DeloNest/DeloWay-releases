@@ -117,10 +117,7 @@ Item {
 
                             Repeater {
                                 model: {
-                                    const sourceList = (ApplicationManager.pinnedAppIds && ApplicationManager.pinnedAppIds.length > 0)
-                                        ? ApplicationManager.pinnedAppIds
-                                        : ConfigManager.defaultPinnedApps;
-                                    return sourceList.slice(0, miniDock.isHorizontal ? 5 : 4);
+                                    return ApplicationManager.pinnedAppIds.slice(0, miniDock.isHorizontal ? 5 : 4);
                                 }
 
                                 delegate: Item {
@@ -463,7 +460,7 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            ConfigManager.setPinnedApps(ConfigManager.defaultPinnedApps);
+                            ConfigManager.resetPinnedApps();
                         }
                     }
                 }

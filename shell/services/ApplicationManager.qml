@@ -18,72 +18,61 @@ Item {
         }
     }
 
-    // Dynamically registered apps (§4.3)
-    property var dynamicApps: []
-
-    function registerInstalledApp(appData) {
-        if (!appData || !appData.id) return;
-        const cleanId = appData.id.toLowerCase().replace(/\.desktop$/, "");
-        if (dynamicApps.some(a => a.id === cleanId)) return;
-        const updated = dynamicApps.concat([{
-            id: cleanId,
-            name: appData.name,
-            icon: appData.icon || "application-x-executable",
-            category: appData.category || "All",
-            exec: appData.exec || cleanId,
-            comment: appData.comment || appData.name
-        }]);
-        dynamicApps = updated;
+    // ── Built-in entries ────────────────────────────────────────────────────
+    // DeloWay's own apps have no .desktop file. The App Store is pamac-manager rebranded:
+    // it exists only while pamac-manager is installed, and it stands in for pamac's own
+    // entry ("Add/Remove Software") instead of listing the same program twice.
+    readonly property string storeEntryId: "org.manjaro.pamac.manager"
+    readonly property bool storeAvailable: {
+        const _rev = _entriesRevision;
+        return !!DesktopEntries.byId(root.storeEntryId);
+    }
+    readonly property var builtinApps: {
+        const list = [{
+            id: "settings",
+            name: I18n.tr("settings"),
+            icon: "settings",
+            categories: ["System", "All"],
+            comment: I18n.tr("settings_app_desc"),
+            startupClass: "deloway-settings",
+            execute: function() { ShellState.toggleSettingsApp(); }
+        }];
+        if (root.storeAvailable) list.push({
+            id: "store",
+            name: I18n.tr("app_store"),
+            icon: "store",
+            categories: ["System", "All"],
+            comment: I18n.tr("app_store_desc"),
+            startupClass: "pamac-manager",
+            execute: function() { Hyprland.dispatch("exec pamac-manager"); }
+        });
+        return list;
+    }
+    // "settings" / "store" and their historical aliases → the built-in entry, or null.
+    function builtinApp(cleanId) {
+        const id = (cleanId === "deloway-settings") ? "settings"
+                 : (cleanId === "app-store" || cleanId === "pamac" || cleanId === "pamac-manager") ? "store"
+                 : cleanId;
+        return root.builtinApps.find(a => a.id === id) || null;
     }
 
-    function unregisterApp(appId) {
-        if (!appId) return;
-        const cleanId = appId.toLowerCase().replace(/\.desktop$/, "");
-        dynamicApps = dynamicApps.filter(a => a.id !== cleanId);
-    }
-
-    // Check if an application is installed on the system
+    // Installed = a built-in entry or a real desktop entry with that id. No heuristic
+    // matching here: a fuzzy hit made pins of apps that are not installed look installed.
     function isInstalled(identifier) {
         if (!identifier) return false;
         const _rev = _entriesRevision;
         const cleanId = identifier.toLowerCase().replace(/\.desktop$/, "");
-        if (cleanId === "settings" || cleanId === "deloway-settings"
-            || cleanId === "store" || cleanId === "app-store" || cleanId === "pamac") return true;
-        if (dynamicApps.some(d => d.id === cleanId)) return true;
-        if (allApps && allApps.some(a => a && (
-            a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId ||
-            a.id.toLowerCase() === identifier.toLowerCase()
-        ))) return true;
-        const app = DesktopEntries.byId(identifier) || DesktopEntries.byId(cleanId) || DesktopEntries.heuristicLookup(cleanId);
-        return app !== null;
+        if (root.builtinApp(cleanId)) return true;
+        if (allApps && allApps.some(a => a && a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId)) return true;
+        return !!(DesktopEntries.byId(identifier) || DesktopEntries.byId(cleanId));
     }
 
     // Helper to find an app by ID
     function findApp(identifier) {
         if (!identifier) return null;
         const cleanId = identifier.toLowerCase().replace(/\.desktop$/, "");
-        if (cleanId === "settings" || cleanId === "deloway-settings") {
-            return {
-                id: "settings",
-                name: "Settings",
-                icon: "settings",
-                categories: ["System", "All"],
-                comment: "DeloWay System Settings",
-                execute: function() { ShellState.toggleSettingsApp(); }
-            };
-        }
-        if (cleanId === "store" || cleanId === "app-store" || cleanId === "pamac") {
-            return {
-                id: "store",
-                name: "App Store",
-                icon: "store",
-                categories: ["System", "All"],
-                comment: "Install, remove and update packages with pamac",
-                execute: function() { Hyprland.dispatch("exec pamac-manager"); }
-            };
-        }
-        const dynamic = dynamicApps.find(d => d.id === cleanId);
-        if (dynamic) return dynamic;
+        const builtin = root.builtinApp(cleanId);
+        if (builtin) return builtin;
         if (allApps) {
             const found = allApps.find(a => a && (
                 a.id.toLowerCase().replace(/\.desktop$/, "") === cleanId ||
@@ -95,15 +84,49 @@ Item {
         return DesktopEntries.byId(identifier) || DesktopEntries.byId(cleanId) || DesktopEntries.heuristicLookup(cleanId);
     }
 
-    // Pinned application IDs for the Dock synced with ConfigManager (strictly filtered to installed apps)
-    // Pure binding: ConfigManager.pinnedApps is the single source (assigning this
-    // property used to break the binding, so Dock resets/external edits stopped applying).
+    // ── Dock pins ───────────────────────────────────────────────────────────
+    // A default-app choice (an executable such as "brave" / "nautilus", or a desktop id)
+    // → the lower-case id of the installed desktop entry that launches it, or "".
+    function resolveAppChoice(choice) {
+        if (!choice) return "";
+        const _rev = _entriesRevision;
+        const c = choice.toLowerCase().replace(/\.desktop$/, "");
+        const entries = Array.from(DesktopEntries.applications.values).filter(e => e && e.id && !e.noDisplay);
+        const byId = entries.find(e => {
+            const id = e.id.toLowerCase().replace(/\.desktop$/, "");
+            return id === c || id.endsWith("." + c);
+        });
+        if (byId) return byId.id.toLowerCase().replace(/\.desktop$/, "");
+        const byCmd = entries.find(e => e.command && e.command.length > 0
+                                        && String(e.command[0]).replace(/.*\//, "").toLowerCase() === c);
+        return byCmd ? byCmd.id.toLowerCase().replace(/\.desktop$/, "") : "";
+    }
+
+    // Pins until the user customises the Dock: the browser, terminal and file manager they
+    // chose (installer / Setup Wizard), resolved to installed entries — never a fixed list
+    // of apps that may not exist on this machine.
+    readonly property var defaultPinnedAppIds: {
+        const out = [];
+        for (const choice of [ConfigManager.defaultBrowser, ConfigManager.defaultTerminal, ConfigManager.defaultFileManager]) {
+            const id = root.resolveAppChoice(choice);
+            if (id && out.indexOf(id) < 0) out.push(id);
+        }
+        return out;
+    }
+
+    // The configured list (incl. pins of apps that are not installed right now).
+    // ConfigManager.pinnedApps is null until the user pins or unpins something; an empty
+    // list is a real choice (an empty Dock) and is kept.
+    function _configuredPins() {
+        return (Array.isArray(ConfigManager.pinnedApps) ? ConfigManager.pinnedApps : root.defaultPinnedAppIds).slice();
+    }
+
+    // Pinned application IDs for the Dock, strictly filtered to installed apps.
+    // Pure binding on ConfigManager.pinnedApps (assigning this property used to break the
+    // binding, so Dock resets/external edits stopped applying).
     readonly property var pinnedAppIds: {
         const _rev = _entriesRevision;
-        const configured = (ConfigManager.pinnedApps && ConfigManager.pinnedApps.length > 0)
-            ? ConfigManager.pinnedApps
-            : ConfigManager.defaultPinnedApps;
-        return configured.filter(id => root.isInstalled(id));
+        return root._configuredPins().filter(id => root.isInstalled(id));
     }
 
     // Checks if an appId is pinned
@@ -132,63 +155,22 @@ Item {
             ConfigManager.setPinnedApps(root._configuredPins().filter(id => id.toLowerCase().replace(/\.desktop$/, "") !== cleanId));
     }
 
-    // The configured list (incl. pins of apps that are not installed right now).
-    function _configuredPins() {
-        return ((ConfigManager.pinnedApps && ConfigManager.pinnedApps.length > 0)
-                ? ConfigManager.pinnedApps : ConfigManager.defaultPinnedApps).slice();
-    }
-
     // Toggle pin status
     function togglePin(appId) {
         if (isPinned(appId)) unpinApp(appId);
         else pinApp(appId);
     }
 
-    // All installed applications from DesktopEntries
+    // All installed applications: the built-ins, then every desktop entry on disk.
+    // Newly installed packages appear through DesktopEntries' own rescan.
     readonly property var allApps: {
         const _rev = _entriesRevision;
         const raw = Array.from(DesktopEntries.applications.values);
         const seen = new Set();
-        const list = [];
+        const list = root.builtinApps.slice();
+        for (const b of list) seen.add(b.id);
+        if (root.storeAvailable) seen.add(root.storeEntryId.toLowerCase());
 
-        // Internal DeloWay System Applications (Settings & App Store)
-        list.push({
-            id: "settings",
-            name: "Settings",
-            icon: "settings",
-            categories: ["System", "All"],
-            comment: "System settings and desktop configuration",
-            execute: function() { ShellState.toggleSettingsApp(); }
-        });
-        seen.add("settings");
-
-        // App Store backed by pamac (the real system package manager)
-        list.push({
-            id: "store",
-            name: "App Store",
-            icon: "store",
-            categories: ["System", "All"],
-            comment: "Install, remove and update packages with pamac",
-            execute: function() { Hyprland.dispatch("exec pamac-manager"); }
-        });
-        seen.add("store");
-
-        // Real installed applications registered by system tools
-        for (let i = 0; i < dynamicApps.length; i++) {
-            const da = dynamicApps[i];
-            if (seen.has(da.id)) continue;
-            seen.add(da.id);
-            list.push({
-                id: da.id,
-                name: da.name,
-                icon: da.icon,
-                categories: [da.category, "All"],
-                comment: da.comment || da.name,
-                execute: function() { root.launchApp(da); }
-            });
-        }
-
-        // All system desktop entries actually installed on disk
         for (let i = 0; i < raw.length; i++) {
             const app = raw[i];
             if (!app || !app.name || !app.id || app.noDisplay) continue;

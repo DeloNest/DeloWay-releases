@@ -58,8 +58,9 @@ Item {
     property string dockPosition: "bottom"
     property int dockIconSize: 38
     property bool showUnderline: true
-    readonly property var defaultPinnedApps: ["brave-browser", "kitty", "thunar", "spotify", "settings", "store"]
-    property var pinnedApps: defaultPinnedApps
+    // null until the user pins/unpins: the Dock then shows the chosen default apps
+    // (ApplicationManager.defaultPinnedAppIds). [] is a real choice — an empty Dock.
+    property var pinnedApps: null
 
     // TopBar Settings
     property bool topBarShowBrand: true
@@ -282,7 +283,7 @@ Item {
                 if (cfg.dock.position) root.dockPosition = cfg.dock.position;
                 if (cfg.dock.iconSize) root.dockIconSize = cfg.dock.iconSize;
                 if (cfg.dock.showUnderline !== undefined) root.showUnderline = cfg.dock.showUnderline;
-                if (cfg.dock.pinnedApps) root.pinnedApps = cfg.dock.pinnedApps;
+                if (Array.isArray(cfg.dock.pinnedApps)) root.pinnedApps = cfg.dock.pinnedApps;
             }
             if (cfg.drawer && (cfg.drawer.groupBy === "category" || cfg.drawer.groupBy === "alpha")) {
                 root.drawerGroupBy = cfg.drawer.groupBy;
@@ -695,6 +696,12 @@ Item {
 
     function setPinnedApps(apps) {
         root.pinnedApps = apps;
+        saveConfig();
+    }
+
+    // Back to the chosen default apps (browser, terminal, file manager).
+    function resetPinnedApps() {
+        root.pinnedApps = null;
         saveConfig();
     }
 

@@ -21,12 +21,7 @@
     "position": "bottom",
     "autoHide": false,
     "iconSize": 56,
-    "showUnderline": true,
-    "pinnedApps": [
-      "brave-browser",
-      "kitty",
-      "thunar"
-    ]
+    "showUnderline": true
   },
   "topBar": {
     "showBrand": true,
