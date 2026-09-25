@@ -1004,6 +1004,124 @@ def write_fontconfig(font_family: str = "Cairo", dry_run: bool = False):
 QT_ENV = {"QT_QPA_PLATFORMTHEME": "gtk3"}
 
 
+# KDE apps (Dolphin, Kate, Okular…) take colours, icons and fonts from ~/.config/kdeglobals,
+# not from the Qt platform theme: without it they fell back to Breeze — blue selection,
+# blue folders — whatever GTK and qt6ct said. Same monochrome palette as the GTK themes.
+KDE_MANAGED_HEADER = "# Colours, icons and fonts below are managed by DeloWay (scripts/deloway-theme-apply.py)"
+
+
+def _kde_rgb(hex_color: str) -> str:
+    h = hex_color.lstrip("#")
+    return ",".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
+
+
+def build_kdeglobals_groups(mode: str, font_family: str, font_scale: float, icon_theme: str) -> dict:
+    pal = PALETTES["dark" if mode == "dark" else "light"]
+    dark = mode == "dark"
+    muted = "#8a8a8a" if dark else "#64748b"
+    alt = "#0a0a0a" if dark else "#f8fafc"
+    button = "#141414" if dark else "#f1f5f9"
+    tooltip = "#111111" if dark else "#ffffff"
+    # Selected rows/tiles: a high-luminance neutral surface under the normal text, as in
+    # Thunar. Dolphin keeps the normal text colour on a selected item, so the solid inverse
+    # fill (white) made the selected file's name vanish (white on white).
+    selection = "#2e2e2e" if dark else "#e2e3e5"
+
+    def role(bg, fg, bg_alt=None):
+        return {
+            "BackgroundNormal": _kde_rgb(bg), "BackgroundAlternate": _kde_rgb(bg_alt or bg),
+            "ForegroundNormal": _kde_rgb(fg), "ForegroundInactive": _kde_rgb(muted),
+            "ForegroundActive": _kde_rgb(fg), "ForegroundLink": _kde_rgb(fg),
+            "ForegroundVisited": _kde_rgb(muted),
+            # Focus rings and hover: the neutral high-contrast colour, never an accent.
+            "DecorationFocus": _kde_rgb(pal["accent_bg"]), "DecorationHover": _kde_rgb(muted),
+            # The only three semantic colours.
+            "ForegroundNegative": _kde_rgb(pal["destructive"]),
+            "ForegroundNeutral": _kde_rgb(pal["warning"]),
+            "ForegroundPositive": _kde_rgb(pal["success"]),
+        }
+
+    size = max(6, round(11 * font_scale))
+    groups = {
+        "General": {
+            "ColorScheme": "DeloWay" + ("Dark" if dark else "Light"),
+            "font": f"{font_family},{size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+            "menuFont": f"{font_family},{size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+            "toolBarFont": f"{font_family},{max(6, size - 1)},-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+            "smallestReadableFont": f"{font_family},{max(6, size - 2)},-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+            "fixed": f"{TERMINAL_FONT},{size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
+        },
+        "Icons": {"Theme": icon_theme},
+        "KDE": {"widgetStyle": "Fusion"},   # Breeze is not installed; Fusion takes the palette
+        # KDE apps with a colour-scheme menu (Dolphin, Kate, Okular…) read the scheme from
+        # their own rc, falling back to kdeglobals; unset, they picked Breeze (Dark)
+        # themselves on a non-Plasma desktop. Set once here for all of them.
+        "UiSettings": {"ColorScheme": "DeloWay" + ("Dark" if dark else "Light")},
+        "Colors:Window": role(pal["window_bg"], pal["window_fg"], alt),
+        "Colors:View": role(pal["view_bg"], pal["view_fg"], alt),
+        "Colors:Button": role(button, pal["window_fg"]),
+        "Colors:Header": role(pal["headerbar_bg"], pal["headerbar_fg"]),
+        "Colors:Tooltip": role(tooltip, pal["window_fg"]),
+        "Colors:Complementary": role(pal["window_bg"], pal["window_fg"]),
+        "Colors:Selection": role(selection, pal["window_fg"]),
+        "WM": {
+            "activeBackground": _kde_rgb(pal["headerbar_bg"]), "activeForeground": _kde_rgb(pal["headerbar_fg"]),
+            "inactiveBackground": _kde_rgb(pal["headerbar_bg"]), "inactiveForeground": _kde_rgb(muted),
+        },
+        # No tinting of inactive windows: it shifted the monochrome palette.
+        "ColorEffects:Inactive": {"Enable": "false", "ChangeSelectionColor": "false"},
+    }
+    return groups
+
+
+COLOR_GROUPS = ("Colors:Window", "Colors:View", "Colors:Button", "Colors:Header", "Colors:Tooltip",
+                "Colors:Complementary", "Colors:Selection", "WM", "ColorEffects:Inactive")
+
+
+def write_kde_color_schemes(data_home: Path, dry_run: bool = False):
+    """~/.local/share/color-schemes/DeloWay{Dark,Light}.colors. KDE apps resolve the
+    ColorScheme named in kdeglobals to one of these files; a name with no file made
+    them fall back to Breeze (Dark) — grey background, blue selection."""
+    for mode in ("dark", "light"):
+        groups = build_kdeglobals_groups(mode, "Cairo", 1.0, "")
+        name = groups["General"]["ColorScheme"]
+        lines = ["[General]", f"ColorScheme={name}", f"Name=DeloWay {'Dark' if mode == 'dark' else 'Light'}", ""]
+        for group in COLOR_GROUPS:
+            lines.append(f"[{group}]")
+            lines.extend(f"{k}={v}" for k, v in groups[group].items())
+            lines.append("")
+        if not dry_run:
+            (data_home / "color-schemes").mkdir(parents=True, exist_ok=True)
+        atomic_write_if_changed(data_home / "color-schemes" / f"{name}.colors", "\n".join(lines), dry_run=dry_run)
+
+
+def write_kdeglobals(mode: str, font_family: str, font_scale: float, icon_theme: str,
+                     config_home: Path, dry_run: bool = False) -> bool:
+    """Merge DeloWay's groups into kdeglobals: our keys are set, anything else the user
+    (or another KDE app) keeps there is left as it is."""
+    import configparser
+    target = config_home / "kdeglobals"
+    cfg = configparser.RawConfigParser(strict=False, delimiters=("=",), comment_prefixes=("#",))
+    cfg.optionxform = str   # KConfig keys are case-sensitive
+    if target.exists():
+        try:
+            cfg.read(target, encoding="utf-8")
+        except configparser.Error as e:
+            print(f"[deloway-theme] kdeglobals unreadable, left alone: {e}", file=sys.stderr)
+            return False
+    for group, keys in build_kdeglobals_groups(mode, font_family, font_scale, icon_theme).items():
+        if not cfg.has_section(group):
+            cfg.add_section(group)
+        for k, v in keys.items():
+            cfg.set(group, k, v)
+    lines = [KDE_MANAGED_HEADER, ""]
+    for group in cfg.sections():
+        lines.append(f"[{group}]")
+        lines.extend(f"{k}={v}" for k, v in cfg.items(group))
+        lines.append("")
+    return atomic_write_if_changed(target, "\n".join(lines), dry_run=dry_run)
+
+
 def apply_qt_environment(dry_run: bool = False):
     """Qt5/Qt6 → gtk3 platform theme (palette + fonts from the DeloWay GTK theme).
     Persisted for new sessions (environment.d) and pushed into the running one."""
@@ -1126,6 +1244,9 @@ def main():
     atomic_write_if_changed(gtk3_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     atomic_write_if_changed(gtk4_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     generate_qt6ct_palette(mode, config_home, dry_run=args.dry_run)   # used if qt6ct is installed
+    write_kde_color_schemes(Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share"),
+                            dry_run=args.dry_run)
+    write_kdeglobals(mode, font_family, font_scale, icon_theme, config_home, dry_run=args.dry_run)
     fonts_changed = write_fontconfig(font_family, dry_run=args.dry_run)
     apply_qt_environment(dry_run=args.dry_run)
 
