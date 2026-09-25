@@ -586,7 +586,7 @@ Item {
         // 4. ADVANCED NETWORK SETTINGS (Collapsible)
         // ═════════════════════════════════════════════════════════════
         SettingsSection {
-            title: I18n.isRTL ? "إعدادات متقدمة للشبكة (Saved Networks & IP)" : "Advanced Network Settings"
+            title: I18n.isRTL ? "إعدادات الشبكة المتقدمة" : "Advanced Network Settings"
             collapsible: true
             isExpanded: false
 
@@ -653,7 +653,7 @@ Item {
 
             // IPv4 Address
             SettingsRow {
-                title: "IPv4 Address"
+                title: I18n.isRTL ? "عنوان IPv4" : "IPv4 Address"
                 subtitle: NetworkService.ipDetails.ipv4 || (I18n.isRTL ? "غير متاح" : "Not assigned")
                 icon: "network-workgroup-symbolic"
                 showDivider: true

@@ -186,7 +186,7 @@ Item {
                             root.isSending = false;
                         } else if (ev.type === "failed") {
                             root.sendStatus = "failed";
-                            root.lastSendError = ev.error || "Transfer failed";
+                            root.lastSendError = root.failureText(ev.error);
                             root.isSending = false;
                         }
                     } catch (e) {
@@ -201,7 +201,7 @@ Item {
             if (root.sendStatus === "sending" || root.sendStatus === "connecting") {
                 root.sendStatus = "failed";
                 if (!root.lastSendError) {
-                    root.lastSendError = "Transfer process exited unexpectedly";
+                    root.lastSendError = root.failureText(I18n.tr("ls_err_exited"));
                 }
             }
         }
@@ -252,12 +252,19 @@ Item {
         root.currentSendingFile = "";
     }
 
+    // The failure line under a transfer: translated, with the helper's own detail (if
+    // any) isolated after it so it still helps diagnose without breaking the Arabic line.
+    function failureText(detail) {
+        const d = (detail || "").trim();
+        return I18n.uiLine(I18n.tr("ls_err_failed") + (d ? " — " + I18n.isolate(d) : ""));
+    }
+
     function sendFiles(files, device) {
         if (!files || files.length === 0) return;
         const target = device || root.selectedDevice || root.getDefaultDevice();
         if (!target) {
             root.sendStatus = "failed";
-            root.lastSendError = "No target device selected";
+            root.lastSendError = I18n.tr("ls_err_no_device");
             return;
         }
 

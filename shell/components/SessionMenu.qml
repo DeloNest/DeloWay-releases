@@ -269,7 +269,7 @@ PanelWindow {
                         Item { Layout.fillWidth: true }
 
                         Text {
-                            text: "Hyprland Wayland Compositor"
+                            text: I18n.tr("session_footer")
                             color: Theme.colors.textTertiary
                             font.family: Theme.typography.fontFamily
                             font.hintingPreference: Theme.hintingPreference

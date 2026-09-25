@@ -530,7 +530,7 @@ Item {
                             horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                             text: (root.activePlayer && root.activePlayer.trackAlbum)
                                   ? root.activePlayer.trackAlbum
-                                  : ((root.activePlayer && root.activePlayer.trackArtist) ? root.activePlayer.trackArtist : "Deloway Music")
+                                  : ((root.activePlayer && root.activePlayer.trackArtist) ? root.activePlayer.trackArtist : I18n.tr("notch_music_fallback"))
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(12)
                             renderType: Theme.renderType

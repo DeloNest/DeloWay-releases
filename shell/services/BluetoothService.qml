@@ -110,8 +110,10 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 let r = null;
-                try { r = JSON.parse(this.text); } catch (e) { r = { success: false, error: this.text.trim() || "no result" }; }
-                root.error = r.success ? "" : (r.error || "failed");
+                try { r = JSON.parse(this.text); } catch (e) { r = { success: false, error: this.text.trim() }; }
+                // Translated, with the helper's detail (BlueZ error) isolated after it
+                const d = (r.error || "").trim();
+                root.error = r.success ? "" : I18n.uiLine(I18n.tr("bt_action_failed") + (d ? " — " + I18n.isolate(d) : ""));
             }
         }
         onExited: (code) => {

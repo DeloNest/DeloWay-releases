@@ -41,7 +41,7 @@ Item {
 
             // Bluetooth Master Toggle
             SettingsRow {
-                title: "Bluetooth"
+                title: I18n.isRTL ? "البلوتوث" : "Bluetooth"
                 subtitle: !BluetoothService.powered
                     ? (I18n.isRTL ? "البلوتوث معطل" : "Bluetooth is turned off")
                     : (BluetoothService.connectedDeviceName.length > 0

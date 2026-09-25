@@ -76,8 +76,9 @@ notify_success() {
     local path="$1"
     local copied="${2:-1}"   # 1 only when wl-copy really succeeded
     if command -v notify-send >/dev/null 2>&1; then
-        local is_ar=0
-        if [[ "${LANGUAGE:-$LANG}" == ar* ]]; then
+        # The shell's language setting, not LANG (which can stay English in an Arabic UI)
+        local is_ar=0 cfg="${DELOWAY_CONFIG:-$HOME/.config/deloway/deloway.json}"
+        if [ -r "$cfg" ] && [ "$(jq -r '.system.uiLanguage // "en"' "$cfg" 2>/dev/null)" = "ar" ]; then
             is_ar=1
         fi
 

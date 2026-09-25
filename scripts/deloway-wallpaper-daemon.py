@@ -16,8 +16,10 @@ from pathlib import Path
 
 DELOWAY_PROJECT_DIR = os.environ.get("DELOWAY_DIR") or str(Path(__file__).resolve().parent.parent)
 SHELL_DIR = os.path.join(DELOWAY_PROJECT_DIR, "shell")
-CONFIG_DIR = os.path.expanduser("~/.config/deloway")
-CONFIG_FILE = os.path.join(CONFIG_DIR, "deloway.json")
+from deloway_config import config_path, tr
+
+CONFIG_FILE = config_path()
+CONFIG_DIR = os.path.dirname(CONFIG_FILE)
 
 def normalize_path(raw_path: str) -> str:
     if not raw_path:
@@ -130,8 +132,8 @@ def main():
                                 "notify-send",
                                 "-a", "Deloway",
                                 "-i", path,
-                                "خلفية الشاشة",
-                                f"تم تعيين الخلفية: {Path(path).name}"
+                                tr("Wallpaper", "خلفية الشاشة"),
+                                tr(f"Wallpaper set: {Path(path).name}", f"تم تعيين الخلفية: {Path(path).name}")
                             ],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
                         )

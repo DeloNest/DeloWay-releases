@@ -343,7 +343,7 @@ PanelWindow {
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
-                                    text: "Dark Mica (Default)"
+                                    text: I18n.tr("wiz_theme_dark")
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(12)
                                     font.weight: Font.DemiBold
@@ -373,7 +373,7 @@ PanelWindow {
                                 }
                                 Text {
                                     Layout.alignment: Qt.AlignHCenter
-                                    text: "Light Mode"
+                                    text: I18n.tr("wiz_theme_light")
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(12)
                                     font.weight: Font.DemiBold
@@ -418,9 +418,9 @@ PanelWindow {
 
                         Repeater {
                             model: [
-                                { "id": "clean", "title": "Clean", "desc": "Uncluttered wallpaper focus with minimal footprint", "icon": "applications-graphics-symbolic" },
-                                { "id": "widgets", "title": "Widgets", "desc": "Live clock, weather, system telemetry, & notes cards", "icon": "preferences-system-symbolic" },
-                                { "id": "traditional", "title": "Traditional", "desc": "Standard desktop icon grid with file manager drag & drop", "icon": "user-home-symbolic" }
+                                { "id": "clean", "title": I18n.tr("wiz_desk_clean"), "desc": I18n.tr("wiz_desk_clean_desc"), "icon": "applications-graphics-symbolic" },
+                                { "id": "widgets", "title": I18n.tr("wiz_desk_widgets"), "desc": I18n.tr("wiz_desk_widgets_desc"), "icon": "preferences-system-symbolic" },
+                                { "id": "traditional", "title": I18n.tr("wiz_desk_traditional"), "desc": I18n.tr("wiz_desk_traditional_desc"), "icon": "user-home-symbolic" }
                             ]
 
                             delegate: DeloCard {
@@ -517,7 +517,7 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     spacing: 2
                                     Text {
-                                        text: "Dock Auto-Hide"
+                                        text: I18n.tr("wiz_dock_autohide")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
@@ -525,7 +525,7 @@ PanelWindow {
                                         color: Theme.colors.text
                                     }
                                     Text {
-                                        text: ConfigManager.dockAutoHide ? "Dock slides down when windows overlap" : "Dock is permanently pinned at screen bottom"
+                                        text: ConfigManager.dockAutoHide ? I18n.tr("wiz_dock_autohide_on") : I18n.tr("wiz_dock_autohide_off")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.typography.scaleCaption.size
                                         renderType: Theme.renderType
@@ -575,7 +575,7 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     spacing: 2
                                     Text {
-                                        text: "Clock Format"
+                                        text: I18n.tr("wiz_clock_format")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: Font.DemiBold
@@ -583,7 +583,7 @@ PanelWindow {
                                         color: Theme.colors.text
                                     }
                                     Text {
-                                        text: ConfigManager.clockFormat === "24h" ? "24-Hour International (14:30)" : "12-Hour AM/PM (02:30 PM)"
+                                        text: ConfigManager.clockFormat === "24h" ? I18n.tr("wiz_clock_24") : I18n.tr("wiz_clock_12")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.typography.scaleCaption.size
                                         renderType: Theme.renderType
@@ -715,9 +715,9 @@ PanelWindow {
 
                         Repeater {
                             model: [
-                                { "id": "compact", "title": "Compact", "gapsIn": 3, "gapsOut": 6, "rounding": 6, "desc": "Maximum screen space, narrow borders" },
-                                { "id": "standard", "title": "Standard (Default)", "gapsIn": 5, "gapsOut": 10, "rounding": 10, "desc": "Optimal balance of aesthetic padding and utility" },
-                                { "id": "spacious", "title": "Spacious", "gapsIn": 10, "gapsOut": 18, "rounding": 14, "desc": "Airy, floating aesthetic with generous gaps" }
+                                { "id": "compact", "title": I18n.tr("wiz_win_compact"), "gapsIn": 3, "gapsOut": 6, "rounding": 6, "desc": I18n.tr("wiz_win_compact_desc") },
+                                { "id": "standard", "title": I18n.tr("wiz_win_standard"), "gapsIn": 5, "gapsOut": 10, "rounding": 10, "desc": I18n.tr("wiz_win_standard_desc") },
+                                { "id": "spacious", "title": I18n.tr("wiz_win_spacious"), "gapsIn": 10, "gapsOut": 18, "rounding": 14, "desc": I18n.tr("wiz_win_spacious_desc") }
                             ]
 
                             delegate: DeloCard {
@@ -750,7 +750,9 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: "Gaps: " + styleCard.modelData.gapsIn + "px / " + styleCard.modelData.gapsOut + "px  •  Corner: " + styleCard.modelData.rounding + "px"
+                                        text: I18n.uiLine(I18n.tr("wiz_win_metrics")
+                                              .replace("%1", I18n.ltr(styleCard.modelData.gapsIn + "/" + styleCard.modelData.gapsOut + "px"))
+                                              .replace("%2", I18n.ltr(styleCard.modelData.rounding + "px")))
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(10)
                                         color: Theme.colors.textSecondary
@@ -807,14 +809,15 @@ PanelWindow {
 
                         Repeater {
                             model: [
-                                { "key": "SUPER + Return", "desc": "Open Kitty Terminal" },
-                                { "key": "SUPER + D / Space", "desc": "Toggle App Drawer & Search" },
-                                { "key": "SUPER + I", "desc": "Open DeloOS Settings" },
-                                { "key": "SUPER + Shift + S", "desc": "Take Screenshot (Tool Overlay)" },
-                                { "key": "SUPER + E", "desc": "Open Thunar File Manager" },
-                                { "key": "SUPER + Q", "desc": "Close Active Window" },
-                                { "key": "SUPER + L", "desc": "Lock Session Screen" },
-                                { "key": "SUPER + Arrows", "desc": "Navigate Tiled Windows" }
+                                // The real binds (docs/KEYBINDINGS.md); apps follow the defaults chosen above.
+                                { "key": "Super", "desc": I18n.tr("wiz_sc_start") },
+                                { "key": "Super + Space", "desc": I18n.tr("wiz_sc_search") },
+                                { "key": "Super + Return", "desc": I18n.tr("wiz_sc_terminal") },
+                                { "key": "Super + E", "desc": I18n.tr("wiz_sc_files") },
+                                { "key": "Super + I", "desc": I18n.tr("wiz_sc_settings") },
+                                { "key": "Super + Shift + S", "desc": I18n.tr("wiz_sc_screenshot") },
+                                { "key": "Super + Q", "desc": I18n.tr("wiz_sc_close") },
+                                { "key": "Super + /", "desc": I18n.tr("wiz_sc_all") }
                             ]
 
                             delegate: DeloCard {

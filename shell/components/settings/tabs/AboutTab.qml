@@ -63,7 +63,7 @@ Item {
             title: I18n.isRTL ? "حول النظام وشل DeloWay" : "About System & DeloWay"
 
             SettingsRow {
-                title: "DeloWay Desktop Shell"
+                title: I18n.tr("about_shell_title")
                 subtitle: (I18n.isRTL ? "نواة لينكس: " : "Linux Kernel: ") + I18n.ltr((root.osKernel || "Arch Linux") + " • " + (root.osHostname || "localhost"))
                 icon: "distributor-logo-symbolic"
                 showDivider: true
