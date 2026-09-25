@@ -122,11 +122,12 @@ Item {
         watchChanges: true
     }
 
+    // Shipped template (config/deloway.json): read synchronously, because it is needed the
+    // moment a first run is detected.
     FileView {
         id: fallbackFile
         path: root.fallbackConfigPath
-        watchChanges: false
-        preload: true
+        blockLoading: true
     }
 
     FileView {
@@ -134,11 +135,30 @@ Item {
         path: root.configPath
         watchChanges: true
         preload: true
+        printErrors: false      // a missing file is the first run, handled in onLoadFailed
 
         onTextChanged: {
-            root.loadFromText(text());
+            const raw = text();
+            if (!raw || !raw.trim()) return;
+            root.loadFromText(raw);
             // Apply compositor-side settings from what was actually loaded (the startup
             // sync used to run before the async file load and pushed the built-in defaults).
+            hyprSyncDebounce.restart();
+        }
+
+        // No deloway.json yet (fresh install, installer skipped, or file deleted): start from
+        // the shipped template, whose setupCompleted is false, so the Setup Wizard opens.
+        // This used to race the async load in Component.onCompleted and lose: the built-in
+        // defaults (setupCompleted: true) won, the wizard never showed and the Dock came up
+        // with a hardcoded pin list.
+        onLoadFailed: (error) => {
+            if (error === FileViewError.FileNotFound) {
+                root.setupCompleted = false;
+                root.loadFromText(fallbackFile.text());
+            } else {
+                console.warn("[Deloway] Cannot read " + root.configPath + " (error " + error
+                             + "); using the built-in defaults.");
+            }
             hyprSyncDebounce.restart();
         }
     }
@@ -154,20 +174,8 @@ Item {
     }
 
     Component.onCompleted: {
-        try {
-            var raw = configFile.text();
-            if (!raw || raw.trim().length < 5) {
-                // Fallback to project template
-                raw = fallbackFile.text();
-            }
-            if (raw && raw.length > 5) {
-                root.loadFromText(raw);
-            }
-            root.syncHyprlandWindowSettings();
-            root.syncHyprlandVisualEffects();
-        } catch (e) {
-            console.log("[Deloway] ConfigManager using default configuration: " + e);
-        }
+        root.syncHyprlandWindowSettings();
+        root.syncHyprlandVisualEffects();
     }
 
     // Graphics & Visual Effects tier → compositor effects (blur / shadows).
