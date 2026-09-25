@@ -352,8 +352,8 @@ Item {
                 subtitle: NetworkService.hotspotProblem.length > 0 && !NetworkService.hotspotEnabled
                     ? NetworkService.hotspotProblem
                     : (NetworkService.hotspotEnabled
-                        ? (I18n.isRTL ? ("مفعّلة — متصل بها " + (NetworkService.hotspotClients ? NetworkService.hotspotClients.length : 0) + " جهاز")
-                                      : ("Enabled — " + (NetworkService.hotspotClients ? NetworkService.hotspotClients.length : 0) + " device(s) connected"))
+                        ? ((I18n.isRTL ? "مفعّلة — متصل بها " : "Enabled — connected: ")
+                           + I18n.devicesCount(NetworkService.hotspotClients ? NetworkService.hotspotClients.length : 0))
                         : (I18n.isRTL ? "معطلة — مشاركة الاتصال متوقفة" : "Disabled — Connection sharing is off"))
                 icon: "network-wireless-hotspot-symbolic"
                 showDivider: NetworkService.hotspotEnabled

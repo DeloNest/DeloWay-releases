@@ -93,7 +93,7 @@ ColumnLayout {
                 Text {
                     Layout.fillWidth: true
                     visible: text.length > 0
-                    text: gauge.line1
+                    text: I18n.number(gauge.line1)
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignLeft
                     font.family: Theme.typography.fontFamily
@@ -104,7 +104,7 @@ ColumnLayout {
                 Text {
                     Layout.fillWidth: true
                     visible: text.length > 0
-                    text: gauge.line2
+                    text: I18n.number(gauge.line2)
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignLeft
                     font.family: Theme.typography.fontFamily
@@ -143,7 +143,7 @@ ColumnLayout {
             value: HardwareService.cpuUsage
             level: root.cpuLevel
             line1: ConfigManager.timeCapsuleShowTemps ? root.tempText(HardwareService.cpuTemp)
-                                                      : (HardwareService.cores.length + " " + I18n.tr("tc_threads", "threads"))
+                                                      : I18n.threadsCount(HardwareService.cores.length)
             line2: HardwareService.cpuFreq ? (HardwareService.cpuFreq / 1000).toFixed(2) + " GHz" : ""
         }
 
@@ -195,9 +195,9 @@ ColumnLayout {
                 Text {
                     Layout.fillWidth: true
                     text: I18n.uiLine((HardwareService.kernel ? I18n.ltr("Linux " + HardwareService.kernel) + "  ·  " : "")
-                          + HardwareService.cores.length + " " + I18n.tr("tc_threads", "threads")
+                          + I18n.threadsCount(HardwareService.cores.length)
                   + (HardwareService.uptimeSec > 0
-                     ? "  ·  " + I18n.tr("tk_uptime", "up") + " " + HardwareService.formatUptime(HardwareService.uptimeSec, I18n.isRTL)
+                     ? "  ·  " + I18n.tr("tk_uptime", "up") + " " + I18n.digits(HardwareService.formatUptime(HardwareService.uptimeSec, I18n.isRTL))
                      : ""))
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignLeft
@@ -208,7 +208,7 @@ ColumnLayout {
                 }
                 Text {
                     text: I18n.tr("tc_load", "Load") + "  "
-                          + (HardwareService.loadAvg || []).map(v => Number(v).toFixed(2)).join("  ")
+                          + I18n.number((HardwareService.loadAvg || []).map(v => Number(v).toFixed(2)).join("  "))
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(10)
                     font.features: { "tnum": 1 }

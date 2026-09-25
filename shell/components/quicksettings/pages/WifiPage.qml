@@ -69,7 +69,8 @@ ColumnLayout {
         title: "Wi-Fi"
         subtitle: !NetworkService.wifiEnabled ? root.t("متوقف", "Off")
                   : (NetworkService.wifiSsid ? root.t("متصل بـ ", "Connected to ") + I18n.isolate(NetworkService.wifiSsid)
-                     : root.t(root.sortedNetworks.length + " شبكة متاحة", root.sortedNetworks.length + " networks available"))
+                     : (root.sortedNetworks.length === 0 ? root.t("لا توجد شبكات", "No networks")
+                                                       : I18n.networksCount(root.sortedNetworks.length)))
         hasAction: NetworkService.wifiEnabled
         actionBusy: NetworkService.isScanning
         hasSwitch: NetworkService.wifiAvailable

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import "../../theme"
+import "../../services"
 
 // RingGauge — 270° monochrome arc gauge with the value centred inside.
 // Hierarchy is pure luminance: a faint track and a solid high-contrast arc.
@@ -57,7 +58,7 @@ Item {
 
     Text {
         anchors.centerIn: parent
-        text: root.centerText
+        text: I18n.digits(root.centerText)
         font.family: Theme.typography.fontFamily
         font.pixelSize: Theme.fontSize(13)
         font.weight: Font.Bold

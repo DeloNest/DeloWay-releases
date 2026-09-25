@@ -46,21 +46,19 @@ Item {
     // ── Formatting / date helpers ────────────────────────────────────────
     function pad2(n) { return (n < 10 ? "0" : "") + n; }
     function dateKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
-    function digits(n) {
-        const s = String(n);
-        return (I18n.isRTL && ConfigManager.timeCapsuleArabicDigits)
-               ? s.replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]) : s;
-    }
+    function digits(n) { return I18n.digits(n); }   // one rule for the whole shell
+    // Display formatters follow the Arabic-digits setting (pad2 stays ASCII: it also
+    // builds data keys such as dateKey()).
     function formatClock(sec) {
         sec = Math.max(0, Math.round(sec));
         const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-        return h > 0 ? h + ":" + pad2(m) + ":" + pad2(s) : pad2(m) + ":" + pad2(s);
+        return I18n.digits(h > 0 ? h + ":" + pad2(m) + ":" + pad2(s) : pad2(m) + ":" + pad2(s));
     }
     function formatIn(ms) {
         const mins = Math.max(0, Math.round(ms / 60000));
         const h = Math.floor(mins / 60), m = mins % 60;
         const U = I18n.isRTL ? { h: "س", m: "د" } : { h: "h", m: "m" };
-        return h > 0 ? h + U.h + " " + m + U.m : m + U.m;
+        return I18n.digits(h > 0 ? h + U.h + " " + m + U.m : m + U.m);
     }
     function parseTime(t) {
         const m = /^\s*(\d{1,2})[:.](\d{2})\s*$/.exec(t || "");

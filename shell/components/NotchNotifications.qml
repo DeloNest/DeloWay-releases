@@ -61,9 +61,7 @@ Item {
             Text {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignLeft
-                text: I18n.isRTL
-                      ? (root.notifCount === 1 ? "إشعار واحد" : root.notifCount + " إشعارات")
-                      : (root.notifCount === 1 ? "1 notification" : root.notifCount + " notifications")
+                text: I18n.notificationsCount(root.notifCount)
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(12)
                 font.weight: Font.Medium

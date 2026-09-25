@@ -425,7 +425,7 @@ Item {
                         Text {
                             id: countTxt
                             anchors.centerIn: parent
-                            text: (root.droppedUrls.length || 1) + " " + (root.droppedUrls.length === 1 ? I18n.tr("notch_file_ready") : I18n.tr("notch_files_ready"))
+                            text: I18n.filesCount(root.droppedUrls.length || 1) + " — " + I18n.tr("notch_ready_to_send")
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(8)
                             font.weight: Font.DemiBold

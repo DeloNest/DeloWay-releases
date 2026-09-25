@@ -52,9 +52,9 @@ DashCard {
 
             Repeater {
                 model: [
-                    { text: root.tk.pad2(root.tk.alarmHour),   step: 60, fine: 60 },
+                    { text: root.tk.digits(root.tk.pad2(root.tk.alarmHour)),   step: 60, fine: 60 },
                     { text: ":",                               step: 0,  fine: 0 },
-                    { text: root.tk.pad2(root.tk.alarmMinute), step: 1,  fine: 5 }
+                    { text: root.tk.digits(root.tk.pad2(root.tk.alarmMinute)), step: 1,  fine: 5 }
                 ]
                 delegate: Text {
                     id: seg

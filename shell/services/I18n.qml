@@ -475,6 +475,7 @@ Item {
             "notch_send_more": "Send More Files",
             "notch_files_ready": "files ready to send",
             "notch_file_ready": "file ready to send",
+            "notch_ready_to_send": "ready to send",
             "notch_status_ready": "Ready to send & receive",
             "notch_status_stopped": "Service stopped",
             "notch_open_app": "Open App",
@@ -948,6 +949,7 @@ Item {
             "notch_send_more": "إرسال ملفات أخرى",
             "notch_files_ready": "ملفات جاهزة للإرسال",
             "notch_file_ready": "ملف جاهز للإرسال",
+            "notch_ready_to_send": "جاهزة للإرسال",
             "notch_status_ready": "جاهز للاستقبال والإرسال",
             "notch_status_stopped": "الخدمة متوقفة",
             "notch_open_app": "فتح التطبيق",
@@ -970,6 +972,16 @@ Item {
                                      "July", "August", "September", "October", "November", "December"]
     readonly property bool arabicDigits: root.isRTL && !!(typeof ConfigManager !== "undefined" && ConfigManager.timeCapsuleArabicDigits)
 
+    // A value such as "6.6 / 31.3 GB", "1.00 0.86 0.84" or "43°C · 35 W" in the digits
+    // setting. To the bidi algorithm Arabic-Indic digits are Arabic numbers, and the
+    // spaces/separators between two of them resolve right-to-left even inside an LTR
+    // isolate, so the values swapped places ("٣١.٣ / ٦.٦"). A value with no Arabic
+    // letters keeps its written order: an LRM after each digit run, inside an LTR isolate.
+    function number(v) {
+        const s = root.digits(v);
+        if (!root.arabicDigits || s.length === 0 || /[\u0621-\u064A]/.test(String(v))) return s;
+        return root.ltr(s.replace(/([\u0660-\u0669][\u0660-\u0669.,]*)/g, "$1\u200E"));
+    }
     function digits(v) {
         const s = String(v === undefined || v === null ? "" : v);
         return root.arabicDigits ? s.replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]) : s;
@@ -1027,20 +1039,43 @@ Item {
     function ltr(s) { return "\u2066" + (s === undefined || s === null ? "" : s) + "\u2069"; }
 
     // "8 apps" / Arabic: تطبيق واحد، تطبيقان، ٣–١٠ تطبيقات، ١١+ تطبيقًا
-    function appsCount(n) {
-        if (!root.isRTL) return n + (n === 1 ? " app" : " apps");
-        if (n === 1) return "تطبيق واحد";
-        if (n === 2) return "تطبيقان";
-        if (n >= 3 && n <= 10) return n + " تطبيقات";
-        return n + " تطبيقًا";
+    // A counted noun in the UI language. Arabic agrees by number: 1 and 2 have their own
+    // words, 3–10 take the plural, 11–99 the accusative singular, 0 and hundreds the
+    // singular (إشعار واحد، إشعاران، ٣ إشعارات، ١١ إشعارًا، ١٠٠ إشعار); digits follow the
+    // Arabic-digits setting. en: [one, other]; ar: [one, two, few, many, other].
+    function plural(n, en, ar) {
+        const num = Math.max(0, Math.round(Number(n) || 0));
+        if (!root.isRTL) return num + " " + (num === 1 ? en[0] : en[1]);
+        if (num === 1) return ar[0];
+        if (num === 2) return ar[1];
+        const r = num % 100;
+        const form = (r >= 3 && r <= 10) ? ar[2] : (r >= 11 ? ar[3] : ar[4]);
+        return root.digits(num) + " " + form;
     }
 
+    function appsCount(n) {
+        return root.plural(n, ["app", "apps"], ["تطبيق واحد", "تطبيقان", "تطبيقات", "تطبيقًا", "تطبيق"]);
+    }
     function windowsCount(n) {
-        if (!root.isRTL) return n + (n === 1 ? " window" : " windows");
-        if (n === 1) return "نافذة واحدة";
-        if (n === 2) return "نافذتان";
-        if (n >= 3 && n <= 10) return n + " نوافذ";
-        return n + " نافذة";
+        return root.plural(n, ["window", "windows"], ["نافذة واحدة", "نافذتان", "نوافذ", "نافذة", "نافذة"]);
+    }
+    function notificationsCount(n) {
+        return root.plural(n, ["notification", "notifications"], ["إشعار واحد", "إشعاران", "إشعارات", "إشعارًا", "إشعار"]);
+    }
+    function filesCount(n) {
+        return root.plural(n, ["file", "files"], ["ملف واحد", "ملفان", "ملفات", "ملفًا", "ملف"]);
+    }
+    function networksCount(n) {
+        return root.plural(n, ["network", "networks"], ["شبكة واحدة", "شبكتان", "شبكات", "شبكة", "شبكة"]);
+    }
+    function devicesCount(n) {
+        return root.plural(n, ["device", "devices"], ["جهاز واحد", "جهازان", "أجهزة", "جهازًا", "جهاز"]);
+    }
+    function charsCount(n) {
+        return root.plural(n, ["character", "characters"], ["حرف واحد", "حرفان", "أحرف", "حرفًا", "حرف"]);
+    }
+    function threadsCount(n) {
+        return root.plural(n, ["thread", "threads"], ["مسار واحد", "مساران", "مسارات", "مسارًا", "مسار"]);
     }
 
     function tr(key, fallback) {

@@ -795,7 +795,7 @@ Item {
 
                                 // Day Number
                                 Text {
-                                    text: dayCol.modelData.dayNumber.toString()
+                                    text: I18n.digits(dayCol.modelData.dayNumber)
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(dayCol.modelData.isToday ? 22 : 15)
                                     font.weight: dayCol.modelData.isToday ? Font.Bold : Font.Normal

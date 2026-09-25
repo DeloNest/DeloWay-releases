@@ -325,7 +325,7 @@ PanelWindow {
                                         Text {
                                             text: clipItem.modelData.isImage
                                                   ? (I18n.isRTL ? "صورة" : "Image")
-                                                  : (clipItem.modelData.text.length + (I18n.isRTL ? " حرف" : " chars"))
+                                                  : I18n.charsCount(clipItem.modelData.text.length)
                                             font.family: Theme.typography.fontFamily
                                             font.pixelSize: Theme.fontSize(10)
                                             font.weight: Font.Normal
