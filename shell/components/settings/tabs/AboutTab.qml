@@ -23,18 +23,12 @@ Item {
     property string osKernel: ""
     property string osHostname: ""
     property bool confirmReset: false
-    property string realBrowser: ""
-    property string realFileManager: ""
 
-    Component.onCompleted: {
-        sysInfoProc.running = true;
-        defaultAppsSyncProc.running = true;
-    }
+    Component.onCompleted: sysInfoProc.running = true
 
     onVisibleChanged: {
         if (visible) {
             sysInfoProc.running = true;
-            defaultAppsSyncProc.running = true;
             root.confirmReset = false;
         }
     }
@@ -52,99 +46,6 @@ Item {
                 }
             }
         }
-    }
-
-    // Process to sync real system defaults from xdg-settings / xdg-mime
-    Process {
-        id: defaultAppsSyncProc
-        command: ["sh", "-c", "echo \"$(xdg-settings get default-web-browser)|$(xdg-mime query default inode/directory)\""]
-        stdout: SplitParser {
-            onRead: data => {
-                var parts = data.trim().split("|");
-                if (parts.length >= 2) {
-                    root.realBrowser = parts[0].trim().replace(/\.desktop$/, "");
-                    root.realFileManager = parts[1].trim().replace(/\.desktop$/, "");
-                }
-            }
-        }
-    }
-
-    // Installed app helper functions
-    function getInstalledBrowsers() {
-        var list = [];
-        var seen = new Set();
-        if (ApplicationManager.allApps) {
-            for (var i = 0; i < ApplicationManager.allApps.length; i++) {
-                var app = ApplicationManager.allApps[i];
-                if (!app || !app.id) continue;
-                var id = app.id.toLowerCase().replace(/\.desktop$/, "");
-                var cats = app.categories ? app.categories.join(" ") : "";
-                if (cats.indexOf("WebBrowser") !== -1 || id.indexOf("browser") !== -1 || id === "zen" || id === "firefox" || id === "chromium" || id === "chrome") {
-                    if (id !== "org.gnome.zenity" && !seen.has(id)) {
-                        seen.add(id);
-                        list.push({ id: id, name: app.name || id, icon: app.icon });
-                    }
-                }
-            }
-        }
-        if (list.length === 0) {
-            list = [
-                { id: "brave", name: "Brave Browser", icon: "brave-browser" },
-                { id: "zen", name: "Zen Browser", icon: "zen" }
-            ];
-        }
-        return list;
-    }
-
-    function getInstalledTerminals() {
-        var list = [];
-        var seen = new Set();
-        if (ApplicationManager.allApps) {
-            for (var i = 0; i < ApplicationManager.allApps.length; i++) {
-                var app = ApplicationManager.allApps[i];
-                if (!app || !app.id) continue;
-                var id = app.id.toLowerCase().replace(/\.desktop$/, "");
-                var cats = app.categories ? app.categories.join(" ") : "";
-                if (cats.indexOf("TerminalEmulator") !== -1 || id.indexOf("terminal") !== -1 || id === "kitty" || id === "alacritty" || id === "foot" || id === "wezterm") {
-                    if (id !== "kitty-open" && !seen.has(id)) {
-                        seen.add(id);
-                        list.push({ id: id, name: app.name || id, icon: app.icon });
-                    }
-                }
-            }
-        }
-        if (list.length === 0) {
-            list = [
-                { id: "kitty", name: "Kitty", icon: "kitty" }
-            ];
-        }
-        return list;
-    }
-
-    function getInstalledFileManagers() {
-        var list = [];
-        var seen = new Set();
-        if (ApplicationManager.allApps) {
-            for (var i = 0; i < ApplicationManager.allApps.length; i++) {
-                var app = ApplicationManager.allApps[i];
-                if (!app || !app.id) continue;
-                var id = app.id.toLowerCase().replace(/\.desktop$/, "");
-                var cats = app.categories ? app.categories.join(" ") : "";
-                if (cats.indexOf("FileManager") !== -1 || id === "thunar" || id === "nautilus" || id === "dolphin" || id === "yazi") {
-                    if (id !== "thunar-bulk-rename" && id !== "thunar-settings" && id !== "nautilus-autorun-software" && !seen.has(id)) {
-                        seen.add(id);
-                        list.push({ id: id, name: app.name || id, icon: app.icon });
-                    }
-                }
-            }
-        }
-        if (list.length === 0) {
-            list = [
-                { id: "thunar", name: "Thunar", icon: "system-file-manager" },
-                { id: "org.gnome.nautilus", name: "Files", icon: "org.gnome.Nautilus" }
-            ];
-        }
-        return list;
     }
 
     ColumnLayout {
