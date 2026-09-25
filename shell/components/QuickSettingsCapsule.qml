@@ -517,9 +517,12 @@ Item {
     // ─────────────────────────────────────────────────────────────────────────
     Item {
         id: capsuleContainer
-        // Body leading edge stays at notchSlotOffset; the ear (earRadius wide) grows
-        // toward the notch as this capsule itself expands, exactly as before.
-        x: Math.round(root.width / 2 + root.notchSlotOffset - root.earRadius * root.expandProgress)
+        // Body edge facing the Notch stays at notchSlotOffset; the ear (earRadius wide) grows
+        // toward the Notch as this capsule expands. The bar mirrors in Arabic: Quick
+        // Settings sits at the reading end, right of the Notch in English, left in Arabic.
+        x: I18n.isRTL
+           ? Math.round(root.width / 2 - root.notchSlotOffset - root.currentWidth - root.earRadius * root.expandProgress)
+           : Math.round(root.width / 2 + root.notchSlotOffset - root.earRadius * root.expandProgress)
         y: root.currentY
         width: Math.round(root.currentWidth + root.earRadius * 2 * root.expandProgress)
         height: Math.round(root.currentHeight + 8 * root.expandProgress)
@@ -709,6 +712,9 @@ Item {
                     id: compactRow
                     anchors.centerIn: parent
                     spacing: 8
+                    // Settings gear at the outer end in both directions
+                    LayoutMirroring.enabled: I18n.isRTL
+                    LayoutMirroring.childrenInherit: true
 
                     // ── Battery Indicator (hidden on desktop) ──
                     Item {
