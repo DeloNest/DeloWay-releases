@@ -118,12 +118,12 @@ case "$CATEGORY" in
 
     editor|text)
         APP=$(get_default_app "editor" "gnome-text-editor")
-        launch "$APP" "$@" || launch gnome-text-editor "$@" || launch gedit "$@" || launch mousepad "$@" || exec kitty -e nano "$@"
+        launch "$APP" "$@" || launch gnome-text-editor "$@" || launch gedit "$@" || launch mousepad "$@" || exec "$0" terminal -e nano "$@"
         ;;
 
     monitor|taskmanager)
-        APP=$(get_default_app "monitor" "mission-center")
-        launch "$APP" "$@" || launch mission-center "$@" || launch gnome-system-monitor "$@" || exec kitty -e btop
+        APP=$(get_default_app "monitor" "missioncenter")
+        launch "$APP" "$@" || launch missioncenter "$@" || launch gnome-system-monitor "$@" || exec "$0" terminal -e btop
         ;;
 
     mixer|audio)

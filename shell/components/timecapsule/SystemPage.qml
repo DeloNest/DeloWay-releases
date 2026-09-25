@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Quickshell.Hyprland
 import "../../theme"
 import "../../services"
@@ -43,7 +44,8 @@ ColumnLayout {
     function tempText(t) { return (t === null || t === undefined) ? "—" : Math.round(t) + "°C"; }
 
     function openSystemMonitor() {
-        Hyprland.dispatch("exec mission-center || gnome-system-monitor || kitty -e btop");
+        // The system monitor chosen in Settings → Apps / the Setup Wizard
+        Quickshell.execDetached([ConfigManager.projectDir + "/bin/delo-app", "monitor"]);
         ShellState.closeTimeCapsule();
     }
 

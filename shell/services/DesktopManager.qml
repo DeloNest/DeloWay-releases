@@ -170,8 +170,12 @@ Item {
         refreshTimer.restart();
     }
 
+    // The user's terminal (delo-app), started in the desktop folder
     function openTerminalHere() {
-        Quickshell.execDetached(["kitty", "--directory", root.desktopDir]);
+        Quickshell.execDetached({
+            command: [ConfigManager.projectDir + "/bin/delo-app", "terminal"],
+            workingDirectory: root.desktopDir
+        });
     }
 
     function openItem(item) {
