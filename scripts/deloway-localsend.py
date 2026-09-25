@@ -172,11 +172,22 @@ def lan_addresses():
     return result
 
 
-def client_context():
+_client_ctx = None
+
+
+def set_client_identity(cert, key):
+    """Current LocalSend apps (2.2) require the connecting device's certificate (mutual
+    TLS): without it every request to them fails with "certificate required"."""
+    global _client_ctx
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE   # LocalSend peers use self-signed certificates
-    return ctx
+    ctx.load_cert_chain(cert, key)
+    _client_ctx = ctx
+
+
+def client_context():
+    return _client_ctx or ssl._create_unverified_context()
 
 
 def connect(device, timeout):
@@ -241,6 +252,7 @@ class Peer:
     def __init__(self, args):
         prefs = read_app_prefs()
         self.cert, self.key, self.fingerprint = load_identity(prefs)
+        set_client_identity(self.cert, self.key)
         self.alias = (args.alias or prefs.get('flutter.ls_alias') or socket.gethostname())[:64]
         self.port = args.port
         self.device_type = args.device_type
