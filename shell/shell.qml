@@ -315,6 +315,13 @@ ShellRoot {
         function showDesktopContextMenu(x: int, y: int) {
             DesktopManager.showWallpaperContextMenu(x, y);
         }
+        // Start the inline rename of a desktop item (as its menu's "Rename…" does)
+        function renameDesktopItem(itemId: string): bool {
+            const item = DesktopManager.allItems.find(i => i.id === itemId);
+            if (!item || item.isSystem) return false;
+            DesktopManager.startRenaming(item.id);
+            return true;
+        }
         function showItemContextMenu(itemId: string, x: int, y: int) {
             var item = DesktopManager.allItems.find(function(i) { return i.id === itemId; });
             if (item) DesktopManager.showItemContextMenu(item, x, y);

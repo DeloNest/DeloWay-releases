@@ -46,6 +46,8 @@ Item {
         z: 1
 
         onPressed: function(mouse) {
+            // A click on the desktop ends an inline rename (the field commits on blur)
+            if (DesktopManager.editingItemId !== "") root.forceActiveFocus();
             if (mouse.button === Qt.LeftButton) {
                 DesktopManager.closeContextMenu();
                 if (!(mouse.modifiers & Qt.ControlModifier)) {
@@ -269,11 +271,22 @@ Item {
                             Keys.onEscapePressed: {
                                 DesktopManager.cancelRenaming();
                             }
-                            Component.onCompleted: {
-                                if (deskItemWrapper.isEditing) {
-                                    forceActiveFocus();
-                                    selectAll();
-                                }
+                            // Focus when renaming starts (it used to be requested only if
+                            // the icon was created mid-rename, so the field never got the
+                            // keyboard) and select the name without its extension.
+                            function beginEditing() {
+                                text = deskItemWrapper.itemData.name;
+                                forceActiveFocus();
+                                const dot = deskItemWrapper.itemData.isDir ? -1 : text.lastIndexOf(".");
+                                select(0, dot > 0 ? dot : text.length);
+                            }
+                            onVisibleChanged: if (visible) beginEditing()
+                            Component.onCompleted: if (deskItemWrapper.isEditing) beginEditing()
+                            // Clicking elsewhere keeps the typed name (Enter and Escape end
+                            // the rename first, so they never reach this).
+                            onActiveFocusChanged: {
+                                if (!activeFocus && deskItemWrapper.isEditing)
+                                    DesktopManager.renameItem(deskItemWrapper.itemData, renameField.text);
                             }
                         }
                     }

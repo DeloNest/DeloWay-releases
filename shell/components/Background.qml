@@ -22,6 +22,9 @@ PanelWindow {
 
     WlrLayershell.namespace: "deloway:background"
     WlrLayershell.layer: WlrLayer.Background
+    // Keyboard only while a desktop item is being renamed (the inline name field); a
+    // layer surface gets none by default, so typing a new name used to do nothing.
+    WlrLayershell.keyboardFocus: DesktopManager.editingItemId !== "" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
 
     // ----------------------------------------------------
