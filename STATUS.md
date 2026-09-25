@@ -197,6 +197,7 @@
 * `c076e6d` - feat(share): paired devices and on-demand peer in LocalSendService
 * `faa7d50` - feat(notch): connect, send and receive in the Share tab
 * `701a438` - perf(share): stop keeping the LocalSend app running hidden
+* `c90602e` - fix(share): cancel works while waiting for the receiver to accept
 
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
