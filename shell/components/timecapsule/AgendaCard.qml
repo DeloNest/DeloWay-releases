@@ -122,6 +122,7 @@ DashCard {
                         color: delMa.containsMouse ? Theme.notchSurfaceActive : "transparent"
                         Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
                         Text {
+                            font.family: Theme.typography.fontFamily
                             anchors.centerIn: parent
                             text: "✕"
                             font.pixelSize: Theme.fontSize(9)

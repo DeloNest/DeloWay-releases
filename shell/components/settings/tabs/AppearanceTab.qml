@@ -106,13 +106,15 @@ Item {
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
+                        // Only fonts that are installed (Readex Pro and Rubik were offered
+                        // without being installed: picking one silently fell back).
                         model: [
                             { family: "Cairo",            label: "Cairo" },
                             { family: "Readex Pro",       label: "Readex Pro" },
                             { family: "Rubik",            label: "Rubik" },
                             { family: "Noto Kufi Arabic", label: "Noto Kufi" },
                             { family: "Inter",            label: "Inter" }
-                        ]
+                        ].filter(f => Qt.fontFamilies().indexOf(f.family) >= 0)
                         delegate: Rectangle {
                             id: fontFamPill
                             required property var modelData

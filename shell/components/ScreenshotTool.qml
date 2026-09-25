@@ -246,6 +246,7 @@ PanelWindow {
                     Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
                     Text {
+                        font.family: Theme.typography.fontFamily
                         anchors.centerIn: parent
                         text: "✕"
                         font.pixelSize: Theme.fontSize(12)

@@ -310,7 +310,7 @@ PanelWindow {
                                         Layout.fillWidth: true
                                         horizontalAlignment: Text.AlignLeft   // reading start, even for Latin/code entries
                                         text: clipItem.modelData.text || ""
-                                        font.family: clipItem.modelData.isBinary ? Theme.typography.fontFamily : "monospace"
+                                        font.family: Theme.typography.fontFamily   // the UI font; only terminals are monospace
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: clipItem.isSelected ? Font.DemiBold : Font.Normal
                                         color: Theme.notchText

@@ -100,6 +100,7 @@ Rectangle {
                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         Text {
+                            font.family: Theme.typography.fontFamily
                             anchors.centerIn: parent
                             text: "─"
                             font.pixelSize: Theme.fontSize(11)
@@ -125,6 +126,7 @@ Rectangle {
                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         Text {
+                            font.family: Theme.typography.fontFamily
                             anchors.centerIn: parent
                             text: root.isMaximized ? "❐" : "□"
                             font.pixelSize: Theme.fontSize(12)
@@ -150,6 +152,7 @@ Rectangle {
                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
                         Text {
+                            font.family: Theme.typography.fontFamily
                             anchors.centerIn: parent
                             text: "✕"
                             font.pixelSize: Theme.fontSize(11)

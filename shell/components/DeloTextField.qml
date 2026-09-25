@@ -120,6 +120,7 @@ Rectangle {
             Layout.alignment: Qt.AlignVCenter
 
             Text {
+                font.family: Theme.typography.fontFamily
                 anchors.centerIn: parent
                 text: "✕"
                 font.pixelSize: Theme.fontSize(10)

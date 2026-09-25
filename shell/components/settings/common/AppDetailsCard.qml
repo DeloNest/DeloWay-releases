@@ -167,7 +167,7 @@ ColumnLayout {
                 text: modelData.v
                 textFormat: Text.PlainText
                 elide: Text.ElideMiddle
-                font.family: modelData.mono ? Theme.typography.terminalFont : Theme.typography.fontFamily
+                font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(modelData.mono ? 11 : 12)
                 font.underline: !!modelData.link && linkMa.containsMouse
                 color: Theme.notchTextBody

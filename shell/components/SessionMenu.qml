@@ -341,6 +341,7 @@ PanelWindow {
             visible: tileRoot.keyHint.length > 0
 
             Text {
+                font.family: Theme.typography.fontFamily
                 anchors.centerIn: parent
                 text: tileRoot.keyHint
                 color: Theme.colors.textTertiary

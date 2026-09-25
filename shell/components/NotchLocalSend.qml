@@ -91,6 +91,7 @@ Item {
         }
 
         Text {
+            font.family: Theme.typography.fontFamily
             text: "•"
             font.pixelSize: Theme.fontSize(10)
             color: Theme.notchTextTertiary
@@ -292,6 +293,7 @@ Item {
                                 }
 
                                 Text {
+                                    font.family: Theme.typography.fontFamily
                                     text: {
                                         let s = (fileItem.modelData || "").toLowerCase();
                                         if (s.endsWith(".pdf")) return "📄";
@@ -311,6 +313,7 @@ Item {
                                     Layout.alignment: Qt.AlignHCenter
 
                                     Text {
+                                        font.family: Theme.typography.fontFamily
                                         anchors.centerIn: parent
                                         text: "PDF"
                                         font.pixelSize: Theme.fontSize(7)
@@ -389,6 +392,7 @@ Item {
                         color: backHover.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                         Text {
+                            font.family: Theme.typography.fontFamily
                             anchors.centerIn: parent
                             text: I18n.isRTL ? "→" : "←"
                             font.pixelSize: Theme.fontSize(12)
@@ -691,6 +695,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
 
                     Text {
+                        font.family: Theme.typography.fontFamily
                         anchors.centerIn: parent
                         text: "✓"
                         font.pixelSize: Theme.fontSize(14)
@@ -754,6 +759,7 @@ Item {
                     Layout.alignment: Qt.AlignHCenter
 
                     Text {
+                        font.family: Theme.typography.fontFamily
                         anchors.centerIn: parent
                         text: "✕"
                         font.pixelSize: Theme.fontSize(14)

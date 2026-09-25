@@ -727,6 +727,7 @@ PanelWindow {
                                                 anchors.centerIn: parent
                                                 spacing: 4
                                                 Text {
+                                                    font.family: Theme.typography.fontFamily
                                                     text: "✓"
                                                     font.pixelSize: Theme.fontSize(10)
                                                     font.weight: Font.Bold
@@ -848,7 +849,7 @@ PanelWindow {
 
                                     Text {
                                         text: "Gaps: " + styleCard.modelData.gapsIn + "px / " + styleCard.modelData.gapsOut + "px  •  Corner: " + styleCard.modelData.rounding + "px"
-                                        font.family: Theme.typography.terminalFont
+                                        font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(10)
                                         color: Theme.colors.textSecondary
                                     }
@@ -937,7 +938,7 @@ PanelWindow {
                                             id: keyText
                                             anchors.centerIn: parent
                                             text: modelData.key
-                                            font.family: Theme.typography.terminalFont
+                                            font.family: Theme.typography.fontFamily
                                             font.pixelSize: Theme.typography.scaleCaption.size
                                             font.weight: Font.DemiBold
                                             color: Theme.colors.text

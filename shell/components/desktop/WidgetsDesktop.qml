@@ -93,6 +93,7 @@ Item {
                 Item { Layout.fillWidth: true }
 
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: "⋮⋮"
                     font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
@@ -197,6 +198,7 @@ Item {
                 Item { Layout.fillWidth: true }
 
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: "⋮⋮"
                     font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
@@ -234,16 +236,19 @@ Item {
                 Layout.fillWidth: true
                 spacing: 16
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: I18n.tr("widget_humidity") + " " + I18n.ltr(SystemMonitor.weatherHumidity)
                     font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textTertiary
                 }
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: I18n.tr("widget_wind") + " " + I18n.ltr(SystemMonitor.weatherWind)
                     font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textTertiary
                 }
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: I18n.tr("widget_uv") + " " + I18n.ltr(SystemMonitor.weatherUv)
                     font.pixelSize: Theme.fontSize(11)
                     color: Theme.colors.textTertiary
@@ -309,6 +314,7 @@ Item {
                 Item { Layout.fillWidth: true }
 
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: "⋮⋮"
                     font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
@@ -322,9 +328,9 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: I18n.tr("widget_cpu"); font.pixelSize: Theme.fontSize(11); color: Theme.colors.textSecondary }
+                    Text { font.family: Theme.typography.fontFamily; text: I18n.tr("widget_cpu"); font.pixelSize: Theme.fontSize(11); color: Theme.colors.textSecondary }
                     Item { Layout.fillWidth: true }
-                    Text { text: SystemMonitor.cpuPercentText; font.weight: Font.DemiBold; font.pixelSize: Theme.fontSize(11); color: Theme.colors.text }
+                    Text { font.family: Theme.typography.fontFamily; text: SystemMonitor.cpuPercentText; font.weight: Font.DemiBold; font.pixelSize: Theme.fontSize(11); color: Theme.colors.text }
                 }
 
                 Rectangle {
@@ -350,9 +356,9 @@ Item {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: I18n.tr("widget_memory"); font.pixelSize: Theme.fontSize(11); color: Theme.colors.textSecondary }
+                    Text { font.family: Theme.typography.fontFamily; text: I18n.tr("widget_memory"); font.pixelSize: Theme.fontSize(11); color: Theme.colors.textSecondary }
                     Item { Layout.fillWidth: true }
-                    Text { text: SystemMonitor.ramText; font.weight: Font.DemiBold; font.pixelSize: Theme.fontSize(11); color: Theme.colors.text }
+                    Text { font.family: Theme.typography.fontFamily; text: SystemMonitor.ramText; font.weight: Font.DemiBold; font.pixelSize: Theme.fontSize(11); color: Theme.colors.text }
                 }
 
                 Rectangle {
@@ -383,6 +389,7 @@ Item {
                 }
 
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: SystemMonitor.hasBattery ? ((I18n.isRTL ? "البطارية " : "Battery ") + I18n.digits(SystemMonitor.batteryPercent) + "%")
                                                 : (I18n.isRTL ? "متصل بالتيار" : "Power: AC Connected")
                     font.pixelSize: Theme.fontSize(11)
@@ -454,6 +461,7 @@ Item {
                 Item { Layout.fillWidth: true }
 
                 Text {
+                    font.family: Theme.typography.fontFamily
                     text: "⋮⋮"
                     font.pixelSize: Theme.fontSize(12)
                     color: Theme.colors.textTertiary
