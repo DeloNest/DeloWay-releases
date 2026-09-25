@@ -1,439 +1,765 @@
 #!/usr/bin/env python3
-"""
-Deloway LocalSend Integration Helper
-Provides status inspection, real network discovery with paired/favorite devices,
-and transfer initiation for Quickshell.
+"""DeloWay's LocalSend peer: the Notch → Share tab's link to phones and other computers.
+
+A small endpoint of the LocalSend protocol v2 (https://github.com/localsend/protocol), so
+the Notch sends and receives on its own instead of keeping the LocalSend app (a Flutter
+program) running hidden in the tray. Standard library only. It sleeps in blocking reads
+(no polling, no subnet scans) and lives exactly as long as the shell process that started
+it (LocalSendService.qml): it exits when its stdin closes.
+
+    deloway-localsend.py serve [--port 53317] [--alias NAME] [--download-dir DIR]
+                               [--device-type desktop|mobile|…]
+
+Identity: the LocalSend app's own certificate and name when that app was set up here (so
+phones that already know this computer still recognise it), else a new self-signed one in
+$XDG_DATA_HOME/deloway/localsend. Discovery is the protocol's own: a multicast
+announcement on 224.0.0.167:53317 that other LocalSend devices answer.
+
+The shell talks to it in JSON lines — commands on stdin, events on stdout:
+
+  commands  {"cmd":"scan"}                                announce on every LAN
+            {"cmd":"probe","ip":…,"port":…}               reach one device directly
+            {"cmd":"send","device":{…},"files":[paths]}
+            {"cmd":"cancel-send"}
+            {"cmd":"accept"|"decline","sessionId":…}      answer an incoming transfer
+            {"cmd":"cancel-receive","sessionId":…}
+  events    ready, network, device, probe-failed,
+            incoming, receive-progress, received, receive-ended,
+            send-status (connecting | sending | sent | failed | cancelled)
 """
 
-import sys
+import argparse
+import errno
+import hashlib
+import http.client
 import json
+import mimetypes
 import os
+import shutil
 import socket
 import ssl
-import urllib.request
-import urllib.error
-import http.client
-import uuid
 import subprocess
-import tempfile
-from concurrent.futures import ThreadPoolExecutor
+import sys
+import threading
+import time
+import uuid
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlparse
 
-PREFS_FILE = os.path.expanduser('~/.local/share/org.localsend.localsend_app/shared_preferences.json')
-import shutil
-# Packaged installs ship /usr/bin/localsend(_app); the AppImage lives in ~/.local/bin.
-LOCALSEND_BIN = (shutil.which('localsend') or shutil.which('localsend_app')
-                 or os.path.expanduser('~/.local/bin/localsend'))
-PORT = 53317
+PROTOCOL_VERSION = '2.1'
+MCAST_GROUP = '224.0.0.167'
+MCAST_PORT = 53317
+DEFAULT_PORT = 53317
+ACCEPT_TIMEOUT = 120          # seconds the user has to accept an incoming transfer
+CHUNK = 256 * 1024
+PROGRESS_INTERVAL = 0.15      # seconds between progress events
 
-def get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+DATA_HOME = os.environ.get('XDG_DATA_HOME') or os.path.expanduser('~/.local/share')
+STATE_DIR = os.path.join(DATA_HOME, 'deloway', 'localsend')
+APP_PREFS = os.path.join(DATA_HOME, 'org.localsend.localsend_app', 'shared_preferences.json')
+
+# Interfaces that never lead to a phone: loopback, containers, VMs, VPN tunnels.
+SKIP_IFACES = ('lo', 'docker', 'veth', 'br-', 'virbr', 'vnet', 'tun', 'tap', 'wg', 'tailscale')
+
+_out_lock = threading.Lock()
+
+
+def emit(event, **fields):
+    fields['event'] = event
+    line = json.dumps(fields, ensure_ascii=False)
+    with _out_lock:
+        try:
+            sys.stdout.write(line + '\n')
+            sys.stdout.flush()
+        except (BrokenPipeError, ValueError):
+            os._exit(0)   # the shell is gone
+
+
+# ── Identity ────────────────────────────────────────────────────────────────
+
+def read_app_prefs():
     try:
-        s.connect(('10.255.255.255', 1))
-        return s.getsockname()[0]
-    except Exception:
-        return '127.0.0.1'
-    finally:
-        s.close()
+        with open(APP_PREFS, encoding='utf-8') as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
 
-def is_localsend_running():
-    for name in ['localsend', 'localsend_app']:
+
+def _write_private(path, text):
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'w') as f:
+        f.write(text)
+
+
+def load_identity(prefs):
+    """(cert path, key path, fingerprint). The fingerprint is what LocalSend uses: the
+    SHA-256 of the certificate's DER bytes, upper-case hex."""
+    cert = os.path.join(STATE_DIR, 'cert.pem')
+    key = os.path.join(STATE_DIR, 'key.pem')
+    if not (os.path.isfile(cert) and os.path.isfile(key)):
+        os.makedirs(STATE_DIR, mode=0o700, exist_ok=True)
+        sec = None
         try:
-            res = subprocess.run(['pgrep', '-x', name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if res.returncode == 0:
-                return True
-        except Exception:
+            sec = json.loads(prefs.get('flutter.ls_security_context') or 'null')
+        except ValueError:
             pass
+        if sec and sec.get('certificate') and sec.get('privateKey'):
+            _write_private(key, sec['privateKey'])
+            _write_private(cert, sec['certificate'])
+        else:
+            subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes',
+                            '-keyout', key, '-out', cert, '-days', '36500',
+                            '-subj', '/CN=LocalSend User'],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            os.chmod(key, 0o600)
+    with open(cert, encoding='ascii') as f:
+        der = ssl.PEM_cert_to_DER_cert(f.read())
+    return cert, key, hashlib.sha256(der).hexdigest().upper()
 
-    local_ip = get_local_ip()
-    for host in ['127.0.0.1', local_ip]:
+
+def app_favorites(prefs):
+    """Devices saved as favourites in the LocalSend app — offered once as paired devices."""
+    out = []
+    for raw in prefs.get('flutter.ls_favorites') or []:
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.12)
-            if sock.connect_ex((host, PORT)) == 0:
-                sock.close()
-                return True
-            sock.close()
-        except Exception:
-            pass
-    return False
+            fav = json.loads(raw)
+        except ValueError:
+            continue
+        if fav.get('fingerprint') and fav.get('ip'):
+            out.append({'fingerprint': fav['fingerprint'], 'alias': fav.get('alias') or fav['ip'],
+                        'ip': fav['ip'], 'port': int(fav.get('port') or DEFAULT_PORT),
+                        'protocol': 'https', 'deviceType': 'mobile', 'deviceModel': ''})
+    return out
 
-def get_ssl_context():
-    ctx = ssl.create_default_context()
+
+def download_dir(explicit):
+    if explicit:
+        path = explicit
+    else:
+        path = ''
+        if shutil.which('xdg-user-dir'):
+            try:
+                path = subprocess.run(['xdg-user-dir', 'DOWNLOAD'], capture_output=True,
+                                      text=True, timeout=3).stdout.strip()
+            except (OSError, subprocess.SubprocessError):
+                path = ''
+        if not path or os.path.realpath(path) == os.path.realpath(os.path.expanduser('~')):
+            path = os.path.expanduser('~/Downloads')
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+# ── Network ─────────────────────────────────────────────────────────────────
+
+def lan_addresses():
+    """[(interface, IPv4)] of every connected LAN — Ethernet, Wi-Fi, and this computer's
+    own hotspot, where a phone joined to it lives."""
+    try:
+        out = subprocess.run(['ip', '-j', '-4', 'addr', 'show', 'up'], capture_output=True,
+                             text=True, timeout=3).stdout
+        links = json.loads(out or '[]')
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return []
+    result = []
+    for link in links:
+        name = link.get('ifname', '')
+        flags = link.get('flags', [])
+        if name.startswith(SKIP_IFACES) or 'MULTICAST' not in flags or 'LOWER_UP' not in flags:
+            continue
+        for addr in link.get('addr_info', []):
+            if addr.get('family') == 'inet' and addr.get('local'):
+                result.append((name, addr['local']))
+    return result
+
+
+def client_context():
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    if os.path.exists(PREFS_FILE):
-        try:
-            with open(PREFS_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                sec_raw = data.get('flutter.ls_security_context')
-                if sec_raw:
-                    sec = json.loads(sec_raw)
-                    cert_pem = sec.get('certificate')
-                    key_pem = sec.get('privateKey')
-                    if cert_pem and key_pem:
-                        with tempfile.NamedTemporaryFile('w', delete=False) as cf, tempfile.NamedTemporaryFile('w', delete=False) as kf:
-                            cf.write(cert_pem)
-                            cf.flush()
-                            kf.write(key_pem)
-                            kf.flush()
-                            cf_name = cf.name
-                            kf_name = kf.name
-                        try:
-                            ctx.load_cert_chain(certfile=cf_name, keyfile=kf_name)
-                        finally:
-                            if os.path.exists(cf_name): os.unlink(cf_name)
-                            if os.path.exists(kf_name): os.unlink(kf_name)
-        except Exception:
-            pass
+    ctx.verify_mode = ssl.CERT_NONE   # LocalSend peers use self-signed certificates
     return ctx
 
-def get_local_info():
-    alias = 'Deloway'
-    favorites = []
-    if os.path.exists(PREFS_FILE):
+
+def connect(device, timeout):
+    ip, port = device['ip'], int(device.get('port') or DEFAULT_PORT)
+    if device.get('protocol', 'https') == 'http':
+        return http.client.HTTPConnection(ip, port, timeout=timeout)
+    return http.client.HTTPSConnection(ip, port, timeout=timeout, context=client_context())
+
+
+def request_json(device, method, path, payload=None, timeout=5):
+    """(status, parsed body or None). Raises OSError / http.client errors on no answer."""
+    conn = connect(device, timeout)
+    try:
+        body = json.dumps(payload).encode() if payload is not None else None
+        headers = {'Content-Type': 'application/json'} if body is not None else {}
+        conn.request(method, path, body=body, headers=headers)
+        resp = conn.getresponse()
+        data = resp.read()
         try:
-            with open(PREFS_FILE, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                alias = data.get('flutter.ls_alias', alias)
-                favs_raw = data.get('flutter.ls_favorites', [])
-                for fav in favs_raw:
-                    try:
-                        fav_obj = json.loads(fav)
-                        fav_obj['isFavorite'] = True
-                        if 'deviceType' not in fav_obj:
-                            fav_obj['deviceType'] = 'mobile'
-                        favorites.append(fav_obj)
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+            parsed = json.loads(data) if data else None
+        except ValueError:
+            parsed = None
+        return resp.status, parsed
+    finally:
+        conn.close()
 
-    local_ip = get_local_ip()
-    running = is_localsend_running()
 
+def device_from(info, ip, via):
     return {
-        'alias': alias,
-        'hostname': socket.gethostname(),
-        'ip': local_ip,
-        'port': PORT,
-        'isRunning': running,
-        'deviceType': 'desktop',
-        'deviceModel': 'Linux (DeloOS)',
-        'favorites': favorites
+        'fingerprint': str(info.get('fingerprint') or ''),
+        'alias': str(info.get('alias') or ip)[:64],
+        'deviceType': str(info.get('deviceType') or 'desktop'),
+        'deviceModel': str(info.get('deviceModel') or '')[:64],
+        'ip': ip,
+        'port': int(info.get('port') or DEFAULT_PORT),
+        'protocol': 'http' if info.get('protocol') == 'http' else 'https',
+        'via': via,
     }
 
-def discover_devices():
-    info = get_local_info()
-    local_ip = info['ip']
-    parts = local_ip.split('.')
-    base = f"{parts[0]}.{parts[1]}.{parts[2]}." if len(parts) == 4 else ""
 
-    devices_dict = {}
+def safe_relative(name):
+    """A received file's name as a path inside the download folder: folder transfers send
+    "dir/sub/file", which is kept; anything that climbs out is dropped."""
+    parts = [p for p in str(name).replace('\\', '/').split('/') if p not in ('', '.', '..')]
+    parts = [p.lstrip('.') or '_' for p in parts]   # no hidden files from a stranger
+    return os.path.join(*parts) if parts else 'file'
 
-    # 1. First add all paired favorites (such as user's phone)
-    for fav in info.get('favorites', []):
-        fav_id = fav.get('id') or fav.get('ip') or fav.get('alias')
-        ip = fav.get('ip')
-        is_online = False
-        if ip and ip != local_ip:
-            # Fast ping probe (1 packet, 0.5s timeout)
-            res = subprocess.run(['ping', '-c', '1', '-W', '1', ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            is_online = (res.returncode == 0)
-        fav['isOnline'] = is_online
-        fav['isFavorite'] = True
-        devices_dict[fav_id] = fav
 
-    # 2. Parallel scan of local network subnet for port 53317
-    if base:
-        ctx = get_ssl_context()
-        ips_to_scan = [f"{base}{i}" for i in range(1, 255) if f"{base}{i}" != local_ip]
+def unique_path(path):
+    if not os.path.exists(path):
+        return path
+    stem, ext = os.path.splitext(path)
+    n = 1
+    while os.path.exists(f'{stem} ({n}){ext}'):
+        n += 1
+    return f'{stem} ({n}){ext}'
 
-        def probe_ip(ip):
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(0.12)
+
+# ── The peer ────────────────────────────────────────────────────────────────
+
+class Peer:
+    def __init__(self, args):
+        prefs = read_app_prefs()
+        self.cert, self.key, self.fingerprint = load_identity(prefs)
+        self.alias = (args.alias or prefs.get('flutter.ls_alias') or socket.gethostname())[:64]
+        self.port = args.port
+        self.device_type = args.device_type
+        self.download_dir = download_dir(args.download_dir)
+        self.favorites = app_favorites(prefs)
+        self.lock = threading.Lock()
+        self.pending = {}         # sessionId → {'event', 'accepted', 'sender', 'files'}
+        self.session = None       # the accepted incoming transfer
+        self.sender = None        # the outgoing transfer
+        self.mcast = None
+        self.mcast_lock = threading.Lock()
+        self.joined = set()
+        self.receiving = False
+        self.error = ''
+
+    def info(self, with_endpoint=True):
+        info = {'alias': self.alias, 'version': PROTOCOL_VERSION, 'deviceModel': 'Linux',
+                'deviceType': self.device_type, 'fingerprint': self.fingerprint, 'download': False}
+        if with_endpoint:
+            info.update(port=self.port, protocol='https')
+        return info
+
+    # Multicast ──────────────────────────────────────────────────────────────
+    def open_multicast(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        if hasattr(socket, 'SO_REUSEPORT'):
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        s.bind(('', MCAST_PORT))
+        self.mcast = s
+        self.join_groups()
+        threading.Thread(target=self.multicast_loop, daemon=True).start()
+
+    def join_groups(self):
+        addrs = lan_addresses()
+        if self.mcast:
+            for _, ip in addrs:
+                if ip in self.joined:
+                    continue
+                mreq = socket.inet_aton(MCAST_GROUP) + socket.inet_aton(ip)
+                try:
+                    self.mcast.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+                except OSError:
+                    pass   # already a member through this address
+                self.joined.add(ip)
+        return addrs
+
+    def multicast_send(self, message):
+        if not self.mcast:
+            return []
+        data = json.dumps(message).encode()
+        addrs = self.join_groups()
+        with self.mcast_lock:
+            for _, ip in addrs:
+                try:
+                    self.mcast.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(ip))
+                    self.mcast.sendto(data, (MCAST_GROUP, MCAST_PORT))
+                except OSError:
+                    pass
+        return addrs
+
+    def announce(self):
+        addrs = self.multicast_send(dict(self.info(), announce=True, announcement=True))
+        if not self.mcast:
+            addrs = lan_addresses()
+        emit('network', addresses=[{'interface': n, 'ip': ip} for n, ip in addrs])
+
+    def multicast_loop(self):
+        while True:
             try:
-                res = sock.connect_ex((ip, PORT))
-            except Exception:
-                res = -1
-            finally:
-                sock.close()
+                data, (ip, _) = self.mcast.recvfrom(65536)
+                msg = json.loads(data)
+            except OSError:
+                return
+            except ValueError:
+                continue
+            if not isinstance(msg, dict) or msg.get('fingerprint') in (None, '', self.fingerprint):
+                continue
+            dev = device_from(msg, ip, 'multicast')
+            emit('device', device=dev)
+            if msg.get('announce') or msg.get('announcement'):
+                threading.Thread(target=self.answer_announcement, args=(dev,), daemon=True).start()
 
-            if res == 0:
-                # Query device info via API
-                for scheme in ['https', 'http']:
-                    try:
-                        url = f"{scheme}://{ip}:{PORT}/api/localsend/v2/info"
-                        req = urllib.request.Request(url, headers={'User-Agent': 'LocalSend'})
-                        with urllib.request.urlopen(req, context=ctx, timeout=0.6) as r:
-                            d = json.loads(r.read().decode('utf-8'))
-                            d['ip'] = ip
-                            d['port'] = PORT
-                            d['isOnline'] = True
-                            return d
-                    except Exception:
-                        pass
-                return {
-                    'ip': ip,
-                    'alias': f"Device ({ip})",
-                    'deviceType': 'mobile',
-                    'deviceModel': 'Network Device',
-                    'port': PORT,
-                    'isOnline': True
-                }
+    def answer_announcement(self, dev):
+        # The protocol's answer to an announcement: register over HTTP, else multicast back.
+        try:
+            status, _ = request_json(dev, 'POST', '/api/localsend/v2/register', self.info(), timeout=3)
+            if status == 200:
+                return
+        except (OSError, http.client.HTTPException):
+            pass
+        self.multicast_send(dict(self.info(), announce=False, announcement=False))
+
+    def probe(self, ip, port):
+        for protocol in ('https', 'http'):
+            dev = {'ip': ip, 'port': port, 'protocol': protocol}
+            try:
+                status, body = request_json(dev, 'POST', '/api/localsend/v2/register', self.info(), timeout=3)
+                if status != 200 or not isinstance(body, dict):
+                    status, body = request_json(dev, 'GET', '/api/localsend/v2/info', timeout=3)
+                if status == 200 and isinstance(body, dict) and body.get('fingerprint') != self.fingerprint:
+                    body.setdefault('port', port)
+                    body['protocol'] = protocol
+                    emit('device', device=device_from(body, ip, 'probe'))
+                    return
+            except (OSError, http.client.HTTPException, ValueError):
+                continue
+        emit('probe-failed', ip=ip, port=port)
+
+    # Receiving ──────────────────────────────────────────────────────────────
+    def start_server(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(self.cert, self.key)
+        peer = self
+
+        class Server(ThreadingHTTPServer):
+            daemon_threads = True
+            allow_reuse_address = True
+            request_queue_size = 16
+
+            def get_request(self):
+                sock, addr = super().get_request()
+                # The TLS handshake runs in the request's own thread, not in accept().
+                return ctx.wrap_socket(sock, server_side=True, do_handshake_on_connect=False), addr
+
+            def handle_error(self, request, client_address):
+                pass   # a phone dropping a connection is not worth a traceback
+
+        class Handler(RequestHandler):
+            pass
+        Handler.peer = peer
+        try:
+            self.server = Server(('0.0.0.0', self.port), Handler)
+        except OSError as exc:
+            self.error = 'port_busy' if exc.errno == errno.EADDRINUSE else 'server_failed'
+            return
+        self.receiving = True
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def answer(self, session_id, accepted):
+        with self.lock:
+            pending = self.pending.get(session_id)
+        if pending:
+            pending['accepted'] = bool(accepted)
+            pending['event'].set()
+
+    def cancel_receive(self, session_id):
+        with self.lock:
+            sess = self.session
+            if sess and sess['id'] == session_id:
+                sess['cancelled'] = True
+                self.session = None
+            else:
+                sess = None
+        if sess:
+            emit('receive-ended', sessionId=session_id, reason='cancelled')
+        else:
+            self.answer(session_id, False)
+
+    # Sending ────────────────────────────────────────────────────────────────
+    def send(self, device, files):
+        if self.sender and self.sender.is_alive():
+            emit('send-status', status='failed', error='busy')
+            return
+        self.sender = Sender(self, device, files)
+        self.sender.start()
+
+    def cancel_send(self):
+        if self.sender and self.sender.is_alive():
+            self.sender.cancelled = True
+
+
+class RequestHandler(BaseHTTPRequestHandler):
+    peer = None
+    protocol_version = 'HTTP/1.1'
+    server_version = 'LocalSend'
+    sys_version = ''
+    timeout = 60
+
+    def log_message(self, *args):
+        pass
+
+    def reply(self, code, obj=None):
+        body = json.dumps(obj).encode() if obj is not None else b''
+        self.send_response(code)
+        if obj is not None:
+            self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        if code >= 400:
+            self.send_header('Connection', 'close')
+            self.close_connection = True
+        self.end_headers()
+        self.wfile.write(body)
+
+    def read_json(self, limit=4 << 20):
+        try:
+            n = int(self.headers.get('Content-Length') or 0)
+        except ValueError:
+            return None
+        if n <= 0 or n > limit:
+            return None
+        try:
+            return json.loads(self.rfile.read(n))
+        except ValueError:
             return None
 
-        with ThreadPoolExecutor(max_workers=50) as executor:
-            for discovered in executor.map(probe_ip, ips_to_scan):
-                if discovered:
-                    dev_id = discovered.get('id') or discovered.get('ip')
-                    matched = False
-                    for fid, existing in list(devices_dict.items()):
-                        if (existing.get('id') and existing.get('id') == discovered.get('id')) or \
-                           (existing.get('fingerprint') and existing.get('fingerprint') == discovered.get('fingerprint')) or \
-                           (existing.get('alias') and existing.get('alias') == discovered.get('alias')):
-                            existing.update(discovered)
-                            existing['isFavorite'] = True
-                            existing['isOnline'] = True
-                            matched = True
-                            break
-                    if not matched:
-                        discovered['isFavorite'] = False
-                        devices_dict[dev_id] = discovered
-
-    dev_list = list(devices_dict.values())
-    dev_list.sort(key=lambda d: (not d.get('isFavorite', False), not d.get('isOnline', False)))
-    return dev_list
-
-def launch_localsend():
-    if is_localsend_running():
-        return True
-    if not (os.path.isfile(LOCALSEND_BIN) and os.access(LOCALSEND_BIN, os.X_OK)):
-        return False   # not installed
-    try:
-        env = os.environ.copy()
-        env['GDK_BACKEND'] = 'wayland'
-        subprocess.Popen([LOCALSEND_BIN], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        return True
-    except Exception:
-        return False
-
-def send_files(target_ip, target_port, files, pin=None):
-    if not files:
-        print(json.dumps({'type': 'failed', 'error': 'No files provided'}))
-        sys.stdout.flush()
-        return False
-
-    clean_files = [f.replace('file://', '') for f in files if f]
-    clean_files = [f for f in clean_files if os.path.isfile(f)]
-    if not clean_files:
-        print(json.dumps({'type': 'failed', 'error': 'Selected files do not exist'}))
-        sys.stdout.flush()
-        return False
-
-    # 1. Build file metadata
-    files_meta = {}
-    total_bytes = 0
-    for idx, path in enumerate(clean_files):
-        fid = f"delo-{idx}-{uuid.uuid4().hex[:8]}"
-        size = os.path.getsize(path)
-        name = os.path.basename(path)
-        ext = os.path.splitext(name)[1].lower()
-        if ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp']:
-            ftype = 'image'
-        elif ext in ['.mp4', '.mkv', '.webm', '.avi', '.mov']:
-            ftype = 'video'
-        elif ext in ['.pdf']:
-            ftype = 'pdf'
-        elif ext in ['.txt', '.md', '.log', '.json', '.xml', '.csv']:
-            ftype = 'text'
-        elif ext in ['.apk']:
-            ftype = 'apk'
-        else:
-            ftype = 'other'
-
-        files_meta[fid] = {
-            'id': fid,
-            'fileName': name,
-            'size': size,
-            'fileType': ftype,
-            '_path': path
-        }
-        total_bytes += size
-
-    local_info = get_local_info()
-    ctx = get_ssl_context()
-
-    # 2. Phase 1: prepare-upload
-    print(json.dumps({'type': 'connecting', 'message': f'Connecting to {target_ip}...'}))
-    sys.stdout.flush()
-
-    session_id = None
-    response_files = {}
-    active_scheme = 'https'
-
-    info_payload = {
-        'info': {
-            'alias': local_info.get('alias', 'Deloway'),
-            'version': '2.0',
-            'deviceModel': 'Linux (DeloOS)',
-            'deviceType': 'desktop',
-            'fingerprint': 'deloway-desktop-fingerprint',
-            'port': PORT,
-            'protocol': 'https',
-            'download': False
-        },
-        'files': {
-            fid: {
-                'id': f['id'],
-                'fileName': f['fileName'],
-                'size': f['size'],
-                'fileType': f['fileType']
-            } for fid, f in files_meta.items()
-        }
-    }
-
-    prepare_success = False
-    schemes = ['https', 'http']
-    last_error = ''
-
-    for scheme in schemes:
-        url = f"{scheme}://{target_ip}:{target_port}/api/localsend/v2/prepare-upload"
-        if pin:
-            url += f"?pin={pin}"
-
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(info_payload).encode('utf-8'),
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': 'LocalSend/2.0'
-            },
-            method='POST'
-        )
-        try:
-            # 60s timeout to allow recipient user to click Accept on their screen
-            with urllib.request.urlopen(req, context=ctx if scheme == 'https' else None, timeout=60) as resp:
-                if resp.status == 200:
-                    resp_data = json.loads(resp.read().decode('utf-8'))
-                    session_id = resp_data.get('sessionId')
-                    response_files = resp_data.get('files', {})
-                    active_scheme = scheme
-                    prepare_success = True
-                    break
-        except urllib.error.HTTPError as e:
-            if e.code == 403:
-                print(json.dumps({'type': 'failed', 'error': 'Recipient declined transfer (403)'}))
-                sys.stdout.flush()
-                return False
-            elif e.code == 401:
-                print(json.dumps({'type': 'failed', 'error': 'PIN required by recipient (401)'}))
-                sys.stdout.flush()
-                return False
-            else:
-                last_error = f"HTTP {e.code}: {e.reason}"
-        except Exception as e:
-            last_error = str(e)
-            continue
-
-    if not prepare_success or not session_id or not response_files:
-        err_msg = last_error or 'Recipient unreachable or declined'
-        print(json.dumps({'type': 'failed', 'error': f'Failed to initiate transfer: {err_msg}'}))
-        sys.stdout.flush()
-        return False
-
-    # 3. Phase 2: upload each accepted file
-    uploaded_total = 0
-    print(json.dumps({
-        'type': 'progress',
-        'progress': 0.0,
-        'uploaded': 0,
-        'total': total_bytes,
-        'file': ''
-    }))
-    sys.stdout.flush()
-
-    for fid, token in response_files.items():
-        if fid not in files_meta:
-            continue
-        file_info = files_meta[fid]
-        file_path = file_info['_path']
-        file_size = file_info['size']
-        file_name = file_info['fileName']
-
-        try:
-            if active_scheme == 'https':
-                conn = http.client.HTTPSConnection(target_ip, target_port, context=ctx, timeout=60)
-            else:
-                conn = http.client.HTTPConnection(target_ip, target_port, timeout=60)
-
-            path_query = f"/api/localsend/v2/upload?sessionId={session_id}&fileId={fid}&token={token}"
-            conn.putrequest("POST", path_query)
-            conn.putheader("Content-Length", str(file_size))
-            conn.putheader("Content-Type", "application/octet-stream")
-            conn.endheaders()
-
-            with open(file_path, 'rb') as f:
-                chunk_size = 65536  # 64 KB
-                while True:
-                    chunk = f.read(chunk_size)
+    def body_chunks(self):
+        if 'chunked' in (self.headers.get('Transfer-Encoding') or '').lower():
+            while True:
+                size = int(self.rfile.readline().split(b';')[0].strip() or b'0', 16)
+                if size == 0:
+                    self.rfile.readline()
+                    return
+                left = size
+                while left:
+                    chunk = self.rfile.read(min(CHUNK, left))
                     if not chunk:
-                        break
-                    conn.send(chunk)
-                    uploaded_total += len(chunk)
-                    pct = min(1.0, uploaded_total / total_bytes) if total_bytes > 0 else 1.0
-                    print(json.dumps({
-                        'type': 'progress',
-                        'progress': round(pct, 3),
-                        'uploaded': uploaded_total,
-                        'total': total_bytes,
-                        'file': file_name
-                    }))
-                    sys.stdout.flush()
+                        raise ConnectionError('closed')
+                    left -= len(chunk)
+                    yield chunk
+                self.rfile.readline()
+        else:
+            left = int(self.headers.get('Content-Length') or 0)
+            while left:
+                chunk = self.rfile.read(min(CHUNK, left))
+                if not chunk:
+                    raise ConnectionError('closed')
+                left -= len(chunk)
+                yield chunk
 
-            resp = conn.getresponse()
-            if resp.status != 200:
-                print(json.dumps({'type': 'failed', 'error': f'Upload failed for {file_name} (HTTP {resp.status})'}))
-                sys.stdout.flush()
+    def route(self):
+        url = urlparse(self.path)
+        query = {k: v[0] for k, v in parse_qs(url.query).items()}
+        return url.path.rstrip('/'), query
+
+    def do_GET(self):
+        path, _ = self.route()
+        if path in ('/api/localsend/v2/info', '/api/localsend/v1/info'):
+            self.reply(200, self.peer.info(with_endpoint=False))
+        else:
+            self.reply(404)
+
+    def do_POST(self):
+        path, query = self.route()
+        handlers = {
+            '/api/localsend/v2/register': self.register,
+            '/api/localsend/v2/prepare-upload': self.prepare_upload,
+            '/api/localsend/v2/upload': self.upload,
+            '/api/localsend/v2/cancel': self.cancel,
+        }
+        handler = handlers.get(path)
+        if handler:
+            handler(query)
+        else:
+            self.reply(404)
+
+    def register(self, _query):
+        body = self.read_json()
+        if not isinstance(body, dict) or body.get('fingerprint') == self.peer.fingerprint:
+            self.reply(400)
+            return
+        emit('device', device=device_from(body, self.client_address[0], 'register'))
+        self.reply(200, self.peer.info(with_endpoint=False))
+
+    def prepare_upload(self, _query):
+        peer = self.peer
+        body = self.read_json()
+        if not isinstance(body, dict) or not isinstance(body.get('info'), dict) \
+                or not isinstance(body.get('files'), dict):
+            self.reply(400)
+            return
+        files = {}
+        for fid, meta in body['files'].items():
+            if not isinstance(meta, dict):
+                continue
+            try:
+                size = max(0, int(meta.get('size') or 0))
+            except (TypeError, ValueError):
+                size = 0
+            files[str(fid)] = {'name': safe_relative(meta.get('fileName') or fid), 'size': size,
+                               'type': str(meta.get('fileType') or '')}
+        if not files:
+            self.reply(204)
+            return
+        sender = device_from(body['info'], self.client_address[0], 'upload')
+        sid = uuid.uuid4().hex
+        pending = {'event': threading.Event(), 'accepted': False}
+        with peer.lock:
+            if peer.session or peer.pending:
+                self.reply(409)
+                return
+            peer.pending[sid] = pending
+        emit('device', device=sender)
+        emit('incoming', sessionId=sid, sender=sender,
+             files=[{'name': f['name'], 'size': f['size'], 'type': f['type']} for f in files.values()],
+             totalSize=sum(f['size'] for f in files.values()))
+        answered = pending['event'].wait(ACCEPT_TIMEOUT)
+        with peer.lock:
+            peer.pending.pop(sid, None)
+            accepted = answered and pending['accepted']
+            if accepted:
+                for f in files.values():
+                    f['token'] = uuid.uuid4().hex
+                    f['done'] = False
+                peer.session = {'id': sid, 'ip': self.client_address[0], 'sender': sender,
+                                'files': files, 'received': 0, 'saved': [], 'cancelled': False,
+                                'total': sum(f['size'] for f in files.values()), 'last': 0.0}
+        if not accepted:
+            emit('receive-ended', sessionId=sid, reason='declined' if answered else 'expired')
+            self.reply(403)
+            return
+        self.reply(200, {'sessionId': sid, 'files': {fid: f['token'] for fid, f in files.items()}})
+
+    def upload(self, query):
+        peer = self.peer
+        with peer.lock:
+            sess = peer.session
+        fid = query.get('fileId', '')
+        if not sess or query.get('sessionId') != sess['id'] or self.client_address[0] != sess['ip']:
+            self.reply(403)
+            return
+        meta = sess['files'].get(fid)
+        if not meta or meta['done'] or query.get('token') != meta['token']:
+            self.reply(403)
+            return
+        target = os.path.join(peer.download_dir, meta['name'])
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        part = os.path.join(os.path.dirname(target), f".{os.path.basename(target)}.{sess['id'][:8]}.part")
+        try:
+            with open(part, 'wb') as out:
+                for chunk in self.body_chunks():
+                    if sess['cancelled']:
+                        raise ConnectionError('cancelled')
+                    out.write(chunk)
+                    sess['received'] += len(chunk)
+                    now = time.monotonic()
+                    if now - sess['last'] >= PROGRESS_INTERVAL:
+                        sess['last'] = now
+                        emit('receive-progress', sessionId=sess['id'], received=sess['received'],
+                             total=sess['total'], file=os.path.basename(meta['name']))
+            final = unique_path(target)
+            os.replace(part, final)
+        except (OSError, ConnectionError, ValueError):
+            try:
+                os.unlink(part)
+            except OSError:
+                pass
+            if not sess['cancelled']:
+                with peer.lock:
+                    if peer.session is sess:
+                        peer.session = None
+                emit('receive-ended', sessionId=sess['id'], reason='failed')
+            self.close_connection = True
+            return
+        with peer.lock:   # uploads may run in parallel: exactly one of them finishes
+            meta['done'] = True
+            sess['saved'].append(final)
+            finished = all(f['done'] for f in sess['files'].values()) and peer.session is sess
+            if finished:
+                peer.session = None
+        if finished:
+            emit('received', sessionId=sess['id'], sender=sess['sender'], files=sess['saved'],
+                 total=sess['total'], folder=peer.download_dir)
+        self.reply(200)
+
+    def cancel(self, query):
+        peer = self.peer
+        sid = query.get('sessionId', '')
+        with peer.lock:
+            sess = peer.session
+            pending = next(iter(peer.pending.values()), None) if not sid else peer.pending.get(sid)
+            if sess and (not sid or sess['id'] == sid) and self.client_address[0] == sess['ip']:
+                sess['cancelled'] = True
+                peer.session = None
+            else:
+                sess = None
+        if sess:
+            emit('receive-ended', sessionId=sess['id'], reason='cancelled')
+        elif pending:
+            pending['accepted'] = False
+            pending['event'].set()
+        self.reply(200)
+
+
+class Sender(threading.Thread):
+    def __init__(self, peer, device, paths):
+        super().__init__(daemon=True)
+        self.peer = peer
+        self.device = device
+        self.paths = [p for p in paths if isinstance(p, str) and os.path.isfile(p)]
+        self.cancelled = False
+
+    def status(self, status, **fields):
+        emit('send-status', status=status, device=self.device.get('alias') or self.device.get('ip'), **fields)
+
+    def run(self):
+        if not self.paths:
+            self.status('failed', error='no_files')
+            return
+        files = {}
+        for path in self.paths:
+            fid = uuid.uuid4().hex[:12]
+            files[fid] = {'path': path, 'id': fid, 'fileName': os.path.basename(path),
+                          'size': os.path.getsize(path),
+                          'fileType': mimetypes.guess_type(path)[0] or 'application/octet-stream'}
+        total = sum(f['size'] for f in files.values())
+        payload = {'info': self.peer.info(),
+                   'files': {fid: {k: f[k] for k in ('id', 'fileName', 'size', 'fileType')}
+                             for fid, f in files.items()}}
+        self.status('connecting', total=total)
+        try:
+            # The receiver's user has to accept first: wait as long as they do.
+            status, body = request_json(self.device, 'POST', '/api/localsend/v2/prepare-upload',
+                                        payload, timeout=ACCEPT_TIMEOUT + 10)
+        except (OSError, http.client.HTTPException):
+            self.status('failed', error='unreachable')
+            return
+        if self.cancelled:
+            self.status('cancelled')
+            return
+        if status == 204:
+            self.status('sent', total=total)
+            return
+        if status != 200 or not isinstance(body, dict) or not isinstance(body.get('files'), dict):
+            error = {401: 'pin', 403: 'declined', 409: 'busy', 429: 'busy'}.get(status, 'failed')
+            self.status('failed', error=error)
+            return
+        session = body.get('sessionId', '')
+        sent, last = 0, 0.0
+        for fid, token in body['files'].items():
+            meta = files.get(fid)
+            if not meta:
+                continue
+            conn = connect(self.device, 60)
+            try:
+                conn.putrequest('POST', f'/api/localsend/v2/upload?sessionId={session}&fileId={fid}&token={token}')
+                conn.putheader('Content-Length', str(meta['size']))
+                conn.putheader('Content-Type', 'application/octet-stream')
+                conn.endheaders()
+                with open(meta['path'], 'rb') as f:
+                    while True:
+                        if self.cancelled:
+                            raise InterruptedError
+                        chunk = f.read(CHUNK)
+                        if not chunk:
+                            break
+                        conn.send(chunk)
+                        sent += len(chunk)
+                        now = time.monotonic()
+                        if now - last >= PROGRESS_INTERVAL:
+                            last = now
+                            self.status('sending', sent=sent, total=total, file=meta['fileName'])
+                resp = conn.getresponse()
+                resp.read()
+                if resp.status != 200:
+                    self.status('failed', error='failed')
+                    return
+            except InterruptedError:
                 conn.close()
-                return False
-            conn.close()
+                try:
+                    request_json(self.device, 'POST', f'/api/localsend/v2/cancel?sessionId={session}', timeout=3)
+                except (OSError, http.client.HTTPException):
+                    pass
+                self.status('cancelled')
+                return
+            except (OSError, http.client.HTTPException):
+                self.status('failed', error='interrupted')
+                return
+            finally:
+                conn.close()
+        self.status('sent', sent=total, total=total)
 
-        except Exception as e:
-            print(json.dumps({'type': 'failed', 'error': f'Connection error during upload: {str(e)}'}))
-            sys.stdout.flush()
-            return False
 
-    print(json.dumps({'type': 'sent', 'message': 'Transfer completed successfully', 'total': total_bytes}))
-    sys.stdout.flush()
-    return True
+def serve(args):
+    peer = Peer(args)
+    peer.start_server()
+    try:
+        peer.open_multicast()
+    except OSError:
+        peer.mcast = None
+    emit('ready', alias=peer.alias, fingerprint=peer.fingerprint, port=peer.port,
+         receiving=peer.receiving, error=peer.error, multicast=peer.mcast is not None,
+         downloadDir=peer.download_dir, appFavorites=peer.favorites)
+    peer.announce()
+
+    for line in sys.stdin:
+        try:
+            cmd = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(cmd, dict):
+            continue
+        name = cmd.get('cmd')
+        if name == 'scan':
+            peer.announce()
+        elif name == 'probe' and cmd.get('ip'):
+            threading.Thread(target=peer.probe, daemon=True,
+                             args=(str(cmd['ip']), int(cmd.get('port') or DEFAULT_PORT))).start()
+        elif name == 'send' and isinstance(cmd.get('device'), dict):
+            peer.send(cmd['device'], cmd.get('files') or [])
+        elif name == 'cancel-send':
+            peer.cancel_send()
+        elif name in ('accept', 'decline'):
+            peer.answer(cmd.get('sessionId', ''), name == 'accept')
+        elif name == 'cancel-receive':
+            peer.cancel_receive(cmd.get('sessionId', ''))
+    os._exit(0)   # stdin closed: the shell that owns this peer is gone
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split('\n')[0])
+    parser.add_argument('action', choices=['serve'])
+    parser.add_argument('--port', type=int, default=DEFAULT_PORT)
+    parser.add_argument('--alias', default='')
+    parser.add_argument('--download-dir', default='')
+    parser.add_argument('--device-type', default='desktop',
+                        choices=['mobile', 'desktop', 'web', 'headless', 'server'])
+    serve(parser.parse_args())
+
 
 if __name__ == '__main__':
-    action = sys.argv[1] if len(sys.argv) > 1 else 'status'
-    if action == 'status':
-        print(json.dumps(get_local_info()))
-    elif action == 'discover':
-        print(json.dumps(discover_devices()))
-    elif action == 'launch':
-        print(json.dumps({'success': launch_localsend()}))
-    elif action == 'send':
-        # Usage: send <target_ip> <target_port> <files...>
-        # Or fallback if target_ip is a file: send <files...>
-        if len(sys.argv) >= 4 and sys.argv[3].isdigit():
-            target_ip = sys.argv[2]
-            target_port = int(sys.argv[3])
-            files = sys.argv[4:]
-            send_files(target_ip, target_port, files)
-        else:
-            # Fallback to favorite device or localhost
-            info = get_local_info()
-            favs = info.get('favorites', [])
-            if favs and favs[0].get('ip'):
-                target_ip = favs[0]['ip']
-                target_port = favs[0].get('port', PORT)
-                files = sys.argv[2:]
-                send_files(target_ip, target_port, files)
-            else:
-                print(json.dumps({'type': 'failed', 'error': 'No target device specified'}))
-                sys.stdout.flush()
-    else:
-        print(json.dumps({'error': f'Unknown action: {action}'}))
+    main()
