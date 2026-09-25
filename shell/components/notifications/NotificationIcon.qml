@@ -1,5 +1,6 @@
 import QtQuick
 import "../../theme"
+import "../../services"
 import ".."
 
 // NotificationIcon — one visual slot for every icon source a notification can carry:
@@ -26,7 +27,7 @@ Rectangle {
         visible: root.isImage && status === Image.Ready
         anchors.fill: parent
         anchors.margins: 1
-        source: root.isImage ? (root.source.startsWith("/") ? "file://" + root.source : root.source) : ""
+        source: root.isImage ? IconResolver.safeUrl(root.source) : ""
         sourceSize.width: root.size * 2
         sourceSize.height: root.size * 2
         fillMode: Image.PreserveAspectCrop

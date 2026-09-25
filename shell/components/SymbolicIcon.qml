@@ -222,12 +222,12 @@ Item {
     // the theme's baked-in colour. Mirroring is intentionally NOT applied here: callers
     // that pick a direction per locale for unmapped icons keep working unchanged.
     readonly property bool themeSymbolic: !root.resolvedSource && root.source.length > 0
-                                          && /-symbolic$/.test(root.source) && Quickshell.hasThemeIcon(root.source)
+                                          && /-symbolic$/.test(root.source) && IconResolver.has(root.source)
 
     Image {
         id: themeIcon
         anchors.fill: parent
-        source: root.themeSymbolic ? Quickshell.iconPath(root.source, "") : ""
+        source: root.themeSymbolic ? IconResolver.themeUrl(root.source) : ""
         sourceSize.width: Math.round(root.iconSize * 2)
         sourceSize.height: Math.round(root.iconSize * 2)
         fillMode: Image.PreserveAspectFit
@@ -243,10 +243,11 @@ Item {
         visible: root.themeSymbolic && themeIcon.status === Image.Ready
     }
 
-    // Fallback: non-symbolic / unresolvable names keep the theme's own rendering
+    // Fallback: non-symbolic names keep the theme's own rendering. An icon the theme does
+    // not have renders nothing (IconResolver), never Quickshell's checkerboard.
     IconImage {
         anchors.fill: parent
-        source: root.resolvedSource ? "" : Quickshell.iconPath(root.source, "image-missing")
+        source: (root.resolvedSource || root.themeSymbolic) ? "" : IconResolver.safeUrl(root.source)
         implicitSize: root.iconSize
         visible: rawIcon.status !== Image.Ready && !(root.themeSymbolic && themeIcon.status === Image.Ready)
     }

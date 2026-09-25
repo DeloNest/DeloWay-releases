@@ -104,13 +104,14 @@ Item {
         return "";
     }
 
-    // Check if the icon exists in the system icon theme before requesting it
-    // This prevents Quickshell from returning a missingPixmap checkerboard texture
-    readonly property bool hasSysThemeIcon: {
-        if (!source || source.startsWith("/") || source.startsWith("file://")) return false;
+    // Theme icon, proved to exist first (IconResolver): a missing one would come back
+    // as Quickshell's checkerboard with status Ready.
+    readonly property string sysThemeUrl: {
+        if (!source || source.startsWith("/") || source.startsWith("file://")) return "";
         const clean = source.toLowerCase().replace(/\.desktop$/, "").replace(/\.svg$/, "").trim();
-        return Quickshell.hasThemeIcon(clean) || Quickshell.hasThemeIcon(source);
+        return IconResolver.themeUrl(source, clean);
     }
+    readonly property bool hasSysThemeIcon: sysThemeUrl !== ""
 
     // 1. First Tier: Local high-fidelity bundled vector SVG or direct file path
     Image {
@@ -128,7 +129,7 @@ Item {
     IconImage {
         id: sysIcon
         anchors.fill: parent
-        source: root.hasSysThemeIcon ? Quickshell.iconPath(root.source, "") : ""
+        source: root.sysThemeUrl
         implicitSize: root.iconSize
         visible: localImg.status !== Image.Ready && root.hasSysThemeIcon && status === Image.Ready
     }
@@ -153,7 +154,14 @@ Item {
 
         Text {
             anchors.centerIn: parent
-            text: root.source ? root.source.replace(/.*[\/\-]/, "").charAt(0).toUpperCase() : "A"
+            // The app's own word from its icon id: "brave-desktop" → B, "org.xfce.thunar" → T
+            // (the last path/dash segment gave "D" for Brave and "O" for Thunar).
+            text: {
+                if (!root.source) return "A";
+                const base = root.source.replace(/\.(desktop|svg|png)$/i, "").split("/").pop();
+                const word = base.split(".").pop().split(/[-_ ]/)[0] || base;
+                return word.charAt(0).toUpperCase();
+            }
             font.family: Theme.typography.fontFamily
             font.pixelSize: Math.max(10, Math.round(root.iconSize * 0.44))
             font.weight: Font.DemiBold

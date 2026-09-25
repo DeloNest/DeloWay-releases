@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import Qt5Compat.GraphicalEffects
 import "../theme"
+import "../services"
 
 Item {
     id: root
@@ -61,7 +62,7 @@ Item {
                     anchors.centerIn: parent
                     width: 20
                     height: 20
-                    source: modelData.icon || ""
+                    source: IconResolver.safeUrl(modelData.icon)
                 }
 
                 onPressed: (mouse) => {

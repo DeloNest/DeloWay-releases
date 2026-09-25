@@ -287,8 +287,8 @@ PopupWindow {
 
                             // Icon
                             IconImage {
-                                visible: modelData && modelData.icon && modelData.icon.length > 0
-                                source: modelData ? (modelData.icon || "") : ""
+                                visible: source.toString().length > 0
+                                source: modelData ? IconResolver.safeUrl(modelData.icon) : ""
                                 implicitSize: 16
                                 Layout.alignment: Qt.AlignVCenter
                             }
