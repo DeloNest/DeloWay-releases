@@ -528,6 +528,8 @@ queue_core_packages() {
         "zenity"                 # "Browse…" file picker for wallpapers
         # Fonts: Arabic coverage and the Settings → Appearance font choices
         "noto-fonts"
+        "noto-fonts-emoji"       # emoji in titles, notifications, chat apps (else tofu boxes)
+        "ttf-dejavu"             # DejaVu Sans Mono: Arabic in terminals, never the UI font
         "inter-font"
     )
 

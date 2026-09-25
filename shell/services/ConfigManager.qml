@@ -238,7 +238,10 @@ Item {
                 ["general:gaps_out", root.windowGapsOut],
                 ["decoration:rounding", root.windowRounding],
                 ["input:follow_mouse", root.followMouse ? 1 : 0],
-                ["decoration:dim_inactive", root.dimInactive ? "true" : "false"]
+                ["decoration:dim_inactive", root.dimInactive ? "true" : "false"],
+                // Hyprland's own text (group bars, error bar) in the UI typeface
+                ["misc:font_family", root.fontFamily],
+                ["group:groupbar:font_family", root.fontFamily]
             ];
             // Window borders follow the theme mode (they used to stay white on light).
             const dark = root.themeMode !== "light";
@@ -603,6 +606,7 @@ Item {
         if (!family || root.fontFamily === family) return;
         root.fontFamily = family;
         saveConfig();
+        root.hyprKeywords([["misc:font_family", family], ["group:groupbar:font_family", family]]);
         if (root.applySystemTheme) {
             updateGtkThemes();
         }

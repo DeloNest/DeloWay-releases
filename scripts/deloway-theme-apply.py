@@ -973,10 +973,24 @@ GTK3_USER_CSS = """/* DeloWay: GTK3 styling lives in the DeloWay-Dark / DeloWay-
 """
 
 
-def write_fontconfig(dry_run: bool = False):
-    """Managed fontconfig: rendering quality + Cairo for Arabic generic sans text.
-    Latin generic families keep the user's own fonts.conf preferences."""
-    conf = """<?xml version="1.0"?>
+# Terminal fonts: DeloWay's kitty profile uses this family (config/kitty/kitty.conf).
+TERMINAL_FONT = "JetBrainsMono Nerd Font"
+# Monospace face with Arabic glyphs (ttf-dejavu): what a terminal falls back to for Arabic.
+TERMINAL_ARABIC_FALLBACK = "DejaVu Sans Mono"
+
+
+def write_fontconfig(font_family: str = "Cairo", dry_run: bool = False):
+    """Managed fontconfig.
+
+    - The UI typeface (Cairo by default) is the preferred font of the generic UI families
+      (sans-serif, system-ui, serif) in every language, so GTK, Qt, browsers, Electron
+      apps and the compositor all render it.
+    - Terminals are exempt: monospace requests never resolve to it. A terminal font
+      without Arabic glyphs falls back to a monospace face that has them, instead of
+      fontconfig's default sans-serif fallback (which would be the UI typeface).
+    """
+    ui = font_family.replace("&", "&amp;").replace("<", "&lt;")
+    conf = f"""<?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
 <!-- Managed by DeloWay (deloway-theme-apply.py). -->
 <fontconfig>
@@ -989,16 +1003,21 @@ def write_fontconfig(dry_run: bool = False):
     <edit name="lcdfilter" mode="assign"><const>lcddefault</const></edit>
     <edit name="embeddedbitmap" mode="assign"><bool>false</bool></edit>
   </match>
-  <!-- Arabic text in generic sans/serif resolves to Cairo (the shell's typeface) -->
+
+  <!-- The UI typeface for every generic UI family, in every language -->
+  <alias binding="strong"><family>sans-serif</family><prefer><family>{ui}</family></prefer></alias>
+  <alias binding="strong"><family>system-ui</family><prefer><family>{ui}</family></prefer></alias>
+  <alias binding="strong"><family>serif</family><prefer><family>{ui}</family></prefer></alias>
+
+  <!-- Terminals keep their monospace font. Characters it lacks (Arabic) come from a
+       monospace face placed right after it, ahead of the sans-serif fallback. -->
   <match target="pattern">
-    <test name="lang" compare="contains"><string>ar</string></test>
-    <test name="family"><string>sans-serif</string></test>
-    <edit name="family" mode="prepend" binding="strong"><string>Cairo</string></edit>
+    <test name="family"><string>monospace</string></test>
+    <edit name="family" mode="append" binding="strong"><string>{TERMINAL_ARABIC_FALLBACK}</string></edit>
   </match>
   <match target="pattern">
-    <test name="lang" compare="contains"><string>ar</string></test>
-    <test name="family"><string>serif</string></test>
-    <edit name="family" mode="prepend" binding="strong"><string>Cairo</string></edit>
+    <test name="family"><string>{TERMINAL_FONT}</string></test>
+    <edit name="family" mode="append" binding="strong"><string>{TERMINAL_ARABIC_FALLBACK}</string></edit>
   </match>
 </fontconfig>
 """
@@ -1107,10 +1126,9 @@ def main():
     else:
         icon_theme = cur_icon
     cursor_theme = get_gsettings_value("cursor-theme") or "default"
-    if font_family == "Cairo":
-        base_font = f"{font_family} Medium 11"
-    else:
-        base_font = f"{font_family} 11"
+    # Regular weight: "Cairo Medium" named a face Cairo does not ship, and with a
+    # variable-weight build it would render at 500 instead of the regular text weight.
+    base_font = f"{font_family} 11"
     font_name = get_font_name_with_scale(font_scale, base_font)
 
     print(f"[deloway-theme] Mode: {mode} | Identity: Monochrome | GTK Theme: {gtk_theme}")
@@ -1134,7 +1152,7 @@ def main():
     atomic_write_if_changed(gtk3_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     atomic_write_if_changed(gtk4_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     generate_qt6ct_palette(mode, config_home, dry_run=args.dry_run)   # used if qt6ct is installed
-    fonts_changed = write_fontconfig(dry_run=args.dry_run)
+    fonts_changed = write_fontconfig(font_family, dry_run=args.dry_run)
     apply_qt_environment(dry_run=args.dry_run)
 
     # 7. Apply gsettings — these are what running apps react to (via the portal):
@@ -1145,7 +1163,7 @@ def main():
     set_gsettings_value("font-name", font_name, dry_run=args.dry_run)
     set_gsettings_value("icon-theme", icon_theme, dry_run=args.dry_run)
     set_gsettings_raw(ifc, "document-font-name", get_font_name_with_scale(font_scale, f"{font_family} 11"), dry_run=args.dry_run)
-    set_gsettings_raw(ifc, "monospace-font-name", get_font_name_with_scale(font_scale, "JetBrainsMono Nerd Font 11"), dry_run=args.dry_run)
+    set_gsettings_raw(ifc, "monospace-font-name", get_font_name_with_scale(font_scale, f"{TERMINAL_FONT} 11"), dry_run=args.dry_run)
     set_gsettings_raw(ifc, "font-antialiasing", "grayscale", dry_run=args.dry_run)
     set_gsettings_raw(ifc, "font-hinting", "slight", dry_run=args.dry_run)
     set_gsettings_raw(ifc, "accent-color", "slate", dry_run=args.dry_run)   # neutral fallback; CSS overrides it
