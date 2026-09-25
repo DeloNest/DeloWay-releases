@@ -32,6 +32,37 @@ def get_gsettings_value(key: str) -> str:
         return ""
 
 
+def icon_theme_dirs() -> list:
+    """Icon theme search path, in XDG order (~/.local/share/icons, ~/.icons, $XDG_DATA_DIRS)."""
+    home = Path.home()
+    data_home = Path(os.environ.get("XDG_DATA_HOME") or home / ".local" / "share")
+    data_dirs = os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share"
+    return [data_home / "icons", home / ".icons"] + [Path(d) / "icons" for d in data_dirs.split(":") if d]
+
+
+def icon_theme_installed(name: str) -> bool:
+    return bool(name) and any((d / name / "index.theme").is_file() for d in icon_theme_dirs())
+
+
+def resolve_icon_theme(is_dark: bool) -> str:
+    """The DeloWay icon theme for the mode, or the closest installed fallback.
+
+    Reversal-black(-dark) comes from packaging/deloway-icon-theme (install.sh). If it is
+    missing, fall back to another Reversal variant, then Breeze, then Adwaita, and say so.
+    """
+    if is_dark:
+        chain = ["Reversal-black-dark", "Reversal-dark", "breeze-dark", "Adwaita"]
+    else:
+        chain = ["Reversal-black", "Reversal", "breeze", "Adwaita"]
+    for name in chain:
+        if icon_theme_installed(name):
+            if name != chain[0]:
+                print(f"[deloway-theme] Icon theme '{chain[0]}' is not installed; using '{name}'. "
+                      "Run install.sh to install deloway-icon-theme.", file=sys.stderr)
+            return name
+    return chain[0]
+
+
 def set_gsettings_value(key: str, val: str, dry_run: bool = False):
     """Set an org.gnome.desktop.interface gsettings key only if different."""
     current = get_gsettings_value(key)
@@ -1066,13 +1097,13 @@ def main():
     radius = radius_tokens(element_radius)
 
     # 3. Read authoritative system settings from gsettings
-    icon_theme_default = "Reversal-black-dark" if is_dark else "Reversal-black"
     cur_icon = get_gsettings_value("icon-theme")
     # Any Reversal variant (the DeloWay default family) follows the mode — the list
     # used to miss Reversal-black(-dark), so icons never switched. A non-Reversal
-    # theme the user picked is left alone.
-    if not cur_icon or cur_icon.startswith("Reversal"):
-        icon_theme = icon_theme_default
+    # theme the user picked is left alone. Only installed themes are ever written:
+    # a missing one leaves GTK/Qt apps with no icons at all.
+    if not cur_icon or cur_icon.startswith("Reversal") or not icon_theme_installed(cur_icon):
+        icon_theme = resolve_icon_theme(is_dark)
     else:
         icon_theme = cur_icon
     cursor_theme = get_gsettings_value("cursor-theme") or "default"
