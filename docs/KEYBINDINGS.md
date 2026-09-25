@@ -42,11 +42,11 @@ These open the defaults chosen in Settings → Apps (through `bin/delo-app`) whe
 | <kbd>Super</kbd> + <kbd>E</kbd> | File manager (`delo-app files`) |
 | <kbd>Super</kbd> + <kbd>W</kbd> | Browser (`delo-app browser`) |
 | <kbd>Super</kbd> + <kbd>C</kbd> | Code editor |
-| <kbd>Super</kbd> + <kbd>X</kbd> | Text editor |
+| <kbd>Super</kbd> + <kbd>X</kbd> | Text editor (`delo-app editor`) |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>W</kbd> | Office suite |
-| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Escape</kbd> | System monitor |
-| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>V</kbd> | Volume control |
-| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>/</kbd> | Edit `hyprland.conf` |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Escape</kbd> | System monitor (`delo-app monitor`) |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>V</kbd> | Volume control (`delo-app mixer`) |
+| <kbd>Ctrl</kbd> + <kbd>Super</kbd> + <kbd>/</kbd> | Edit `hyprland.conf` in the text editor |
 
 ## 4. Windows
 

@@ -71,7 +71,9 @@ Log out and pick **DeloWay** from the session list on the login screen. From a T
 deloway-session
 ```
 
-The first start opens a short setup wizard for language, theme and apps.
+The first start opens a short setup wizard for language, theme and your default apps (browser,
+terminal, file manager, editor, system monitor — pick any of the offered alternatives; ones
+that are not installed yet are installed for you).
 
 ## Updating
 
@@ -118,7 +120,9 @@ scripts/             Python and shell helpers the services call (network, blueto
                      theme apply, wallpaper, screenshots, LocalSend…)
 config/              hyprland.conf, kitty profile, default deloway.json
 bin/                 deloway-session (session wrapper), delo-app (default-app launcher)
-system/              session .desktop entry, PAM file
+packaging/           PKGBUILDs install.sh builds: the black Reversal icon theme, the
+                     RTL8188EUS Wi-Fi driver (only when that adapter is present)
+system/              session .desktop entry, PAM file, NetworkManager hotspot hook
 ```
 
 The QML side keeps to one rule: components talk to services, services own the state and the

@@ -84,8 +84,9 @@ Below is an annotated example of a complete `deloway.json` file:
   "defaultApps": {
     "browser": "firefox",
     "terminal": "kitty",
-    "fileManager": "thunar",
-    "editor": "code"
+    "fileManager": "org.kde.dolphin",
+    "editor": "org.gnome.TextEditor",
+    "monitor": "missioncenter"
   },
   "setupCompleted": true
 }
@@ -113,7 +114,7 @@ Below is an annotated example of a complete `deloway.json` file:
 - `autoHide` *(boolean)*: When `true`, dock slides out of view when windows overlap its area.
 - `iconSize` *(integer, px)*: App icon dimensions inside the dock (default: `38`).
 - `showUnderline` *(boolean)*: Toggles running dot / indicator under active apps.
-- `pinnedApps` *(array of strings)*: List of application IDs pinned to the dock in display order.
+- `pinnedApps` *(array of strings, optional)*: Desktop-entry IDs pinned to the dock, in display order. While the key is absent (or `null`) the Dock shows the chosen browser, terminal and file manager (`defaultApps`); `[]` is an empty Dock. Settings → Dock → Reset goes back to the defaults. Apps that are not installed are never shown.
 
 ### 3.4 `topBar`
 - `showBrand` *(boolean)*: Shows or hides the DeloOS brand badge and quick launcher button.
@@ -137,7 +138,8 @@ Below is an annotated example of a complete `deloway.json` file:
 - `sleepTimeout` *(integer, minutes)*: Idle delay before screen blanking.
 
 ### 3.8 `defaultApps`
-- Maps standard system roles (`browser`, `terminal`, `fileManager`, `editor`) to their respective commands.
+- Maps the roles `browser`, `terminal`, `fileManager`, `editor` and `monitor` to an app: an executable (`brave`, as `install.sh` writes it) or a desktop-entry ID (`org.kde.dolphin`, as the Setup Wizard and Settings → Apps write it). `bin/delo-app` launches either form.
+- The alternatives offered for each role (installer menus, Setup Wizard, Settings → Apps) come from one catalog, `config/default-apps.tsv`; installed apps of the role that it does not list are offered too.
 
 ---
 

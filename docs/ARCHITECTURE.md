@@ -70,7 +70,12 @@ Deloway is designed from the ground up as a **single, cohesive desktop shell** a
   - **Desktop Surface**: Three distinct selectable modes (Clean, Widgets, and Traditional).
   - **Settings App**: Complete native GUI for system and shell customizations.
   - **App Store**: there is no in-shell store UI. The "App Store" launcher entry and "View in Store" open `pamac-manager` (AUR `pamac-aur`); installs and uninstalls go through `pamac`.
-  - **First-Run Setup Wizard**: Onboarding wizard initializing user preferences before first desktop presentation.
+  - **First-Run Setup Wizard**: Onboarding wizard initializing user preferences before first desktop presentation. It opens whenever `deloway.json` does not exist yet, and its apps step is a real choice for each default-app role (`DefaultApps`).
+- **Shared services worth knowing** (`shell/services/`):
+  - `IconResolver`: the only place theme icons become image URLs. Quickshell answers a missing theme icon with a checkerboard image whose status is Ready, so every name is proved with `hasThemeIcon()` first; `directional()` picks `-rtl` icon variants in Arabic.
+  - `DefaultApps`: default-app roles and their alternatives, from `config/default-apps.tsv` (also read by `install.sh`); installs a missing choice through `PackageManager` (pamac) and applies it.
+  - `I18n`: strings plus the bidi/number helpers every surface uses — `uiLine()` (a line starting with Latin keeps the UI direction), `isolate()` / `ltr()`, `digits()` / `number()`, `plural()` (Arabic number agreement).
+  - `ConfigManager.fileUrl()`: local paths as correctly encoded `file://` URLs (names with `#`, `?`, spaces, Arabic).
 
 ---
 
@@ -185,6 +190,8 @@ Quickshell exposes an `IpcHandler` target named `deloway` that permits external 
 | `openSettingsTab(tab)` | `tabId: string` | Directly jumps to a specific settings tab |
 | `toggleQuickSettings()` | None | Toggles the Quick Settings flyout |
 | `showSetup()` | None | Spawns the First-Run Setup Wizard |
+| `showSetupStep(step)` | `step: int` | Opens (or moves) the Setup Wizard at a step |
+| `setDefaultApp(role, id)` | `role: string, desktopId: string` | Same as picking an app in Settings → Apps; installs it first when needed |
 | `setMode(mode)` | `mode: string` (`"dark" \| "light"`) | Switches system theme mode |
 | `setDesktopMode(mode)` | `mode: string` (`"clean" \| "widgets" \| "traditional"`) | Switches desktop mode |
 | `showDesktopContextMenu(x, y)` | `x: int, y: int` | Displays wallpaper context menu |

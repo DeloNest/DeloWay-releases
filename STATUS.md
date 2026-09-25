@@ -2,7 +2,7 @@
 
 > **الغرض من الملف**: مرجع شامل وكافٍ بذاته لأي نموذج ذكاء اصطناعي "عقل تخطيط" (مثل Claude Code أو غيره) للعمل والتخطيط وتقديم حلول وتشخيصات تقنية دقيقة ومتسقة مع الكود الحالي دون الحاجة للبحث المضني في كل ملفات المشروع على القرص.
 > **قاعدة التحديث الإلزامية**: في نهاية أي مهمة برمجية معتمدة ولها commit، يتم تحديث الأقسام (6، 7، 8، 9) لتعكس واقع Git والقرص الفعلي. الأقسام (1 إلى 5) شبه ثابتة، وتُعدّل عند حدوث قرار معماري أو تعديل جذري في نظام التصميم.
-> **آخر تحديث موثق**: سبتمبر 2026 — متطابق مع Commit HEAD (`6fdb1e1`) وما يليه من تحسينات قيد العمل.
+> **آخر تحديث موثق**: 25 سبتمبر 2026 — جلسة إصلاحات التثبيت النظيف (القسم 7-ب). سجل Git هو المرجع النهائي عند أي تعارض.
 
 ---
 
@@ -32,7 +32,7 @@
     - `scripts/deloway-bluetooth.py`: فحص وإدارة أجهزة البلوتوث والاقتران عبر BlueZ.
     - `scripts/deloway-theme-apply.py`: تطبيق الثيم وتوليد ملفات GTK3/4 و Qt6ct ومزامنة الخطوط.
     - `scripts/deloway-hardware.py`: خدمة تدفقية حية لحساسات النظام (CPU, RAM, GPU, temps).
-    - `scripts/deloway-hotspot-rules.sh`: ضبط واستعادة قواعد iptables لنقطة الاتصال وتوافقها مع محرك Docker.
+    - `system/NetworkManager/dispatcher.d/90-deloway-hotspot-forward`: يسمح بتمرير حركة الهوتسبوت عبر `DOCKER-USER` حين يوجد Docker (يثبّته `install.sh`).
 - **حزم النظام المساعدة**:
   - `localsend`: يعمل كخدمة خلفية خفية (`localsend --hidden`) لتغذية كبسولة النوتش ببروتوكول Direct v2.
   - `pamac-manager`: المحرك الافتراضي لمتجر التطبيقات وإدارة الحزم.
@@ -185,7 +185,9 @@
 ---
 
 ## 6. سجل التغييرات والـ Commits الأخيرة (Recent Commits & Changelog)
-*(مستخرج مباشرة من واقع سجل Git)*:
+*(مستخرج مباشرة من واقع سجل Git — للأحدث: `git log --oneline`)*.
+جلسة 23 سبتمبر (إعادة بناء الواجهة، من `1330283` إلى `2476bfd`) وجلسة 25 سبتمبر
+(إصلاحات التثبيت النظيف، بعد `2476bfd`) موثقتان في رسائل الـ commits نفسها. ما يلي أقدم منهما:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
 * `c4eccaf` - fix: eliminate TimeCapsule sticking to Notch on expand (static right margin)
 * `71c9014` - docs: remove Delo prefix from app names in documentation
@@ -247,11 +249,15 @@
    - ربط متجر التطبيقات بـ `pamac-manager`.
    - توحيد التطبيقات الافتراضية المثبتة عبر `ConfigManager.defaultPinnedApps`.
 
-### ب) التعديلات قيد العمل غير الملتزمة (`git status -s`)
-- `config/hyprland.conf`: تحديث اختصار زر الويندوز (Super) لدعم إخفاء الكبسولات والشريط السفلي (Fullscreen / Immersion Mode) واختصار `Super + Space` للمشغل.
-- `shell/services/ShellState.qml`: إضافة خاصية `shellHidden` ودوال `toggleShell()`.
-- `shell/components/Notch.qml`, `TimeCapsule.qml`, `QuickSettingsCapsule.qml`, `Dock.qml`: منطق إخفاء الكبسولات والشريط السفلي للتمدد الكامل للنوافذ.
-- `shell/components/settings/tabs/*`: إعادة تنظيم تبويبات الإعدادات إلى ملفات فرعية متخصصة (`DesktopWindowsTab`, `NotificationsTab`, `TimeLanguageTab`).
+### ب) جلسة 25 سبتمبر 2026: إصلاحات ما بعد التثبيت النظيف
+اختُبر كل تغيير بصري في جلسة معزولة (`scripts/launch-nested.sh`: HOME مؤقت، gsettings في الذاكرة) مع لقطات grim.
+- **الأيقونات**: حزمة `packaging/deloway-icon-theme` (Reversal الأسود؛ حزمة AUR لا تثبّته)، `IconResolver` يمنع لوح الشطرنج في كل مكان، وتنبيه عند غياب السمة.
+- **الـ Dock**: التثبيتات الافتراضية = التطبيقات المختارة فعلياً، والمعالج يظهر عند غياب `deloway.json`.
+- **الواي فاي/الهوتسبوت**: حزمة `packaging/rtl8188eus-dkms`، كشف من sysfs، dnsmasq/wireless-regdb، بلد الواي فاي، PMF، خطاف Docker.
+- **الخط والحجم**: Cairo Regular للنظام كله عدا الطرفية (DejaVu Sans Mono للعربية فيها)، ومقياس النص 1.0 وكل النصوص تتبعه.
+- **التطبيقات الافتراضية**: كتالوج واحد `config/default-apps.tsv` يقرؤه المثبّت والمعالج والإعدادات (`DefaultApps` + `DefaultAppChooser`).
+- **RTL**: `I18n.uiLine/plural/number`، الشريط العلوي ينعكس، الأيقونات الاتجاهية، الترجمة الكاملة، توليد locale العربي.
+- **غير ذلك**: حفظ الإعدادات ذرياً، ملفات بأسماء فيها `#`، حذف عنصر الحافظة، `update.sh` يبلّغ عن التبعيات الناقصة.
 
 ### ج) جدول اختصارات لوحة المفاتيح المعتمدة (Keybindings)
 | الاختصار | الوظيفة | الوصف البرمجي |
@@ -324,6 +330,7 @@
 ---
 
 ## 9. خارطة الطريق والمسار القادم (Roadmap & Next Steps)
+0. **(عاجل قبل Hyprland 0.57)**: Hyprland يحذّر بأن صيغة `.conf` ستُزال في 0.57 وبأن تشغيله دون `start-hyprland` غير مستحسن — يلزم ترحيل `config/hyprland.conf` و`bin/deloway-session`.
 1. **استقرار وضع الانغماس (Immersion Mode / Super Key Toggle)**:
    - إنهاء ضبط إخفاء الكبسولات والـ Dock عبر مفتاح Super دون التأثير على استقرار دورة حياة أسطح Wayland.
 2. **إيماءات لوحة اللمس (Touchpad Gestures)**:
