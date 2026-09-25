@@ -63,6 +63,96 @@ Item {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
+        // ── 1. Desktop: what it shows, and whether it shows it ──────
+        // (The right-click menu has the show/hide switch; choosing icons or widgets
+        // lives here, where "Desktop Settings…" leads.)
+        SettingsSection {
+            title: I18n.isRTL ? "سطح المكتب" : "Desktop"
+
+            SettingsRow {
+                title: I18n.isRTL ? "إظهار عناصر سطح المكتب" : "Show Desktop Items"
+                subtitle: I18n.isRTL ? "عند الإيقاف يبقى سطح المكتب فارغاً، الخلفية وحدها"
+                                     : "When off, the desktop stays empty — just the wallpaper"
+                icon: ConfigManager.showDesktopContent ? "view-reveal-symbolic" : "view-conceal-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setShowDesktopContent(!ConfigManager.showDesktopContent)
+
+                SettingsToggle {
+                    checked: ConfigManager.showDesktopContent
+                    onToggled: ch => ConfigManager.setShowDesktopContent(ch)
+                }
+            }
+
+            SettingsRow {
+                title: I18n.isRTL ? "محتوى سطح المكتب" : "Desktop Content"
+                subtitle: I18n.isRTL ? "أيقونات الملفات والمجلدات، أو بطاقات الأدوات"
+                                     : "File and folder icons, or widget cards"
+                icon: "preferences-desktop-symbolic"
+                showDivider: ConfigManager.desktopMode === "traditional"
+
+                RowLayout {
+                    spacing: Theme.space4
+                    LayoutMirroring.enabled: I18n.isRTL
+                    LayoutMirroring.childrenInherit: true
+
+                    Repeater {
+                        model: [
+                            { id: "traditional", label: I18n.isRTL ? "الأيقونات" : "Icons" },
+                            { id: "widgets",     label: I18n.isRTL ? "الأدوات" : "Widgets" }
+                        ]
+                        delegate: Rectangle {
+                            id: modePill
+                            required property var modelData
+                            readonly property bool isSelected: ConfigManager.desktopMode === modelData.id
+
+                            height: 28
+                            implicitWidth: modeText.implicitWidth + Theme.space16
+                            radius: 14
+                            color: modePill.isSelected ? Theme.notchSurfaceActive : (modeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: modePill.isSelected ? Theme.notchBorderHighlight : (modeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                id: modeText
+                                anchors.centerIn: parent
+                                text: modePill.modelData.label
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: modePill.isSelected ? Font.DemiBold : Font.Normal
+                                color: modePill.isSelected ? Theme.notchText : Theme.notchTextSecondary
+                            }
+
+                            MouseArea {
+                                id: modeMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ConfigManager.setDesktopMode(modePill.modelData.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingsRow {
+                visible: ConfigManager.desktopMode === "traditional"
+                title: I18n.isRTL ? "المحاذاة للشبكة" : "Align to Grid"
+                subtitle: I18n.isRTL ? "تستقر الأيقونات على شبكة منتظمة عند إفلاتها"
+                                     : "Icons settle on an even grid when dropped"
+                icon: "snap-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setDesktopSnapToGrid(!ConfigManager.desktopSnapToGrid)
+
+                SettingsToggle {
+                    checked: ConfigManager.desktopSnapToGrid
+                    onToggled: ch => ConfigManager.setDesktopSnapToGrid(ch)
+                }
+            }
+        }
+
         // ── 2. Desktop Wallpapers ────────────────────────────────
         SettingsSection {
             title: I18n.tr("wallpaper_title")
