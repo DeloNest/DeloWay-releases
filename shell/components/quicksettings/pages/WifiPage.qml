@@ -229,7 +229,7 @@ ColumnLayout {
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: !NetworkService.wifiAvailable ? root.t("لا توجد بطاقة Wi-Fi", "No Wi-Fi adapter")
-                      : (!NetworkService.wifiEnabled ? root.t("Wi-Fi متوقف", "Wi-Fi is off")
+                      : (!NetworkService.wifiEnabled ? I18n.uiLine(root.t("Wi-Fi متوقف", "Wi-Fi is off"))
                          : (NetworkService.isScanning ? root.t("جارٍ البحث…", "Scanning…") : root.t("لا توجد شبكات", "No networks found")))
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(12)

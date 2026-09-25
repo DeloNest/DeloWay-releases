@@ -153,7 +153,7 @@ ColumnLayout {
             value: HardwareService.ramUsage
             level: root.ramLevel
             line1: HardwareService.ramUsedGb.toFixed(1) + " / " + HardwareService.ramTotalGb.toFixed(1) + " GB"
-            line2: Math.max(0, HardwareService.ramTotalGb - HardwareService.ramUsedGb).toFixed(1) + " GB " + I18n.tr("tc_free", "free")
+            line2: I18n.uiLine(Math.max(0, HardwareService.ramTotalGb - HardwareService.ramUsedGb).toFixed(1) + " GB " + I18n.tr("tc_free", "free"))
         }
 
         GaugeCard {
@@ -194,11 +194,11 @@ ColumnLayout {
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: (HardwareService.kernel ? "Linux " + HardwareService.kernel + "  ·  " : "")
+                    text: I18n.uiLine((HardwareService.kernel ? I18n.ltr("Linux " + HardwareService.kernel) + "  ·  " : "")
                           + HardwareService.cores.length + " " + I18n.tr("tc_threads", "threads")
                   + (HardwareService.uptimeSec > 0
                      ? "  ·  " + I18n.tr("tk_uptime", "up") + " " + HardwareService.formatUptime(HardwareService.uptimeSec, I18n.isRTL)
-                     : "")
+                     : ""))
                     elide: Text.ElideRight
                     horizontalAlignment: Text.AlignLeft
                     font.family: Theme.typography.fontFamily

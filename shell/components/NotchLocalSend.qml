@@ -224,7 +224,7 @@ Item {
                         color: Theme.notchText
                     }
                     Text {
-                        text: "LocalSend: " + LocalSendService.localAlias + " • " + (LocalSendService.isRunning ? I18n.tr("notch_status_ready") : I18n.tr("notch_status_stopped"))
+                        text: I18n.uiLine("LocalSend: " + I18n.isolate(LocalSendService.localAlias) + " • " + (LocalSendService.isRunning ? I18n.tr("notch_status_ready") : I18n.tr("notch_status_stopped")))
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(10)
                         color: LocalSendService.isRunning ? Theme.notchTextSecondary : Theme.notchTextTertiary
@@ -580,6 +580,7 @@ Item {
                                 }
 
                                 Text {
+                                    horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                                     text: I18n.tr("notch_no_devices_hint")
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(8)

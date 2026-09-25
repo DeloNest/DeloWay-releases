@@ -314,6 +314,7 @@ Item {
 
                 // Track Title
                 Text {
+                    horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                     text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(14)
@@ -513,6 +514,7 @@ Item {
 
                         // Track Title
                         Text {
+                            horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                             text: root.activePlayer && root.activePlayer.trackTitle ? root.activePlayer.trackTitle : I18n.tr("notch_now_playing")
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(15)
@@ -525,6 +527,7 @@ Item {
 
                         // Album Title (Line 2)
                         Text {
+                            horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                             text: (root.activePlayer && root.activePlayer.trackAlbum)
                                   ? root.activePlayer.trackAlbum
                                   : ((root.activePlayer && root.activePlayer.trackArtist) ? root.activePlayer.trackArtist : "Deloway Music")
@@ -538,6 +541,7 @@ Item {
 
                         // Artist Name (Line 3)
                         Text {
+                            horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                             text: root.activePlayer && root.activePlayer.trackArtist ? root.activePlayer.trackArtist : "—"
                             font.family: Theme.typography.fontFamily
                             font.pixelSize: Theme.fontSize(11)

@@ -61,6 +61,7 @@ Rectangle {
                     spacing: 1
 
                     Text {
+                        horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                         text: root.title
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
@@ -73,6 +74,7 @@ Rectangle {
                     }
 
                     Text {
+                        horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                         visible: root.subtitle !== ""
                         text: root.subtitle
                         font.family: Theme.typography.fontFamily

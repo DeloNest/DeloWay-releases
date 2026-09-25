@@ -249,7 +249,7 @@ ColumnLayout {
             spacing: -2
             Text {
                 Layout.fillWidth: true
-                text: NotificationManager.bidi(I18n.tr("app_uninstall_confirm").replace("%1", root.app ? (root.app.name || root.app.id) : ""))
+                text: NotificationManager.bidi(I18n.tr("app_uninstall_confirm").replace("%1", I18n.isolate(root.app ? (root.app.name || root.app.id) : "")))
                 textFormat: Text.PlainText
                 elide: Text.ElideRight
                 font.family: Theme.typography.fontFamily

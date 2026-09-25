@@ -398,9 +398,11 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
+                    // The query is isolated so its own punctuation ("c++", "hello!") stays
+                    // with it instead of jumping to the other side of the quotes.
                     text: I18n.isRTL
-                          ? ("لا توجد نتائج تطابق \"" + root.filterQuery + "\"")
-                          : ("No results matching \"" + root.filterQuery + "\"")
+                          ? ("لا توجد نتائج تطابق «" + I18n.isolate(root.filterQuery) + "»")
+                          : ("No results matching \u201C" + I18n.isolate(root.filterQuery) + "\u201D")
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(13)
                     font.weight: Font.Medium

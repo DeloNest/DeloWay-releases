@@ -490,6 +490,7 @@ Item {
                         font.pixelSize: Theme.fontSize(12)
                         color: Theme.colors.text
                         wrapMode: Text.WordWrap
+                        horizontalAlignment: Text.AlignLeft   // reading start: cursor and text on the right in Arabic
                         background: null
 
                         onTextChanged: {

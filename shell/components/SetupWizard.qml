@@ -451,6 +451,7 @@ PanelWindow {
                                     }
 
                                     Text {
+                                        horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                                         Layout.fillWidth: true
                                         text: dCard.modelData.desc
                                         font.family: Theme.typography.fontFamily
@@ -751,6 +752,7 @@ PanelWindow {
                                     }
 
                                     Text {
+                                        horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                                         Layout.fillWidth: true
                                         text: styleCard.modelData.desc
                                         font.family: Theme.typography.fontFamily
@@ -842,6 +844,7 @@ PanelWindow {
                                     }
 
                                     Text {
+                                        horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                                         Layout.fillWidth: true
                                         text: modelData.desc
                                         font.family: Theme.typography.fontFamily

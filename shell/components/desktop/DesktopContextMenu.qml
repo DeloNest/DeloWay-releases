@@ -59,6 +59,7 @@ Item {
             }
 
             Text {
+                horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                 Layout.fillWidth: true
                 text: cItem.title
                 font.family: Theme.typography.fontFamily
@@ -132,6 +133,7 @@ Item {
             spacing: 8
 
             Text {
+                horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
                 Layout.fillWidth: true
                 text: mItem.title
                 font.family: Theme.typography.fontFamily

@@ -102,7 +102,7 @@ Item {
 
                     Repeater {
                         model: [
-                            { val: 0,  label: I18n.isRTL ? "0px (حادة)" : "0px (Sharp)" },
+                            { val: 0,  label: I18n.isRTL ? "حادة (0px)" : "0px (Sharp)" },
                             { val: 8,  label: I18n.isRTL ? "8px" : "8px" },
                             { val: 12, label: I18n.isRTL ? "12px" : "12px" },
                             { val: 16, label: I18n.isRTL ? "16px" : "16px" }

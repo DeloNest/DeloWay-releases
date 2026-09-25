@@ -249,7 +249,7 @@ Item {
 
             // Setup Wizard & General
             "welcome_deloos": "Welcome to DeloOS",
-            "setup_wizard_desc": "Configure your personalized desktop experience (§5.10)",
+            "setup_wizard_desc": "Configure your personalized desktop experience",
             "icon_theme_missing_title": "Icon theme not installed",
             "icon_theme_missing_body": "“%1” is missing, so apps show letters instead of icons. Run install.sh in the DeloWay folder to install it.",
             "step_language": "0. Interface Language",
@@ -686,7 +686,7 @@ Item {
 
             // Setup Wizard & General
             "welcome_deloos": "مرحباً بك في DeloOS",
-            "setup_wizard_desc": "معالج الإعداد لأول مرة — خصص تجربة وإعدادات سطح مكتبك (§5.10)",
+            "setup_wizard_desc": "معالج الإعداد لأول مرة — خصّص تجربة سطح مكتبك وإعداداته",
             "icon_theme_missing_title": "سمة الأيقونات غير مثبّتة",
             "icon_theme_missing_body": "السمة “%1” غير موجودة، لذلك تظهر التطبيقات بحروف بدل أيقوناتها. شغّل install.sh من مجلد DeloWay لتثبيتها.",
             "step_language": "٠. لغة واجهة النظام",
@@ -943,6 +943,14 @@ Item {
     // Bidi helpers for embedding runs in a sentence of the other direction.
     //   isolate(s): user/system text of unknown direction (SSIDs, device and app names)
     //   ltr(s):     always-LTR runs (versions, paths, CLI flags, key combos)
+    // A line of the UI that may begin with a Latin word ("Linux 7.2 · …", "8.3 GB متاح",
+    // "Wi-Fi متوقف", "LocalSend: …"). Qt takes a paragraph's direction from its first strong
+    // character, so in Arabic such a line was laid out left-to-right and its Arabic words
+    // read in reverse. A leading RLM gives it the UI's direction; English is unchanged.
+    function uiLine(s) {
+        const t = (s === undefined || s === null) ? "" : String(s);
+        return (root.isRTL && t.length > 0) ? "\u200F" + t : t;
+    }
     function isolate(s) { return "\u2068" + (s === undefined || s === null ? "" : s) + "\u2069"; }
     function ltr(s) { return "\u2066" + (s === undefined || s === null ? "" : s) + "\u2069"; }
 
