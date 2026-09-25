@@ -201,6 +201,7 @@
 * `3e443ae` - feat(share): open the LocalSend app from the Share tab
 * `a855b7e` - fix(share): log why a send failed
 * `160c907` - fix(share): present our certificate to LocalSend 2.2 receivers
+* `5ffcd6f` - fix(theme): KDE apps follow the DeloWay theme
 
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
@@ -314,6 +315,8 @@
 | عارض PDF | لا يوجد؛ `application/pdf` → Brave | غير مثبّت (Brave بديل) |
 | بيئة التطوير | لا دور IDE في DeloWay؛ دور «المحرر» = GNOME Text Editor 50.1 (`text/plain`). Antigravity 2.16 مثبّت (منصة وكلاء من Google) وغير مربوط بأي دور | لا IDE مُهيّأ |
 الأدوار التي يديرها DeloWay: `browser`، `terminal`، `fileManager`، `editor`، `monitor` (`config/default-apps.tsv`)؛ الصور والفيديو وPDF تتبع xdg-mime فقط.
+
+**تطبيقات KDE (Dolphin وغيره)**: تأخذ ألوانها وأيقوناتها وخطها من `~/.config/kdeglobals` وملف مخطط ألوان، لا من سمة Qt (`QT_QPA_PLATFORMTHEME=gtk3`). منذ `5ffcd6f` يكتب `deloway-theme-apply.py` المخططين `DeloWay{Dark,Light}.colors` ويدمج في `kdeglobals` (المخطط أيضاً تحت `[UiSettings]` فيشمل كل تطبيقات KDE، أيقونات Reversal، Cairo، التحديد سطح رمادي محايد كما في Thunar). اتجاه RTL في Dolphin سليم (شريط الأدوات والعرض والحالة معكوسة)؛ لوحة «الأماكن» تبقى يساراً (سلوك Qt، تُسحب يميناً ويحفظها Dolphin). عملية Dolphin الخلفية (`plasma-dolphin.service`) تحتفظ ببيئتها القديمة حتى تُعاد.
 
 ### و) خطوات معلّقة تحتاج صاحب الجهاز (sudo أو الجلسة الحقيقية)
 1. ✅ (25 سبتمبر 17:10) ثُبّت خطاف الهوتسبوت وقاعدة `ufw allow LocalSend` على الجهاز؛ البث المتعدد لـ LocalSend يمر الآن (مقيس).
