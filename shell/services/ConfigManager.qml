@@ -117,6 +117,10 @@ Item {
 
     // Music Settings (P10)
     property string musicPreferredPlayer: "auto"
+    // Devices paired for Notch → Share (LocalSend): [{fingerprint, alias, deviceType,
+    // deviceModel, ip, port, protocol}]. null = never set (LocalSendService then offers the
+    // LocalSend app's own favourites once).
+    property var shareDevices: null
     property var musicLaunchTarget: ({ "type": "app", "value": "spotify", "webApp": false })
 
     // System & Localization Settings
@@ -365,6 +369,7 @@ Item {
                 if (cfg.music.preferredPlayer !== undefined) root.musicPreferredPlayer = cfg.music.preferredPlayer;
                 if (cfg.music.launchTarget !== undefined) root.musicLaunchTarget = cfg.music.launchTarget;
             }
+            if (cfg.share && Array.isArray(cfg.share.devices)) root.shareDevices = cfg.share.devices;
             if (cfg.system) {
                 if (cfg.system.uiLanguage) root.uiLanguage = cfg.system.uiLanguage;
                 if (cfg.system.keyboardLayouts) root.keyboardLayouts = cfg.system.keyboardLayouts;
@@ -570,6 +575,11 @@ Item {
 
     function setShowDesktopContent(val) {
         root.showDesktopContent = !!val;
+        saveConfig();
+    }
+
+    function setShareDevices(list) {
+        root.shareDevices = Array.isArray(list) ? list : [];
         saveConfig();
     }
 
@@ -963,6 +973,9 @@ Item {
             music: {
                 preferredPlayer: root.musicPreferredPlayer,
                 launchTarget: root.musicLaunchTarget
+            },
+            share: {
+                devices: root.shareDevices
             },
             system: {
                 uiLanguage: root.uiLanguage,
