@@ -211,6 +211,7 @@ AUR_PKGS_TO_INSTALL=()
 # Built from packaging/<name>/PKGBUILD with makepkg: pinned upstream sources DeloWay
 # needs that no repo or AUR package ships in the required form.
 LOCAL_PKGS_TO_BUILD=()
+FOUND_RTL8188EUS=""   # USB id of a detected RTL8188EUS adapter (detect_hardware_deps)
 
 interactive_app_selection() {
     log_step "3. Default Applications Selection"
@@ -407,17 +408,29 @@ detect_hardware_deps() {
         return
     fi
 
-    # 1. WiFi: Realtek RTL8188EUS Check
-    if command -v lsusb &>/dev/null; then
-        if lsusb | grep -qi "0bda:8179"; then
-            log_warn "Detected Realtek RTL8188EUS USB WiFi adapter (0bda:8179)."
-            log_info "The default in-kernel driver lacks AP mode and suffers stability issues."
-            log_info "Queuing '8188eu-aircrack-dkms-git' and 'linux-headers' for AP mode and full stability."
-            PKGS_TO_INSTALL+=("linux-headers")
-            AUR_PKGS_TO_INSTALL+=("8188eu-aircrack-dkms-git")
+    # 1. Wi-Fi: USB adapters whose in-kernel driver cannot run a hotspot. Read from sysfs:
+    # lsusb needs usbutils, which a fresh Arch lacks, and the check used to skip silently.
+    # IDs are the USB aliases of the 8188eu module (packaging/rtl8188eus-dkms).
+    local rtl8188eus_ids=" 0bda:8179 0bda:0179 056e:4008 07b8:8179 0df6:0076 2001:330f 2001:3310 2001:3311 2001:331b 2357:010c 7392:b811 "
+    local usb id
+    for usb in /sys/bus/usb/devices/*; do
+        [ -r "$usb/idVendor" ] && [ -r "$usb/idProduct" ] || continue
+        id="$(<"$usb/idVendor"):$(<"$usb/idProduct")"
+        [[ "$rtl8188eus_ids" == *" $id "* ]] && FOUND_RTL8188EUS="$id"
+    done
+    if [ -n "$FOUND_RTL8188EUS" ]; then
+        log_warn "Detected a Realtek RTL8188EUS USB Wi-Fi adapter ($FOUND_RTL8188EUS)."
+        log_info "The in-kernel rtl8xxxu driver has no hotspot (AP) mode for it and its firmware start fails intermittently."
+        if pacman -Q rtl8188eus-dkms &>/dev/null; then
+            log_success "rtl8188eus-dkms already installed."
         else
-            log_info "No legacy RTL8188EUS USB adapter detected; using standard in-kernel WiFi drivers."
+            log_info "Queuing the rtl8188eus DKMS driver (packaging/rtl8188eus-dkms) with kernel headers."
+            PKGS_TO_INSTALL+=("dkms")
+            queue_kernel_headers
+            LOCAL_PKGS_TO_BUILD+=("rtl8188eus-dkms")
         fi
+    else
+        log_info "No USB Wi-Fi adapter that needs an out-of-tree driver detected."
     fi
 
     # 2. GPU: NVIDIA needs a kernel module package. Arch ships the open modules
@@ -503,6 +516,10 @@ queue_core_packages() {
         "python-gobject"         # deloway-bluetooth.py scan (Gio / BlueZ discovery)
         "bluez-utils"            # bluetoothctl (restores power after airplane mode)
         "iw"                     # Wi-Fi / hotspot capability checks
+        "dnsmasq"                # hotspot: NetworkManager's shared mode runs it for DHCP/DNS
+        "wireless-regdb"         # Wi-Fi regulatory database (country channels / TX power)
+        "usbutils"               # lsusb, for diagnosing USB Wi-Fi adapters
+        "pciutils"               # lspci
         "psmisc"                 # killall (binds, shell restart)
         "pipewire-pulse"         # PipeWire audio server (pw-play / paplay alarm sound)
         "hyprlock"               # Super+L fallback when the shell is not running
@@ -644,6 +661,58 @@ build_local_packages() {
         fi
         rm -rf "$work"
     done
+}
+
+# ── 6b. Wi-Fi & Hotspot ───────────────────────────────────────────────────────
+# Everything a hotspot needs beyond the packages: the Wi-Fi country (without it the
+# kernel stays on the restrictive "world" domain 00) and, with Docker, forwarding for
+# shared connections.
+configure_networking() {
+    log_step "6b. Configuring Wi-Fi & Hotspot"
+
+    local has_wifi=false w
+    for w in /sys/class/net/*/wireless /sys/class/net/*/phy80211; do
+        [ -e "$w" ] && has_wifi=true
+    done
+    [ -n "$FOUND_RTL8188EUS" ] && has_wifi=true   # driver may only bind after install
+
+    # Regulatory domain from the configured time zone (zone.tab maps zones to countries).
+    if [ "$has_wifi" = true ]; then
+        if grep -qs 'ieee80211_regdom' /etc/modprobe.d/*.conf; then
+            log_info "Wi-Fi country already configured in /etc/modprobe.d."
+        else
+            local tz cc
+            tz=$(readlink /etc/localtime 2>/dev/null | sed 's|.*/zoneinfo/||')
+            cc=$(awk -F'\t' -v tz="$tz" '!/^#/ && $3 == tz { print $1; exit }' /usr/share/zoneinfo/zone.tab 2>/dev/null)
+            if [ -n "$cc" ]; then
+                log_info "Setting the Wi-Fi country to $cc (from time zone $tz)."
+                if [ "$DRY_RUN" = true ]; then
+                    echo -e "${CYAN}[DRY-RUN]${NC} echo 'options cfg80211 ieee80211_regdom=$cc' | sudo tee /etc/modprobe.d/deloway-wifi-country.conf"
+                else
+                    echo "options cfg80211 ieee80211_regdom=$cc" | sudo tee /etc/modprobe.d/deloway-wifi-country.conf >/dev/null \
+                        && sudo iw reg set "$cc" 2>/dev/null || true
+                fi
+            else
+                log_warn "Could not tell the Wi-Fi country from the time zone; set it with: sudo iw reg set <CC>"
+            fi
+        fi
+    else
+        log_info "No Wi-Fi adapter present; skipping Wi-Fi country setup."
+    fi
+
+    # Docker drops forwarded traffic (FORWARD policy DROP), so hotspot clients connect but
+    # get no internet. The dispatcher script allows forwarding for shared connections
+    # while they are up (DOCKER-USER chain).
+    if command -v docker &>/dev/null; then
+        log_info "Docker found: installing the hotspot forwarding hook for NetworkManager."
+        if [ "$DRY_RUN" = true ]; then
+            echo -e "${CYAN}[DRY-RUN]${NC} sudo install -Dm755 system/NetworkManager/dispatcher.d/90-deloway-hotspot-forward /etc/NetworkManager/dispatcher.d/"
+        else
+            sudo install -Dm755 "$DELOWAY_DIR/system/NetworkManager/dispatcher.d/90-deloway-hotspot-forward" \
+                /etc/NetworkManager/dispatcher.d/90-deloway-hotspot-forward \
+                || log_warn "Could not install the hotspot forwarding hook."
+        fi
+    fi
 }
 
 # ── 7. Centralized Configuration & Dispatcher Deployment ──────────────────────
@@ -830,6 +899,7 @@ main() {
     detect_hardware_deps
     queue_core_packages
     install_packages
+    configure_networking
     configure_deloway
     print_completion_summary
 }

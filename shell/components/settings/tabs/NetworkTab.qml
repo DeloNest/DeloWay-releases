@@ -349,8 +349,8 @@ Item {
             // Master Hotspot Toggle
             SettingsRow {
                 title: I18n.isRTL ? "نقطة الاتصال اللاسلكية" : "Mobile Hotspot"
-                subtitle: !NetworkService.hotspotAvailable
-                    ? (I18n.isRTL ? "غير متاحة على هذا العتاد" : "Not available on this hardware")
+                subtitle: NetworkService.hotspotProblem.length > 0 && !NetworkService.hotspotEnabled
+                    ? NetworkService.hotspotProblem
                     : (NetworkService.hotspotEnabled
                         ? (I18n.isRTL ? ("مفعّلة — متصل بها " + (NetworkService.hotspotClients ? NetworkService.hotspotClients.length : 0) + " جهاز")
                                       : ("Enabled — " + (NetworkService.hotspotClients ? NetworkService.hotspotClients.length : 0) + " device(s) connected"))

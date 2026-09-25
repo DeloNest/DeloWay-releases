@@ -4,6 +4,15 @@
 النظام: Arch Linux (النواة: `7.2.6-arch2-1`)
 المحرر: Antigravity AI Agent
 
+> **تحديث 2026-09-25 — صار كل ما يلي آلياً في `install.sh`** (على أي نظام نظيف، لا جهاز واحد):
+> - كشف المحوّل من `sysfs` (لم يعد يعتمد على `lsusb` غير الموجود في تثبيت Arch نظيف، والذي جعل الفحص القديم يتخطّى المحوّل بصمت)، لكل معرّفات USB التي يدعمها التعريف (`0bda:8179`، TP-Link TL-WN722N v2/v3، D-Link DWA-125 D1…).
+> - بناء وتثبيت حزمة `packaging/rtl8188eus-dkms` (مصدر PR #275 مثبّت على commit مُختبَر؛ مُجمَّع فعلياً على النواة `7.2.6-arch2-1`) مع `dkms` وترويسات كل نواة مثبّتة، وحظر `rtl8xxxu` عبر `/usr/lib/modprobe.d/rtl8188eus-dkms.conf` داخل الحزمة نفسها (يُزال مع الحزمة).
+> - متطلبات الهوتسبوت لكل الأجهزة: `dnsmasq` (يشغّله NetworkManager في وضع المشاركة)، `wireless-regdb`، وضبط بلد الواي فاي من المنطقة الزمنية (`/etc/modprobe.d/deloway-wifi-country.conf`).
+> - تعطيل PMF في ملف الهوتسبوت يطبّقه الشل نفسه (`scripts/deloway-network.py`) عند الإنشاء والتشغيل، ويفحص قبل التشغيل: وجود المحوّل، دعم وضع AP، ووجود `dnsmasq` — مع رسالة مترجمة بالسبب بدل خطأ NetworkManager الخام.
+> - إن وُجد Docker: خطاف NetworkManager (`system/NetworkManager/dispatcher.d/90-deloway-hotspot-forward`) يسمح بتمرير حركة أي اتصال مشاركة عبر سلسلة `DOCKER-USER` طوال تشغيله فقط، دون أسماء واجهات ثابتة.
+>
+> الأقسام أدناه هي سجل التشخيص الأصلي والخطوات اليدوية للمرجعية.
+
 ---
 
 ## 1. نتائج التشخيص (Diagnostic Results)

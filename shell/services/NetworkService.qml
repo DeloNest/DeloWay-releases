@@ -53,6 +53,9 @@ Item {
     property string hotspotSsid: ""
     property string hotspotPassword: ""
     property string hotspotError: ""
+    // Why a hotspot cannot start here (no adapter, no AP mode, no dnsmasq), translated;
+    // "" when nothing is known to be missing.
+    property string hotspotProblem: ""
     property string hotspotSaveSuccess: ""
     property var hotspotClients: []
     property bool hotspotActionRunning: hotspotActionProc.running
@@ -94,6 +97,7 @@ Item {
                         if (parsed.hotspot.ssid) root.hotspotSsid = parsed.hotspot.ssid;
                         if (parsed.hotspot.password) root.hotspotPassword = parsed.hotspot.password;
                         if (parsed.hotspot.clients !== undefined) root.hotspotClients = parsed.hotspot.clients;
+                        root.hotspotProblem = parsed.hotspot.error_code ? root.hotspotMessage(parsed.hotspot) : "";
                     }
                 } catch (e) {
                     root.networkError = I18n.isRTL ? "تعذر قراءة بيانات الشبكة" : "Failed to parse network data";
@@ -295,7 +299,7 @@ Item {
                 try {
                     const res = JSON.parse(data.trim());
                     if (res.enabled !== undefined) root.hotspotEnabled = res.enabled;
-                    root.hotspotError = res.error || "";
+                    root.hotspotError = res.success === false ? root.hotspotMessage(res) : "";
                 } catch (e) {}
             }
         }
@@ -316,7 +320,7 @@ Item {
                         if (res.ssid) root.hotspotSsid = res.ssid;
                         if (res.password) root.hotspotPassword = res.password;
                     } else {
-                        root.hotspotError = res.error || (I18n.isRTL ? "فشل حفظ الإعدادات" : "Failed to save configuration");
+                        root.hotspotError = root.hotspotMessage(res) || (I18n.isRTL ? "فشل حفظ الإعدادات" : "Failed to save configuration");
                         root.hotspotSaveSuccess = "";
                     }
                 } catch (e) {
@@ -397,6 +401,13 @@ Item {
         if (!nameOrUuid) return;
         forgetConnProc.command = ["nmcli", "con", "delete", nameOrUuid];
         forgetConnProc.running = true;
+    }
+
+    // A helper result → user-facing text: known error codes are translated, anything else
+    // (NetworkManager's own message) is shown as reported.
+    function hotspotMessage(res) {
+        if (!res) return "";
+        return res.error_code ? I18n.tr("hotspot_err_" + res.error_code, res.error || "") : (res.error || "");
     }
 
     function toggleHotspot() {

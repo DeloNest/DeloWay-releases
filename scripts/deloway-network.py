@@ -8,6 +8,7 @@ import os
 import socket
 import json
 import subprocess
+import shutil
 import time
 
 
@@ -115,6 +116,42 @@ def get_wifi_device():
         pass
     return None
 
+def wifi_supports_ap(dev):
+    """True/False from `iw phy … info` ("Supported interface modes" lists AP), None when
+    it cannot be told (no iw, no phy link)."""
+    try:
+        phy = open(f"/sys/class/net/{dev}/phy80211/name").read().strip()
+        out = subprocess.run(["iw", "phy", phy, "info"], capture_output=True, text=True, timeout=3).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    modes, in_modes = [], False
+    for line in out.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("Supported interface modes"):
+            in_modes = True
+            continue
+        if in_modes:
+            if stripped.startswith("* "):
+                modes.append(stripped[2:].strip())
+            else:
+                break
+    return ("AP" in modes) if modes else None
+
+def hotspot_preflight(dev):
+    """Why a hotspot cannot start on this machine, as (code, message), or None.
+    Codes are stable so the shell can show a translated explanation."""
+    if not dev:
+        return ("no_device", "No Wi-Fi adapter found")
+    if wifi_supports_ap(dev) is False:
+        return ("no_ap_mode", f"The Wi-Fi adapter ({dev}) cannot act as an access point with its current driver")
+    if shutil.which("dnsmasq") is None:
+        # NetworkManager's shared (hotspot) mode runs dnsmasq for DHCP/DNS
+        return ("no_dnsmasq", "dnsmasq is not installed (NetworkManager needs it to share a connection)")
+    return None
+
+def failure(code, message):
+    return {"success": False, "enabled": is_hotspot_active(), "error_code": code, "error": message}
+
 def hotspot_profile_exists():
     try:
         res = subprocess.run(["nmcli", "-t", "-f", "NAME", "con", "show"], capture_output=True, text=True, timeout=2).stdout
@@ -180,6 +217,7 @@ def get_hotspot_status():
     except Exception:
         pass
 
+    problem = None if active else hotspot_preflight(dev)
     return {
         "available": dev is not None,
         "device": dev or "",
@@ -189,36 +227,55 @@ def get_hotspot_status():
         "password": password,
         "wifi_connected": wifi_connected,
         "clients": get_hotspot_clients() if active else [],
-        "error": "" if dev else ( "لا توجد واجهة واي فاي" )
+        "error_code": problem[0] if problem else "",
+        "error": problem[1] if problem else ""
     }
+
+# Protected Management Frames off: several USB adapters (RTL8188EUS among them) reject
+# the keys NetworkManager installs with PMF, so the AP never comes up
+# ("key setting validation failed"). WPA2-PSK without PMF works with every client.
+HOTSPOT_COMPAT = ["802-11-wireless-security.pmf", "disable"]
+
+def create_hotspot_profile(ssid, password, dev):
+    cmd = [
+        "nmcli", "con", "add",
+        "type", "wifi",
+        "con-name", "Deloway-Hotspot",
+        "autoconnect", "no",
+        "ssid", ssid,
+        "802-11-wireless.mode", "ap",
+        "802-11-wireless-security.key-mgmt", "wpa-psk",
+        "802-11-wireless-security.psk", password,
+        *HOTSPOT_COMPAT,
+        "ipv4.method", "shared",
+        "ipv6.method", "ignore"
+    ]
+    if dev:
+        cmd.extend(["ifname", dev])
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
 def hotspot_start():
     dev = get_wifi_device()
-    if not dev:
-        return {"success": False, "enabled": False, "error": "No Wi-Fi device found"}
-    
+    problem = hotspot_preflight(dev)
+    if problem:
+        return failure(*problem)
+
     try:
         if hotspot_profile_exists():
-            res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
+            # Profiles made before the PMF setting existed get it too.
+            subprocess.run(["nmcli", "con", "modify", "Deloway-Hotspot", *HOTSPOT_COMPAT],
+                           capture_output=True, text=True, timeout=10)
         else:
-            ssid = socket.gethostname()
-            password = generate_hotspot_password()
-            res = subprocess.run([
-                "nmcli", "dev", "wifi", "hotspot",
-                "ifname", dev,
-                "con-name", "Deloway-Hotspot",
-                "ssid", ssid,
-                "password", password
-            ], capture_output=True, text=True, timeout=15)
+            created = create_hotspot_profile(socket.gethostname(), generate_hotspot_password(), dev)
+            if created.returncode != 0:
+                return failure("nm_error", created.stderr.strip() or created.stdout.strip())
+        res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=20)
     except (subprocess.TimeoutExpired, OSError) as e:
-        return {"success": False, "enabled": is_hotspot_active(), "error": str(e)}
+        return failure("nm_error", str(e))
 
-    success = (res.returncode == 0)
-    return {
-        "success": success,
-        "enabled": is_hotspot_active(),
-        "error": "" if success else (res.stderr.strip() or res.stdout.strip())
-    }
+    if res.returncode != 0:
+        return failure("nm_error", res.stderr.strip() or res.stdout.strip())
+    return {"success": True, "enabled": is_hotspot_active(), "error_code": "", "error": ""}
 
 def hotspot_stop():
     try:
@@ -236,14 +293,14 @@ def hotspot_configure(ssid, password):
     try:
         return _hotspot_configure(ssid, password)
     except (subprocess.TimeoutExpired, OSError) as e:
-        return {"success": False, "enabled": is_hotspot_active(), "error": str(e)}
+        return failure("nm_error", str(e))
 
 def _hotspot_configure(ssid, password):
     if not ssid or not ssid.strip():
-        return {"success": False, "enabled": is_hotspot_active(), "error": "SSID cannot be empty"}
+        return failure("ssid_empty", "SSID cannot be empty")
     ssid = ssid.strip()
     if not password or len(password) < 8:
-        return {"success": False, "enabled": is_hotspot_active(), "error": "Password must be at least 8 characters"}
+        return failure("password_short", "Password must be at least 8 characters")
     
     dev = get_wifi_device()
     active = is_hotspot_active()
@@ -252,41 +309,20 @@ def _hotspot_configure(ssid, password):
         res = subprocess.run([
             "nmcli", "con", "modify", "Deloway-Hotspot",
             "802-11-wireless.ssid", ssid,
-            "802-11-wireless-security.psk", password
+            "802-11-wireless-security.psk", password,
+            *HOTSPOT_COMPAT
         ], capture_output=True, text=True, timeout=10)
     else:
-        cmd = [
-            "nmcli", "con", "add",
-            "type", "wifi",
-            "con-name", "Deloway-Hotspot",
-            "autoconnect", "no",
-            "ssid", ssid,
-            "802-11-wireless.mode", "ap",
-            "802-11-wireless-security.key-mgmt", "wpa-psk",
-            "802-11-wireless-security.psk", password,
-            "ipv4.method", "shared",
-            "ipv6.method", "ignore"
-        ]
-        if dev:
-            cmd.extend(["ifname", dev])
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        res = create_hotspot_profile(ssid, password, dev)
 
     if res.returncode != 0:
-        return {
-            "success": False,
-            "enabled": is_hotspot_active(),
-            "error": res.stderr.strip() or res.stdout.strip()
-        }
+        return failure("nm_error", res.stderr.strip() or res.stdout.strip())
 
     if active:
         subprocess.run(["nmcli", "con", "down", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
         up_res = subprocess.run(["nmcli", "con", "up", "Deloway-Hotspot"], capture_output=True, text=True, timeout=10)
         if up_res.returncode != 0:
-            return {
-                "success": False,
-                "enabled": is_hotspot_active(),
-                "error": up_res.stderr.strip() or up_res.stdout.strip()
-            }
+            return failure("nm_error", up_res.stderr.strip() or up_res.stdout.strip())
 
     return {
         "success": True,

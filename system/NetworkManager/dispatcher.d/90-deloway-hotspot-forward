@@ -1,0 +1,34 @@
+#!/bin/sh
+# DeloWay (install.sh, only when Docker is installed): let a NetworkManager hotspot —
+# any connection with ipv4.method=shared — reach the internet.
+#
+# Docker sets the iptables FORWARD policy to DROP and exempts only its own bridges, so
+# traffic from hotspot clients is dropped: they connect but get no internet. Docker's
+# documented hook for this is the DOCKER-USER chain. NetworkManager's shared mode already
+# does the NAT; only the forwarding needs allowing, and only while the hotspot is up.
+IFACE="$1"
+ACTION="$2"
+
+[ -n "$IFACE" ] && [ -n "$CONNECTION_UUID" ] || exit 0
+command -v iptables >/dev/null 2>&1 || exit 0
+iptables -n -L DOCKER-USER >/dev/null 2>&1 || exit 0
+[ "$(nmcli -g ipv4.method connection show "$CONNECTION_UUID" 2>/dev/null)" = "shared" ] || exit 0
+
+rule_in="-i $IFACE -j ACCEPT"
+rule_out="-o $IFACE -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT"
+
+case "$ACTION" in
+    up)
+        # shellcheck disable=SC2086
+        iptables -C DOCKER-USER $rule_in 2>/dev/null || iptables -I DOCKER-USER 1 $rule_in
+        # shellcheck disable=SC2086
+        iptables -C DOCKER-USER $rule_out 2>/dev/null || iptables -I DOCKER-USER 1 $rule_out
+        ;;
+    down)
+        # shellcheck disable=SC2086
+        iptables -D DOCKER-USER $rule_in 2>/dev/null
+        # shellcheck disable=SC2086
+        iptables -D DOCKER-USER $rule_out 2>/dev/null
+        ;;
+esac
+exit 0

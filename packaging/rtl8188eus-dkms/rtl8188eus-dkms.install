@@ -1,0 +1,11 @@
+post_install() {
+    # The dkms pacman hook has built the module; switch drivers without a reboot.
+    if lsmod 2>/dev/null | grep -q '^rtl8xxxu'; then
+        modprobe -r rtl8xxxu 2>/dev/null || true
+    fi
+    modprobe 8188eu 2>/dev/null || echo ":: Load it with 'modprobe 8188eu' or reboot."
+}
+
+post_upgrade() {
+    post_install
+}

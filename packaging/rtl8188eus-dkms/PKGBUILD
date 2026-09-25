@@ -1,0 +1,41 @@
+# Realtek RTL8188EUS USB Wi-Fi (0bda:8179, TP-Link TL-WN722N v2/v3, D-Link DWA-125 D1 …)
+# driver with access-point (hotspot) support, built by DKMS for every installed kernel.
+#
+# Why not the in-kernel rtl8xxxu or the AUR:
+#   - rtl8xxxu offers only managed/monitor modes on this chip (no AP, so no hotspot)
+#     and its firmware start fails intermittently (probe error -11)
+#   - 8188eu-aircrack-dkms-git (aircrack-ng v5.3.9) no longer compiles on kernels >= 6.9
+#   - 8188eu-dkms-git (lwfinger) fails to build on 7.x (drv_types.h not found)
+# The source is aircrack-ng/rtl8188eus with the kernel 6.x–7.2 build fixes of its open
+# PR #275 (gglluukk/rtl8188eus), pinned to the tested commit. See docs/WIFI-ADAPTER.md.
+pkgname=rtl8188eus-dkms
+_commit=f48878a7a66b1281e6eab0cf2b55e7149510daf2
+pkgver=5.3.9.r20260818
+pkgrel=1
+pkgdesc="RTL8188EUS USB Wi-Fi driver with AP (hotspot) mode, DKMS (DeloWay)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/aircrack-ng/rtl8188eus/pull/275"
+license=('GPL-2.0-only')
+depends=('dkms')
+makedepends=('git')
+conflicts=('8188eu-dkms' '8188eu-dkms-git' '8188eu-aircrack-dkms-git')
+install=rtl8188eus-dkms.install
+source=("rtl8188eus::git+https://github.com/gglluukk/rtl8188eus.git#commit=${_commit}"
+        'blacklist-rtl8xxxu.conf')
+sha256sums=('SKIP'
+            'SKIP')
+
+package() {
+    local dest="${pkgdir}/usr/src/${pkgname%-dkms}-${pkgver}"
+    install -dm755 "${dest}"
+    cd "${srcdir}/rtl8188eus"
+    cp -r --no-preserve=ownership core hal include os_dep platform Kconfig Makefile "${dest}/"
+    # dkms.conf name/version must match the /usr/src directory for the dkms pacman hook.
+    sed -e "s/^PACKAGE_NAME=.*/PACKAGE_NAME=\"${pkgname%-dkms}\"/" \
+        -e "s/^PACKAGE_VERSION=.*/PACKAGE_VERSION=\"${pkgver}\"/" \
+        -e '/^REMAKE_INITRD=/d' \
+        dkms.conf > "${dest}/dkms.conf"
+
+    # Keep the in-kernel driver off this chip so 8188eu binds it.
+    install -Dm644 "${srcdir}/blacklist-rtl8xxxu.conf" "${pkgdir}/usr/lib/modprobe.d/rtl8188eus-dkms.conf"
+}

@@ -78,7 +78,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignLeft
                     text: {
-                        if (!root.hotspotAvailable) return I18n.isRTL ? "غير متوفرة" : "Unavailable";
+                        if (!root.hotspotAvailable) return NetworkService.hotspotProblem || (I18n.isRTL ? "غير متوفرة" : "Unavailable");
                         if (root.hotspotEnabled) return I18n.isRTL ? ("مفعلة • " + I18n.isolate(root.hotspotSsid || "Hotspot")) : ("Active • " + I18n.isolate(root.hotspotSsid || "Hotspot"));
                         return I18n.isRTL ? "معطلة" : "Disabled";
                     }
