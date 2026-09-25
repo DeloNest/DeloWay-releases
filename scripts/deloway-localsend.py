@@ -410,7 +410,7 @@ class Peer:
 
     def cancel_send(self):
         if self.sender and self.sender.is_alive():
-            self.sender.cancelled = True
+            self.sender.cancel()
 
 
 class RequestHandler(BaseHTTPRequestHandler):
@@ -549,7 +549,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                                 'files': files, 'received': 0, 'saved': [], 'cancelled': False,
                                 'total': sum(f['size'] for f in files.values()), 'last': 0.0}
         if not accepted:
-            emit('receive-ended', sessionId=sid, reason='declined' if answered else 'expired')
+            reason = 'cancelled' if pending.get('cancelled') else ('declined' if answered else 'expired')
+            emit('receive-ended', sessionId=sid, reason=reason)
             self.reply(403)
             return
         self.reply(200, {'sessionId': sid, 'files': {fid: f['token'] for fid, f in files.items()}})
@@ -621,6 +622,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             emit('receive-ended', sessionId=sess['id'], reason='cancelled')
         elif pending:
             pending['accepted'] = False
+            pending['cancelled'] = True
             pending['event'].set()
         self.reply(200)
 
@@ -632,6 +634,16 @@ class Sender(threading.Thread):
         self.device = device
         self.paths = [p for p in paths if isinstance(p, str) and os.path.isfile(p)]
         self.cancelled = False
+        self.conn = None
+
+    def cancel(self):
+        self.cancelled = True
+        conn = self.conn
+        if conn is not None and conn.sock is not None:
+            try:   # wakes the thread blocked waiting for the receiver to accept
+                conn.sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
 
     def status(self, status, **fields):
         emit('send-status', status=status, device=self.device.get('alias') or self.device.get('ip'), **fields)
@@ -651,14 +663,34 @@ class Sender(threading.Thread):
                    'files': {fid: {k: f[k] for k in ('id', 'fileName', 'size', 'fileType')}
                              for fid, f in files.items()}}
         self.status('connecting', total=total)
+        # The receiver's user has to accept first: wait as long as they do.
+        self.conn = connect(self.device, ACCEPT_TIMEOUT + 10)
         try:
-            # The receiver's user has to accept first: wait as long as they do.
-            status, body = request_json(self.device, 'POST', '/api/localsend/v2/prepare-upload',
-                                        payload, timeout=ACCEPT_TIMEOUT + 10)
+            self.conn.request('POST', '/api/localsend/v2/prepare-upload', body=json.dumps(payload).encode(),
+                              headers={'Content-Type': 'application/json'})
+            resp = self.conn.getresponse()
+            data = resp.read()
+            status = resp.status
+            try:
+                body = json.loads(data) if data else None
+            except ValueError:
+                body = None
+        except TimeoutError:
+            if not self.cancelled:
+                self.status('failed', error='timeout')
+                return
         except (OSError, http.client.HTTPException):
-            self.status('failed', error='unreachable')
-            return
+            if not self.cancelled:
+                self.status('failed', error='unreachable')
+                return
+        finally:
+            self.conn.close()
+            self.conn = None
         if self.cancelled:
+            try:   # no session yet: the receiver drops its pending request
+                request_json(self.device, 'POST', '/api/localsend/v2/cancel', timeout=3)
+            except (OSError, http.client.HTTPException):
+                pass
             self.status('cancelled')
             return
         if status == 204:

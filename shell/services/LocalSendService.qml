@@ -287,6 +287,11 @@ Item {
         const list = files || root.droppedFiles;
         if (!list || list.length === 0 || !device) return;
         root.sendDevice = device;
+        if (!root.ready) {   // the peer is not running (python3 missing, crashed): say so
+            root.sendStatus = "failed";
+            root.sendError = "failed";
+            return;
+        }
         root.sendStatus = "connecting";
         root.sendProgress = 0;
         root.sendError = "";
