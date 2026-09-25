@@ -215,7 +215,7 @@ Item {
                 spacing: 8
 
                 SymbolicIcon {
-                    source: "weather-sunny"
+                    source: SystemMonitor.weatherIcon
                     iconSize: 13
                     iconColor: Theme.colors.textSecondary
                 }
@@ -242,7 +242,7 @@ Item {
                 spacing: 12
 
                 SymbolicIcon {
-                    source: "weather-sunny"
+                    source: SystemMonitor.weatherIcon
                     iconSize: 34
                     iconColor: Theme.colors.text
                 }

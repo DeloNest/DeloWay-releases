@@ -43,6 +43,22 @@ QtObject {
     property string weatherHumidity: "—"
     property string weatherWind: "—"
     property string weatherUv: "—"
+    property int weatherCode: 0      // wttr.in / WWO condition code
+    // The condition's icon (it was always a sun, even for "cloudy" or rain).
+    readonly property string weatherIcon: {
+        const c = root.weatherCode;
+        const h = new Date().getHours();
+        const night = h < 6 || h >= 19;
+        if (c === 113) return night ? "weather-clear-night-symbolic" : "weather-clear-symbolic";
+        if (c === 116) return "weather-few-clouds-symbolic";
+        if (c === 119 || c === 122) return "weather-overcast-symbolic";
+        if ([143, 248, 260].indexOf(c) >= 0) return "weather-fog-symbolic";
+        if ([200, 386, 389, 392, 395].indexOf(c) >= 0) return "weather-storm-symbolic";
+        if ([179, 227, 230, 323, 326, 329, 332, 335, 338, 350, 368, 371, 374, 377].indexOf(c) >= 0) return "weather-snow-symbolic";
+        if ([176, 263, 266, 293, 296, 353].indexOf(c) >= 0) return "weather-showers-scattered-symbolic";
+        if (c >= 176) return "weather-showers-symbolic";
+        return "weather-clear-symbolic";
+    }
 
     // Background Process for Sysinfo
     property var sysProcess: Process {
@@ -101,6 +117,7 @@ QtObject {
                     if (data.humidity) root.weatherHumidity = data.humidity + "%";
                     if (data.wind) root.weatherWind = data.wind + " km/h";
                     if (data.uv) root.weatherUv = data.uv;
+                    root.weatherCode = parseInt(data.code, 10) || 0;
                 } catch (e) {
                     // ignore parse errors
                 }

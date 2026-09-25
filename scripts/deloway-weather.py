@@ -15,6 +15,7 @@ try:
             "city": a["areaName"][0]["value"],
             "tempC": c["temp_C"],
             "desc": desc,
+            "code": c.get("weatherCode", ""),
             "humidity": c["humidity"],
             "wind": c["windspeedKmph"],
             "uv": c.get("uvIndex", "1")
