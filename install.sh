@@ -546,6 +546,37 @@ build_local_packages() {
     done
 }
 
+# ── 6a. Locales ───────────────────────────────────────────────────────────────
+# DeloWay is Arabic-first. Without a generated Arabic locale LANG cannot switch to
+# Arabic (glibc falls back to "C"), so app names in the Dock/App Drawer/search stay
+# English in the Arabic UI and GTK/Qt apps stay LTR. deloway-locale-apply.py switches
+# LANG on a language change only when the locale exists; this makes sure it does.
+configure_locales() {
+    log_step "6a. Generating Locales"
+    local want=("en_US.UTF-8 UTF-8" "ar_SA.UTF-8 UTF-8") missing=() l
+    for l in "${want[@]}"; do
+        grep -qE "^${l%% *}[[:space:]]" /etc/locale.gen 2>/dev/null || missing+=("$l")
+    done
+    if [ ${#missing[@]} -eq 0 ]; then
+        log_success "English and Arabic locales are enabled."
+        return
+    fi
+    log_info "Enabling locales: ${missing[*]%% *}"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}[DRY-RUN]${NC} enable ${missing[*]%% *} in /etc/locale.gen && sudo locale-gen"
+        return
+    fi
+    for l in "${missing[@]}"; do
+        # Uncomment the stock line, or append it when the file does not have one
+        if grep -qE "^#[[:space:]]*${l%% *}[[:space:]]" /etc/locale.gen; then
+            sudo sed -i -E "s|^#[[:space:]]*(${l%% *}[[:space:]].*)|\1|" /etc/locale.gen
+        else
+            echo "$l" | sudo tee -a /etc/locale.gen >/dev/null
+        fi
+    done
+    sudo locale-gen || log_warn "locale-gen failed; Arabic app names need the ar_SA.UTF-8 locale."
+}
+
 # ── 6b. Wi-Fi & Hotspot ───────────────────────────────────────────────────────
 # Everything a hotspot needs beyond the packages: the Wi-Fi country (without it the
 # kernel stays on the restrictive "world" domain 00) and, with Docker, forwarding for
@@ -782,6 +813,7 @@ main() {
     detect_hardware_deps
     queue_core_packages
     install_packages
+    configure_locales
     configure_networking
     configure_deloway
     print_completion_summary
