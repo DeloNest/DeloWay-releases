@@ -237,11 +237,11 @@ Item {
     // ── Outer Shape & Notch Framing ───────────────────────────────────────
     NotchFrame {
         id: notchFrame
-        // The bar mirrors in Arabic (clock at the reading start: left of the Notch in
-        // English, right of it in Arabic). The edge facing the Notch stays notchSlotOffset
-        // px from the screen centre either way.
-        x: I18n.isRTL ? Math.round(root.width / 2 + root.notchSlotOffset)
-                      : Math.round(root.width / 2 - root.notchSlotOffset - width)
+        // Fixed side, the same in every language: left of the Notch unless Settings → Top
+        // Bar swaps the capsules. The edge facing the Notch stays notchSlotOffset px from
+        // the screen centre either way.
+        x: ConfigManager.clockOnRight ? Math.round(root.width / 2 + root.notchSlotOffset)
+                                      : Math.round(root.width / 2 - root.notchSlotOffset - width)
         y: root.currentY
         isExpanded: root.isExpanded
         currentWidth: root.currentWidth

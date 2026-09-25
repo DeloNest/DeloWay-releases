@@ -119,6 +119,7 @@ Below is an annotated example of a complete `deloway.json` file:
 ### 3.4 `topBar`
 - `showBrand` *(boolean)*: Shows or hides the DeloOS brand badge and quick launcher button.
 - `showWorkspaces` *(boolean)*: Displays workspace indicator pills.
+- `capsuleOrder` *(string)*: Sides of the capsules around the Notch, the same in every language: `"clockLeft"` (default — clock left, Quick Settings right) or `"clockRight"`. Settings → Top Bar → Capsule Layout.
 - `clockFormat` *(string)*: `"12h"` (e.g. `09:30 AM`) or `"24h"` (e.g. `21:30`).
 - `workspacesCount` *(integer)*: Number of workspace numbers to show in the bar (default: `5`).
 

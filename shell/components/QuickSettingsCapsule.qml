@@ -518,9 +518,9 @@ Item {
     Item {
         id: capsuleContainer
         // Body edge facing the Notch stays at notchSlotOffset; the ear (earRadius wide) grows
-        // toward the Notch as this capsule expands. The bar mirrors in Arabic: Quick
-        // Settings sits at the reading end, right of the Notch in English, left in Arabic.
-        x: I18n.isRTL
+        // toward the Notch as this capsule expands. Fixed side, the same in every language:
+        // right of the Notch unless Settings → Top Bar swaps the capsules.
+        x: ConfigManager.clockOnRight
            ? Math.round(root.width / 2 - root.notchSlotOffset - root.currentWidth - root.earRadius * root.expandProgress)
            : Math.round(root.width / 2 + root.notchSlotOffset - root.earRadius * root.expandProgress)
         y: root.currentY
@@ -712,8 +712,8 @@ Item {
                     id: compactRow
                     anchors.centerIn: parent
                     spacing: 8
-                    // Settings gear at the outer end in both directions
-                    LayoutMirroring.enabled: I18n.isRTL
+                    // Settings gear at the capsule's outer end, whichever side it is on
+                    LayoutMirroring.enabled: ConfigManager.clockOnRight
                     LayoutMirroring.childrenInherit: true
 
                     // ── Battery Indicator (hidden on desktop) ──

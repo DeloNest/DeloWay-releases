@@ -68,6 +68,10 @@ Item {
     property string clockFormat: "12h"
     property int workspacesCount: 5
     property string workspaceIndicatorStyle: "icons" // "icons" | "numbers" | "dots"
+    // Sides of the top bar capsules around the Notch. Physical and the same in every
+    // language: "clockLeft" (default: clock left, Quick Settings right) | "clockRight".
+    property string capsuleOrder: "clockLeft"
+    readonly property bool clockOnRight: capsuleOrder === "clockRight"
     property bool timeCapsuleEnabled: true
     property bool timeCapsuleShowHijri: true
     property string timeCapsuleWeekStart: "saturday" // "saturday" | "sunday" | "monday"
@@ -301,6 +305,8 @@ Item {
                 if (cfg.topBar.clockFormat) root.clockFormat = cfg.topBar.clockFormat;
                 if (cfg.topBar.workspacesCount) root.workspacesCount = cfg.topBar.workspacesCount;
                 if (cfg.topBar.workspaceIndicatorStyle) root.workspaceIndicatorStyle = cfg.topBar.workspaceIndicatorStyle;
+                if (cfg.topBar.capsuleOrder === "clockLeft" || cfg.topBar.capsuleOrder === "clockRight")
+                    root.capsuleOrder = cfg.topBar.capsuleOrder;
                 if (cfg.topBar.timeCapsuleEnabled !== undefined) root.timeCapsuleEnabled = cfg.topBar.timeCapsuleEnabled;
                 if (cfg.topBar.timeCapsuleShowHijri !== undefined) root.timeCapsuleShowHijri = cfg.topBar.timeCapsuleShowHijri;
                 if (cfg.topBar.timeCapsuleWeekStart) root.timeCapsuleWeekStart = cfg.topBar.timeCapsuleWeekStart;
@@ -529,6 +535,7 @@ Item {
         setDimInactive(false);
         setWorkspacesCount(5);
         setWorkspaceIndicatorStyle("icons");
+        setCapsuleOrder("clockLeft");
         setTopBarShowWorkspaces(true);
         setNotificationsDnd(false);
         setNotificationsSound(false);
@@ -640,6 +647,12 @@ Item {
         saveConfig();
         // App corner radii follow the shell's (passed to the theme script as --radius)
         if (root.applySystemTheme) updateGtkThemes();
+    }
+
+    function setCapsuleOrder(order) {
+        if (order !== "clockLeft" && order !== "clockRight") return;
+        root.capsuleOrder = order;
+        saveConfig();
     }
 
     function setWorkspaceIndicatorStyle(style) {
@@ -887,6 +900,7 @@ Item {
                 clockFormat: root.clockFormat,
                 workspacesCount: root.workspacesCount,
                 workspaceIndicatorStyle: root.workspaceIndicatorStyle,
+                capsuleOrder: root.capsuleOrder,
                 timeCapsuleEnabled: root.timeCapsuleEnabled,
                 timeCapsuleShowHijri: root.timeCapsuleShowHijri,
                 timeCapsuleWeekStart: root.timeCapsuleWeekStart,

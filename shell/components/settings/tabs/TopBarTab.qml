@@ -31,6 +31,66 @@ Item {
         LayoutMirroring.childrenInherit: true
 
         SettingsSection {
+            title: I18n.isRTL ? "ترتيب الكبسولات" : "Capsule Layout"
+
+            // Which side of the Notch the clock and Quick Settings sit on. Physical and
+            // language-independent, so the two choices are drawn in screen order.
+            SettingsRow {
+                title: I18n.isRTL ? "موضع الساعة والإعدادات السريعة" : "Clock and Quick Settings position"
+                subtitle: I18n.isRTL
+                    ? "على جانبي النوتش؛ الكبسولة الأخرى تأخذ الجانب المقابل، ولا يتغير الترتيب مع اللغة"
+                    : "On either side of the Notch; the other capsule takes the opposite side, in every language"
+                icon: "view-dual-symbolic"
+                showDivider: false
+
+                RowLayout {
+                    spacing: Theme.space4
+                    LayoutMirroring.enabled: false          // screen order: left pill = left layout
+                    LayoutMirroring.childrenInherit: true
+
+                    Repeater {
+                        model: [
+                            { id: "clockLeft",  label: I18n.isRTL ? "الساعة يساراً (افتراضي)" : "Clock left (Default)" },
+                            { id: "clockRight", label: I18n.isRTL ? "الساعة يميناً" : "Clock right" }
+                        ]
+                        delegate: Rectangle {
+                            id: orderPill
+                            required property var modelData
+                            readonly property bool isSelected: ConfigManager.capsuleOrder === modelData.id
+
+                            height: 28
+                            implicitWidth: orderText.implicitWidth + Theme.space16
+                            radius: 14
+                            color: orderPill.isSelected ? Theme.notchSurfaceActive : (orderMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: orderPill.isSelected ? Theme.notchBorderHighlight : (orderMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                id: orderText
+                                anchors.centerIn: parent
+                                text: orderPill.modelData.label
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: orderPill.isSelected ? Font.DemiBold : Font.Normal
+                                color: orderPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
+                            }
+
+                            MouseArea {
+                                id: orderMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ConfigManager.setCapsuleOrder(orderPill.modelData.id)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        SettingsSection {
             title: I18n.isRTL ? "النوتش الذكي" : "Smart Notch"
 
             // Show Workspaces Indicator
