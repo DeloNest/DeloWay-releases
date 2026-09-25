@@ -2,7 +2,7 @@
   "theme": {
     "mode": "dark",
     "wallpaper": "",
-    "fontSizeScale": 1.25,
+    "fontSizeScale": 1.0,
     "transparencyLevel": 3,
     "elementRadius": 8,
     "performanceTier": 1
