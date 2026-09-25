@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import "."
 
 // Notch → Share: LocalSend without the LocalSend app. scripts/deloway-localsend.py is a
@@ -17,7 +18,8 @@ Item {
     property string localAlias: ""
     property string fingerprint: ""
     property bool receiving: false        // other devices can send here
-    property string peerError: ""         // "port_busy" (the LocalSend app holds the port), …
+    property string peerError: ""         // "port_busy" (another program holds port 53317), …
+    property bool appElsewhere: false     // …and that program is the LocalSend app
     property var addresses: []            // [{interface, ip}] this computer is reachable on
     property string downloadDir: ""
     readonly property string localIp: addresses.length > 0 ? addresses[0].ip : ""
@@ -79,12 +81,14 @@ Item {
     // ── When the peer runs ────────────────────────────────────────────────
     readonly property bool panelVisible: ShellState.smartNotchExpanded && ShellState.smartNotchTab === 2
     onPanelVisibleChanged: if (panelVisible) root.scan()   // fresh online states on opening
-    readonly property bool wanted: root.hasPaired || root.panelVisible || root.isSending
-                                   || root.isReceiving || root.droppedFiles.length > 0
+    readonly property bool wanted: !root.appOpen
+                                   && (root.hasPaired || root.panelVisible || root.isSending
+                                       || root.isReceiving || root.droppedFiles.length > 0)
     property bool _run: false
     on_RunChanged: peer.running = root._run
     onWantedChanged: {
         if (root.wanted) { idleStop.stop(); root._run = true; }
+        else if (root.appOpen) { idleStop.stop(); root._run = false; }   // free the port now
         else idleStop.restart();
     }
     // Linger a minute after the last reason to run, so flipping tabs does not restart it.
@@ -98,6 +102,7 @@ Item {
         stdout: SplitParser { onRead: data => root._handle(data) }
         onRunningChanged: {
             if (!running) {
+                if (root.appOpen && !app.running) app.running = true;   // the port is free now
                 root.ready = false;
                 root.receiving = false;
                 root.isScanning = false;
@@ -109,6 +114,51 @@ Item {
     }
     // The peer died while needed: start it again, not in a tight loop.
     Timer { id: restartPeer; interval: 5000; onTriggered: if (root._run && !peer.running) peer.running = true }
+
+    // ── The LocalSend app ─────────────────────────────────────────────────
+    // For the app's full experience. It needs port 53317 too, so while it runs (started
+    // here) the peer steps aside, and comes back when the app is closed.
+    readonly property bool appInstalled: {
+        const _r = root._entriesRev;
+        return !!DesktopEntries.byId("localsend");
+    }
+    property int _entriesRev: 0
+    Connections {
+        target: DesktopEntries
+        function onApplicationsChanged() { root._entriesRev++; }
+    }
+    property bool appOpen: false          // started from here and still running
+    // Opened elsewhere (the peer found port 53317 taken): same situation for the user.
+    readonly property bool appHoldsPort: root.appOpen || root.appElsewhere
+
+    Process {
+        id: app
+        command: ["localsend"]
+        onRunningChanged: if (!running) root.appOpen = false
+    }
+
+    function openApp() {
+        if (app.running || root.appElsewhere) {
+            Hyprland.dispatch("focuswindow class:^(org\\.localsend\\.localsend_app)$");
+            return;
+        }
+        root.appOpen = true;               // stops the peer; it starts the app once it is gone
+        if (!peer.running) app.running = true;
+    }
+
+    // Back to sharing from the Notch: close the app (ours, or one opened elsewhere).
+    function closeApp() {
+        if (app.running) {
+            app.running = false;
+        } else if (root.appElsewhere) {
+            Quickshell.execDetached(["pkill", "-x", "localsend"]);
+            root.peerError = "";
+            root.appElsewhere = false;
+            root._run = false;             // restart the peer so it takes the port
+            peerRestart.restart();
+        }
+    }
+    Timer { id: peerRestart; interval: 1500; onTriggered: root._run = root.wanted }
 
     function _cmd(obj) {
         if (peer.running) peer.write(JSON.stringify(obj) + "\n");
@@ -124,6 +174,7 @@ Item {
             root.fingerprint = ev.fingerprint || "";
             root.receiving = !!ev.receiving;
             root.peerError = ev.error || "";
+            root.appElsewhere = !!ev.appRunning;
             root.downloadDir = ev.downloadDir || "";
             // First run: the phones already saved in the LocalSend app come along.
             if (ConfigManager.shareDevices === null)

@@ -15,6 +15,7 @@ import "../services"
 //   select   files staged: pick who gets them
 //   send     an outgoing transfer (waiting for accept, progress, sent, failed)
 //   receive  an incoming transfer (accept/decline, progress, received)
+//   app      the LocalSend app is open and holds the port: show it, or close it
 Item {
     id: root
 
@@ -27,6 +28,7 @@ Item {
     readonly property string view: {
         if (LocalSendService.receiveStatus !== "idle") return "receive";
         if (LocalSendService.sendStatus !== "idle") return "send";
+        if (LocalSendService.appHoldsPort) return "app";
         if (root.pairing) return "pair";
         if (LocalSendService.droppedFiles.length > 0) return "select";
         return LocalSendService.hasPaired ? "home" : "empty";
@@ -322,6 +324,11 @@ Item {
                 }
             }
             Pill {
+                visible: LocalSendService.appInstalled
+                label: I18n.tr("share_open_app")
+                onActivated: LocalSendService.openApp()
+            }
+            Pill {
                 label: I18n.tr("share_connect")
                 icon: "list-add-symbolic"
                 primary: true
@@ -515,10 +522,18 @@ Item {
                         text: I18n.tr("share_drop_hint")
                         color: Theme.notchText
                     }
-                    Pill {
+                    RowLayout {
                         Layout.alignment: Qt.AlignHCenter
-                        label: I18n.tr("share_choose_files")
-                        onActivated: if (!chooser.running) chooser.running = true
+                        spacing: 8
+                        Pill {
+                            label: I18n.tr("share_choose_files")
+                            onActivated: if (!chooser.running) chooser.running = true
+                        }
+                        Pill {
+                            visible: LocalSendService.appInstalled
+                            label: I18n.tr("share_open_app")
+                            onActivated: LocalSendService.openApp()
+                        }
                     }
                 }
             }
@@ -552,10 +567,9 @@ Item {
                         Layout.fillWidth: true
                         font.pixelSize: Theme.fontSize(9)
                         color: Theme.notchTextTertiary
-                        text: LocalSendService.peerError === "port_busy" ? I18n.tr("share_port_busy")
-                              : (LocalSendService.receiving
-                                 ? I18n.uiLine(I18n.tr("share_visible_as") + " " + I18n.isolate(LocalSendService.localAlias))
-                                 : (LocalSendService.ready ? I18n.tr("share_not_visible") : ""))
+                        text: LocalSendService.receiving
+                              ? I18n.uiLine(I18n.tr("share_visible_as") + " " + I18n.isolate(LocalSendService.localAlias))
+                              : (LocalSendService.ready ? I18n.tr("share_not_visible") : "")
                     }
                     Pill {
                         label: I18n.tr("share_add_device")
@@ -629,6 +643,46 @@ Item {
                     primary: true
                     onActivated: { root.pairing = true; LocalSendService.scan(); }
                 }
+            }
+        }
+
+        // ── APP: the LocalSend app has the port ─────────────────────────
+        RowLayout {
+            anchors.centerIn: parent
+            width: Math.min(parent.width, 540)
+            spacing: 16
+            visible: root.view === "app"
+
+            Rectangle {
+                implicitWidth: 52
+                implicitHeight: 52
+                radius: 26
+                color: Theme.notchSurfaceElevated
+                SymbolicIcon {
+                    anchors.centerIn: parent
+                    source: "document-send-symbolic"
+                    iconSize: 24
+                    iconColor: Theme.notchText
+                }
+            }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 2
+                Title { Layout.fillWidth: true; text: I18n.tr("share_app_open") }
+                Caption {
+                    Layout.fillWidth: true
+                    text: I18n.tr("share_app_open_hint")
+                    wrapMode: Text.WordWrap
+                }
+            }
+            Pill {
+                label: I18n.tr("share_app_show")
+                onActivated: LocalSendService.openApp()
+            }
+            Pill {
+                label: I18n.tr("share_app_back")
+                primary: true
+                onActivated: LocalSendService.closeApp()
             }
         }
 

@@ -753,8 +753,12 @@ def serve(args):
         peer.open_multicast()
     except OSError:
         peer.mcast = None
+    # Port taken: by the LocalSend app itself, or by something else.
+    app_running = bool(peer.error == 'port_busy' and shutil.which('pgrep') and subprocess.run(
+        ['pgrep', '-x', 'localsend'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0)
     emit('ready', alias=peer.alias, fingerprint=peer.fingerprint, port=peer.port,
-         receiving=peer.receiving, error=peer.error, multicast=peer.mcast is not None,
+         receiving=peer.receiving, error=peer.error, appRunning=app_running,
+         multicast=peer.mcast is not None,
          downloadDir=peer.download_dir, appFavorites=peer.favorites)
     peer.announce()
 
