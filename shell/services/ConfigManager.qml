@@ -41,8 +41,11 @@ Item {
     property bool applySystemTheme: true
 
     // Desktop Settings (§5.8)
-    property string desktopMode: "clean"
-    property bool showDesktopIcons: true
+    // What the desktop shows — "traditional" (icons) | "widgets" — and whether it shows it
+    // at all. Hiding leaves an empty desktop (wallpaper only) without forgetting the mode.
+    // ("clean" used to be a third mode meaning "empty"; it maps to showDesktopContent.)
+    property string desktopMode: "traditional"
+    property bool showDesktopContent: false
     property var enabledWidgets: ["clock", "weather", "system_monitor", "notes"]
     property var widgetPositions: ({
         "clock": { "x": 60, "y": 70 },
@@ -278,8 +281,12 @@ Item {
                 if (cfg.theme.applySystemTheme !== undefined) root.applySystemTheme = cfg.theme.applySystemTheme;
             }
             if (cfg.desktop) {
-                if (cfg.desktop.mode) root.desktopMode = cfg.desktop.mode;
-                if (cfg.desktop.showIcons !== undefined) root.showDesktopIcons = cfg.desktop.showIcons;
+                if (cfg.desktop.mode === "traditional" || cfg.desktop.mode === "widgets") {
+                    root.desktopMode = cfg.desktop.mode;
+                    root.showDesktopContent = cfg.desktop.showContent !== undefined ? !!cfg.desktop.showContent : true;
+                } else if (cfg.desktop.mode === "clean") {
+                    root.showDesktopContent = false;     // legacy empty mode
+                }
                 if (cfg.desktop.widgetPositions) root.widgetPositions = cfg.desktop.widgetPositions;
                 if (cfg.desktop.enabledWidgets) root.enabledWidgets = cfg.desktop.enabledWidgets;
             }
@@ -545,14 +552,17 @@ Item {
         setClockFormat("12h");
     }
 
+    // Choosing what the desktop shows also shows it. "clean" (legacy, IPC) = hide it.
     function setDesktopMode(mode) {
-        if (mode !== "clean" && mode !== "widgets" && mode !== "traditional") return;
+        if (mode === "clean") { root.setShowDesktopContent(false); return; }
+        if (mode !== "widgets" && mode !== "traditional") return;
         root.desktopMode = mode;
+        root.showDesktopContent = true;
         saveConfig();
     }
 
-    function setShowDesktopIcons(val) {
-        root.showDesktopIcons = val;
+    function setShowDesktopContent(val) {
+        root.showDesktopContent = !!val;
         saveConfig();
     }
 
@@ -881,7 +891,7 @@ Item {
             },
             desktop: {
                 mode: root.desktopMode,
-                showIcons: root.showDesktopIcons,
+                showContent: root.showDesktopContent,
                 widgetPositions: root.widgetPositions,
                 enabledWidgets: root.enabledWidgets
             },

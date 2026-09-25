@@ -457,7 +457,10 @@ PanelWindow {
                             delegate: DeloCard {
                                 id: dCard
                                 required property var modelData
-                                readonly property bool isSelected: ConfigManager.desktopMode === dCard.modelData.id
+                                // "clean" = the desktop content hidden; the others = that content shown
+                                readonly property bool isSelected: dCard.modelData.id === "clean"
+                                    ? !ConfigManager.showDesktopContent
+                                    : (ConfigManager.showDesktopContent && ConfigManager.desktopMode === dCard.modelData.id)
 
                                 Layout.fillWidth: true
                                 height: 160

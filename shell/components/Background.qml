@@ -58,22 +58,22 @@ PanelWindow {
     // 2. DESKTOP MODE SURFACES (§5.8)
     // ----------------------------------------------------
 
-    // Mode A: Clean Desktop (Minimalist wallpaper only)
+    // Desktop content hidden: an empty desktop (wallpaper only, right-click still works)
     CleanDesktop {
         anchors.fill: parent
-        visible: ConfigManager.desktopMode === "clean"
+        visible: !ConfigManager.showDesktopContent
     }
 
-    // Mode B: Widgets Desktop (Draggable Fluent widgets)
+    // Widgets Desktop (draggable Fluent widgets)
     WidgetsDesktop {
         anchors.fill: parent
-        visible: ConfigManager.desktopMode === "widgets"
+        visible: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "widgets"
     }
 
-    // Mode C: Traditional Desktop (Icons grid & rubber-band select)
+    // Traditional Desktop (icons grid & rubber-band select)
     TraditionalDesktop {
         anchors.fill: parent
-        visible: ConfigManager.desktopMode === "traditional"
+        visible: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "traditional"
     }
 
     // ----------------------------------------------------

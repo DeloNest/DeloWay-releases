@@ -30,8 +30,8 @@ Below is an annotated example of a complete `deloway.json` file:
     "wallpaper": ""
   },
   "desktop": {
-    "mode": "clean",
-    "showIcons": true,
+    "mode": "traditional",
+    "showContent": true,
     "widgetPositions": {
       "clock": { "x": 60, "y": 70 },
       "weather": { "x": 380, "y": 70 },
@@ -101,11 +101,11 @@ Below is an annotated example of a complete `deloway.json` file:
 - `wallpaper` *(string, path)*: Absolute path to the desktop wallpaper image (JPEG, PNG, WebP). Empty, or a file that no longer exists, falls back to `assets/wallpaper.jpg`.
 
 ### 3.2 `desktop`
-- `mode` *(string)*: Selects the desktop presentation style:
-  - `"clean"`: Minimalist wallpaper view without file or widget clutter.
-  - `"widgets"`: Draggable Fluent Mica widgets.
+- `mode` *(string)*: What the desktop shows:
   - `"traditional"`: Full desktop icon grid with files, folders, and rubber-band selection.
-- `showIcons` *(boolean)*: Toggles visibility of desktop shortcut icons in traditional mode.
+  - `"widgets"`: Draggable Fluent Mica widgets.
+  - (`"clean"`, from older configs, is read as `showContent: false`.)
+- `showContent` *(boolean)*: Shows the desktop's icons or widgets; `false` leaves an empty desktop (wallpaper only) and keeps `mode` for when it is shown again. Toggled from the desktop's right-click menu.
 - `widgetPositions` *(object)*: Map of widget IDs (`"clock"`, `"weather"`, `"system_monitor"`, `"notes"`) to their desktop coordinate objects `{ "x": number, "y": number }`.
 - `enabledWidgets` *(array of strings)*: List of active widgets rendered on the desktop in widgets mode.
 

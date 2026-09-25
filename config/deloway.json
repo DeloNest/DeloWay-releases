@@ -8,8 +8,8 @@
     "performanceTier": 1
   },
   "desktop": {
-    "mode": "clean",
-    "showIcons": true,
+    "mode": "traditional",
+    "showContent": false,
     "widgetPositions": {},
     "enabledWidgets": [
       "clock",
