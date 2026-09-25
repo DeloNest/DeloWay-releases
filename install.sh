@@ -614,17 +614,18 @@ configure_networking() {
         log_info "No Wi-Fi adapter present; skipping Wi-Fi country setup."
     fi
 
-    # Docker drops forwarded traffic (FORWARD policy DROP), so hotspot clients connect but
-    # get no internet. The dispatcher script allows forwarding for shared connections
-    # while they are up (DOCKER-USER chain).
-    if command -v docker &>/dev/null; then
-        log_info "Docker found: installing the hotspot forwarding hook for NetworkManager."
+    # A host firewall (ufw, Docker) drops what hotspot clients need: ufw their DHCP/DNS
+    # requests and forwarding (phones join but never get an address), Docker their
+    # forwarding (no internet). The dispatcher script opens exactly that, for the hotspot
+    # interface, while a shared connection is up.
+    if command -v ufw &>/dev/null || command -v docker &>/dev/null; then
+        log_info "Firewall found: installing the hotspot hook for NetworkManager."
         if [ "$DRY_RUN" = true ]; then
             echo -e "${CYAN}[DRY-RUN]${NC} sudo install -Dm755 system/NetworkManager/dispatcher.d/90-deloway-hotspot-forward /etc/NetworkManager/dispatcher.d/"
         else
             sudo install -Dm755 "$DELOWAY_DIR/system/NetworkManager/dispatcher.d/90-deloway-hotspot-forward" \
                 /etc/NetworkManager/dispatcher.d/90-deloway-hotspot-forward \
-                || log_warn "Could not install the hotspot forwarding hook."
+                || log_warn "Could not install the hotspot hook."
         fi
     fi
 }
