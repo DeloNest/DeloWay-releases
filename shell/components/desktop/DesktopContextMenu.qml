@@ -6,6 +6,7 @@ import Quickshell.Wayland
 import "../../theme"
 import "../../services"
 import "../"
+import "../menu"
 
 // The desktop's right-click menu, in its own surface on the Top layer.
 // It used to be drawn inside the wallpaper surface (Background layer), i.e. below every
@@ -47,161 +48,18 @@ PanelWindow {
         onWheel: function(wheel) { wheel.accepted = true; }
     }
 
-    // Reusable Clean Fluent Context Menu Item
-    component ContextMenuItem: Rectangle {
-        id: cItem
-        property string title: ""
-        property string iconSource: ""
-        property bool isUrgent: false
-        property bool isCheckable: false
-        property bool isChecked: false
-        property bool hasSubmenu: false
-        signal triggered()
+    readonly property var target: DesktopManager.contextMenuTargetItem
+    readonly property bool onItem: target !== null && target !== undefined
 
-        Layout.fillWidth: true
-        Layout.preferredHeight: 32
-        Layout.leftMargin: 6
-        Layout.rightMargin: 6
-        radius: Theme.radiusSmall
-
-        color: cItem.isChecked
-               ? Theme.notchSurfaceElevated
-               : (itemMouse.pressed ? Theme.notchSurfaceActive : (itemMouse.containsMouse ? Theme.notchSurfaceHover : "transparent"))
-
-        Behavior on color { ColorAnimation { duration: 80 } }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 10
-            anchors.rightMargin: 10
-            spacing: 9
-
-            SymbolicIcon {
-                visible: cItem.iconSource.length > 0
-                source: cItem.iconSource
-                iconSize: 14
-                iconColor: cItem.isUrgent
-                           ? Theme.danger
-                           : (itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
-            }
-
-            Text {
-                horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
-                Layout.fillWidth: true
-                text: cItem.title
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(12)
-                font.weight: cItem.isChecked ? Font.DemiBold : Font.Medium
-                color: itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                elide: Text.ElideRight
-                renderType: Theme.renderType
-            }
-
-            // Checkmark for toggle items
-            Text {
-                visible: cItem.isCheckable && cItem.isChecked
-                text: "✓"
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(12)
-                font.weight: Font.Bold
-                color: Theme.notchText
-            }
-
-            // Submenu chevron
-            Text {
-                visible: cItem.hasSubmenu
-                text: I18n.isRTL ? "‹" : "›"
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(14)
-                font.weight: Font.DemiBold
-                color: itemMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-            }
-        }
-
-        MouseArea {
-            id: itemMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                cItem.triggered();
-            }
-        }
-    }
-
-    // Modern Desktop Mode Selector Option
-    component ModeOptionItem: Rectangle {
-        id: mItem
-        property string modeId: ""
-        property string title: ""
-        readonly property bool isActive: ConfigManager.desktopMode === modeId
-
-        Layout.fillWidth: true
-        Layout.preferredHeight: 30
-        Layout.leftMargin: 6
-        Layout.rightMargin: 6
-        radius: Theme.radiusSmall
-
-        color: mItem.isActive
-               ? Theme.notchSurfaceElevated
-               : (mMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
-        border.color: mItem.isActive
-                      ? Theme.notchBorder
-                      : (mMouse.containsMouse ? Theme.notchBorderSubtle : "transparent")
-        border.width: 1
-
-        Behavior on color { ColorAnimation { duration: 80 } }
-        Behavior on border.color { ColorAnimation { duration: 80 } }
-
-        RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 12
-            anchors.rightMargin: 10
-            spacing: 8
-
-            Text {
-                horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
-                Layout.fillWidth: true
-                text: mItem.title
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                font.weight: mItem.isActive ? Font.DemiBold : Font.Normal
-                color: mItem.isActive ? Theme.notchText : (mMouse.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
-                elide: Text.ElideRight
-                renderType: Theme.renderType
-            }
-
-            // Minimalist active dot / check
-            Text {
-                visible: mItem.isActive
-                text: "✓"
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                font.weight: Font.Bold
-                color: Theme.notchText
-            }
-        }
-
-        MouseArea {
-            id: mMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                ConfigManager.setDesktopMode(mItem.modeId);
-                DesktopManager.closeContextMenu();
-            }
-        }
-    }
-
-    // Outer card: flat OLED surface, 1px border (no shadow or glow)
+    // Same card as AppContextMenu: opaque, radiusLarge, 1px border, no shadow; fades in
+    // with a short slide.
     Rectangle {
         id: menuCard
+        width: 228
+        height: menuCol.implicitHeight + 10
         // Opens toward the reading end of the pointer (left of it in Arabic).
         x: Math.max(12, Math.min(I18n.isRTL ? DesktopManager.contextMenuX - width : DesktopManager.contextMenuX, root.width - width - 12))
         y: Math.max(12, Math.min(DesktopManager.contextMenuY, root.height - height - 12))
-        width: 232
-        implicitHeight: menuCol.implicitHeight + 14
         radius: Theme.radiusLarge
         color: Theme.notchBackground
         border.color: Theme.notchBorder
@@ -210,154 +68,107 @@ PanelWindow {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        // Smooth fade & scale entrance
         opacity: root.shown ? 1.0 : 0.0
-        scale: root.shown ? 1.0 : 0.96
-        Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
-        Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
-
-        // Prevent clicks inside menu from closing it
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {}
+        transform: Translate {
+            y: root.shown ? 0 : -3
+            Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
         }
+        Behavior on opacity { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
+
+        // Clicks inside the card never reach the dismiss area
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton }
 
         ColumnLayout {
             id: menuCol
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.topMargin: 7
-            anchors.bottomMargin: 7
-            spacing: 2
+            anchors.margins: 5
+            spacing: 0
 
-            // ====================================================
-            // SCENARIO A: WALLPAPER CONTEXT MENU
-            // ====================================================
+            // ── On the desktop itself ───────────────────────────────────
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
-                visible: DesktopManager.contextMenuTargetItem === null
+                spacing: 0
+                visible: !root.onItem
 
-                ContextMenuItem {
-                    title: I18n.isRTL ? "مجلد جديد" : "New Folder"
-                    iconSource: "folder"
+                MenuItem {
+                    text: I18n.isRTL ? "مجلد جديد" : "New Folder"
+                    icon: "folder-new-symbolic"
                     onTriggered: {
                         DesktopManager.createFolder(I18n.isRTL ? "مجلد جديد" : "New Folder");
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
-                    title: I18n.isRTL ? "مستند نصي جديد" : "New Text Document"
-                    iconSource: "document"
+                MenuItem {
+                    text: I18n.isRTL ? "مستند نصي جديد" : "New Text Document"
+                    icon: "document-new-symbolic"
                     onTriggered: {
                         DesktopManager.createDocument(I18n.isRTL ? "مستند جديد.txt" : "New Document.txt");
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
-                    title: I18n.isRTL ? "فتح في الطرفية" : "Open Terminal Here"
-                    iconSource: "utilities-terminal"
+                MenuItem {
+                    text: I18n.isRTL ? "فتح في الطرفية" : "Open Terminal Here"
+                    icon: "utilities-terminal-symbolic"
                     onTriggered: {
                         DesktopManager.openTerminalHere();
                         DesktopManager.closeContextMenu();
                     }
                 }
 
-                // Separator
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    Layout.leftMargin: 8
-                    Layout.rightMargin: 8
-                    Layout.topMargin: 3
-                    Layout.bottomMargin: 3
-                    color: Theme.notchBorderSubtle
-                }
+                MenuSeparator {}
 
-                ContextMenuItem {
-                    title: I18n.isRTL ? "ترتيب الأيقونات تلقائياً" : "Auto-Arrange Icons"
-                    iconSource: "view-grid"
+                MenuItem {
+                    text: I18n.isRTL ? "ترتيب الأيقونات تلقائياً" : "Auto-Arrange Icons"
+                    icon: "view-app-grid-symbolic"
                     onTriggered: {
                         DesktopManager.autoArrangeIcons(root.width, root.height);
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
-                    title: I18n.isRTL ? "المحاذاة للشبكة" : "Align to Grid"
-                    isCheckable: true
-                    isChecked: DesktopManager.snapToGrid
-                    onTriggered: {
-                        DesktopManager.snapToGrid = !DesktopManager.snapToGrid;
-                    }
+                MenuItem {
+                    text: I18n.isRTL ? "المحاذاة للشبكة" : "Align to Grid"
+                    icon: "snap-symbolic"
+                    toggle: true
+                    checked: DesktopManager.snapToGrid
+                    onTriggered: DesktopManager.snapToGrid = !DesktopManager.snapToGrid
                 }
 
-                // Separator
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    Layout.leftMargin: 8
-                    Layout.rightMargin: 8
-                    Layout.topMargin: 3
-                    Layout.bottomMargin: 3
-                    color: Theme.notchBorderSubtle
+                MenuSeparator {}
+
+                MenuItem {
+                    text: I18n.isRTL ? "أيقونات حرة (تقليدي)" : "Free Icons (Traditional)"
+                    checkable: true
+                    checked: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "traditional"
+                    onTriggered: { ConfigManager.setDesktopMode("traditional"); DesktopManager.closeContextMenu(); }
+                }
+                MenuItem {
+                    text: I18n.isRTL ? "ودجات ذكية" : "Smart Widgets"
+                    checkable: true
+                    checked: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "widgets"
+                    onTriggered: { ConfigManager.setDesktopMode("widgets"); DesktopManager.closeContextMenu(); }
+                }
+                MenuItem {
+                    text: I18n.isRTL ? "نظيف (خلفية فقط)" : "Clean (Wallpaper Only)"
+                    checkable: true
+                    checked: !ConfigManager.showDesktopContent
+                    onTriggered: { ConfigManager.setDesktopMode("clean"); DesktopManager.closeContextMenu(); }
                 }
 
-                // Desktop Mode Sub-header
-                Text {
-                    Layout.leftMargin: 14
-                    Layout.rightMargin: 14
-                    Layout.topMargin: 2
-                    Layout.bottomMargin: 1
-                    text: I18n.isRTL ? "وضع سطح المكتب" : "DESKTOP MODE"
-                    font.family: Theme.typography.fontFamily
-                    font.pixelSize: Theme.fontSize(10)
-                    font.weight: Font.DemiBold
-                    color: Theme.notchTextTertiary
-                    renderType: Theme.renderType
-                }
+                MenuSeparator {}
 
-                ModeOptionItem {
-                    modeId: "traditional"
-                    title: I18n.isRTL ? "أيقونات حرة (تقليدي)" : "Free Icons (Traditional)"
-                }
-
-                ModeOptionItem {
-                    modeId: "widgets"
-                    title: I18n.isRTL ? "ودجات ذكية" : "Smart Widgets"
-                }
-
-                ModeOptionItem {
-                    modeId: "clean"
-                    title: I18n.isRTL ? "نظيف (خلفية فقط)" : "Clean (Wallpaper Only)"
-                }
-
-                // Separator
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    Layout.leftMargin: 8
-                    Layout.rightMargin: 8
-                    Layout.topMargin: 3
-                    Layout.bottomMargin: 3
-                    color: Theme.notchBorderSubtle
-                }
-
-                ContextMenuItem {
-                    title: I18n.isRTL ? "تغيير الخلفية..." : "Change Wallpaper..."
-                    iconSource: "image"
+                MenuItem {
+                    text: I18n.isRTL ? "تغيير الخلفية…" : "Change Wallpaper…"
+                    icon: "preferences-desktop-wallpaper-symbolic"
                     onTriggered: {
                         ShellState.openSettingsTab("wallpaper");
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
-                    title: I18n.isRTL ? "إعدادات سطح المكتب..." : "Desktop Settings..."
-                    iconSource: "settings"
+                MenuItem {
+                    text: I18n.isRTL ? "إعدادات سطح المكتب…" : "Desktop Settings…"
+                    icon: "preferences-desktop-symbolic"
                     onTriggered: {
                         ShellState.openSettingsTab("desktop");
                         DesktopManager.closeContextMenu();
@@ -365,138 +176,85 @@ PanelWindow {
                 }
             }
 
-            // ====================================================
-            // SCENARIO B: ITEM / FILE CONTEXT MENU
-            // ====================================================
+            // ── On a desktop item ────────────────────────────────────────
             ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 2
-                visible: DesktopManager.contextMenuTargetItem !== null
+                spacing: 0
+                visible: root.onItem
 
-                // Item Header Preview
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 36
-                    Layout.leftMargin: 6
-                    Layout.rightMargin: 6
-                    Layout.bottomMargin: 2
-                    radius: Theme.radiusSmall
-                    color: Theme.notchSurface
-                    border.color: Theme.notchBorderSubtle
-                    border.width: 1
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 8
-                        spacing: 8
-
-                        AppIcon {
-                            iconSize: 22
-                            source: DesktopManager.contextMenuTargetItem ? DesktopManager.contextMenuTargetItem.icon : "folder"
-                        }
-
-                        Text {
-                            Layout.fillWidth: true
-                            elide: Text.ElideRight
-                            horizontalAlignment: Text.AlignLeft   // next to the icon, whatever the name's script
-                            text: DesktopManager.contextMenuTargetItem ? DesktopManager.contextMenuTargetItem.name : ""
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(11)
-                            font.weight: Font.DemiBold
-                            color: Theme.notchText
-                            renderType: Theme.renderType
-                        }
-                    }
+                MenuHeader {
+                    icon: root.onItem ? root.target.icon : "folder"
+                    title: root.onItem ? root.target.name : ""
                 }
+                MenuSeparator {}
 
-                ContextMenuItem {
-                    title: I18n.isRTL ? "فتح" : "Open"
-                    iconSource: "document-open"
+                MenuItem {
+                    text: I18n.isRTL ? "فتح" : "Open"
+                    icon: "document-open-symbolic"
                     onTriggered: {
-                        DesktopManager.openItem(DesktopManager.contextMenuTargetItem);
+                        DesktopManager.openItem(root.target);
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
-                    title: I18n.isRTL ? "مشاركة عبر LocalSend..." : "Share via LocalSend..."
-                    iconSource: "send"
+                MenuItem {
+                    text: I18n.isRTL ? "مشاركة عبر LocalSend…" : "Share via LocalSend…"
+                    icon: "document-send-symbolic"
                     onTriggered: {
-                        if (DesktopManager.contextMenuTargetItem && DesktopManager.contextMenuTargetItem.path) {
+                        if (root.onItem && root.target.path) {
                             ShellState.setSmartNotchTab(2);   // Share tab
                             ShellState.openSmartNotch();
-                            LocalSendService.stageFiles([DesktopManager.contextMenuTargetItem.path]);
+                            LocalSendService.stageFiles([root.target.path]);
                         }
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
+                MenuItem {
                     // Only .desktop shortcuts map to an installed app; pin that app's real id
                     // (the desktop item id "user_…" could never be pinned).
                     readonly property var targetApp: {
-                        const it = DesktopManager.contextMenuTargetItem;
+                        const it = root.target;
                         if (!it || !it.isDesktopEntry || !it.fileName) return null;
                         return ApplicationManager.findApp(it.fileName.replace(/\.desktop$/, ""));
                     }
                     visible: targetApp !== null
-                    title: (targetApp && ApplicationManager.isPinned(targetApp.id))
-                           ? (I18n.isRTL ? "إلغاء التثبيت من الشريط (Dock)" : "Unpin from Dock")
-                           : (I18n.isRTL ? "تثبيت في الشريط (Dock)" : "Pin to Dock")
-                    iconSource: "view-paged"
+                    text: (targetApp && ApplicationManager.isPinned(targetApp.id))
+                          ? (I18n.isRTL ? "إلغاء التثبيت من الشريط" : "Unpin from Dock")
+                          : (I18n.isRTL ? "تثبيت في الشريط" : "Pin to Dock")
+                    icon: "view-pin-symbolic"
                     onTriggered: {
                         if (targetApp) ApplicationManager.togglePin(targetApp.id);
                         DesktopManager.closeContextMenu();
                     }
                 }
-
-                ContextMenuItem {
-                    visible: DesktopManager.contextMenuTargetItem && !DesktopManager.contextMenuTargetItem.isSystem
-                    title: I18n.isRTL ? "إعادة تسمية..." : "Rename..."
-                    iconSource: "edit-rename"
+                MenuItem {
+                    visible: root.onItem && !root.target.isSystem
+                    text: I18n.isRTL ? "إعادة تسمية…" : "Rename…"
+                    icon: "edit-rename-symbolic"
                     onTriggered: {
-                        if (DesktopManager.contextMenuTargetItem) {
-                            DesktopManager.startRenaming(DesktopManager.contextMenuTargetItem.id);
-                        }
+                        if (root.onItem) DesktopManager.startRenaming(root.target.id);
                         DesktopManager.closeContextMenu();
                     }
                 }
 
-                // Separator
-                Rectangle {
-                    visible: DesktopManager.contextMenuTargetItem && !DesktopManager.contextMenuTargetItem.isSystem
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
-                    Layout.leftMargin: 8
-                    Layout.rightMargin: 8
-                    Layout.topMargin: 2
-                    Layout.bottomMargin: 2
-                    color: Theme.notchBorderSubtle
-                }
+                MenuSeparator { visible: root.onItem && (!root.target.isSystem || root.target.isTrash) }
 
-                ContextMenuItem {
-                    visible: DesktopManager.contextMenuTargetItem && !DesktopManager.contextMenuTargetItem.isSystem
-                    title: I18n.isRTL ? "نقل إلى سلة المحذوفات" : "Move to Trash"
-                    iconSource: "user-trash"
-                    isUrgent: true
+                MenuItem {
+                    visible: root.onItem && !root.target.isSystem
+                    text: I18n.isRTL ? "نقل إلى سلة المحذوفات" : "Move to Trash"
+                    icon: "user-trash-symbolic"
                     onTriggered: {
-                        if (DesktopManager.contextMenuTargetItem) {
-                            DesktopManager.moveToTrash(DesktopManager.contextMenuTargetItem);
-                        }
+                        if (root.onItem) DesktopManager.moveToTrash(root.target);
                         DesktopManager.closeContextMenu();
                     }
                 }
-
                 // Permanent deletion: the first click arms, the second confirms.
-                ContextMenuItem {
+                MenuItem {
                     id: emptyTrashItem
                     property bool armed: false
-                    visible: DesktopManager.contextMenuTargetItem && DesktopManager.contextMenuTargetItem.isTrash
-                    title: armed ? (I18n.isRTL ? "تأكيد: حذف كل ما في السلة نهائياً" : "Confirm: permanently delete all")
-                                 : (I18n.isRTL ? "تفريغ سلة المحذوفات" : "Empty Trash")
-                    iconSource: "user-trash"
-                    isUrgent: true
+                    visible: root.onItem && !!root.target.isTrash
+                    text: armed ? (I18n.isRTL ? "تأكيد: حذف كل ما في السلة نهائياً" : "Confirm: permanently delete all")
+                                : (I18n.isRTL ? "تفريغ سلة المحذوفات" : "Empty Trash")
+                    icon: "user-trash-symbolic"
                     onTriggered: {
                         if (!armed) { armed = true; return; }
                         armed = false;
