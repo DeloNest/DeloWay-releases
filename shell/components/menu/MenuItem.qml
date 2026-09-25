@@ -22,12 +22,14 @@ Rectangle {
 
     Layout.fillWidth: true
     implicitHeight: 32
+    implicitWidth: rowLayout.implicitWidth + 20     // lets the card grow to fit its longest row
     radius: Theme.radiusSmall
     color: rowMa.pressed ? Theme.notchSurfaceActive : (root.hovered ? Theme.notchSurfaceHover : "transparent")
     opacity: root.enabled ? 1 : 0.5
     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
     RowLayout {
+        id: rowLayout
         anchors.fill: parent
         anchors.leftMargin: 10
         anchors.rightMargin: 10

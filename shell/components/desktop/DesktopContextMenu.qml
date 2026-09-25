@@ -55,7 +55,8 @@ PanelWindow {
     // with a short slide.
     Rectangle {
         id: menuCard
-        width: 228
+        // The reference width, grown for a longer row (Arabic labels + a switch), capped.
+        width: Math.min(320, Math.max(228, menuCol.implicitWidth + 10))
         height: menuCol.implicitHeight + 10
         // Opens toward the reading end of the pointer (left of it in Arabic).
         x: Math.max(12, Math.min(I18n.isRTL ? DesktopManager.contextMenuX - width : DesktopManager.contextMenuX, root.width - width - 12))
@@ -117,9 +118,13 @@ PanelWindow {
                     }
                 }
 
-                MenuSeparator {}
+                // Arranging applies to desktop icons only: shown while they are.
+                readonly property bool iconsShown: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "traditional"
+
+                MenuSeparator { visible: parent.iconsShown }
 
                 MenuItem {
+                    visible: parent.iconsShown
                     text: I18n.isRTL ? "ترتيب الأيقونات تلقائياً" : "Auto-Arrange Icons"
                     icon: "view-app-grid-symbolic"
                     onTriggered: {
@@ -128,6 +133,7 @@ PanelWindow {
                     }
                 }
                 MenuItem {
+                    visible: parent.iconsShown
                     text: I18n.isRTL ? "المحاذاة للشبكة" : "Align to Grid"
                     icon: "snap-symbolic"
                     toggle: true
@@ -137,23 +143,13 @@ PanelWindow {
 
                 MenuSeparator {}
 
+                // One switch: the desktop with its items (icons or widgets), or empty.
                 MenuItem {
-                    text: I18n.isRTL ? "أيقونات حرة (تقليدي)" : "Free Icons (Traditional)"
-                    checkable: true
-                    checked: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "traditional"
-                    onTriggered: { ConfigManager.setDesktopMode("traditional"); DesktopManager.closeContextMenu(); }
-                }
-                MenuItem {
-                    text: I18n.isRTL ? "ودجات ذكية" : "Smart Widgets"
-                    checkable: true
-                    checked: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "widgets"
-                    onTriggered: { ConfigManager.setDesktopMode("widgets"); DesktopManager.closeContextMenu(); }
-                }
-                MenuItem {
-                    text: I18n.isRTL ? "نظيف (خلفية فقط)" : "Clean (Wallpaper Only)"
-                    checkable: true
-                    checked: !ConfigManager.showDesktopContent
-                    onTriggered: { ConfigManager.setDesktopMode("clean"); DesktopManager.closeContextMenu(); }
+                    text: I18n.isRTL ? "إظهار عناصر سطح المكتب" : "Show Desktop Items"
+                    icon: ConfigManager.showDesktopContent ? "view-reveal-symbolic" : "view-conceal-symbolic"
+                    toggle: true
+                    checked: ConfigManager.showDesktopContent
+                    onTriggered: ConfigManager.setShowDesktopContent(!ConfigManager.showDesktopContent)
                 }
 
                 MenuSeparator {}
