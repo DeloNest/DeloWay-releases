@@ -17,6 +17,20 @@ Item {
     LayoutMirroring.childrenInherit: true
     property var now: new Date()
     function defaultX(physicalX, w) { return I18n.isRTL ? root.width - w - physicalX : physicalX; }
+
+    // A widget's position: the saved one, or the default — kept inside the area a drag
+    // allows (below the top bar, above the Dock). Saved positions from a larger screen or
+    // resolution used to leave widgets off-screen.
+    function posX(id, fallback, w) {
+        const p = ConfigManager.widgetPositions[id];
+        const v = (p && p.x !== undefined) ? p.x : fallback;
+        return Math.max(16, Math.min(v, root.width - w - 16));
+    }
+    function posY(id, fallback, h) {
+        const p = ConfigManager.widgetPositions[id];
+        const v = (p && p.y !== undefined) ? p.y : fallback;
+        return Math.max(48, Math.min(v, root.height - h - 60));
+    }
     anchors.fill: parent
 
     // Click handler on wallpaper
@@ -42,15 +56,17 @@ Item {
         id: clockWidget
         visible: ConfigManager.isWidgetEnabled("clock")
         width: 290
-        height: 150
+        // Sized to its content: a fixed height let the last line spill over the frame
+        // with larger text (Cairo metrics, Settings → text size).
+        height: clockCol.implicitHeight + 36
         radius: Theme.radiusLarge
         color: Theme.colors.surface
         border.color: Theme.colors.border
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.clock && ConfigManager.widgetPositions.clock.x !== undefined) ? ConfigManager.widgetPositions.clock.x : root.defaultX(60, width)
-        y: (ConfigManager.widgetPositions.clock && ConfigManager.widgetPositions.clock.y !== undefined) ? ConfigManager.widgetPositions.clock.y : 70
+        x: root.posX("clock", root.defaultX(60, width), width)
+        y: root.posY("clock", 70, height)
 
         // Drag Handle
         MouseArea {
@@ -65,11 +81,18 @@ Item {
 
             onReleased: {
                 ConfigManager.setWidgetPosition("clock", clockWidget.x, clockWidget.y);
+                // A drag replaces the x/y bindings with numbers; bind again to the saved
+                // position so it stays clamped on screen changes.
+                clockWidget.x = Qt.binding(() => root.posX("clock", root.defaultX(60, clockWidget.width), clockWidget.width));
+                clockWidget.y = Qt.binding(() => root.posY("clock", 70, clockWidget.height));
             }
         }
 
         ColumnLayout {
-            anchors.fill: parent
+            id: clockCol
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
             anchors.margins: 18
             spacing: 6
 
@@ -149,15 +172,17 @@ Item {
         id: weatherWidget
         visible: ConfigManager.isWidgetEnabled("weather")
         width: 290
-        height: 150
+        // Sized to its content: a fixed height let the last line spill over the frame
+        // with larger text (Cairo metrics, Settings → text size).
+        height: weatherCol.implicitHeight + 36
         radius: Theme.radiusLarge
         color: Theme.colors.surface
         border.color: Theme.colors.border
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.weather && ConfigManager.widgetPositions.weather.x !== undefined) ? ConfigManager.widgetPositions.weather.x : root.defaultX(370, width)
-        y: (ConfigManager.widgetPositions.weather && ConfigManager.widgetPositions.weather.y !== undefined) ? ConfigManager.widgetPositions.weather.y : 70
+        x: root.posX("weather", root.defaultX(370, width), width)
+        y: root.posY("weather", 70, height)
 
         MouseArea {
             anchors.fill: parent
@@ -170,11 +195,18 @@ Item {
 
             onReleased: {
                 ConfigManager.setWidgetPosition("weather", weatherWidget.x, weatherWidget.y);
+                // A drag replaces the x/y bindings with numbers; bind again to the saved
+                // position so it stays clamped on screen changes.
+                weatherWidget.x = Qt.binding(() => root.posX("weather", root.defaultX(370, weatherWidget.width), weatherWidget.width));
+                weatherWidget.y = Qt.binding(() => root.posY("weather", 70, weatherWidget.height));
             }
         }
 
         ColumnLayout {
-            anchors.fill: parent
+            id: weatherCol
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
             anchors.margins: 18
             spacing: 6
 
@@ -233,7 +265,8 @@ Item {
                 }
             }
 
-            RowLayout {
+            // Wraps instead of running past the card's edge (long Arabic labels)
+            Flow {
                 Layout.fillWidth: true
                 spacing: 16
                 Text {
@@ -265,15 +298,18 @@ Item {
         id: sysWidget
         visible: ConfigManager.isWidgetEnabled("system_monitor")
         width: 290
-        height: 180
+        // Sized to its content: a fixed height let the last line spill over the frame
+        // with larger text (Cairo metrics, Settings → text size).
+        height: sysCol.implicitHeight + 36
         radius: Theme.radiusLarge
         color: Theme.colors.surface
         border.color: Theme.colors.border
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.system_monitor && ConfigManager.widgetPositions.system_monitor.x !== undefined) ? ConfigManager.widgetPositions.system_monitor.x : root.defaultX(60, width)
-        y: (ConfigManager.widgetPositions.system_monitor && ConfigManager.widgetPositions.system_monitor.y !== undefined) ? ConfigManager.widgetPositions.system_monitor.y : 240
+        x: root.posX("system_monitor", root.defaultX(60, width), width)
+        // Default: under the clock card, whatever its height (the cards size to content)
+        y: root.posY("system_monitor", clockWidget.y + clockWidget.height + 16, height)
 
         MouseArea {
             anchors.fill: parent
@@ -286,11 +322,18 @@ Item {
 
             onReleased: {
                 ConfigManager.setWidgetPosition("system_monitor", sysWidget.x, sysWidget.y);
+                // A drag replaces the x/y bindings with numbers; bind again to the saved
+                // position so it stays clamped on screen changes.
+                sysWidget.x = Qt.binding(() => root.posX("system_monitor", root.defaultX(60, sysWidget.width), sysWidget.width));
+                sysWidget.y = Qt.binding(() => root.posY("system_monitor", clockWidget.y + clockWidget.height + 16, sysWidget.height));
             }
         }
 
         ColumnLayout {
-            anchors.fill: parent
+            id: sysCol
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
             anchors.margins: 18
             spacing: 10
 
@@ -414,8 +457,8 @@ Item {
         border.width: 1
         z: 10
 
-        x: (ConfigManager.widgetPositions.notes && ConfigManager.widgetPositions.notes.x !== undefined) ? ConfigManager.widgetPositions.notes.x : root.defaultX(370, width)
-        y: (ConfigManager.widgetPositions.notes && ConfigManager.widgetPositions.notes.y !== undefined) ? ConfigManager.widgetPositions.notes.y : 240
+        x: root.posX("notes", root.defaultX(370, width), width)
+        y: root.posY("notes", weatherWidget.y + weatherWidget.height + 16, height)
 
         // Drag bar on header
         MouseArea {
@@ -433,6 +476,10 @@ Item {
 
             onReleased: {
                 ConfigManager.setWidgetPosition("notes", notesWidget.x, notesWidget.y);
+                // A drag replaces the x/y bindings with numbers; bind again to the saved
+                // position so it stays clamped on screen changes.
+                notesWidget.x = Qt.binding(() => root.posX("notes", root.defaultX(370, notesWidget.width), notesWidget.width));
+                notesWidget.y = Qt.binding(() => root.posY("notes", weatherWidget.y + weatherWidget.height + 16, notesWidget.height));
             }
         }
 
