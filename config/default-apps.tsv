@@ -1,0 +1,33 @@
+# DeloWay default applications — the one catalog of alternatives offered for each role.
+# Read by install.sh (terminal menus), the Setup Wizard and Settings → Apps
+# (shell/services/DefaultApps.qml). Installed apps of the same kind that are not listed
+# here are offered too; this list adds the ones worth installing.
+#
+# Columns (tab-separated):
+#   role      browser | terminal | fileManager | editor | monitor
+#   command   what delo-app runs (the executable)
+#   desktop   desktop-entry id (without .desktop), used for icons, xdg defaults, the Dock
+#   package   Arch package that provides it
+#   source    repo | aur
+#   name      shown in the menus
+#   default   "default" marks the preselected choice of the role (exactly one per role)
+browser	brave	brave-browser	brave-bin	aur	Brave	default
+browser	firefox	firefox	firefox	repo	Firefox
+browser	chromium	chromium	chromium	repo	Chromium
+browser	zen-browser	zen	zen-browser-bin	aur	Zen Browser
+terminal	kitty	kitty	kitty	repo	Kitty	default
+terminal	ghostty	com.mitchellh.ghostty	ghostty	repo	Ghostty
+terminal	alacritty	Alacritty	alacritty	repo	Alacritty
+terminal	foot	foot	foot	repo	Foot
+terminal	konsole	org.kde.konsole	konsole	repo	Konsole
+fileManager	thunar	thunar	thunar	repo	Thunar	default
+fileManager	dolphin	org.kde.dolphin	dolphin	repo	Dolphin
+fileManager	nautilus	org.gnome.Nautilus	nautilus	repo	Files (Nautilus)
+fileManager	pcmanfm-qt	pcmanfm-qt	pcmanfm-qt	repo	PCManFM-Qt
+editor	gnome-text-editor	org.gnome.TextEditor	gnome-text-editor	repo	Text Editor	default
+editor	kate	org.kde.kate	kate	repo	Kate
+editor	mousepad	org.xfce.mousepad	mousepad	repo	Mousepad
+editor	code-oss	code-oss	code	repo	Code - OSS
+monitor	missioncenter	io.missioncenter.MissionCenter	mission-center	repo	Mission Center	default
+monitor	gnome-system-monitor	org.gnome.SystemMonitor	gnome-system-monitor	repo	System Monitor
+monitor	plasma-systemmonitor	org.kde.plasma-systemmonitor	plasma-systemmonitor	repo	Plasma System Monitor

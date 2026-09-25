@@ -238,6 +238,15 @@ ShellRoot {
             ConfigManager[fn](v);
             return true;
         }
+        // The same as picking an app in Settings → Apps / the Setup Wizard: a catalog app
+        // that is not installed is installed first. role: browser | terminal | fileManager |
+        // editor | monitor; desktopId: e.g. org.kde.dolphin.
+        function setDefaultApp(role: string, desktopId: string): string {
+            const opt = DefaultApps.options(role).find(o => o.desktop.toLowerCase() === desktopId.toLowerCase());
+            if (!opt) return "unknown";
+            DefaultApps.choose(role, opt);
+            return opt.installed ? "chosen" : "installing";
+        }
         function getSetting(key: string): string {
             const v = ConfigManager[key];
             return v === undefined ? "undefined" : JSON.stringify(v);
@@ -311,7 +320,8 @@ ShellRoot {
         }
 
         // ── Setup Wizard ────────────────────────────────────────────────────
-        function showSetup() { ShellState.openSetupWizard(); }
+        function showSetup() { ShellState.openSetupWizard(0); }
+        function showSetupStep(step: int) { ShellState.openSetupWizard(step); }
 
         // ── Global "close topmost" — used by bindings & hotkeys ─────────────
         // Returns true if something was closed, false otherwise.

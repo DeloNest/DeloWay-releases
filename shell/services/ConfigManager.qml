@@ -105,6 +105,7 @@ Item {
     property string defaultTerminal: "kitty"
     property string defaultFileManager: "thunar"
     property string defaultEditor: "org.gnome.TextEditor"
+    property string defaultMonitor: "missioncenter"
 
     // Music Settings (P10)
     property string musicPreferredPlayer: "auto"
@@ -340,6 +341,7 @@ Item {
                 if (cfg.defaultApps.terminal) root.defaultTerminal = cfg.defaultApps.terminal;
                 if (cfg.defaultApps.fileManager) root.defaultFileManager = cfg.defaultApps.fileManager;
                 if (cfg.defaultApps.editor) root.defaultEditor = cfg.defaultApps.editor;
+                if (cfg.defaultApps.monitor) root.defaultMonitor = cfg.defaultApps.monitor;
             }
             if (cfg.music) {
                 if (cfg.music.preferredPlayer !== undefined) root.musicPreferredPlayer = cfg.music.preferredPlayer;
@@ -721,22 +723,31 @@ Item {
         saveConfig();
     }
 
-    function setDefaultApp(cat, cmd) {
-        if (!cmd) return;
-        const cleanCmd = cmd.replace(/\.desktop$/, "");
-        const desktopFile = cleanCmd + ".desktop";
+    // Stores the choice (what delo-app launches) and makes it the XDG default. The value may
+    // be a desktop id or an executable; the XDG defaults need the exact desktop file, so it is
+    // resolved (building "<value>.desktop" named files that do not exist: brave.desktop,
+    // dolphin.desktop). The Dock's default pins follow browser/terminal/file manager.
+    function setDefaultApp(cat, value) {
+        if (!value) return;
+        const clean = value.replace(/\.desktop$/, "");
+        const entry = ApplicationManager.resolveAppEntry(clean);
+        const desktopFile = (entry ? entry.id.replace(/\.desktop$/, "") : clean) + ".desktop";
         if (cat === "browser") {
-            root.defaultBrowser = cleanCmd;
+            root.defaultBrowser = clean;
             root.run(["xdg-settings", "set", "default-web-browser", desktopFile]);
             root.run(["xdg-mime", "default", desktopFile, "x-scheme-handler/http", "x-scheme-handler/https", "text/html"]);
         } else if (cat === "terminal") {
-            root.defaultTerminal = cleanCmd;
+            root.defaultTerminal = clean;
         } else if (cat === "fileManager") {
-            root.defaultFileManager = cleanCmd;
+            root.defaultFileManager = clean;
             root.run(["xdg-mime", "default", desktopFile, "inode/directory"]);
         } else if (cat === "editor") {
-            root.defaultEditor = cleanCmd;
+            root.defaultEditor = clean;
             root.run(["xdg-mime", "default", desktopFile, "text/plain"]);
+        } else if (cat === "monitor") {
+            root.defaultMonitor = clean;
+        } else {
+            return;
         }
         saveConfig();
     }
@@ -898,7 +909,8 @@ Item {
                 browser: root.defaultBrowser,
                 terminal: root.defaultTerminal,
                 fileManager: root.defaultFileManager,
-                editor: root.defaultEditor
+                editor: root.defaultEditor,
+                monitor: root.defaultMonitor
             },
             music: {
                 preferredPlayer: root.musicPreferredPlayer,

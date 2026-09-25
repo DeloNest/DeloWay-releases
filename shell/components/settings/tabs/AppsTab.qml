@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
@@ -19,133 +18,6 @@ Item {
     height: implicitHeight
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
-
-    property string osKernel: ""
-    property string osHostname: ""
-    property bool confirmReset: false
-    property string realBrowser: ""
-    property string realFileManager: ""
-
-    Component.onCompleted: {
-        sysInfoProc.running = true;
-        defaultAppsSyncProc.running = true;
-    }
-
-    onVisibleChanged: {
-        if (visible) {
-            sysInfoProc.running = true;
-            defaultAppsSyncProc.running = true;
-            root.confirmReset = false;
-        }
-    }
-
-    // Process to fetch kernel and hostname
-    Process {
-        id: sysInfoProc
-        command: ["sh", "-c", "echo \"$(uname -r)|$(uname -n)\""]
-        stdout: SplitParser {
-            onRead: data => {
-                var parts = data.trim().split("|");
-                if (parts.length >= 2) {
-                    root.osKernel = parts[0];
-                    root.osHostname = parts[1];
-                }
-            }
-        }
-    }
-
-    // Process to sync real system defaults from xdg-settings / xdg-mime
-    Process {
-        id: defaultAppsSyncProc
-        command: ["sh", "-c", "echo \"$(xdg-settings get default-web-browser)|$(xdg-mime query default inode/directory)\""]
-        stdout: SplitParser {
-            onRead: data => {
-                var parts = data.trim().split("|");
-                if (parts.length >= 2) {
-                    root.realBrowser = parts[0].trim().replace(/\.desktop$/, "");
-                    root.realFileManager = parts[1].trim().replace(/\.desktop$/, "");
-                }
-            }
-        }
-    }
-
-    // Installed app helper functions
-    function getInstalledBrowsers() {
-        var list = [];
-        var seen = new Set();
-        if (ApplicationManager.allApps) {
-            for (var i = 0; i < ApplicationManager.allApps.length; i++) {
-                var app = ApplicationManager.allApps[i];
-                if (!app || !app.id) continue;
-                var id = app.id.toLowerCase().replace(/\.desktop$/, "");
-                var cats = app.categories ? app.categories.join(" ") : "";
-                if (cats.indexOf("WebBrowser") !== -1 || id.indexOf("browser") !== -1 || id === "zen" || id === "firefox" || id === "chromium" || id === "chrome") {
-                    if (id !== "org.gnome.zenity" && !seen.has(id)) {
-                        seen.add(id);
-                        list.push({ id: id, name: app.name || id, icon: app.icon });
-                    }
-                }
-            }
-        }
-        if (list.length === 0) {
-            list = [
-                { id: "brave", name: "Brave Browser", icon: "brave-browser" },
-                { id: "zen", name: "Zen Browser", icon: "zen" }
-            ];
-        }
-        return list;
-    }
-
-    function getInstalledTerminals() {
-        var list = [];
-        var seen = new Set();
-        if (ApplicationManager.allApps) {
-            for (var i = 0; i < ApplicationManager.allApps.length; i++) {
-                var app = ApplicationManager.allApps[i];
-                if (!app || !app.id) continue;
-                var id = app.id.toLowerCase().replace(/\.desktop$/, "");
-                var cats = app.categories ? app.categories.join(" ") : "";
-                if (cats.indexOf("TerminalEmulator") !== -1 || id.indexOf("terminal") !== -1 || id === "kitty" || id === "alacritty" || id === "foot" || id === "wezterm") {
-                    if (id !== "kitty-open" && !seen.has(id)) {
-                        seen.add(id);
-                        list.push({ id: id, name: app.name || id, icon: app.icon });
-                    }
-                }
-            }
-        }
-        if (list.length === 0) {
-            list = [
-                { id: "kitty", name: "Kitty", icon: "kitty" }
-            ];
-        }
-        return list;
-    }
-
-    function getInstalledFileManagers() {
-        var list = [];
-        var seen = new Set();
-        if (ApplicationManager.allApps) {
-            for (var i = 0; i < ApplicationManager.allApps.length; i++) {
-                var app = ApplicationManager.allApps[i];
-                if (!app || !app.id) continue;
-                var id = app.id.toLowerCase().replace(/\.desktop$/, "");
-                var cats = app.categories ? app.categories.join(" ") : "";
-                if (cats.indexOf("FileManager") !== -1 || id === "thunar" || id === "nautilus" || id === "dolphin" || id === "yazi") {
-                    if (id !== "thunar-bulk-rename" && id !== "thunar-settings" && id !== "nautilus-autorun-software" && !seen.has(id)) {
-                        seen.add(id);
-                        list.push({ id: id, name: app.name || id, icon: app.icon });
-                    }
-                }
-            }
-        }
-        if (list.length === 0) {
-            list = [
-                { id: "thunar", name: "Thunar", icon: "system-file-manager" },
-                { id: "org.gnome.nautilus", name: "Files", icon: "org.gnome.Nautilus" }
-            ];
-        }
-        return list;
-    }
 
     ColumnLayout {
         id: mainCol
@@ -168,182 +40,42 @@ Item {
         SettingsSection {
             title: I18n.isRTL ? "التطبيقات الافتراضية" : "Default Applications"
 
-            // Default Browser
-            SettingsRow {
-                title: I18n.tr("web_browser")
-                subtitle: I18n.isRTL ? "المتصفح المستخدم لفتح الروابط وصفحات الويب (xdg default)" : "Default browser for opening web links and html"
-                icon: "applications-internet-symbolic"
-                showDivider: true
+            // One row per role; the choices come from DefaultApps (same catalog as
+            // install.sh and the Setup Wizard). Not-installed choices install on click.
+            Repeater {
+                model: [
+                    { role: "browser", icon: "applications-internet-symbolic", title: I18n.tr("web_browser"),
+                      subtitle: I18n.isRTL ? "يفتح الروابط وصفحات الويب" : "Opens web links and pages" },
+                    { role: "terminal", icon: "utilities-terminal-symbolic", title: I18n.tr("terminal_emulator"),
+                      subtitle: I18n.isRTL ? "يفتح بـ Super+Return ومن سطح المكتب" : "Opened by Super+Return and from the desktop" },
+                    { role: "fileManager", icon: "system-file-manager-symbolic", title: I18n.tr("file_manager"),
+                      subtitle: I18n.isRTL ? "يفتح المجلدات والملفات" : "Opens folders and files" },
+                    { role: "editor", icon: "accessories-text-editor-symbolic", title: I18n.tr("text_editor"),
+                      subtitle: I18n.isRTL ? "يفتح الملفات النصية" : "Opens plain-text files" },
+                    { role: "monitor", icon: "utilities-system-monitor-symbolic", title: I18n.tr("system_monitor"),
+                      subtitle: I18n.isRTL ? "يفتح بـ Ctrl+Shift+Esc" : "Opened by Ctrl+Shift+Esc" }
+                ]
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
+                delegate: ColumnLayout {
+                    id: roleRow
+                    required property var modelData
+                    required property int index
+                    Layout.fillWidth: true
+                    spacing: 0
 
-                    Repeater {
-                        model: root.getInstalledBrowsers()
-                        delegate: Rectangle {
-                            id: browserPill
-                            required property var modelData
-                            readonly property bool isSelected: (root.realBrowser || ConfigManager.defaultBrowser || "").toLowerCase().replace(/\.desktop$/, "") === modelData.id
-
-                            height: 28
-                            implicitWidth: browserRow.implicitWidth + Theme.space16
-                            radius: 14
-                            color: browserPill.isSelected ? Theme.notchSurfaceActive : (browserMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: browserPill.isSelected ? Theme.notchBorderHighlight : (browserMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                id: browserRow
-                                anchors.centerIn: parent
-                                spacing: 6
-
-                                AppIcon {
-                                    iconSize: 16
-                                    source: browserPill.modelData.icon || "applications-internet"
-                                }
-
-                                Text {
-                                    text: browserPill.modelData.name
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: browserPill.isSelected ? Font.DemiBold : Font.Normal
-                                    color: browserPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                                }
-                            }
-
-                            MouseArea {
-                                id: browserMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.realBrowser = browserPill.modelData.id;
-                                    ConfigManager.setDefaultApp("browser", browserPill.modelData.id);
-                                }
-                            }
-                        }
+                    SettingsRow {
+                        title: roleRow.modelData.title
+                        subtitle: roleRow.modelData.subtitle
+                        icon: roleRow.modelData.icon
+                        showDivider: false
                     }
-                }
-            }
 
-            // Default Terminal
-            SettingsRow {
-                title: I18n.tr("terminal_emulator")
-                subtitle: I18n.isRTL ? "برنامج الطرفية الافتراضي للسطر البرمجي والسكربتات" : "Terminal emulator used for command line tools"
-                icon: "utilities-terminal-symbolic"
-                showDivider: true
-
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: root.getInstalledTerminals()
-                        delegate: Rectangle {
-                            id: termPill
-                            required property var modelData
-                            readonly property bool isSelected: (ConfigManager.defaultTerminal || "").toLowerCase().replace(/\.desktop$/, "") === modelData.id
-
-                            height: 28
-                            implicitWidth: termRow.implicitWidth + Theme.space16
-                            radius: 14
-                            color: termPill.isSelected ? Theme.notchSurfaceActive : (termMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: termPill.isSelected ? Theme.notchBorderHighlight : (termMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                id: termRow
-                                anchors.centerIn: parent
-                                spacing: 6
-
-                                AppIcon {
-                                    iconSize: 16
-                                    source: termPill.modelData.icon || "utilities-terminal"
-                                }
-
-                                Text {
-                                    text: termPill.modelData.name
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: termPill.isSelected ? Font.DemiBold : Font.Normal
-                                    color: termPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                                }
-                            }
-
-                            MouseArea {
-                                id: termMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setDefaultApp("terminal", termPill.modelData.id)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Default File Manager
-            SettingsRow {
-                title: I18n.tr("file_manager")
-                subtitle: I18n.isRTL ? "تطبيق إدارة الملفات والمجلدات الافتراضي (inode/directory)" : "Default application for browsing folders and files"
-                icon: "system-file-manager-symbolic"
-                showDivider: false
-
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: root.getInstalledFileManagers()
-                        delegate: Rectangle {
-                            id: fmPill
-                            required property var modelData
-                            readonly property bool isSelected: (root.realFileManager || ConfigManager.defaultFileManager || "").toLowerCase().replace(/\.desktop$/, "") === modelData.id
-
-                            height: 28
-                            implicitWidth: fmRow.implicitWidth + Theme.space16
-                            radius: 14
-                            color: fmPill.isSelected ? Theme.notchSurfaceActive : (fmMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: fmPill.isSelected ? Theme.notchBorderHighlight : (fmMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                            RowLayout {
-                                id: fmRow
-                                anchors.centerIn: parent
-                                spacing: 6
-
-                                AppIcon {
-                                    iconSize: 16
-                                    source: fmPill.modelData.icon || "system-file-manager"
-                                }
-
-                                Text {
-                                    text: fmPill.modelData.name
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: fmPill.isSelected ? Font.DemiBold : Font.Normal
-                                    color: fmPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                                }
-                            }
-
-                            MouseArea {
-                                id: fmMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.realFileManager = fmPill.modelData.id;
-                                    ConfigManager.setDefaultApp("fileManager", fmPill.modelData.id);
-                                }
-                            }
-                        }
+                    DefaultAppChooser {
+                        Layout.fillWidth: true
+                        Layout.leftMargin: Theme.space16
+                        Layout.rightMargin: Theme.space16
+                        Layout.bottomMargin: Theme.space12
+                        role: roleRow.modelData.role
                     }
                 }
             }

@@ -31,6 +31,7 @@ PanelWindow {
 
     property int currentStep: 0
     readonly property int totalSteps: 7
+    onIsActiveChanged: if (isActive) currentStep = Math.max(0, Math.min(totalSteps - 1, ShellState.setupWizardStartStep))
 
     // Full-Screen Dark Acrylic Backdrop (Blocks desktop interaction completely until setup is done)
     Rectangle {
@@ -597,7 +598,9 @@ PanelWindow {
                 }
 
                 // =============================================================
-                // STEP 4: RECOMMENDED APPLICATIONS (Section 5)
+                // STEP 4: DEFAULT APPLICATIONS
+                // One real choice per role (DefaultApps: same catalog as install.sh and
+                // Settings → Apps). Picking an app that is not installed installs it.
                 // =============================================================
                 ColumnLayout {
                     anchors.fill: parent
@@ -615,6 +618,9 @@ PanelWindow {
                     }
 
                     Text {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignLeft
+                        wrapMode: Text.WordWrap
                         text: I18n.tr("step_apps_desc")
                         font.family: Theme.typography.fontFamily
                         font.hintingPreference: Theme.hintingPreference
@@ -623,156 +629,46 @@ PanelWindow {
                         color: Theme.colors.textSecondary
                     }
 
-                    GridLayout {
+                    Flickable {
                         Layout.fillWidth: true
-                        columns: 2
-                        rowSpacing: 10
-                        columnSpacing: 12
+                        Layout.fillHeight: true
+                        clip: true
+                        contentHeight: rolesCol.implicitHeight
+                        boundsBehavior: Flickable.StopAtBounds
 
-                        Repeater {
-                            model: [
-                                {
-                                    "id": "thunar",
-                                    "name": "Thunar File Manager",
-                                    "desc": I18n.locale === "ar" ? "مدير ملفات حديث وخفيف وسريع" : "Modern, fast, and lightweight file manager",
-                                    "icon": "system-file-manager"
-                                },
-                                {
-                                    "id": "org.gnome.TextEditor",
-                                    "name": "GNOME Text Editor",
-                                    "desc": I18n.locale === "ar" ? "محرر نصوص حديث مع تمييز الصيغ" : "Clean, modern text and code editor",
-                                    "icon": "text-editor"
-                                },
-                                {
-                                    "id": "pwvucontrol",
-                                    "name": "PipeWire Volume Control",
-                                    "desc": I18n.locale === "ar" ? "تحكم متقدم في أجهزة وقنوات الصوت" : "Granular PipeWire sound and device mixer",
-                                    "icon": "multimedia-volume-control"
-                                },
-                                {
-                                    "id": "io.missioncenter.MissionCenter",
-                                    "name": "Mission Center",
-                                    "desc": I18n.locale === "ar" ? "مراقب أداء النظام والعتاد في الوقت الفعلي" : "Real-time hardware and resource monitor",
-                                    "icon": "utilities-system-monitor"
-                                }
-                            ]
+                        ColumnLayout {
+                            id: rolesCol
+                            width: parent.width
+                            spacing: 14
 
-                            delegate: DeloCard {
-                                id: appCard
-                                required property var modelData
-                                readonly property bool isInstalled: PackageManager.isInstalled(appCard.modelData.id)
-                                readonly property bool isInstalling: PackageManager.isInstalling(appCard.modelData.id)
-                                readonly property real progress: PackageManager.getInstallProgress(appCard.modelData.id)
-                                readonly property string statusText: PackageManager.getInstallStatus(appCard.modelData.id)
+                            Repeater {
+                                model: [
+                                    { role: "browser",     label: I18n.tr("web_browser") },
+                                    { role: "terminal",    label: I18n.tr("terminal_emulator") },
+                                    { role: "fileManager", label: I18n.tr("file_manager") },
+                                    { role: "editor",      label: I18n.tr("text_editor") },
+                                    { role: "monitor",     label: I18n.tr("system_monitor") }
+                                ]
 
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 96
-                                cardRadius: Theme.radiusMedium
-                                selected: appCard.isInstalling
-                                selectedBorderColor: Theme.inverseSurface
-
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 12
+                                delegate: ColumnLayout {
+                                    required property var modelData
+                                    Layout.fillWidth: true
                                     spacing: 6
 
-                                    RowLayout {
+                                    Text {
                                         Layout.fillWidth: true
-                                        spacing: 12
-
-                                        AppIcon {
-                                            iconSize: 36
-                                            source: appCard.modelData.icon
-                                        }
-
-                                        ColumnLayout {
-                                            Layout.fillWidth: true
-                                            spacing: 2
-
-                                            Text {
-                                                horizontalAlignment: Text.AlignLeft   // reading start (mirrored)
-                                                text: appCard.modelData.name
-                                                font.family: Theme.typography.fontFamily
-                                                font.pixelSize: Theme.fontSize(12)
-                                                font.weight: Font.DemiBold
-                                                renderType: Theme.renderType
-                                                color: Theme.colors.text
-                                                elide: Text.ElideRight
-                                                Layout.fillWidth: true
-                                            }
-
-                                            Text {
-                                                horizontalAlignment: Text.AlignLeft
-                                                text: appCard.modelData.desc
-                                                font.family: Theme.typography.fontFamily
-                                                font.pixelSize: Theme.fontSize(10)
-                                                renderType: Theme.renderType
-                                                color: Theme.colors.textSecondary
-                                                elide: Text.ElideRight
-                                                Layout.fillWidth: true
-                                            }
-                                        }
-
-                                        // Action Button / Badge
-                                        Rectangle {
-                                            visible: appCard.isInstalled
-                                            implicitWidth: 80
-                                            implicitHeight: 28
-                                            radius: Theme.radiusSmall
-                                            color: Theme.colors.surfaceElevated
-                                            border.color: Theme.hairline
-                                            border.width: 1
-
-                                            Row {
-                                                anchors.centerIn: parent
-                                                spacing: 4
-                                                Text {
-                                                    font.family: Theme.typography.fontFamily
-                                                    text: "✓"
-                                                    font.pixelSize: Theme.fontSize(10)
-                                                    font.weight: Font.Bold
-                                                    color: Theme.colors.success
-                                                }
-                                                Text {
-                                                    text: I18n.tr("installed_btn")
-                                                    font.family: Theme.typography.fontFamily
-                                                    font.pixelSize: Theme.fontSize(10)
-                                                    font.weight: Font.DemiBold
-                                                    color: Theme.colors.textSecondary
-                                                }
-                                            }
-                                        }
-
-                                        DeloButton {
-                                            visible: !appCard.isInstalled
-                                            implicitWidth: 80
-                                            implicitHeight: 28
-                                            variant: "primary"
-                                            loading: appCard.isInstalling
-                                            text: appCard.isInstalling ? (Math.round(appCard.progress * 100) + "%") : I18n.tr("install_btn")
-                                            onClicked: {
-                                                PackageManager.installApp(appCard.modelData.id, "native");
-                                            }
-                                        }
+                                        horizontalAlignment: Text.AlignLeft
+                                        text: modelData.label
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: Font.DemiBold
+                                        renderType: Theme.renderType
+                                        color: Theme.colors.text
                                     }
 
-                                    // Progress Bar (when installing)
-                                    Rectangle {
+                                    DefaultAppChooser {
                                         Layout.fillWidth: true
-                                        height: 3
-                                        radius: 1.5
-                                        color: Theme.colors.surfaceElevated
-                                        visible: appCard.isInstalling
-
-                                        Rectangle {
-                                            anchors.left: parent.left
-                                            anchors.top: parent.top
-                                            anchors.bottom: parent.bottom
-                                            width: parent.width * Math.max(0.05, Math.min(1.0, appCard.progress))
-                                            radius: 1.5
-                                            color: Theme.inverseSurface
-                                            Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
-                                        }
+                                        role: modelData.role
                                     }
                                 }
                             }

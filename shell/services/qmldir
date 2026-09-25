@@ -17,3 +17,4 @@ singleton TimeKeeperService 1.0 TimeKeeperService.qml
 singleton ControlCenterService 1.0 ControlCenterService.qml
 singleton AppActions 1.0 AppActions.qml
 singleton IconResolver 1.0 IconResolver.qml
+singleton DefaultApps 1.0 DefaultApps.qml

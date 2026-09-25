@@ -88,7 +88,13 @@ Item {
     // A default-app choice (an executable such as "brave" / "nautilus", or a desktop id)
     // → the lower-case id of the installed desktop entry that launches it, or "".
     function resolveAppChoice(choice) {
-        if (!choice) return "";
+        const e = root.resolveAppEntry(choice);
+        return e ? e.id.toLowerCase().replace(/\.desktop$/, "") : "";
+    }
+
+    // … and the desktop entry itself (exact-case id, for xdg-mime / gtk-launch), or null.
+    function resolveAppEntry(choice) {
+        if (!choice) return null;
         const _rev = _entriesRevision;
         const c = choice.toLowerCase().replace(/\.desktop$/, "");
         const entries = Array.from(DesktopEntries.applications.values).filter(e => e && e.id && !e.noDisplay);
@@ -96,10 +102,9 @@ Item {
             const id = e.id.toLowerCase().replace(/\.desktop$/, "");
             return id === c || id.endsWith("." + c);
         });
-        if (byId) return byId.id.toLowerCase().replace(/\.desktop$/, "");
-        const byCmd = entries.find(e => e.command && e.command.length > 0
-                                        && String(e.command[0]).replace(/.*\//, "").toLowerCase() === c);
-        return byCmd ? byCmd.id.toLowerCase().replace(/\.desktop$/, "") : "";
+        if (byId) return byId;
+        return entries.find(e => e.command && e.command.length > 0
+                                 && String(e.command[0]).replace(/.*\//, "").toLowerCase() === c) || null;
     }
 
     // Pins until the user customises the Dock: the browser, terminal and file manager they

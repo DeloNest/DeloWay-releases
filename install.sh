@@ -200,11 +200,15 @@ check_aur_helper() {
 }
 
 # ── 3. Interactive Default Applications Selection ─────────────────────────────
-SELECTED_BROWSER="brave"
-SELECTED_TERMINAL="kitty"
-SELECTED_FILEMANAGER="thunar"
-SELECTED_EDITOR="gnome-text-editor"
-SELECTED_MONITOR="mission-center"
+# The menus come from config/default-apps.tsv — the same catalog the Setup Wizard and
+# Settings → Apps offer — so every place shows the same alternatives. An empty selection
+# (Skip) leaves the role to the shell's default.
+DEFAULT_APPS_TSV="$DELOWAY_DIR/config/default-apps.tsv"
+SELECTED_BROWSER=""
+SELECTED_TERMINAL=""
+SELECTED_FILEMANAGER=""
+SELECTED_EDITOR=""
+SELECTED_MONITOR=""
 
 PKGS_TO_INSTALL=()
 AUR_PKGS_TO_INSTALL=()
@@ -213,181 +217,57 @@ AUR_PKGS_TO_INSTALL=()
 LOCAL_PKGS_TO_BUILD=()
 FOUND_RTL8188EUS=""   # USB id of a detected RTL8188EUS adapter (detect_hardware_deps)
 
+# select_default_app ROLE LABEL STEP — prints the role's menu (or takes its default with
+# -y), queues the package when the chosen app is missing and sets REPLY_APP to its command.
+select_default_app() {
+    local role="$1" label="$2" step="$3"
+    local -a cmds=() names=() pkgs=() srcs=()
+    local def=1 n=0 r cmd desktop pkg src name flag
+    while IFS=$'\t' read -r r cmd desktop pkg src name flag; do
+        [[ -z "$r" || "$r" == \#* || "$r" != "$role" ]] && continue
+        cmds+=("$cmd"); names+=("$name"); pkgs+=("$pkg"); srcs+=("$src")
+        n=$((n + 1))
+        [ "${flag:-}" = "default" ] && def=$n
+    done < "$DEFAULT_APPS_TSV"
+
+    local choice="$def" i tag mark
+    if [ "$AUTO_YES" != true ]; then
+        echo ""
+        echo -e "${CYAN}${BOLD}[$step/5] $label:${NC}"
+        for ((i = 0; i < n; i++)); do
+            tag="[Official Repo]"; [ "${srcs[i]}" = "aur" ] && tag="[AUR]"
+            mark=""
+            [ $((i + 1)) -eq "$def" ] && mark=" (Default)"
+            command -v "${cmds[i]}" &>/dev/null && mark="$mark (installed)"
+            echo "  $((i + 1))) ${names[i]}$mark $tag"
+        done
+        echo "  $((n + 1))) Skip"
+        read -r -p "Choice [1-$((n + 1))] (Default: $def): " choice
+        choice="${choice:-$def}"
+    fi
+
+    REPLY_APP=""
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$n" ]; then
+        i=$((choice - 1))
+        REPLY_APP="${cmds[i]}"
+        if ! command -v "${cmds[i]}" &>/dev/null; then
+            if [ "${srcs[i]}" = "aur" ]; then AUR_PKGS_TO_INSTALL+=("${pkgs[i]}")
+            else PKGS_TO_INSTALL+=("${pkgs[i]}"); fi
+        fi
+    fi
+}
+
 interactive_app_selection() {
     log_step "3. Default Applications Selection"
-    echo -e "Choose your preferred default applications. DeloWay's ${BOLD}delo-app${NC} dispatcher"
-    echo -e "will dynamically route keyboard shortcuts and interface actions to your selections."
-    echo ""
+    echo -e "Choose your default applications. DeloWay's ${BOLD}delo-app${NC} dispatcher routes"
+    echo -e "keyboard shortcuts and the shell to them; the Setup Wizard and Settings → Apps"
+    echo -e "offer the same choices later."
 
-    # ── A. Web Browser ────────────────────────────────────────────────────────
-    if [ "$AUTO_YES" = true ]; then
-        CHOICE_BROWSER=1
-    else
-        echo -e "${CYAN}${BOLD}[1/5] Select Default Web Browser:${NC}"
-        echo "  1) Brave Browser (Default - Recommended) [AUR]"
-        echo "  2) Mozilla Firefox [Official Repo]"
-        echo "  3) Zen Browser [AUR]"
-        echo "  4) Chromium [Official Repo]"
-        echo "  5) Skip (Use existing system browser)"
-        read -r -p "Choice [1-5] (Default: 1): " CHOICE_BROWSER
-        CHOICE_BROWSER="${CHOICE_BROWSER:-1}"
-    fi
-
-    case "$CHOICE_BROWSER" in
-        1)
-            SELECTED_BROWSER="brave"
-            AUR_PKGS_TO_INSTALL+=("brave-bin")
-            ;;
-        2)
-            SELECTED_BROWSER="firefox"
-            PKGS_TO_INSTALL+=("firefox")
-            ;;
-        3)
-            SELECTED_BROWSER="zen-browser"
-            AUR_PKGS_TO_INSTALL+=("zen-browser-bin")
-            ;;
-        4)
-            SELECTED_BROWSER="chromium"
-            PKGS_TO_INSTALL+=("chromium")
-            ;;
-        *)
-            SELECTED_BROWSER="xdg-open"
-            log_info "Skipping browser installation; defaulting to xdg-open."
-            ;;
-    esac
-
-    # ── B. Terminal Emulator ──────────────────────────────────────────────────
-    if [ "$AUTO_YES" = true ]; then
-        CHOICE_TERM=1
-    else
-        echo ""
-        echo -e "${CYAN}${BOLD}[2/5] Select Default Terminal Emulator:${NC}"
-        echo "  1) Kitty (Default - Fully themed for DeloWay) [Official Repo]"
-        echo "  2) Ghostty (Modern GPU-accelerated terminal) [Official Repo]"
-        echo "  3) Alacritty (Fast, lightweight terminal) [Official Repo]"
-        echo "  4) Foot (Wayland-native fast terminal) [Official Repo]"
-        echo "  5) Skip"
-        read -r -p "Choice [1-5] (Default: 1): " CHOICE_TERM
-        CHOICE_TERM="${CHOICE_TERM:-1}"
-    fi
-
-    case "$CHOICE_TERM" in
-        1)
-            SELECTED_TERMINAL="kitty"
-            PKGS_TO_INSTALL+=("kitty")
-            ;;
-        2)
-            SELECTED_TERMINAL="ghostty"
-            PKGS_TO_INSTALL+=("ghostty")
-            ;;
-        3)
-            SELECTED_TERMINAL="alacritty"
-            PKGS_TO_INSTALL+=("alacritty")
-            ;;
-        4)
-            SELECTED_TERMINAL="foot"
-            PKGS_TO_INSTALL+=("foot")
-            ;;
-        *)
-            SELECTED_TERMINAL="kitty"
-            ;;
-    esac
-
-    # ── C. File Manager ───────────────────────────────────────────────────────
-    if [ "$AUTO_YES" = true ]; then
-        CHOICE_FM=1
-    else
-        echo ""
-        echo -e "${CYAN}${BOLD}[3/5] Select Default File Manager:${NC}"
-        echo "  1) Thunar (Default - Lightweight XFCE) [Official Repo]"
-        echo "  2) Nautilus (GNOME Files) [Official Repo]"
-        echo "  3) PCManFM-Qt [Official Repo]"
-        echo "  4) Skip"
-        read -r -p "Choice [1-4] (Default: 1): " CHOICE_FM
-        CHOICE_FM="${CHOICE_FM:-1}"
-    fi
-
-    case "$CHOICE_FM" in
-        1)
-            SELECTED_FILEMANAGER="thunar"
-            PKGS_TO_INSTALL+=("thunar")
-            ;;
-        2)
-            SELECTED_FILEMANAGER="nautilus"
-            PKGS_TO_INSTALL+=("nautilus")
-            ;;
-        3)
-            SELECTED_FILEMANAGER="pcmanfm-qt"
-            PKGS_TO_INSTALL+=("pcmanfm-qt")
-            ;;
-        *)
-            SELECTED_FILEMANAGER="thunar"
-            ;;
-    esac
-
-    # ── D. Text Editor ────────────────────────────────────────────────────────
-    if [ "$AUTO_YES" = true ]; then
-        CHOICE_ED=1
-    else
-        echo ""
-        echo -e "${CYAN}${BOLD}[4/5] Select Default Text Editor:${NC}"
-        echo "  1) GNOME Text Editor (Default) [Official Repo]"
-        echo "  2) Mousepad [Official Repo]"
-        echo "  3) Kate [Official Repo]"
-        echo "  4) Skip"
-        read -r -p "Choice [1-4] (Default: 1): " CHOICE_ED
-        CHOICE_ED="${CHOICE_ED:-1}"
-    fi
-
-    case "$CHOICE_ED" in
-        1)
-            SELECTED_EDITOR="gnome-text-editor"
-            PKGS_TO_INSTALL+=("gnome-text-editor")
-            ;;
-        2)
-            SELECTED_EDITOR="mousepad"
-            PKGS_TO_INSTALL+=("mousepad")
-            ;;
-        3)
-            SELECTED_EDITOR="kate"
-            PKGS_TO_INSTALL+=("kate")
-            ;;
-        *)
-            SELECTED_EDITOR="gnome-text-editor"
-            ;;
-    esac
-
-    # ── E. System Monitor ─────────────────────────────────────────────────────
-    if [ "$AUTO_YES" = true ]; then
-        CHOICE_MON=1
-    else
-        echo ""
-        echo -e "${CYAN}${BOLD}[5/5] Select Default System Monitor:${NC}"
-        echo "  1) Mission Center (Default - Modern GUI) [AUR / Flatpak]"
-        echo "  2) Btop (Terminal TUI monitor) [Official Repo]"
-        echo "  3) GNOME System Monitor [Official Repo]"
-        echo "  4) Skip"
-        read -r -p "Choice [1-4] (Default: 1): " CHOICE_MON
-        CHOICE_MON="${CHOICE_MON:-1}"
-    fi
-
-    case "$CHOICE_MON" in
-        1)
-            SELECTED_MONITOR="mission-center"
-            PKGS_TO_INSTALL+=("mission-center")   # in extra, not the AUR
-            ;;
-        2)
-            SELECTED_MONITOR="btop"
-            PKGS_TO_INSTALL+=("btop")
-            ;;
-        3)
-            SELECTED_MONITOR="gnome-system-monitor"
-            PKGS_TO_INSTALL+=("gnome-system-monitor")
-            ;;
-        *)
-            SELECTED_MONITOR="btop"
-            ;;
-    esac
+    select_default_app browser "Default Web Browser" 1;       SELECTED_BROWSER="$REPLY_APP"
+    select_default_app terminal "Default Terminal" 2;         SELECTED_TERMINAL="$REPLY_APP"
+    select_default_app fileManager "Default File Manager" 3;  SELECTED_FILEMANAGER="$REPLY_APP"
+    select_default_app editor "Default Text Editor" 4;        SELECTED_EDITOR="$REPLY_APP"
+    select_default_app monitor "Default System Monitor" 5;    SELECTED_MONITOR="$REPLY_APP"
 }
 
 # ── 4. Hardware-Conditional Dependency Detection ──────────────────────────────
@@ -770,12 +650,12 @@ chosen = {
 # missing keys are filled so Settings → Apps choices are never overwritten.
 apps = data.get("defaultApps") if isinstance(data.get("defaultApps"), dict) else {}
 for k, v in chosen.items():
-    if fresh or not apps.get(k):
+    if v and (fresh or not apps.get(k)):   # skipped roles keep the shell's default
         apps[k] = v
 data["defaultApps"] = apps
 # Backward compatibility keys
 for k in ("browser", "terminal", "fileManager"):
-    if fresh or not data.get(k):
+    if apps.get(k) and (fresh or not data.get(k)):
         data[k] = apps[k]
 
 with open(cfg_path, "w", encoding="utf-8") as f:
