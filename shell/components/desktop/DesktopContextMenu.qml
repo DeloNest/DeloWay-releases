@@ -193,6 +193,9 @@ PanelWindow {
                     }
                 }
                 MenuItem {
+                    // LocalSend sends files only (deloway-localsend.py drops folders), so
+                    // offering it on a folder or the Trash always ended in a failed transfer.
+                    visible: root.onItem && !root.target.isDir
                     text: I18n.isRTL ? "مشاركة عبر LocalSend…" : "Share via LocalSend…"
                     icon: "document-send-symbolic"
                     onTriggered: {

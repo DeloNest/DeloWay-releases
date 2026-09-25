@@ -63,7 +63,9 @@ Item {
         "audacity": "apps/audacity.svg",
         "obsidian": "apps/obsidian.svg",
 
-        // Desktop Folders & Files (Reversal Places & Mimes)
+        // Desktop folders (Reversal places). File types are NOT mapped: the theme's own
+        // mimetype icons are used, instead of folder pictures that made files look like
+        // folders (a .txt showed a Documents folder, a video a Videos folder).
         "user-home": "desktop/user-home.svg",
         "home": "desktop/user-home.svg",
         "user-trash": "desktop/user-trash.svg",
@@ -74,15 +76,7 @@ Item {
         "folder-development": "desktop/folder-projects.svg",
         "folder-videos": "desktop/folder-videos.svg",
         "media": "desktop/folder-videos.svg",
-        "media-video": "desktop/folder-videos.svg",
-        "video-x-generic": "desktop/folder-videos.svg",
-        "image-x-generic": "categories/graphics.svg",
-        "package-x-generic": "apps/store.svg",
         "folder-documents": "desktop/folder-documents.svg",
-        "text-x-generic": "desktop/folder-documents.svg",
-        "text-plain": "desktop/folder-documents.svg",
-        "document": "desktop/folder-documents.svg",
-        "audio-x-generic": "status/audio-x-generic.svg",
         "work": "desktop/folder-documents.svg",
         "folder-download": "desktop/folder-download.svg",
         "folder-downloads": "desktop/folder-download.svg",

@@ -371,61 +371,27 @@ Item {
         }
     }
 
+    // A file's icon: the theme's mimetype icon for its extension — never a folder picture
+    // (the old fallbacks listed folder-documents / folder-videos / folder-pictures, which
+    // made files look like folders). The first name the theme has wins.
+    readonly property var _mimeIcons: [
+        [["png", "jpg", "jpeg", "svg", "webp", "gif", "bmp", "ico", "avif", "heic"], ["image-x-generic"]],
+        [["mp4", "mkv", "avi", "mov", "webm", "flv", "m4v"], ["video-x-generic"]],
+        [["mp3", "wav", "flac", "ogg", "opus", "m4a", "aac"], ["audio-x-generic"]],
+        [["zip", "tar", "gz", "xz", "7z", "bz2", "rar", "zst"], ["package-x-generic", "application-x-archive"]],
+        [["pdf"], ["application-pdf", "x-office-document"]],
+        [["doc", "docx", "odt", "rtf"], ["x-office-document"]],
+        [["xls", "xlsx", "ods", "csv"], ["x-office-spreadsheet"]],
+        [["ppt", "pptx", "odp"], ["x-office-presentation"]],
+        [["sh", "bash", "zsh"], ["application-x-shellscript", "text-x-script"]],
+        [["py", "js", "ts", "qml", "json", "c", "cpp", "h", "rs", "go", "html", "css", "xml", "yaml", "yml", "toml"], ["text-x-script"]]
+    ]
     function getFileIcon(filename) {
-        if (!filename) return "text-x-generic";
-        const dot = filename.lastIndexOf(".");
-        if (dot === -1) return "text-x-generic";
-        const ext = filename.substring(dot + 1).toLowerCase();
-
-        // 1. Images
-        if (["png", "jpg", "jpeg", "svg", "webp", "gif", "bmp", "ico"].includes(ext)) {
-            const imgCandidates = ["image-x-generic", "image", "folder-image", "folder-pictures"];
-            for (let i = 0; i < imgCandidates.length; i++) {
-                if (Quickshell.hasThemeIcon(imgCandidates[i])) return imgCandidates[i];
-            }
-            return "image-x-generic";
-        }
-
-        // 2. Videos
-        if (["mp4", "mkv", "avi", "mov", "webm", "flv"].includes(ext)) {
-            const vidCandidates = ["video-x-generic", "folder-videos", "media-video", "video"];
-            for (let i = 0; i < vidCandidates.length; i++) {
-                if (Quickshell.hasThemeIcon(vidCandidates[i])) return vidCandidates[i];
-            }
-            return "video-x-generic";
-        }
-
-        // 3. Audio
-        if (["mp3", "wav", "flac", "ogg", "m4a", "aac"].includes(ext)) {
-            const audCandidates = ["audio-x-generic", "folder-music", "audio"];
-            for (let i = 0; i < audCandidates.length; i++) {
-                if (Quickshell.hasThemeIcon(audCandidates[i])) return audCandidates[i];
-            }
-            return "audio-x-generic";
-        }
-
-        // 4. Archives
-        if (["zip", "tar", "gz", "xz", "7z", "bz2", "rar"].includes(ext)) {
-            const archCandidates = ["package-x-generic", "application-zip", "application-x-tar", "package"];
-            for (let i = 0; i < archCandidates.length; i++) {
-                if (Quickshell.hasThemeIcon(archCandidates[i])) return archCandidates[i];
-            }
-            return "package-x-generic";
-        }
-
-        // 5. Code & Scripts
-        if (["sh", "bash", "py", "js", "ts", "qml", "json", "c", "cpp", "h", "rs", "go", "html", "css", "xml", "yaml", "yml"].includes(ext)) {
-            const codeCandidates = ["text-x-script", "application-x-shellscript", "text-x-generic", "folder-documents"];
-            for (let i = 0; i < codeCandidates.length; i++) {
-                if (Quickshell.hasThemeIcon(codeCandidates[i])) return codeCandidates[i];
-            }
-            return "text-x-generic";
-        }
-
-        // 6. Documents & Text
-        const docCandidates = ["text-x-generic", "folder-documents", "document", "text-plain"];
-        for (let i = 0; i < docCandidates.length; i++) {
-            if (Quickshell.hasThemeIcon(docCandidates[i])) return docCandidates[i];
+        const dot = filename ? filename.lastIndexOf(".") : -1;
+        const ext = dot > 0 ? filename.substring(dot + 1).toLowerCase() : "";
+        const row = root._mimeIcons.find(r => r[0].indexOf(ext) >= 0);
+        for (const n of (row ? row[1] : []).concat(["text-x-generic"])) {
+            if (IconResolver.has(n)) return n;
         }
         return "text-x-generic";
     }
