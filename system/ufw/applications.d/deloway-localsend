@@ -1,0 +1,6 @@
+# DeloWay (install.sh): the Notch → Share tab speaks LocalSend. Nearby devices find this
+# computer over multicast UDP and send to it over HTTPS, both on port 53317.
+[LocalSend]
+title=LocalSend (DeloWay Notch sharing)
+description=Find nearby devices and exchange files with them from the Notch
+ports=53317/tcp|53317/udp

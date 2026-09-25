@@ -628,6 +628,22 @@ configure_networking() {
                 || log_warn "Could not install the hotspot hook."
         fi
     fi
+
+    # Notch → Share (LocalSend): nearby devices find this computer and send to it on port
+    # 53317 (multicast UDP + HTTPS). ufw drops both by default. The rule is added even
+    # while ufw is disabled, so it is in place when it gets enabled.
+    if command -v ufw &>/dev/null; then
+        log_info "ufw found: allowing LocalSend (port 53317) for Notch sharing."
+        if [ "$DRY_RUN" = true ]; then
+            echo -e "${CYAN}[DRY-RUN]${NC} sudo install -Dm644 system/ufw/applications.d/deloway-localsend /etc/ufw/applications.d/"
+            echo -e "${CYAN}[DRY-RUN]${NC} sudo ufw allow LocalSend"
+        else
+            sudo install -Dm644 "$DELOWAY_DIR/system/ufw/applications.d/deloway-localsend" \
+                /etc/ufw/applications.d/deloway-localsend \
+                && sudo ufw allow LocalSend >/dev/null \
+                || log_warn "Could not allow LocalSend through ufw; nearby devices will not find this computer."
+        fi
+    fi
 }
 
 # ── 7. Centralized Configuration & Dispatcher Deployment ──────────────────────
