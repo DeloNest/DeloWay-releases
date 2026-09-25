@@ -159,7 +159,9 @@ PanelWindow {
         id: launcherCard
 
         anchors.horizontalCenter: parent.horizontalCenter
-        y: Math.round(targetScreen.height * 0.20)
+        // The window spans the screen; its height is there even while targetScreen is
+        // briefly null (a monitor being removed), which threw "height of null".
+        y: Math.round(root.height * 0.20)
         width: Math.min(500, root.width - 32)
 
         readonly property int headerHeight: 52
