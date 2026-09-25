@@ -45,7 +45,7 @@ ColumnLayout {
         implicitHeight: 46
         radius: Theme.notchRadiusCard
         color: Theme.notchSurfaceElevated
-        border.color: root.hotspotEnabled ? Theme.accent : Theme.notchBorder
+        border.color: root.hotspotEnabled ? Theme.inverseSurface : Theme.notchBorder
         border.width: 1
 
         RowLayout {
@@ -57,7 +57,7 @@ ColumnLayout {
             SymbolicIcon {
                 source: "network-wireless-hotspot-symbolic"
                 iconSize: 18
-                iconColor: root.hotspotEnabled ? Theme.accent : Theme.notchTextSecondary
+                iconColor: root.hotspotEnabled ? Theme.inverseSurface : Theme.notchTextSecondary
             }
 
             ColumnLayout {
@@ -84,7 +84,7 @@ ColumnLayout {
                     }
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(10)
-                    color: root.hotspotEnabled ? Theme.accent : Theme.notchTextSecondary
+                    color: root.hotspotEnabled ? Theme.inverseSurface : Theme.notchTextSecondary
                     elide: Text.ElideRight
                 }
             }
@@ -94,7 +94,7 @@ ColumnLayout {
                 width: 44
                 height: 24
                 radius: 12
-                color: root.hotspotEnabled ? Theme.accent : Theme.notchBackground
+                color: root.hotspotEnabled ? Theme.inverseSurface : Theme.notchBackground
                 border.color: Theme.notchBorder
                 border.width: 1
                 opacity: root.hotspotAvailable && !root.actionRunning ? 1.0 : 0.5
@@ -105,7 +105,7 @@ ColumnLayout {
                     width: 16
                     height: 16
                     radius: 8
-                    color: Theme.textOnAccent
+                    color: Theme.inverseText
                     Behavior on x { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                 }
 
