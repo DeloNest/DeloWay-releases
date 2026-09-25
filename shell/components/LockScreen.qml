@@ -169,6 +169,8 @@ WlSessionLock {
                             spacing: 8
 
                             TextInput {
+                                selectionColor: Theme.textSelection      // monochrome, not the palette's blue
+                                selectedTextColor: color
                                 id: pwdInput
                                 Layout.fillWidth: true
                                 font.family: Theme.typography.fontFamily

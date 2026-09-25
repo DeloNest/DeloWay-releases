@@ -171,6 +171,8 @@ ColumnLayout {
                     border.width: 1
 
                     TextInput {
+                        selectionColor: Theme.textSelection      // monochrome, not the palette's blue
+                        selectedTextColor: color
                         id: ssidInput
                         anchors.fill: parent
                         anchors.leftMargin: 8
@@ -216,6 +218,8 @@ ColumnLayout {
                         spacing: 4
 
                         TextInput {
+                            selectionColor: Theme.textSelection      // monochrome, not the palette's blue
+                            selectedTextColor: color
                             id: pwdInput
                             Layout.fillWidth: true
                             Layout.fillHeight: true

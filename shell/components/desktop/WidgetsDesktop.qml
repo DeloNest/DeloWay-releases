@@ -530,6 +530,8 @@ Item {
                     clip: true
 
                     TextArea {
+                        selectionColor: Theme.textSelection      // monochrome, not the palette's blue
+                        selectedTextColor: color
                         id: noteArea
                         placeholderText: I18n.tr("widget_notes_placeholder")
                         placeholderTextColor: Theme.colors.textTertiary

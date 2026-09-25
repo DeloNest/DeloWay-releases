@@ -251,6 +251,8 @@ Item {
 
                         // Inline Rename TextField
                         TextField {
+                            selectionColor: Theme.textSelection      // monochrome, not the palette's blue
+                            selectedTextColor: color
                             id: renameField
                             visible: deskItemWrapper.isEditing
                             Layout.fillWidth: true
