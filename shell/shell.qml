@@ -322,6 +322,7 @@ ShellRoot {
         // ── Setup Wizard ────────────────────────────────────────────────────
         function showSetup() { ShellState.openSetupWizard(0); }
         function showSetupStep(step: int) { ShellState.openSetupWizard(step); }
+        function closeSetup() { if (ConfigManager.setupCompleted) ShellState.closeSetupWizard(); }
 
         // ── Global "close topmost" — used by bindings & hotkeys ─────────────
         // Returns true if something was closed, false otherwise.

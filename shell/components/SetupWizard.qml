@@ -22,6 +22,9 @@ PanelWindow {
     color: "transparent"
 
     readonly property bool isActive: (!ConfigManager.setupCompleted || ShellState.setupWizardOpen)
+    // Reopened after setup (Settings, IPC): it can be closed without walking every step.
+    // On the first run it stays until Finish.
+    readonly property bool dismissible: ConfigManager.setupCompleted
 
     WlrLayershell.namespace: "deloway:setup-wizard"
     WlrLayershell.layer: WlrLayer.Overlay
@@ -68,6 +71,9 @@ PanelWindow {
 
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
+
+        focus: root.isActive
+        Keys.onEscapePressed: if (root.dismissible) ShellState.closeSetupWizard()
 
         opacity: root.isActive ? 1.0 : 0.0
         scale: root.isActive ? 1.0 : 0.94
@@ -143,6 +149,31 @@ PanelWindow {
                             Behavior on width { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                             Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                         }
+                    }
+                }
+
+                // Close (only once setup is complete)
+                Rectangle {
+                    visible: root.dismissible
+                    Layout.alignment: Qt.AlignVCenter
+                    width: 28
+                    height: 28
+                    radius: 14
+                    color: closeMa.containsMouse ? Theme.colors.surfaceHover : "transparent"
+
+                    SymbolicIcon {
+                        anchors.centerIn: parent
+                        iconSize: 14
+                        source: "window-close-symbolic"
+                        iconColor: Theme.colors.textSecondary
+                    }
+
+                    MouseArea {
+                        id: closeMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: ShellState.closeSetupWizard()
                     }
                 }
             }
