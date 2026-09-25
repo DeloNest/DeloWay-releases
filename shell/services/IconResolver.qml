@@ -52,14 +52,14 @@ Item {
             const name = decodeURIComponent(q >= 0 ? rest.substring(0, q) : rest);
             const query = q >= 0 ? rest.substring(q + 1) : "";
             // A path smuggled into the theme provider (some tray items do this)
-            if (name.startsWith("/")) return "file://" + name;
+            if (name.startsWith("/")) return ConfigManager.fileUrl(name);
             // Tray items with their own IconThemePath: the icon lives outside the theme,
             // where hasThemeIcon() cannot see it; the provider resolves it.
             if (/(?:^|&)path=/.test(query)) return s;
             const fb = (/(?:^|&)fallback=([^&]*)/.exec(query) || [])[1];
             return root.themeUrl(name, fb ? decodeURIComponent(fb) : "");
         }
-        if (s.startsWith("/")) return "file://" + s;
+        if (s.startsWith("/")) return ConfigManager.fileUrl(s);
         if (s.includes("://")) return s;
         return root.themeUrl(s);
     }

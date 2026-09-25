@@ -93,8 +93,7 @@ Item {
 
     readonly property string localAssetUrl: {
         if (!source) return "";
-        if (source.startsWith("file://")) return source;
-        if (source.startsWith("/")) return "file://" + source;
+        if (source.startsWith("file://") || source.startsWith("/")) return ConfigManager.fileUrl(source);
 
         const clean = source.toLowerCase().replace(/\.desktop$/, "").replace(/\.svg$/, "").trim();
         const mapped = directAppMap[clean];

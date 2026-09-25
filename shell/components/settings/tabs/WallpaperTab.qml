@@ -174,7 +174,7 @@ Item {
                             Image {
                                 anchors.fill: parent
                                 anchors.margins: wpCard.isSelected ? 2 : 0
-                                source: "file://" + wpCard.modelData.path
+                                source: ConfigManager.fileUrl(wpCard.modelData.path)
                                 fillMode: Image.PreserveAspectCrop
                                 sourceSize: Qt.size(280, 176)   // 2× the 140×88 card
                                 cache: true

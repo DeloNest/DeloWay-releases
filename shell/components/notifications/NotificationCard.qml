@@ -249,7 +249,7 @@ Item {
             Image {
                 anchors.fill: parent
                 anchors.margins: 1
-                source: (root.notif && root.notif.imagePath) ? "file://" + root.notif.imagePath : ""
+                source: (root.notif && root.notif.imagePath) ? ConfigManager.fileUrl(root.notif.imagePath) : ""
                 fillMode: Image.PreserveAspectCrop
                 sourceSize.width: Math.round(width * 2)   // thumbnail, not the full screenshot
                 asynchronous: true

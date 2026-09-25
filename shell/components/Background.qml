@@ -32,7 +32,7 @@ PanelWindow {
         anchors.fill: parent
         readonly property string bundled: "file://" + ConfigManager.projectDir + "/assets/wallpaper.jpg"
         readonly property string configured: (ConfigManager.wallpaper && ConfigManager.wallpaper.length > 0)
-                ? (ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper))
+                ? ConfigManager.fileUrl(ConfigManager.wallpaper)
                 : ""
         // A configured path that no longer exists falls back to the bundled wallpaper
         // instead of leaving a black desktop.

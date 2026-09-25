@@ -270,9 +270,7 @@ Item {
                                 anchors.fill: parent
                                 anchors.margins: 1
                                 source: {
-                                    let s = (fileItem.modelData || "");
-                                    if (s.startsWith("/") && !s.startsWith("file://")) return "file://" + s;
-                                    return s;
+                                    return ConfigManager.fileUrl(fileItem.modelData || "");
                                 }
                                 fillMode: Image.PreserveAspectCrop
                                 sourceSize: Qt.size(96, 80)   // 2× the 48×40 tile; big photos decoded off-thread

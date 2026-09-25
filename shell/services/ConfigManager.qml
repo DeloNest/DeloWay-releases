@@ -591,9 +591,22 @@ Item {
         saveConfig();
 
         // Sync with GNOME GSettings so external tools and image viewers stay in sync
-        var uri = "file://" + cleanPath;
+        var uri = root.fileUrl(cleanPath);
         root.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri", uri]);
         root.run(["gsettings", "set", "org.gnome.desktop.background", "picture-uri-dark", uri]);
+    }
+
+    // A local path (or a file:// URL someone stored unencoded) as a correct file:// URL.
+    // Plain "file://" + path broke on "#" and "?" — "#silver surfer#.jpeg" was read as
+    // the fragment "silver surfer#.jpeg" of the folder — so such wallpapers never loaded.
+    function fileUrl(path) {
+        if (!path) return "";
+        let p = String(path);
+        if (p.startsWith("file://")) {
+            try { p = decodeURIComponent(p.substring(7)); } catch (e) { p = p.substring(7); }
+        }
+        if (!p.startsWith("/")) return String(path);   // another scheme: leave it alone
+        return "file://" + encodeURI(p).replace(/#/g, "%23").replace(/\?/g, "%3F");
     }
 
     function setFontSizeScale(scale) {

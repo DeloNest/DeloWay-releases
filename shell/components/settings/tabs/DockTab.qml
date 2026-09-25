@@ -51,7 +51,7 @@ Item {
                     // Subtle Desktop Wallpaper Preview
                     Image {
                         anchors.fill: parent
-                        source: ConfigManager.wallpaper ? (ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper)) : ""
+                        source: ConfigManager.fileUrl(ConfigManager.wallpaper)
                         fillMode: Image.PreserveAspectCrop
                         opacity: 0.45
                         sourceSize.width: Math.round(width * 2)   // preview card, not the full wallpaper

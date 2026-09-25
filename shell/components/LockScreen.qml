@@ -41,7 +41,7 @@ WlSessionLock {
             // Fullscreen Alpine Backdrop
             Image {
                 anchors.fill: parent
-                source: ConfigManager.wallpaper.startsWith("file://") ? ConfigManager.wallpaper : ("file://" + ConfigManager.wallpaper)
+                source: ConfigManager.fileUrl(ConfigManager.wallpaper)
                 fillMode: Image.PreserveAspectCrop
                 // Same decode size as the desktop Background, off the GUI thread.
                 sourceSize.width: Math.round(width * Screen.devicePixelRatio)
