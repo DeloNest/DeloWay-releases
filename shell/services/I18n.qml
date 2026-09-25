@@ -270,8 +270,6 @@ Item {
             "desk_downloads": "Downloads",
             "notch_music_fallback": "Music",
             "ls_err_failed": "Transfer failed",
-            "ls_err_exited": "the sender stopped unexpectedly",
-            "ls_err_no_device": "Choose a device to send to",
             "share_connect": "Connect a device",
             "share_no_device": "No device connected",
             "share_no_device_hint": "Pair your phone to send and receive files right here.",
@@ -463,7 +461,6 @@ Item {
             // Smart Notch & LocalSend
             "notch_now_playing": "Now Playing",
             "notch_sending_to": "Sending to",
-            "notch_sent_success": "Sent successfully!",
             "notch_sent_failed": "Transfer failed",
             "notch_try_again": "Try Again",
             "common_cancel": "Cancel",
@@ -520,18 +517,6 @@ Item {
             "tc_load": "Load",
             "tc_threads": "threads",
             "tc_free": "free",
-            "notch_select_device": "Select Recipient Device",
-            "notch_send_more": "Send More Files",
-            "notch_files_ready": "files ready to send",
-            "notch_file_ready": "file ready to send",
-            "notch_ready_to_send": "ready to send",
-            "notch_status_ready": "Ready to send & receive",
-            "notch_status_stopped": "Service stopped",
-            "notch_open_app": "Open App",
-            "notch_no_devices": "No devices found on local network",
-            "notch_no_devices_hint": "Open LocalSend on your phone or other device on the same Wi-Fi",
-            "notch_scan_network": "Scan Network",
-            "notch_scanning": "Scanning network..."
         },
         "ar": {
             // Navigation
@@ -793,8 +778,6 @@ Item {
             "desk_downloads": "التنزيلات",
             "notch_music_fallback": "موسيقى",
             "ls_err_failed": "تعذّر الإرسال",
-            "ls_err_exited": "توقف الإرسال فجأة",
-            "ls_err_no_device": "اختر جهازاً للإرسال إليه",
             "share_connect": "الاتصال بجهاز",
             "share_no_device": "لا يوجد جهاز متصل",
             "share_no_device_hint": "اقترن بجوالك لترسل الملفات وتستقبلها من هنا مباشرة.",
@@ -986,7 +969,6 @@ Item {
             // Smart Notch & LocalSend
             "notch_now_playing": "يتم التشغيل الآن",
             "notch_sending_to": "جارٍ الإرسال إلى",
-            "notch_sent_success": "تم الإرسال بنجاح!",
             "notch_sent_failed": "فشل الإرسال",
             "notch_try_again": "إعادة المحاولة",
             "common_cancel": "إلغاء",
@@ -1043,18 +1025,6 @@ Item {
             "tc_load": "الحمل",
             "tc_threads": "مسار",
             "tc_free": "متاح",
-            "notch_select_device": "اختر الجهاز المستلم",
-            "notch_send_more": "إرسال ملفات أخرى",
-            "notch_files_ready": "ملفات جاهزة للإرسال",
-            "notch_file_ready": "ملف جاهز للإرسال",
-            "notch_ready_to_send": "جاهزة للإرسال",
-            "notch_status_ready": "جاهز للاستقبال والإرسال",
-            "notch_status_stopped": "الخدمة متوقفة",
-            "notch_open_app": "فتح التطبيق",
-            "notch_no_devices": "لم يتم العثور على أجهزة متصلة حالياً",
-            "notch_no_devices_hint": "تأكد من فتح تطبيق LocalSend على هاتفك أو جهازك الآخر متصلاً بنفس شبكة الـ Wi-Fi",
-            "notch_scan_network": "إعادة الفحص",
-            "notch_scanning": "جارٍ فحص الشبكة..."
         }
     })
 
