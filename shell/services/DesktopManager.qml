@@ -18,60 +18,32 @@ Item {
     // ----------------------------------------------------
     property bool isTrashEmpty: true
 
-    // System default endpoints with unified Reversal amber icons
-    readonly property var systemItems: [
-        {
-            "id": "home",
-            "name": "Home",
-            "icon": "user-home",
-            "path": root.homeDir,
-            "isSystem": true,
-            "isTrash": false,
-            "isDir": true
-        },
-        {
-            "id": "trash",
-            "name": "Trash",
-            "icon": root.isTrashEmpty ? "user-trash" : "user-trash-full",
-            "path": "trash://",
-            "isSystem": true,
-            "isTrash": true,
-            "isDir": true
-        },
-        {
-            "id": "projects",
-            "name": "Projects",
-            "icon": "folder-development",
-            "path": root.homeDir + "/Projects",
-            "isSystem": true,
-            "isTrash": false,
-            "isDir": true
-        },
-        {
-            "id": "media",
-            "name": "Videos",
-            "icon": "folder-videos",
-            "path": root.homeDir + "/Videos",
-            "isSystem": true,
-            "isTrash": false,
-            "isDir": true
-        },
-        {
-            "id": "downloads",
-            "name": "Downloads",
-            "icon": "folder-download",
-            "path": root.homeDir + "/Downloads",
-            "isSystem": true,
-            "isTrash": false,
-            "isDir": true
+    // Fixed desktop items. Home and Trash always; Projects, Videos and Downloads only
+    // when the folder exists (the XDG location, e.g. a localized "Videos"), found by the
+    // desktop scan. Names follow the UI language.
+    property var sysPaths: ({})     // id → existing folder, from refreshDesktop()
+    readonly property var systemItems: {
+        const list = [
+            { "id": "home", "name": I18n.tr("desk_home"), "icon": "user-home", "path": root.homeDir,
+              "isSystem": true, "isTrash": false, "isDir": true },
+            { "id": "trash", "name": I18n.tr("desk_trash"), "icon": root.isTrashEmpty ? "user-trash" : "user-trash-full",
+              "path": "trash://", "isSystem": true, "isTrash": true, "isDir": true }
+        ];
+        const extra = [["projects", "desk_projects", "folder-development"],
+                       ["media",    "desk_videos",   "folder-videos"],        // id kept: saved positions
+                       ["downloads","desk_downloads","folder-download"]];
+        for (const e of extra) {
+            if (root.sysPaths[e[0]]) list.push({ "id": e[0], "name": I18n.tr(e[1]), "icon": e[2], "path": root.sysPaths[e[0]],
+                                                 "isSystem": true, "isTrash": false, "isDir": true });
         }
-    ]
+        return list;
+    }
 
     // User created files and folders on ~/Desktop
     property var userItems: []
 
     // Combined items array (reactive and explicitly updated on changes)
-    property var allItems: []
+    readonly property var allItems: root.systemItems.concat(root.userItems)
 
     // Selection management
     property var selectedItemIds: []
@@ -458,6 +430,7 @@ Item {
     }
 
     property var _pendingUserItems: []
+    property var _pendingSysPaths: ({})
 
     Process {
         id: listDesktopProcess
@@ -467,6 +440,10 @@ Item {
                 if (trimmed.length > 0) {
                     const parts = trimmed.split("\t");
                     const type = parts[0];
+                    if (type === "SYS") {             // SYS <id> <existing folder>
+                        root._pendingSysPaths[parts[1]] = parts[2];
+                        return;
+                    }
                     let icon = "folder";
                     let displayName = "";
                     let fileName = "";
@@ -508,15 +485,32 @@ Item {
             }
         }
         onExited: {
+            root.sysPaths = root._pendingSysPaths;
             root.userItems = root._pendingUserItems;
-            root.allItems = root.systemItems.concat(root.userItems);
         }
     }
 
     function refreshDesktop() {
         root._pendingUserItems = [];
-        const scanCmd = "mkdir -p '" + root.desktopDir + "' && for entry in '" + root.desktopDir + "'/*; do [ -e \"$entry\" ] || continue; name=$(basename \"$entry\"); if [ -d \"$entry\" ]; then printf \"DIR\\t\\t%s\\n\" \"$name\"; elif [[ \"$name\" == *.desktop ]]; then d_name=$(grep -m1 '^Name=' \"$entry\" | cut -d= -f2-); d_icon=$(grep -m1 '^Icon=' \"$entry\" | cut -d= -f2-); [ -z \"$d_name\" ] && d_name=\"$name\"; printf \"DESKTOP\\t%s\\t%s\\t%s\\n\" \"$d_icon\" \"$d_name\" \"$name\"; else printf \"FILE\\t\\t%s\\n\" \"$name\"; fi; done";
-        listDesktopProcess.command = ["bash", "-c", scanCmd];
+        root._pendingSysPaths = ({});
+        // Paths travel as positional arguments ($1 desktop, $2 home), never spliced into
+        // the script. SYS lines report the fixed folders that exist (XDG location first).
+        const scanCmd =
+            'd="$1"; h="$2"; mkdir -p -- "$d"\n' +
+            'xdgdir() { p=$(xdg-user-dir "$1" 2>/dev/null); if [ -n "$p" ] && [ "$p" != "$h" ]; then printf %s "$p"; else printf %s "$h/$2"; fi; }\n' +
+            'p=$(xdgdir VIDEOS Videos);      [ -d "$p" ] && printf "SYS\\tmedia\\t%s\\n" "$p"\n' +
+            'p=$(xdgdir DOWNLOAD Downloads); [ -d "$p" ] && printf "SYS\\tdownloads\\t%s\\n" "$p"\n' +
+            '[ -d "$h/Projects" ] && printf "SYS\\tprojects\\t%s\\n" "$h/Projects"\n' +
+            'for entry in "$d"/*; do\n' +
+            '  [ -e "$entry" ] || continue; name=$(basename -- "$entry")\n' +
+            '  if [ -d "$entry" ]; then printf "DIR\\t\\t%s\\n" "$name"\n' +
+            '  elif [[ "$name" == *.desktop ]]; then\n' +
+            '    d_name=$(grep -m1 "^Name=" "$entry" | cut -d= -f2-); d_icon=$(grep -m1 "^Icon=" "$entry" | cut -d= -f2-)\n' +
+            '    [ -z "$d_name" ] && d_name="$name"\n' +
+            '    printf "DESKTOP\\t%s\\t%s\\t%s\\n" "$d_icon" "$d_name" "$name"\n' +
+            '  else printf "FILE\\t\\t%s\\n" "$name"; fi\n' +
+            'done\n';
+        listDesktopProcess.command = ["bash", "-c", scanCmd, "deloway-desktop-scan", root.desktopDir, root.homeDir];
         listDesktopProcess.running = true;
 
         checkTrashProcess.command = ["sh", "-c", '[ -n "$(ls -A "$1" 2>/dev/null)" ] && echo full || echo empty', "sh", root.trashFilesDir];
@@ -563,7 +557,6 @@ Item {
     }
 
     Component.onCompleted: {
-        root.allItems = root.systemItems.concat([]);
         loadPositions();
         refreshDesktop();
     }
