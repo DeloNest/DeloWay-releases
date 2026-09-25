@@ -148,7 +148,7 @@ check_aur_helper() {
         log_success "Found AUR helper: ${BOLD}yay${NC}"
     else
         log_warn "No AUR helper (paru/yay) was found in PATH."
-        echo -e "Some DeloWay packages (Cairo font, LocalSend, pamac) come from the AUR and need a helper."
+        echo -e "Some DeloWay packages (Cairo font, pamac) come from the AUR and need a helper."
         
         if [ "$AUTO_YES" = true ]; then
             CHOICE=1
@@ -406,7 +406,7 @@ queue_core_packages() {
         "xdg-utils"              # xdg-open / xdg-mime / xdg-settings (default apps)
         "gtk3"                   # gtk-launch (delo-app, desktop shortcuts)
         "adw-gtk-theme"          # adw-gtk3: the base the DeloWay GTK3 themes are built on
-        "zenity"                 # "Browse…" file picker for wallpapers
+        "zenity"                 # file pickers: wallpaper "Browse…", Notch → Share "Choose files…"
         # Fonts: Arabic coverage and the Settings → Appearance font choices
         "noto-fonts"
         "noto-fonts-emoji"       # emoji in titles, notifications, chat apps (else tofu boxes)
@@ -439,15 +439,13 @@ queue_core_packages() {
 
     # AUR packages the shell depends on:
     #   ttf-cairo      — the default UI font (Theme.qml falls back to "Cairo")
-    #   localsend-bin  — Notch → Share (LocalSend)
     #   pamac-aur      — App Store entry, "View in Store", package install / uninstall
     # fc-list -q: exit status only. `fc-list | grep -qi` was always "missing" under
     # pipefail (grep -q exits early, fc-list dies of SIGPIPE), so ttf-cairo was re-queued.
     if ! fc-list -q "Cairo" 2>/dev/null; then
         AUR_PKGS_TO_INSTALL+=("ttf-cairo")
     fi
-    command -v localsend &>/dev/null || command -v localsend_app &>/dev/null || [ -x "$HOME/.local/bin/localsend" ] \
-        || AUR_PKGS_TO_INSTALL+=("localsend-bin")
+    # (Notch → Share needs no LocalSend app: scripts/deloway-localsend.py speaks the protocol.)
     command -v pamac &>/dev/null || AUR_PKGS_TO_INSTALL+=("pamac-aur")
 
     # Optional Tools: Satty & SwayOSD (Explicitly separated from code integration)
