@@ -242,6 +242,8 @@ Item {
             // Setup Wizard & General
             "welcome_deloos": "Welcome to DeloOS",
             "setup_wizard_desc": "Configure your personalized desktop experience (§5.10)",
+            "icon_theme_missing_title": "Icon theme not installed",
+            "icon_theme_missing_body": "“%1” is missing, so apps show letters instead of icons. Run install.sh in the DeloWay folder to install it.",
             "step_language": "0. Interface Language",
             "step_language_desc": "Choose your preferred interface language and desktop layout.",
             "step_theme": "1. System Theme & Accent Color",
@@ -655,6 +657,8 @@ Item {
             // Setup Wizard & General
             "welcome_deloos": "مرحباً بك في DeloOS",
             "setup_wizard_desc": "معالج الإعداد لأول مرة — خصص تجربة وإعدادات سطح مكتبك (§5.10)",
+            "icon_theme_missing_title": "سمة الأيقونات غير مثبّتة",
+            "icon_theme_missing_body": "السمة “%1” غير موجودة، لذلك تظهر التطبيقات بحروف بدل أيقوناتها. شغّل install.sh من مجلد DeloWay لتثبيتها.",
             "step_language": "٠. لغة واجهة النظام",
             "step_language_desc": "اختر لغة الواجهة وتخطيط اتجاه سطح المكتب المفضل لديك.",
             "step_theme": "١. مظهر النظام ولون التمييز",

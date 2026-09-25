@@ -410,6 +410,20 @@ ShellRoot {
     //  STARTUP
     // ═══════════════════════════════════════════════════════════════════════
 
+    // A missing icon theme turns every app icon into a letter and every theme glyph into a
+    // placeholder. Say so once instead of failing silently (install.sh builds the theme).
+    Timer {
+        interval: 4000
+        running: true
+        onTriggered: {
+            if (Quickshell.hasThemeIcon("folder") || Quickshell.hasThemeIcon("application-x-executable")) return;
+            const theme = Quickshell.env("QS_ICON_THEME") || "Reversal-black-dark";
+            console.warn("[Deloway] Icon theme '" + theme + "' is not installed; icons fall back to placeholders.");
+            NotificationManager.postNotification("DeloWay", I18n.tr("icon_theme_missing_title"),
+                I18n.tr("icon_theme_missing_body").replace("%1", I18n.isolate(theme)), "dialog-warning-symbolic");
+        }
+    }
+
     Component.onCompleted: {
         const screenCount = Quickshell.screens.length;
         console.log("[Deloway] Shell initialised — "
