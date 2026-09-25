@@ -46,6 +46,7 @@ Item {
     // ("clean" used to be a third mode meaning "empty"; it maps to showDesktopContent.)
     property string desktopMode: "traditional"
     property bool showDesktopContent: false
+    property bool desktopSnapToGrid: true     // desktop icons snap to the grid when dropped
     property var enabledWidgets: ["clock", "weather", "system_monitor", "notes"]
     property var widgetPositions: ({
         "clock": { "x": 60, "y": 70 },
@@ -287,6 +288,7 @@ Item {
                 } else if (cfg.desktop.mode === "clean") {
                     root.showDesktopContent = false;     // legacy empty mode
                 }
+                if (cfg.desktop.snapToGrid !== undefined) root.desktopSnapToGrid = !!cfg.desktop.snapToGrid;
                 if (cfg.desktop.widgetPositions) root.widgetPositions = cfg.desktop.widgetPositions;
                 if (cfg.desktop.enabledWidgets) root.enabledWidgets = cfg.desktop.enabledWidgets;
             }
@@ -558,6 +560,11 @@ Item {
         if (mode !== "widgets" && mode !== "traditional") return;
         root.desktopMode = mode;
         root.showDesktopContent = true;
+        saveConfig();
+    }
+
+    function setDesktopSnapToGrid(val) {
+        root.desktopSnapToGrid = !!val;
         saveConfig();
     }
 
@@ -892,6 +899,7 @@ Item {
             desktop: {
                 mode: root.desktopMode,
                 showContent: root.showDesktopContent,
+                snapToGrid: root.desktopSnapToGrid,
                 widgetPositions: root.widgetPositions,
                 enabledWidgets: root.enabledWidgets
             },

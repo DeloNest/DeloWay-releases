@@ -59,7 +59,8 @@ Item {
     readonly property real topMargin: 56
     readonly property real sideMargin: 24
 
-    property bool snapToGrid: true
+    // Saved in deloway.json (desktop.snapToGrid); it used to reset on every restart.
+    readonly property bool snapToGrid: ConfigManager.desktopSnapToGrid
 
     readonly property string positionsPath: homeDir + "/.config/deloway/desktop_positions.json"
     property var iconPositions: ({})

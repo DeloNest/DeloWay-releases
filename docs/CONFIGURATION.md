@@ -105,6 +105,7 @@ Below is an annotated example of a complete `deloway.json` file:
   - `"traditional"`: Full desktop icon grid with files, folders, and rubber-band selection.
   - `"widgets"`: Draggable Fluent Mica widgets.
   - (`"clean"`, from older configs, is read as `showContent: false`.)
+- `snapToGrid` *(boolean)*: Desktop icons snap to the grid when dropped (default `true`).
 - `showContent` *(boolean)*: Shows the desktop's icons or widgets; `false` leaves an empty desktop (wallpaper only) and keeps `mode` for when it is shown again. Toggled from the desktop's right-click menu.
 - `widgetPositions` *(object)*: Map of widget IDs (`"clock"`, `"weather"`, `"system_monitor"`, `"notes"`) to their desktop coordinate objects `{ "x": number, "y": number }`.
 - `enabledWidgets` *(array of strings)*: List of active widgets rendered on the desktop in widgets mode.

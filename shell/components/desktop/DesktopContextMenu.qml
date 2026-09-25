@@ -138,7 +138,7 @@ PanelWindow {
                     icon: "snap-symbolic"
                     toggle: true
                     checked: DesktopManager.snapToGrid
-                    onTriggered: DesktopManager.snapToGrid = !DesktopManager.snapToGrid
+                    onTriggered: ConfigManager.setDesktopSnapToGrid(!ConfigManager.desktopSnapToGrid)
                 }
 
                 MenuSeparator {}
