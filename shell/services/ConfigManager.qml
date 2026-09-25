@@ -121,7 +121,8 @@ Item {
     FileView {
         id: markerFile
         path: root.markerPath
-        watchChanges: true
+        atomicWrites: true
+        printErrors: false      // absent until the Setup Wizard finishes
     }
 
     // Shipped template (config/deloway.json): read synchronously, because it is needed the
@@ -137,11 +138,13 @@ Item {
         path: root.configPath
         watchChanges: true
         preload: true
+        atomicWrites: true      // written by writeConfigNow(): temp file + rename, never half a file
         printErrors: false      // a missing file is the first run, handled in onLoadFailed
 
         onTextChanged: {
             const raw = text();
             if (!raw || !raw.trim()) return;
+            if (raw === root._lastWritten) return;   // our own save: nothing new to apply
             root.loadFromText(raw);
             // Apply compositor-side settings from what was actually loaded (the startup
             // sync used to run before the async file load and pushed the built-in defaults).
@@ -936,18 +939,18 @@ Item {
             setupCompleted: root.setupCompleted
         };
 
-        const jsonStr = JSON.stringify(configData, null, 2);
-        saveProcess.exec(["bash", "-c", "mkdir -p " + root.userConfigDir + " && cat << 'EOF' > " + root.configPath + "\n" + jsonStr + "\nEOF"]);
+        // Atomic write through the FileView (it used to be a bash heredoc: not atomic, so
+        // a crash mid-write left a truncated deloway.json, and a quote in the path broke it).
+        const jsonStr = JSON.stringify(configData, null, 2) + "\n";
+        root._lastWritten = jsonStr;
+        configFile.setText(jsonStr);
     }
+    property string _lastWritten: ""
 
     function completeSetup() {
         root.setupCompleted = true;
         saveConfig();
-        root.run(["bash", "-c", "mkdir -p " + root.userConfigDir + " && echo 'done' > " + root.markerPath]);
-    }
-
-    Process {
-        id: saveProcess
+        markerFile.setText("done\n");
     }
 
 
