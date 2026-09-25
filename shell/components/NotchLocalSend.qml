@@ -170,9 +170,10 @@ Item {
                         urls = [drop.text];
                     }
                     if (urls.length > 0) {
-                        root.droppedUrls = urls;
-                        root.stage = "selecting";
-                        LocalSendService.scanNetwork();
+                        // Through the service like every other way of staging: drop.urls are
+                        // url objects, not strings, and the tray's string code threw on them
+                        // ("toLowerCase is not a function"). onFilesStaged does the rest.
+                        LocalSendService.stageFiles(urls);
                         drop.acceptProposedAction();
                     }
                 }
