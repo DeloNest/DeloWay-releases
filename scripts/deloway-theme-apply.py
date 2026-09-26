@@ -1015,6 +1015,11 @@ def _kde_rgb(hex_color: str) -> str:
     return ",".join(str(int(h[i:i + 2], 16)) for i in (0, 2, 4))
 
 
+def breeze_style_installed() -> bool:
+    return any(Path(d, "styles", "breeze6.so").exists()
+               for d in ("/usr/lib/qt6/plugins", "/usr/lib64/qt6/plugins"))
+
+
 def build_kdeglobals_groups(mode: str, font_family: str, font_scale: float, icon_theme: str) -> dict:
     pal = PALETTES["dark" if mode == "dark" else "light"]
     dark = mode == "dark"
@@ -1052,7 +1057,9 @@ def build_kdeglobals_groups(mode: str, font_family: str, font_scale: float, icon
             "fixed": f"{TERMINAL_FONT},{size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1",
         },
         "Icons": {"Theme": icon_theme},
-        "KDE": {"widgetStyle": "Fusion"},   # Breeze is not installed; Fusion takes the palette
+        # Breeze draws KDE apps as designed (rounded selection, framed location bar) and
+        # takes every colour from the scheme; Fusion (square, flat) only when it is missing.
+        "KDE": {"widgetStyle": "Breeze" if breeze_style_installed() else "Fusion"},
         # KDE apps with a colour-scheme menu (Dolphin, Kate, Okular…) read the scheme from
         # their own rc, falling back to kdeglobals; unset, they picked Breeze (Dark)
         # themselves on a non-Plasma desktop. Set once here for all of them.
