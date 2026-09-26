@@ -452,6 +452,13 @@ queue_core_packages() {
         AUR_PKGS_TO_INSTALL+=("ttf-cairo")
     fi
     # (Notch → Share needs no LocalSend app: scripts/deloway-localsend.py speaks the protocol.)
+
+    # Default viewers by file type (config/default-apps.tsv): images, videos, PDFs. The
+    # shell makes them the defaults on first run (scripts/deloway-default-app.py);
+    # Settings → Apps offers the alternatives and the browser.
+    pacman -Q loupe &>/dev/null || PKGS_TO_INSTALL+=("loupe")
+    pacman -Q papers &>/dev/null || PKGS_TO_INSTALL+=("papers")
+    pacman -Q cine &>/dev/null || AUR_PKGS_TO_INSTALL+=("cine")
     command -v pamac &>/dev/null || AUR_PKGS_TO_INSTALL+=("pamac-aur")
 
     # Optional Tools: Satty & SwayOSD (Explicitly separated from code integration)
