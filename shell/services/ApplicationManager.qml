@@ -191,7 +191,7 @@ Item {
                 categories: app.categories || ["All"],
                 comment: app.comment || "",
                 startupClass: app.startupClass || "",
-                execute: function() { app.execute(); }
+                execute: function() { root.runEntry(app); }
             });
         }
 
@@ -407,7 +407,7 @@ Item {
 
     function newWindow(item) {
         if (!item) return;
-        if (item.desktopEntry && typeof item.desktopEntry.execute === "function") item.desktopEntry.execute();
+        if (item.desktopEntry && typeof item.desktopEntry.execute === "function") root.runEntry(item.desktopEntry);
         else root.launchApp(root.findApp(item.id) || item);
     }
 
@@ -559,7 +559,7 @@ Item {
             return;
         }
         if (item.desktopEntry && typeof item.desktopEntry.execute === "function") {
-            item.desktopEntry.execute();
+            root.runEntry(item.desktopEntry);
             return;
         }
         if (item.exec) {
@@ -569,6 +569,29 @@ Item {
         Hyprland.dispatch("exec " + item.id);
     }
 
+    // ── Launching ─────────────────────────────────────────────────────────
+    // Everything the shell starts gets the UI language explicitly. The shell's own
+    // environment is fixed when it starts — without LANGUAGE when the session began
+    // without it, stale after a language switch — so apps from the App Drawer came up in
+    // English while the same app from a shortcut (started by Hyprland) was Arabic.
+    readonly property var launchEnvironment: ({ "LANGUAGE": ConfigManager.uiLanguage === "en" ? "en_US:en" : "ar:en" })
+
+    function run(command, workingDirectory) {
+        const context = { command: command, environment: root.launchEnvironment };
+        if (workingDirectory) context.workingDirectory = workingDirectory;
+        Quickshell.execDetached(context);
+    }
+
+    // A desktop entry, started as execute() would, with the UI language.
+    function runEntry(entry) {
+        if (!entry) return;
+        if (entry.runInTerminal || !entry.command || entry.command.length === 0) {
+            entry.execute();   // terminal apps: Quickshell wraps them in a terminal
+            return;
+        }
+        root.run(entry.command, entry.workingDirectory);
+    }
+
     function launchApp(app) {
         if (!app) return;
         if (app.id === "settings") {
@@ -576,7 +599,8 @@ Item {
             return;
         }
         if (typeof app.execute === "function") {
-            app.execute();
+            if (app.command !== undefined) root.runEntry(app);   // a DesktopEntry itself
+            else app.execute();
             return;
         }
         if (app.exec) {

@@ -578,7 +578,7 @@ PanelWindow {
 
             onClicked: (mouse) => {
                 if (slot.isTrash) {
-                    if (mouse.button === Qt.LeftButton) Quickshell.execDetached(["xdg-open", "trash://"]);
+                    if (mouse.button === Qt.LeftButton) ApplicationManager.run(["xdg-open", "trash://"]);
                     return;
                 }
                 if (slot.isLauncher) {

@@ -179,7 +179,7 @@ ColumnLayout {
                     enabled: !!factRow.modelData.link
                     hoverEnabled: enabled
                     cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: Quickshell.execDetached(["xdg-open", factRow.modelData.v])
+                    onClicked: ApplicationManager.run(["xdg-open", factRow.modelData.v])
                 }
             }
         }

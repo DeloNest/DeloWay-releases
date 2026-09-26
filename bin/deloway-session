@@ -41,6 +41,17 @@ export DELOWAY_DIR="${DELOWAY_DIR:-$PROJECT_ROOT}"   # read by the shell, delo-a
 export DELOWAY_HOME="${DELOWAY_HOME:-$DELOWAY_DIR}"  # legacy alias
 export DELOWAY_CONFIG="${DELOWAY_CONFIG:-$HOME/.config/deloway/deloway.json}"
 
+# The UI language for the whole session from its first process. Set only later (by the
+# shell, into Hyprland), it missed the shell itself — so everything the shell started
+# (App Drawer, desktop files) came up in English while shortcuts, started by Hyprland,
+# were Arabic. Same values as scripts/deloway-locale-apply.py.
+UI_LANG=$(jq -r '.system.uiLanguage // "ar"' "$DELOWAY_CONFIG" 2>/dev/null || echo ar)
+if [ "$UI_LANG" = "en" ]; then
+    export LANGUAGE="en_US:en"
+else
+    export LANGUAGE="ar:en"
+fi
+
 # Ensure user directories exist
 mkdir -p "$HOME/.config/deloway" "$HOME/.local/share/applications" "$HOME/Desktop"
 

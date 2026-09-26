@@ -334,7 +334,7 @@ Item {
                 isSubSetting: false,
                 actions: app.actions || [],
                 desktopEntry: app,
-                execute: function() { app.execute(); }
+                execute: function() { ApplicationManager.runEntry(app); }
             };
             item.isSubSetting = root.isSubSetting(item);
             list.push(item);

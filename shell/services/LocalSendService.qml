@@ -382,10 +382,10 @@ Item {
     }
     function openReceived() {
         const files = root.receivedFiles;
-        Quickshell.execDetached(["xdg-open", files.length === 1 ? files[0] : root.downloadDir]);
+        ApplicationManager.run(["xdg-open", files.length === 1 ? files[0] : root.downloadDir]);
     }
     function openDownloads() {
-        if (root.downloadDir) Quickshell.execDetached(["xdg-open", root.downloadDir]);
+        if (root.downloadDir) ApplicationManager.run(["xdg-open", root.downloadDir]);
     }
 
     // Text for a transfer failure code.

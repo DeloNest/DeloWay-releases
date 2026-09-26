@@ -156,18 +156,15 @@ Item {
 
     // The user's terminal (delo-app), started in the desktop folder
     function openTerminalHere() {
-        Quickshell.execDetached({
-            command: [ConfigManager.projectDir + "/bin/delo-app", "terminal"],
-            workingDirectory: root.desktopDir
-        });
+        ApplicationManager.run([ConfigManager.projectDir + "/bin/delo-app", "terminal"], root.desktopDir);
     }
 
     function openItem(item) {
         if (!item) return;
         if (item.isDesktopEntry && item.path) {
-            Quickshell.execDetached(["gtk-launch", item.fileName || item.name]);
+            ApplicationManager.run(["gtk-launch", item.fileName || item.name]);
         } else if (item.path) {
-            Quickshell.execDetached(["xdg-open", item.path]);
+            ApplicationManager.run(["xdg-open", item.path]);
         }
     }
 
