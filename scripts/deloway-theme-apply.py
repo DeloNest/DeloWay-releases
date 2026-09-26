@@ -1004,6 +1004,16 @@ def write_fontconfig(font_family: str = "Cairo", dry_run: bool = False):
 QT_ENV = {"QT_QPA_PLATFORMTHEME": "gtk3"}
 
 
+def qt_environment() -> dict:
+    """The Qt variables for the session: the gtk3 platform theme, and the Breeze style
+    when installed — KDE apps started on their own (Ark, Okular…) ignore kdeglobals'
+    widgetStyle and fell back to the flat Fusion style."""
+    env = dict(QT_ENV)
+    if breeze_style_installed():
+        env["QT_STYLE_OVERRIDE"] = "Breeze"
+    return env
+
+
 # KDE apps (Dolphin, Kate, Okular…) take colours, icons and fonts from ~/.config/kdeglobals,
 # not from the Qt platform theme: without it they fell back to Breeze — blue selection,
 # blue folders — whatever GTK and qt6ct said. Same monochrome palette as the GTK themes.
@@ -1252,16 +1262,17 @@ def apply_qt_environment(dry_run: bool = False):
     """Qt5/Qt6 → gtk3 platform theme (palette + fonts from the DeloWay GTK theme).
     Persisted for new sessions (environment.d) and pushed into the running one."""
     env_file = Path.home() / ".config" / "environment.d" / "80-deloway-toolkits.conf"
+    qt_env = qt_environment()
     body = "# Managed by DeloWay: Qt apps take palette/fonts from the DeloWay GTK theme\n" + \
-           "".join(f"{k}={v}\n" for k, v in QT_ENV.items())
+           "".join(f"{k}={v}\n" for k, v in qt_env.items())
     if not dry_run:
         env_file.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_if_changed(env_file, body, dry_run=dry_run)
     if dry_run:
         return
-    for k, v in QT_ENV.items():
+    for k, v in qt_env.items():
         subprocess.run(["hyprctl", "keyword", "env", f"{k},{v}"], capture_output=True, timeout=3)
-    subprocess.run(["dbus-update-activation-environment", "--systemd"] + [f"{k}={v}" for k, v in QT_ENV.items()],
+    subprocess.run(["dbus-update-activation-environment", "--systemd"] + [f"{k}={v}" for k, v in qt_env.items()],
                    capture_output=True, timeout=5)
 
 
