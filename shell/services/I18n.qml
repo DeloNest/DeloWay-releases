@@ -1064,7 +1064,8 @@ Item {
     readonly property var enDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     readonly property var enMonths: ["January", "February", "March", "April", "May", "June",
                                      "July", "August", "September", "October", "November", "December"]
-    readonly property bool arabicDigits: root.isRTL && !!(typeof ConfigManager !== "undefined" && ConfigManager.timeCapsuleArabicDigits)
+    // Settings → Apps → Number Format, in either UI language.
+    readonly property bool arabicDigits: typeof ConfigManager !== "undefined" && ConfigManager.numberFormat === "eastern"
 
     // A value such as "6.6 / 31.3 GB", "1.00 0.86 0.84" or "43°C · 35 W" in the digits
     // setting. To the bidi algorithm Arabic-Indic digits are Arabic numbers, and the

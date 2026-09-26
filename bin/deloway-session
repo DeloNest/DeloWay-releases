@@ -51,6 +51,14 @@ if [ "$UI_LANG" = "en" ]; then
 else
     export LANGUAGE="ar:en"
 fi
+# Digits in Qt/KDE apps (Settings → Apps → Number Format): Eastern ٠١٢٣ come from an
+# Arabic LC_NUMERIC, Western 0123 from en_US.
+if [ "$(jq -r '.system.numberFormat // "western"' "$DELOWAY_CONFIG" 2>/dev/null)" = "eastern" ] \
+        && locale -a 2>/dev/null | grep -qi '^ar_SA.utf8$'; then
+    export LC_NUMERIC="ar_SA.UTF-8"
+else
+    export LC_NUMERIC="en_US.UTF-8"
+fi
 
 # Ensure user directories exist
 mkdir -p "$HOME/.config/deloway" "$HOME/.local/share/applications" "$HOME/Desktop"

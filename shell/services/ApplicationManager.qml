@@ -574,7 +574,8 @@ Item {
     // environment is fixed when it starts — without LANGUAGE when the session began
     // without it, stale after a language switch — so apps from the App Drawer came up in
     // English while the same app from a shortcut (started by Hyprland) was Arabic.
-    readonly property var launchEnvironment: ({ "LANGUAGE": ConfigManager.uiLanguage === "en" ? "en_US:en" : "ar:en" })
+    readonly property var launchEnvironment: ({ "LANGUAGE": ConfigManager.uiLanguage === "en" ? "en_US:en" : "ar:en",
+                                                  "LC_NUMERIC": ConfigManager.numericLocale })
 
     function run(command, workingDirectory) {
         const context = { command: command, environment: root.launchEnvironment };

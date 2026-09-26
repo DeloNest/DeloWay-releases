@@ -82,7 +82,6 @@ Item {
     property bool timeCapsuleShowHardware: true
     property bool timeCapsuleShowSeconds: true
     property bool timeCapsuleShowShortDate: true
-    property bool timeCapsuleArabicDigits: true
     property bool timeCapsuleShowCpu: true
     property bool timeCapsuleShowRam: true
     property bool timeCapsuleShowGpu: true
@@ -132,6 +131,10 @@ Item {
 
     // System & Localization Settings
     property string uiLanguage: "en"
+    // Digits everywhere — the shell and Qt/KDE apps (LC_NUMERIC): "western" 0123 or
+    // "eastern" ٠١٢٣. An explicit choice: it used to be a clock option (defaulting to
+    // Eastern) that the whole shell silently followed in Arabic.
+    property string numberFormat: "western"
     property var keyboardLayouts: ["us", "ara"]
 
     // Setup Wizard State
@@ -333,7 +336,6 @@ Item {
                 if (cfg.topBar.timeCapsuleShowHardware !== undefined) root.timeCapsuleShowHardware = cfg.topBar.timeCapsuleShowHardware;
                 if (cfg.topBar.timeCapsuleShowSeconds !== undefined) root.timeCapsuleShowSeconds = cfg.topBar.timeCapsuleShowSeconds;
                 if (cfg.topBar.timeCapsuleShowShortDate !== undefined) root.timeCapsuleShowShortDate = cfg.topBar.timeCapsuleShowShortDate;
-                if (cfg.topBar.timeCapsuleArabicDigits !== undefined) root.timeCapsuleArabicDigits = cfg.topBar.timeCapsuleArabicDigits;
                 if (cfg.topBar.timeCapsuleShowCpu !== undefined) root.timeCapsuleShowCpu = cfg.topBar.timeCapsuleShowCpu;
                 if (cfg.topBar.timeCapsuleShowRam !== undefined) root.timeCapsuleShowRam = cfg.topBar.timeCapsuleShowRam;
                 if (cfg.topBar.timeCapsuleShowGpu !== undefined) root.timeCapsuleShowGpu = cfg.topBar.timeCapsuleShowGpu;
@@ -383,6 +385,9 @@ Item {
             if (cfg.share && Array.isArray(cfg.share.devices)) root.shareDevices = cfg.share.devices;
             if (cfg.system) {
                 if (cfg.system.uiLanguage) root.uiLanguage = cfg.system.uiLanguage;
+                // (topBar.timeCapsuleArabicDigits is not carried over: it was a default, not a choice.)
+                if (cfg.system.numberFormat === "eastern" || cfg.system.numberFormat === "western")
+                    root.numberFormat = cfg.system.numberFormat;
                 if (cfg.system.keyboardLayouts) root.keyboardLayouts = cfg.system.keyboardLayouts;
             }
             if (cfg.setupCompleted !== undefined) {
@@ -736,9 +741,18 @@ Item {
         saveConfig();
     }
 
-    function setTimeCapsuleArabicDigits(val) {
-        root.timeCapsuleArabicDigits = !!val;
+    // Qt/KDE apps take their digits from LC_NUMERIC; GTK apps print Western digits.
+    readonly property string numericLocale: root.numberFormat === "eastern" ? "ar_SA.UTF-8" : "en_US.UTF-8"
+
+    function setNumberFormat(fmt) {
+        if (fmt !== "eastern" && fmt !== "western") return;
+        root.numberFormat = fmt;
         saveConfig();
+        // Apps started from now on (Hyprland, D-Bus/systemd, next session).
+        root.run(["hyprctl", "keyword", "env", "LC_NUMERIC," + root.numericLocale]);
+        root.run(["dbus-update-activation-environment", "--systemd", "LC_NUMERIC=" + root.numericLocale]);
+        root.run(["python3", root.projectDir + "/scripts/deloway-locale-apply.py",
+                  "--lang", root.uiLanguage, "--numbers", fmt, "--env-only"]);
     }
 
     function setTimeCapsuleShowCpu(val) {
@@ -896,7 +910,8 @@ Item {
         root.run(["hyprctl", "keyword", "env", "LANGUAGE," + langVal]);
         root.run(["dbus-update-activation-environment", "--systemd", "LANGUAGE=" + langVal]);
         localeApplyProcess.lang = lang;
-        localeApplyProcess.exec(["python3", root.projectDir + "/scripts/deloway-locale-apply.py", "--lang", lang]);
+        localeApplyProcess.exec(["python3", root.projectDir + "/scripts/deloway-locale-apply.py", "--lang", lang,
+                                 "--numbers", root.numberFormat]);
         if (root.applySystemTheme) {
             updateGtkThemes();
         }
@@ -964,7 +979,6 @@ Item {
                 timeCapsuleShowHardware: root.timeCapsuleShowHardware,
                 timeCapsuleShowSeconds: root.timeCapsuleShowSeconds,
                 timeCapsuleShowShortDate: root.timeCapsuleShowShortDate,
-                timeCapsuleArabicDigits: root.timeCapsuleArabicDigits,
                 timeCapsuleShowCpu: root.timeCapsuleShowCpu,
                 timeCapsuleShowRam: root.timeCapsuleShowRam,
                 timeCapsuleShowGpu: root.timeCapsuleShowGpu,
@@ -1012,6 +1026,7 @@ Item {
             },
             system: {
                 uiLanguage: root.uiLanguage,
+                numberFormat: root.numberFormat,
                 keyboardLayouts: root.keyboardLayouts
             },
             setupCompleted: root.setupCompleted

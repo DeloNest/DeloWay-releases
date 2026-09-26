@@ -194,7 +194,7 @@ Item {
         const dayIdx = d.getDay();
         const monthIdx = d.getMonth();
         const dateNum = d.getDate();
-        const useAr = I18n.isRTL && ConfigManager.timeCapsuleArabicDigits;
+        const useAr = I18n.arabicDigits;
         const dNum = useAr ? root.toArabicDigits(dateNum) : dateNum;
 
         if (I18n.isRTL) {
@@ -210,7 +210,7 @@ Item {
         const monthIdx = d.getMonth();
         const dateNum = d.getDate();
         const yearNum = d.getFullYear();
-        const useAr = I18n.isRTL && ConfigManager.timeCapsuleArabicDigits;
+        const useAr = I18n.arabicDigits;
         const dNum = useAr ? root.toArabicDigits(dateNum) : dateNum;
         const yNum = useAr ? root.toArabicDigits(yearNum) : yearNum;
 

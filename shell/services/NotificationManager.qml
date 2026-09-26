@@ -72,7 +72,7 @@ Item {
         if (d.toDateString() === today.toDateString()) return root.clockLabel(ts);
         const y = new Date(root.now - 86400000);
         if (d.toDateString() === y.toDateString()) return (rtl ? "أمس " : "Yesterday ") + root.clockLabel(ts);
-        return Qt.formatDate(d, "d/M");
+        return I18n.digits(Qt.formatDate(d, "d/M"));
     }
 
     // ── Item factory ─────────────────────────────────────────────────────

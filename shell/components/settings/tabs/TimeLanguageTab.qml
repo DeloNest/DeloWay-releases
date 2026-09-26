@@ -226,11 +226,11 @@ Item {
                 icon: "format-text-bold-symbolic"
                 showDivider: false
                 clickable: true
-                onClicked: ConfigManager.setTimeCapsuleArabicDigits(!ConfigManager.timeCapsuleArabicDigits)
+                onClicked: ConfigManager.setNumberFormat(ConfigManager.numberFormat === "eastern" ? "western" : "eastern")
 
                 SettingsToggle {
-                    checked: ConfigManager.timeCapsuleArabicDigits
-                    onToggled: ch => ConfigManager.setTimeCapsuleArabicDigits(ch)
+                    checked: ConfigManager.numberFormat === "eastern"
+                    onToggled: ch => ConfigManager.setNumberFormat(ch ? "eastern" : "western")
                 }
             }
         }

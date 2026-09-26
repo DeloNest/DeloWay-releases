@@ -72,7 +72,15 @@ def main_locale_for(lang: str) -> str:
         return available_arabic_locale() or "en_US.UTF-8"
     return "en_US.UTF-8"
 
-def apply_environment_d(lang: str, dry_run: bool = False) -> None:
+def numeric_locale(numbers: str) -> str:
+    """LC_NUMERIC for Settings → Apps → Number Format (Qt/KDE apps take their digits
+    from it): Eastern digits from the Arabic locale, Western from en_US."""
+    if numbers == "eastern":
+        return available_arabic_locale() or "en_US.UTF-8"
+    return "en_US.UTF-8"
+
+
+def apply_environment_d(lang: str, numbers: str = "western", dry_run: bool = False) -> None:
     env_dir = Path.home() / ".config" / "environment.d"
     target_file = env_dir / "90-deloway-locale.conf"
 
@@ -81,7 +89,7 @@ def apply_environment_d(lang: str, dry_run: bool = False) -> None:
             MANAGED_HEADER
             + f"LANG={main_locale_for('ar')}\n"
             + "LANGUAGE=ar:en\n"
-            + "LC_NUMERIC=en_US.UTF-8\n"
+            + f"LC_NUMERIC={numeric_locale(numbers)}\n"
             + "LC_TIME=en_US.UTF-8\n"
             + "LC_COLLATE=C\n"
         )
@@ -90,7 +98,7 @@ def apply_environment_d(lang: str, dry_run: bool = False) -> None:
             MANAGED_HEADER
             + "LANG=en_US.UTF-8\n"
             + "LANGUAGE=en_US:en\n"
-            + "LC_NUMERIC=en_US.UTF-8\n"
+            + f"LC_NUMERIC={numeric_locale(numbers)}\n"
             + "LC_TIME=en_US.UTF-8\n"
             + "LC_COLLATE=C\n"
         )
@@ -206,7 +214,7 @@ def update_running_session(lang: str, dry_run: bool = False) -> None:
 def revert(dry_run: bool = False) -> None:
     log("Reverting managed DeloWay locale configurations...")
     # Revert to English
-    apply_environment_d("en", dry_run)
+    apply_environment_d("en", dry_run=dry_run)
     apply_firefox_user_js("en", dry_run)
     apply_chromium_flags("en", dry_run)
     apply_flatpak("en", dry_run)
@@ -218,6 +226,10 @@ def main():
     parser.add_argument("--lang", choices=["ar", "en"], default="ar", help="Target language (ar or en)")
     parser.add_argument("--dry-run", action="store_true", help="Simulate changes without modifying files")
     parser.add_argument("--revert", action="store_true", help="Revert settings to English")
+    parser.add_argument("--numbers", choices=["western", "eastern"], default="western",
+                        help="Digits for Qt/KDE apps (LC_NUMERIC)")
+    parser.add_argument("--env-only", action="store_true",
+                        help="Only the session environment files (number format changes)")
 
     args = parser.parse_args()
 
@@ -226,7 +238,9 @@ def main():
         return
 
     log(f"Applying system-wide language: {args.lang} (dry-run={args.dry_run})")
-    apply_environment_d(args.lang, dry_run=args.dry_run)
+    apply_environment_d(args.lang, args.numbers, dry_run=args.dry_run)
+    if args.env_only:
+        return
     apply_firefox_user_js(args.lang, dry_run=args.dry_run)
     apply_chromium_flags(args.lang, dry_run=args.dry_run)
     apply_flatpak(args.lang, dry_run=args.dry_run)
