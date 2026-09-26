@@ -2,7 +2,7 @@
 
 > **الغرض من الملف**: مرجع شامل وكافٍ بذاته لأي نموذج ذكاء اصطناعي "عقل تخطيط" (مثل Claude Code أو غيره) للعمل والتخطيط وتقديم حلول وتشخيصات تقنية دقيقة ومتسقة مع الكود الحالي دون الحاجة للبحث المضني في كل ملفات المشروع على القرص.
 > **قاعدة التحديث الإلزامية**: في نهاية أي مهمة برمجية معتمدة ولها commit، يتم تحديث الأقسام (6، 7، 8، 9) لتعكس واقع Git والقرص الفعلي. الأقسام (1 إلى 5) شبه ثابتة، وتُعدّل عند حدوث قرار معماري أو تعديل جذري في نظام التصميم.
-> **آخر تحديث موثق**: 26 سبتمبر 2026 — Dolphin (Breeze، اتجاه اللوحة، اللغة)، التطبيقات الافتراضية للصور والفيديو وPDF والسكربتات (القسم 7-ز). قبله: 25 سبتمبر 2026 (مساءً) — المشاركة عبر LocalSend في النوتش، الجدار الناري والهوتسبوت، وجرد التطبيقات الافتراضية (القسم 7-د إلى 7-و). سجل Git هو المرجع النهائي عند أي تعارض.
+> **آخر تحديث موثق**: 26 سبتمبر 2026 — Settings → Apps بثلاثة أقسام وصيغة الأرقام ولغة لكل تطبيق (7-ح)؛ وقبلها Dolphin (Breeze، اتجاه اللوحة، اللغة)، التطبيقات الافتراضية للصور والفيديو وPDF والسكربتات (القسم 7-ز). قبله: 25 سبتمبر 2026 (مساءً) — المشاركة عبر LocalSend في النوتش، الجدار الناري والهوتسبوت، وجرد التطبيقات الافتراضية (القسم 7-د إلى 7-و). سجل Git هو المرجع النهائي عند أي تعارض.
 
 ---
 
@@ -213,6 +213,12 @@
 * `6a28966` - fix(settings): the Apps page says what it now covers
 * `6fe57ad` - feat(install): install the default image, video and PDF viewers
 
+26 سبتمبر (Settings → Apps بثلاثة أقسام، صيغة الأرقام، لغة لكل تطبيق):
+* `d6d0fbc` - fix(i18n): number format is an explicit system setting
+* `f574e9f` - fix(apps): only real viewers are offered for a file type
+* `def3b37` - feat(settings): Apps in three sections — Default Apps, All Apps, Number Format
+* `f7dc60c` - feat(settings): All Apps — every installed app, its details and its language
+
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
 * `c4eccaf` - fix: eliminate TimeCapsule sticking to Notch on expand (static right margin)
@@ -340,6 +346,15 @@
 - **الافتراضيات حسب النوع**: `scripts/deloway-default-app.py` (status/set) + أدوار `image/video/pdf` في `config/default-apps.tsv` وSettings → Apps (مع خيار «في المتصفح» الذي يتبع المتصفح الافتراضي). الافتراضي: Loupe، Cine (AUR)، Papers (غير مثبت بعد). دور المحرر يشمل السكربتات والأكواد (كانت `x-shellscript` → kitty-open و`x-csrc` → vim). أول تشغيل يطبّق المثبت منها مرة واحدة (`defaultApps.fileTypesApplied`).
 - **VSCodium**: غير مثبت (لم يكن معتمداً)؛ أضيف خياراً للمحرر (AUR `vscodium-bin`). المحرر الافتراضي للسكربتات يبقى GNOME Text Editor.
 - **مُتحقَّق في الجلسة المعزولة**: Dolphin بنمط Breeze (محمّل من استخراج مؤقت) واللوحة يميناً؛ تشغيل من شيل بلا LANGUAGE يستلم `ar:en`؛ أول تشغيل يضبط Loupe/Cine/المحرر؛ التبديل للمتصفح وعودته؛ الواجهة بالعربية والإنجليزية. **على الجهاز الحقيقي لم يُطبّق بعد**: يلزم تثبيت `breeze` و`papers`، إغلاق نوافذ Dolphin، إعادة تشغيل الشيل، ثم `systemctl --user restart plasma-dolphin.service`.
+
+
+### ح) 26 سبتمبر 2026: Settings → Apps بثلاثة أقسام
+- **الأقسام**: شريط علوي «التطبيقات الافتراضية | كل التطبيقات | صيغة الأرقام» (`AppsTab.qml`). «App Info» من قوائم التطبيقات يفتح «كل التطبيقات» مُصفّاة على التطبيق.
+- **التطبيقات الافتراضية**: صف لكل دور/نوع ملف يعرض التطبيق الحالي فعلياً وزر «تغيير» يطوي الاختيارات (`DefaultAppRow` + `DefaultAppChooser`)، ومعه إعدادات مشغّل الموسيقى. المقترح لنوع الملف يشترط فتح ملفاته الشائعة (PNG/JPEG، MP4/WebM/MKV، PDF).
+- **كل التطبيقات** (`settings/common/AllAppsList.qml`): بحث، عدد، وكل صف يفتح لغة التطبيق وبطاقة التفاصيل (`AppDetailsCard`: معلومات، عرض في المتجر، إلغاء التثبيت بتأكيد).
+- **لغة لكل تطبيق** (`scripts/deloway-app-language.py` + `AppActions.appLanguages`): نسخة مستخدم من ملف `.desktop` في `~/.local/share/applications` تشغّل كل `Exec` عبر `env LANGUAGE=… LC_MESSAGES=…` وتعطّل `DBusActivatable` (وإلا يتجاهل ناقل D-Bus الـ Exec)، مع `X-DeloWay-Language`. «لغة النظام» يحذفها؛ ملف التطبيق الموجود أصلاً في مجلد المستخدم يُعدَّل في مكانه ويُستعاد حرفياً. إلغاء التثبيت يحذف النسخة. لا يؤثر على ما يُشغَّل بالأمر مباشرة (مثل `delo-app` للطرفية)، والمتصفحات تتبع إعداد لغتها الخاص.
+- **صيغة الأرقام** (`system.numberFormat`: `western` افتراضياً | `eastern`): كانت مفتاح كبسولة الوقت `topBar.timeCapsuleArabicDigits` افتراضيه `true` فتُفرض الأرقام الشرقية في العربية دون اختيار؛ لم يُنقل. تحكم في `I18n.arabicDigits` (كل واجهات الشيل) وفي `LC_NUMERIC` لتطبيقات Qt/KDE (`ar_SA.UTF-8` ↔ `en_US.UTF-8`: في `deloway-session`، وكل تشغيل من الشيل، وHyprland وD-Bus عند التغيير، و`environment.d` عبر `deloway-locale-apply.py --numbers [--env-only]`). تطبيقات GTK تطبع أرقاماً غربية دائماً.
+- **مُتحقَّق في الجلسة المعزولة** بالعربية والإنجليزية. **على الجهاز الحقيقي**: يلزم إعادة تشغيل الشيل (الساعة تصبح غربية لأن الإعداد لم يُختر بعد)، وتسجيل دخول جديد ليأخذ `deloway-session` اللغة وLC_NUMERIC من البداية.
 
 ---
 
