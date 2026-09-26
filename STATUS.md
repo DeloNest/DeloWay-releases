@@ -2,7 +2,7 @@
 
 > **الغرض من الملف**: مرجع شامل وكافٍ بذاته لأي نموذج ذكاء اصطناعي "عقل تخطيط" (مثل Claude Code أو غيره) للعمل والتخطيط وتقديم حلول وتشخيصات تقنية دقيقة ومتسقة مع الكود الحالي دون الحاجة للبحث المضني في كل ملفات المشروع على القرص.
 > **قاعدة التحديث الإلزامية**: في نهاية أي مهمة برمجية معتمدة ولها commit، يتم تحديث الأقسام (6، 7، 8، 9) لتعكس واقع Git والقرص الفعلي. الأقسام (1 إلى 5) شبه ثابتة، وتُعدّل عند حدوث قرار معماري أو تعديل جذري في نظام التصميم.
-> **آخر تحديث موثق**: 25 سبتمبر 2026 (مساءً) — المشاركة عبر LocalSend في النوتش، الجدار الناري والهوتسبوت، وجرد التطبيقات الافتراضية (القسم 7-د إلى 7-و). سجل Git هو المرجع النهائي عند أي تعارض.
+> **آخر تحديث موثق**: 26 سبتمبر 2026 — Dolphin (Breeze، اتجاه اللوحة، اللغة)، التطبيقات الافتراضية للصور والفيديو وPDF والسكربتات (القسم 7-ز). قبله: 25 سبتمبر 2026 (مساءً) — المشاركة عبر LocalSend في النوتش، الجدار الناري والهوتسبوت، وجرد التطبيقات الافتراضية (القسم 7-د إلى 7-و). سجل Git هو المرجع النهائي عند أي تعارض.
 
 ---
 
@@ -203,6 +203,16 @@
 * `160c907` - fix(share): present our certificate to LocalSend 2.2 receivers
 * `5ffcd6f` - fix(theme): KDE apps follow the DeloWay theme
 
+26 سبتمبر (Dolphin، التطبيقات الافتراضية حسب نوع الملف، لغة التطبيقات):
+* `b2ecee9` - fix(i18n): apps start in the UI language however they are launched
+* `4deadfb` - feat(theme): KDE apps use the Breeze style when it is installed
+* `1eb8977` - fix(theme): Dolphin's places panel follows the reading direction
+* `80e609f` - feat(apps): choosing Dolphin installs the Breeze style with it
+* `5969530` - feat(apps): default apps for images, videos, PDFs and scripts
+* `645beb4` - feat(apps): offer VSCodium as a code editor
+* `6a28966` - fix(settings): the Apps page says what it now covers
+* `6fe57ad` - feat(install): install the default image, video and PDF viewers
+
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
 * `c4eccaf` - fix: eliminate TimeCapsule sticking to Notch on expand (static right margin)
@@ -322,6 +332,14 @@
 1. ✅ (25 سبتمبر 17:10) ثُبّت خطاف الهوتسبوت وقاعدة `ufw allow LocalSend` على الجهاز؛ البث المتعدد لـ LocalSend يمر الآن (مقيس).
 2. ✅ الهوتسبوت: الجوال (S22) اتصل بـ `myarch` وأخذ `10.42.0.169` عبر DHCP وله إنترنت — المشكلة الأصلية محلولة ومتحقق منها.
 3. ⏳ LocalSend مع الجوال الحقيقي: من الجوال إلى الحاسوب يعمل (مُتحقَّق). من الحاسوب إلى الجوال كان يفشل لأن LocalSend 2.2 على الجوال يشترط شهادة العميل (mutual TLS: `certificate required`)؛ أُصلح (النظير يقدّم شهادته) ونجح `register` مع الجوال الحقيقي، وبقي إرسال ملف فعلي بعد إعادة تشغيل الشيل.
+
+
+### ز) 26 سبتمبر 2026: Dolphin، الافتراضيات حسب نوع الملف، لغة التطبيقات
+- **اللغة (عربي من الاختصار/إنجليزي من App Drawer)**: السبب أن الجلسة (SDDM → `deloway-session` → Hyprland) تبدأ بلا `LANGUAGE`، والشيل يضيفه لـ Hyprland لاحقاً فقط، فما يشغّله الشيل نفسه (App Drawer، البحث، Dock، ملفات سطح المكتب، xdg-open) يرث الإنجليزية. الإصلاح: `bin/deloway-session` يصدّر `LANGUAGE` من `deloway.json` قبل Hyprland، و`ApplicationManager.run()/runEntry()` تمرّر لغة الواجهة الحالية صراحةً لكل تشغيل (execDetached مع environment؛ يتطلب `import Quickshell.Io`).
+- **Dolphin**: نمط Breeze (زوايا مستديرة، يأخذ ألوان مخطط DeloWay) يُختار في `kdeglobals` إن كان مثبتاً — **غير مثبت بعد** (`breeze`؛ اختيار Dolphin يثبّته الآن معه). لوحة «الأماكن» تُعكس لليمين في العربية بقلب مناطق QMainWindow في `~/.local/state/dolphinstaterc` مرة لكل تغيير لغة (مع علامة `[DeloWay] PlacesPanelSide`)، ولا يحدث ذلك ونافذة Dolphin مفتوحة. شارة «غير موصول» الصفراء على الأقراص = `ColorScheme-NeutralText` (لون التحذير في مخططنا، ≤8px) وهي مسموحة بقواعد الهوية.
+- **الافتراضيات حسب النوع**: `scripts/deloway-default-app.py` (status/set) + أدوار `image/video/pdf` في `config/default-apps.tsv` وSettings → Apps (مع خيار «في المتصفح» الذي يتبع المتصفح الافتراضي). الافتراضي: Loupe، Cine (AUR)، Papers (غير مثبت بعد). دور المحرر يشمل السكربتات والأكواد (كانت `x-shellscript` → kitty-open و`x-csrc` → vim). أول تشغيل يطبّق المثبت منها مرة واحدة (`defaultApps.fileTypesApplied`).
+- **VSCodium**: غير مثبت (لم يكن معتمداً)؛ أضيف خياراً للمحرر (AUR `vscodium-bin`). المحرر الافتراضي للسكربتات يبقى GNOME Text Editor.
+- **مُتحقَّق في الجلسة المعزولة**: Dolphin بنمط Breeze (محمّل من استخراج مؤقت) واللوحة يميناً؛ تشغيل من شيل بلا LANGUAGE يستلم `ar:en`؛ أول تشغيل يضبط Loupe/Cine/المحرر؛ التبديل للمتصفح وعودته؛ الواجهة بالعربية والإنجليزية. **على الجهاز الحقيقي لم يُطبّق بعد**: يلزم تثبيت `breeze` و`papers`، إغلاق نوافذ Dolphin، إعادة تشغيل الشيل، ثم `systemctl --user restart plasma-dolphin.service`.
 
 ---
 
