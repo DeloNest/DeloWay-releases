@@ -26,7 +26,13 @@ Item {
     Connections {
         target: ShellState
         // "App Info" from an app menu opens All Apps on that app.
-        function onAppInfoIdChanged() { if (ShellState.appInfoId !== "") root.section = "all"; }
+        function onAppInfoIdChanged() {
+            if (ShellState.appInfoId === "" || root.section === "all") return;
+            // From an app menu: show that app at the top of the list.
+            root.section = "all";
+            const e = DesktopEntries.byId(ShellState.appInfoId);
+            allApps.query = e ? e.name : "";
+        }
     }
 
     // A role row: what opens it now, and "Change" to pick another (the chooser folds out).
@@ -169,10 +175,10 @@ Item {
         }
 
         // ── All Apps ─────────────────────────────────────────────────
-        SettingsSection {
-            visible: root.section === "all" && ShellState.appInfoId !== ""
-            title: I18n.tr("app_details")
-            AppDetailsCard {}
+        AllAppsList {
+            id: allApps
+            visible: root.section === "all"
+            Layout.fillWidth: true
         }
 
         // ── Default Apps ─────────────────────────────────────────────

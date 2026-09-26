@@ -150,6 +150,8 @@ Item {
         const name = job.name || job.id;
         if (res && res.ok) {
             if (ApplicationManager.isPinned(job.clean)) ApplicationManager.unpinApp(job.clean);
+            // Its language override would stay behind as an entry for a missing program.
+            if (root.appLanguage(job.id) !== "system" && res.source !== "user") root.setAppLanguage(job.id, "system");
             if (ShellState.appInfoId === job.id) ShellState.appInfoId = "";
             NotificationManager.postNotification(I18n.tr("app_menu_title"),
                 I18n.tr("app_uninstalled").replace("%1", name),
@@ -181,6 +183,43 @@ Item {
         }
         onExited: root._nextUninstall()
     }
+
+    // ── Per-app language ─────────────────────────────────────────────────
+    // An app can run in Arabic or English whatever the UI language (scripts/
+    // deloway-app-language.py: a user desktop-entry override running it with LANGUAGE).
+    readonly property string languageScript: ConfigManager.projectDir + "/scripts/deloway-app-language.py"
+    property var appLanguages: ({})       // desktopId → "ar" | "en" (absent = the system's)
+
+    function appLanguage(desktopId) { return root.appLanguages[desktopId] || "system"; }
+
+    function setAppLanguage(desktopId, lang) {
+        if (!desktopId || root.appLanguage(desktopId) === lang) return;
+        languageSetProc.command = ["python3", root.languageScript, "set", desktopId, lang];
+        languageSetProc.running = true;
+    }
+    function refreshAppLanguages() {
+        if (!languageListProc.running) languageListProc.running = true;
+    }
+    Process {
+        id: languageListProc
+        command: ["python3", root.languageScript, "list"]
+        stdout: StdioCollector {
+            onStreamFinished: { try { root.appLanguages = JSON.parse(this.text); } catch (e) {} }
+        }
+    }
+    Process {
+        id: languageSetProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const r = JSON.parse(this.text);
+                    if (!r.ok) console.warn("[AppActions] app language:", this.text.trim());
+                } catch (e) {}
+            }
+        }
+        onExited: root.refreshAppLanguages()
+    }
+    Component.onCompleted: root.refreshAppLanguages()
 
     // ── Presentation helpers (shared by menu + Settings) ─────────────────
     function sourceLabel(info) {
