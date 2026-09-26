@@ -209,28 +209,13 @@ Item {
                 title: I18n.isRTL ? "إظهار التاريخ الهجري (أم القرى)" : "Show Hijri Date (Umm al-Qura)"
                 subtitle: I18n.isRTL ? "عرض التاريخ الهجري بدقة فلكية في ترويسة الكبسولة" : "Display astronomical Umm al-Qura Hijri date in expanded header"
                 icon: "weather-clear-night-symbolic"
-                showDivider: true
+                showDivider: false
                 clickable: true
                 onClicked: ConfigManager.setTimeCapsuleShowHijri(!ConfigManager.timeCapsuleShowHijri)
 
                 SettingsToggle {
                     checked: ConfigManager.timeCapsuleShowHijri
                     onToggled: ch => ConfigManager.setTimeCapsuleShowHijri(ch)
-                }
-            }
-
-            // Eastern Arabic Numerals (٠١٢)
-            SettingsRow {
-                title: I18n.isRTL ? "الأرقام المشرقية (٠١٢٣٤)" : "Eastern Arabic Numerals (٠١٢)"
-                subtitle: I18n.isRTL ? "استخدام الأرقام العربية المشرقية للأوقات والتواريخ" : "Use Eastern Arabic digits for times and dates in Arabic UI"
-                icon: "format-text-bold-symbolic"
-                showDivider: false
-                clickable: true
-                onClicked: ConfigManager.setNumberFormat(ConfigManager.numberFormat === "eastern" ? "western" : "eastern")
-
-                SettingsToggle {
-                    checked: ConfigManager.numberFormat === "eastern"
-                    onToggled: ch => ConfigManager.setNumberFormat(ch ? "eastern" : "western")
                 }
             }
         }

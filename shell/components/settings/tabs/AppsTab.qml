@@ -1,4 +1,6 @@
-// Apps — app details (App Info), default applications and music player behaviour.
+// Apps — three sub-sections: Default Apps (the app for each role / file type, and the
+// music player), All Apps (every installed app: info, uninstall, per-app language) and
+// Number Format (Western / Eastern digits everywhere).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -19,6 +21,92 @@ Item {
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
+    // "defaults" | "all" | "numbers"
+    property string section: ShellState.appInfoId !== "" ? "all" : "defaults"
+    Connections {
+        target: ShellState
+        // "App Info" from an app menu opens All Apps on that app.
+        function onAppInfoIdChanged() { if (ShellState.appInfoId !== "") root.section = "all"; }
+    }
+
+    // A role row: what opens it now, and "Change" to pick another (the chooser folds out).
+    component DefaultAppRow: ColumnLayout {
+        id: row
+        property string role: ""
+        property string title: ""
+        property string subtitle: ""
+        property string icon: ""
+        property bool expanded: false
+        readonly property var current: {
+            const id = DefaultApps.currentId(row.role);
+            return DefaultApps.options(row.role).find(o => o.desktop.toLowerCase() === id) || null;
+        }
+        Layout.fillWidth: true
+        spacing: 0
+
+        SettingsRow {
+            title: row.title
+            subtitle: row.subtitle
+            icon: row.icon
+            showDivider: false
+            clickable: true
+            onClicked: row.expanded = !row.expanded
+
+            RowLayout {
+                spacing: Theme.space8
+                AppIcon {
+                    visible: !!row.current
+                    source: row.current ? row.current.icon : ""
+                    iconSize: 18
+                }
+                Text {
+                    text: row.current ? row.current.name : I18n.tr("default_app_none")
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    Layout.maximumWidth: 200
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: Theme.fontSize(12)
+                    font.weight: Font.DemiBold
+                    renderType: Theme.renderType
+                    color: row.current ? Theme.notchText : Theme.notchTextTertiary
+                }
+                Rectangle {
+                    implicitHeight: 26
+                    implicitWidth: changeText.implicitWidth + Theme.space16
+                    radius: 13
+                    color: row.expanded ? Theme.notchSurfaceActive : (changeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.width: 1
+                    border.color: changeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle
+                    Text {
+                        id: changeText
+                        anchors.centerIn: parent
+                        text: row.expanded ? I18n.tr("default_app_done") : I18n.tr("default_app_change")
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(11)
+                        renderType: Theme.renderType
+                        color: Theme.notchText
+                    }
+                    MouseArea {
+                        id: changeMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: row.expanded = !row.expanded
+                    }
+                }
+            }
+        }
+
+        DefaultAppChooser {
+            visible: row.expanded
+            Layout.fillWidth: true
+            Layout.leftMargin: Theme.space16
+            Layout.rightMargin: Theme.space16
+            Layout.bottomMargin: Theme.space12
+            role: row.role
+        }
+    }
+
     ColumnLayout {
         id: mainCol
         anchors.left: parent.left
@@ -29,16 +117,68 @@ Item {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        // ── 1. App details (from the app menu → "App Info") ──────────
+        // ── Sub-sections ─────────────────────────────────────────────
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+            implicitHeight: 38
+            implicitWidth: segRow.implicitWidth + 8
+            radius: height / 2
+            color: Theme.notchSurface
+            border.width: 1
+            border.color: Theme.notchBorderSubtle
+
+            RowLayout {
+                id: segRow
+                anchors.centerIn: parent
+                spacing: 4
+                Repeater {
+                    model: [
+                        { id: "defaults", label: I18n.tr("apps_section_defaults") },
+                        { id: "all", label: I18n.tr("apps_section_all") },
+                        { id: "numbers", label: I18n.tr("apps_section_numbers") }
+                    ]
+                    delegate: Rectangle {
+                        id: seg
+                        required property var modelData
+                        readonly property bool selected: root.section === seg.modelData.id
+                        implicitHeight: 30
+                        implicitWidth: segText.implicitWidth + Theme.space24
+                        radius: height / 2
+                        color: seg.selected ? Theme.inverseSurface : (segMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                        Text {
+                            id: segText
+                            anchors.centerIn: parent
+                            text: seg.modelData.label
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(12)
+                            font.weight: seg.selected ? Font.DemiBold : Font.Normal
+                            renderType: Theme.renderType
+                            color: seg.selected ? Theme.inverseText : Theme.notchTextSecondary
+                        }
+                        MouseArea {
+                            id: segMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.section = seg.modelData.id
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── All Apps ─────────────────────────────────────────────────
         SettingsSection {
-            visible: ShellState.appInfoId !== ""
+            visible: root.section === "all" && ShellState.appInfoId !== ""
             title: I18n.tr("app_details")
             AppDetailsCard {}
         }
 
-        // ── 2. Real Default Applications ─────────────────────────────
+        // ── Default Apps ─────────────────────────────────────────────
         SettingsSection {
-            title: I18n.isRTL ? "التطبيقات الافتراضية" : "Default Applications"
+            visible: root.section === "defaults"
+            title: I18n.tr("apps_section_defaults")
 
             // One row per role; the choices come from DefaultApps (same catalog as
             // install.sh and the Setup Wizard). Not-installed choices install on click.
@@ -62,32 +202,18 @@ Item {
                       subtitle: I18n.tr("pdf_viewer_desc") }
                 ]
 
-                delegate: ColumnLayout {
-                    id: roleRow
+                delegate: DefaultAppRow {
                     required property var modelData
-                    required property int index
-                    Layout.fillWidth: true
-                    spacing: 0
-
-                    SettingsRow {
-                        title: roleRow.modelData.title
-                        subtitle: roleRow.modelData.subtitle
-                        icon: roleRow.modelData.icon
-                        showDivider: false
-                    }
-
-                    DefaultAppChooser {
-                        Layout.fillWidth: true
-                        Layout.leftMargin: Theme.space16
-                        Layout.rightMargin: Theme.space16
-                        Layout.bottomMargin: Theme.space12
-                        role: roleRow.modelData.role
-                    }
+                    role: modelData.role
+                    title: modelData.title
+                    subtitle: modelData.subtitle
+                    icon: modelData.icon
                 }
             }
         }
 
         SettingsSection {
+            visible: root.section === "defaults"
             title: I18n.isRTL ? "مشغّل الموسيقى" : "Music Player"
 
             // Preferred Music Player
@@ -290,6 +416,90 @@ Item {
                         }
                     }
                 }
+            }
+        }
+
+        // ── Number Format ────────────────────────────────────────────
+        SettingsSection {
+            visible: root.section === "numbers"
+            title: I18n.tr("apps_section_numbers")
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.margins: Theme.space16
+                spacing: Theme.space12
+
+                Repeater {
+                    model: [
+                        { id: "western", label: I18n.tr("number_format_western"), sample: "0123456789", clock: "12:45" },
+                        { id: "eastern", label: I18n.tr("number_format_eastern"), sample: "٠١٢٣٤٥٦٧٨٩", clock: "١٢:٤٥" }
+                    ]
+                    delegate: Rectangle {
+                        id: fmtCard
+                        required property var modelData
+                        readonly property bool selected: ConfigManager.numberFormat === fmtCard.modelData.id
+                        Layout.fillWidth: true
+                        implicitHeight: fmtCol.implicitHeight + Theme.space24
+                        radius: Theme.notchRadiusCard
+                        color: fmtCard.selected ? Theme.inverseSurface : (fmtMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
+                        border.width: 1
+                        border.color: fmtCard.selected ? Theme.inverseSurface : Theme.notchBorderSubtle
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                        ColumnLayout {
+                            id: fmtCol
+                            anchors.centerIn: parent
+                            spacing: 4
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: fmtCard.modelData.clock
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(26)
+                                font.weight: Font.DemiBold
+                                renderType: Theme.renderType
+                                color: fmtCard.selected ? Theme.inverseText : Theme.notchText
+                            }
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: fmtCard.modelData.sample
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(13)
+                                renderType: Theme.renderType
+                                color: fmtCard.selected ? Theme.inverseText : Theme.notchTextSecondary
+                            }
+                            Text {
+                                Layout.alignment: Qt.AlignHCenter
+                                text: fmtCard.modelData.label
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(12)
+                                font.weight: Font.DemiBold
+                                renderType: Theme.renderType
+                                color: fmtCard.selected ? Theme.inverseText : Theme.notchText
+                            }
+                        }
+                        MouseArea {
+                            id: fmtMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: ConfigManager.setNumberFormat(fmtCard.modelData.id)
+                        }
+                    }
+                }
+            }
+
+            Text {
+                Layout.fillWidth: true
+                Layout.leftMargin: Theme.space16
+                Layout.rightMargin: Theme.space16
+                Layout.bottomMargin: Theme.space16
+                horizontalAlignment: Text.AlignLeft
+                wrapMode: Text.WordWrap
+                text: I18n.tr("number_format_scope")
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(11)
+                renderType: Theme.renderType
+                color: Theme.notchTextSecondary
             }
         }
     }
