@@ -164,6 +164,14 @@ Item {
     // a white wallpaper; hovered / selected names darken further instead of losing it.
     readonly property color imageLabelScrim: Qt.rgba(0, 0, 0, 0.58)
     readonly property color imageLabelScrimActive: Qt.rgba(0, 0, 0, 0.76)
+    // Hovered / selected desktop icons: a light fill and a two-tone ring (dark outside,
+    // light inside) — one of the two lines shows on a white, a black or a busy wallpaper.
+    readonly property color imageSelectionFill: Qt.rgba(1, 1, 1, 0.16)
+    readonly property color imageHoverFill: Qt.rgba(1, 1, 1, 0.10)
+    readonly property color imageRingOuter: Qt.rgba(0, 0, 0, 0.45)
+    readonly property color imageRingInner: Qt.rgba(1, 1, 1, 0.60)
+    readonly property color imageHoverRingOuter: Qt.rgba(0, 0, 0, 0.22)
+    readonly property color imageHoverRingInner: Qt.rgba(1, 1, 1, 0.28)
     readonly property color imageScrimSoft: Qt.rgba(0, 0, 0, 0.28)
     readonly property color imageScrim: Qt.rgba(0, 0, 0, 0.40)
     readonly property color imageScrimStrong: Qt.rgba(0, 0, 0, 0.65)

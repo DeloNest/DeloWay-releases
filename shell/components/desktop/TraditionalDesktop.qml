@@ -168,23 +168,38 @@ Item {
                     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                 }
 
-                // Card Container (Translucent frosted highlight on hover/select)
+                // Card: the hover / selection highlight. It lies on the wallpaper, not on
+                // a shell surface, so it uses the on-image tokens (the theme's surfaces
+                // vanish on a wallpaper of the same brightness): a light fill and a
+                // dark outer ring with a light inner one.
                 Rectangle {
                     id: deskItemCard
                     anchors.fill: parent
-                    radius: 6
+                    radius: 8
                     color: deskItemWrapper.isSelected
-                           ? Theme.notchSurfaceActive
-                           : (itemMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                           ? Theme.imageSelectionFill
+                           : (itemMouse.containsMouse ? Theme.imageHoverFill : "transparent")
                     border.color: deskItemWrapper.isSelected
-                                  ? Theme.notchBorderHighlight
-                                  : (itemMouse.containsMouse ? Theme.notchBorder : "transparent")
+                                  ? Theme.imageRingOuter
+                                  : (itemMouse.containsMouse ? Theme.imageHoverRingOuter : "transparent")
                     border.width: 1
                     opacity: itemMouse.drag.active ? 0.90 : 1.0
 
                     Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
                     Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        radius: parent.radius - 1
+                        color: "transparent"
+                        border.width: 1
+                        border.color: deskItemWrapper.isSelected
+                                      ? Theme.imageRingInner
+                                      : (itemMouse.containsMouse ? Theme.imageHoverRingInner : "transparent")
+                        Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                    }
 
                     ColumnLayout {
                         anchors.fill: parent
