@@ -197,59 +197,41 @@ Item {
                             source: deskItemWrapper.itemData.icon
                         }
 
-                        // Display Name with soft backdrop pill and clean text shadow
+                        // The name: white on a dark scrim hugging the text (the width of
+                        // its longest line), readable over any wallpaper — light, dark or
+                        // busy — and in either theme, since both sit on the image.
                         Item {
                             id: nameContainer
                             visible: !deskItemWrapper.isEditing
                             Layout.fillWidth: true
-                            Layout.preferredHeight: nameText.implicitHeight + 4
-                            Layout.alignment: Qt.AlignHCenter
+                            Layout.fillHeight: true
 
-                            // Soft subtle backdrop pill
                             Rectangle {
                                 id: nameBackdrop
-                                anchors.centerIn: parent
-                                width: Math.min(parent.width, nameText.implicitWidth + 10)
-                                height: nameText.implicitHeight + 4
-                                radius: 4
-                                color: deskItemWrapper.isSelected
-                                       ? "transparent"
-                                       : (itemMouse.containsMouse ? Theme.imageScrim : Theme.imageScrimSoft)
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.top: parent.top
+                                width: Math.min(parent.width, nameText.contentWidth + 12)
+                                height: nameText.contentHeight + 6
+                                radius: 6
+                                color: (deskItemWrapper.isSelected || itemMouse.containsMouse)
+                                       ? Theme.imageLabelScrimActive : Theme.imageLabelScrim
                                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                             }
 
-                            // Text shadow layer
-                            Text {
-                                anchors.centerIn: parent
-                                anchors.verticalCenterOffset: 1
-                                width: parent.width
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                elide: Text.ElideRight
-                                maximumLineCount: 2
-                                wrapMode: Text.Wrap
-                                text: deskItemWrapper.itemData.name
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
-                                color: Theme.imageTextShadow
-                                renderType: Theme.renderType
-                            }
-
-                            // Main crisp text
                             Text {
                                 id: nameText
-                                anchors.centerIn: parent
-                                width: parent.width
+                                anchors.centerIn: nameBackdrop
+                                width: nameContainer.width - 8
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                                 elide: Text.ElideRight
                                 maximumLineCount: 2
                                 wrapMode: Text.Wrap
+                                textFormat: Text.PlainText
                                 text: deskItemWrapper.itemData.name
                                 font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: deskItemWrapper.isSelected ? Font.Medium : Font.Normal
+                                font.pixelSize: Theme.fontSize(12)
+                                font.weight: Font.Medium
                                 color: Theme.onImageText
                                 renderType: Theme.renderType
                             }

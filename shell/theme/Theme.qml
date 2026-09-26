@@ -160,7 +160,10 @@ Item {
     readonly property color modalScrim: Qt.rgba(0, 0, 0, 0.60)             // neutral dim behind dialogs
     // On-image tokens: text and scrims drawn over a wallpaper/photo are mode-independent.
     readonly property color onImageText: "#ffffff"
-    readonly property color imageTextShadow: Qt.rgba(0, 0, 0, 0.70)
+    // Desktop icon names: white on at least 58% black reads at 4.5:1 or better even over
+    // a white wallpaper; hovered / selected names darken further instead of losing it.
+    readonly property color imageLabelScrim: Qt.rgba(0, 0, 0, 0.58)
+    readonly property color imageLabelScrimActive: Qt.rgba(0, 0, 0, 0.76)
     readonly property color imageScrimSoft: Qt.rgba(0, 0, 0, 0.28)
     readonly property color imageScrim: Qt.rgba(0, 0, 0, 0.40)
     readonly property color imageScrimStrong: Qt.rgba(0, 0, 0, 0.65)

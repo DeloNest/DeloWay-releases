@@ -53,9 +53,9 @@ Item {
     // GRID METRICS & ICON POSITION PERSISTENCE
     // ----------------------------------------------------
     readonly property real cellWidth: 100
-    readonly property real cellHeight: 100
-    readonly property real itemWidth: 76
-    readonly property real itemHeight: 84
+    readonly property real cellHeight: 108
+    readonly property real itemWidth: 88     // a two-line name fits under the icon
+    readonly property real itemHeight: 100
     readonly property real topMargin: 56
     readonly property real sideMargin: 24
 
