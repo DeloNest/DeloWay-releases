@@ -223,6 +223,7 @@
 * `1956fd9` - fix(settings): Number Format belongs with the fonts, not with the apps
 * `9166905` - feat(apps): an Archive Manager default, Ark by default
 * `228bb9e` - feat(install): Compress / Extract in the file manager
+* `e7f5cb0` - fix(theme): KDE apps started on their own use Breeze too
 
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
@@ -365,8 +366,8 @@
 ### ط) 26 سبتمبر 2026: الضغط وفك الضغط في مدير الملفات
 - **السبب**: لا أداة أرشفة مثبتة (لا Ark ولا File Roller ولا thunar-archive-plugin)، فلا «ضغط/استخراج» في Dolphin ولا Thunar؛ ولا 7zip/unrar/zip.
 - **الحل**: Ark (يضيف لـ Dolphin قائمتي «اضغطه» و«استخراج» عبر ملحقاته، ولـ Thunar عبر thunar-archive-plugin الذي يشغّل Ark) + الخلفيات: libarchive (tar وأنواعه، مثبت)، libzip (zip، تبعية لـ Ark)، 7zip (7z)، unrar (فك RAR — Ark لا يقرأ RAR عبر 7zip، مُختبر). دور «مدير الأرشيف» في Settings → Apps (Ark افتراضي، File Roller بديل) يضبط فتح الأرشيفات المضغوطة فقط (لا ISO/deb/rpm/AppImage/jar).
-- **مُتحقَّق في الجلسة المعزولة** (الحزم مستخرجة في مسار مؤقت بتواقيع Arch سليمة): إنشاء zip وtar.gz (مجلد باسم عربي) و7z وفكها، وفك RAR، كلها مطابقة بايتاً ببايت؛ حوارات Ark ونافذة التقدم عربية RTL وأحادية. Thunar لم يُختبر بعد (يلزم تثبيت الإضافة).
-- **على الجهاز الحقيقي**: يلزم `sudo pacman -S ark 7zip unrar zip unzip thunar-archive-plugin` ثم إعادة تشغيل الشيل (يُعيَّن Ark تلقائياً لأن الدور لم يُختر بعد).
+- **مُتحقَّق في الجلسة المعزولة** (الحزم مستخرجة في مسار مؤقت بتواقيع Arch سليمة): إنشاء zip وtar.gz (مجلد باسم عربي) و7z وفكها، وفك RAR، كلها مطابقة بايتاً ببايت؛ حوارات Ark ونافذة التقدم عربية RTL وأحادية. **Thunar** (بعد تثبيت الحزم 26 سبتمبر): «Create Archive…» و«إستخرج هنا/إلى…» تعمل عبر Ark (ضغط tar.gz وفك RAR مُتحقَّق)؛ عنوان «Create Archive…» غير مترجم في الإضافة upstream. Ark المشغَّل مستقلاً كان يرسم بنمط Fusion المسطح لأنه لا يطبّق widgetStyle من kdeglobals كما يفعل Dolphin — أُصلح بـ `QT_STYLE_OVERRIDE=Breeze` (hyprland.conf + deloway-theme-apply.py).
+- **على الجهاز الحقيقي**: الحزم مثبتة (26 سبتمبر). يلزم إعادة تشغيل الشيل (يُعيَّن Ark تلقائياً لأن الدور لم يُختر بعد، ويُدفع QT_STYLE_OVERRIDE لبيئة systemd/D-Bus).
 
 ---
 
