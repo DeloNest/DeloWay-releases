@@ -4,7 +4,8 @@
 # here are offered too; this list adds the ones worth installing.
 #
 # Columns (tab-separated):
-#   role      browser | terminal | fileManager | editor | monitor
+#   role      browser | terminal | fileManager | editor | monitor | image | video | pdf
+#             (image/video/pdf: the default by file type — Settings also offers the browser)
 #   command   what delo-app runs (the executable)
 #   desktop   desktop-entry id (without .desktop), used for icons, xdg defaults, the Dock
 #   package   Arch package(s) that provide it, space-separated (companions included,
@@ -32,3 +33,13 @@ editor	code-oss	code-oss	code	repo	Code - OSS
 monitor	missioncenter	io.missioncenter.MissionCenter	mission-center	repo	Mission Center	default
 monitor	gnome-system-monitor	org.gnome.SystemMonitor	gnome-system-monitor	repo	System Monitor
 monitor	plasma-systemmonitor	org.kde.plasma-systemmonitor	plasma-systemmonitor	repo	Plasma System Monitor
+image	loupe	org.gnome.Loupe	loupe	repo	Image Viewer (Loupe)	default
+image	gwenview	org.kde.gwenview	gwenview breeze	repo	Gwenview
+image	imv	imv	imv	repo	imv
+video	cine	io.github.diegopvlk.Cine	cine	aur	Cine	default
+video	mpv	mpv	mpv	repo	mpv
+video	showtime	org.gnome.Showtime	showtime	repo	Showtime
+video	vlc	vlc	vlc	repo	VLC
+pdf	papers	org.gnome.Papers	papers	repo	Papers	default
+pdf	evince	org.gnome.Evince	evince	repo	Document Viewer (Evince)
+pdf	okular	org.kde.okular	okular breeze	repo	Okular

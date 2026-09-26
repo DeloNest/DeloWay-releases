@@ -51,9 +51,15 @@ Item {
                     { role: "fileManager", icon: "system-file-manager-symbolic", title: I18n.tr("file_manager"),
                       subtitle: I18n.isRTL ? "يفتح المجلدات والملفات" : "Opens folders and files" },
                     { role: "editor", icon: "accessories-text-editor-symbolic", title: I18n.tr("text_editor"),
-                      subtitle: I18n.isRTL ? "يفتح الملفات النصية" : "Opens plain-text files" },
+                      subtitle: I18n.tr("text_editor_desc") },
                     { role: "monitor", icon: "utilities-system-monitor-symbolic", title: I18n.tr("system_monitor"),
-                      subtitle: I18n.isRTL ? "يفتح بـ Ctrl+Shift+Esc" : "Opened by Ctrl+Shift+Esc" }
+                      subtitle: I18n.isRTL ? "يفتح بـ Ctrl+Shift+Esc" : "Opened by Ctrl+Shift+Esc" },
+                    { role: "image", icon: "image-x-generic-symbolic", title: I18n.tr("image_viewer"),
+                      subtitle: I18n.tr("image_viewer_desc") },
+                    { role: "video", icon: "video-x-generic-symbolic", title: I18n.tr("video_player"),
+                      subtitle: I18n.tr("video_player_desc") },
+                    { role: "pdf", icon: "x-office-document-symbolic", title: I18n.tr("pdf_viewer"),
+                      subtitle: I18n.tr("pdf_viewer_desc") }
                 ]
 
                 delegate: ColumnLayout {

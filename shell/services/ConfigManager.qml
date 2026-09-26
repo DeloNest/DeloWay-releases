@@ -114,6 +114,13 @@ Item {
     property string defaultFileManager: "thunar"
     property string defaultEditor: "org.gnome.TextEditor"
     property string defaultMonitor: "missioncenter"
+    // Defaults by file type (xdg-mime, applied by DefaultApps): a desktop id, "@browser"
+    // (follows the default browser), or "" = never chosen in DeloWay (the catalog
+    // default is applied once it is installed).
+    property string defaultImageViewer: ""
+    property string defaultVideoPlayer: ""
+    property string defaultPdfViewer: ""
+    property bool fileTypeDefaultsApplied: false   // first run of the by-type defaults done
 
     // Music Settings (P10)
     property string musicPreferredPlayer: "auto"
@@ -364,6 +371,10 @@ Item {
                 if (cfg.defaultApps.fileManager) root.defaultFileManager = cfg.defaultApps.fileManager;
                 if (cfg.defaultApps.editor) root.defaultEditor = cfg.defaultApps.editor;
                 if (cfg.defaultApps.monitor) root.defaultMonitor = cfg.defaultApps.monitor;
+                if (cfg.defaultApps.image) root.defaultImageViewer = cfg.defaultApps.image;
+                if (cfg.defaultApps.video) root.defaultVideoPlayer = cfg.defaultApps.video;
+                if (cfg.defaultApps.pdf) root.defaultPdfViewer = cfg.defaultApps.pdf;
+                root.fileTypeDefaultsApplied = !!cfg.defaultApps.fileTypesApplied;
             }
             if (cfg.music) {
                 if (cfg.music.preferredPlayer !== undefined) root.musicPreferredPlayer = cfg.music.preferredPlayer;
@@ -788,10 +799,21 @@ Item {
         const clean = value.replace(/\.desktop$/, "");
         const entry = ApplicationManager.resolveAppEntry(clean);
         const desktopFile = (entry ? entry.id.replace(/\.desktop$/, "") : clean) + ".desktop";
-        if (cat === "browser") {
+        if (cat === "image" || cat === "video" || cat === "pdf") {
+            // By file type; "@browser" follows the default browser.
+            const id = (clean === "@browser") ? clean : desktopFile.replace(/\.desktop$/, "");
+            if (cat === "image") root.defaultImageViewer = id;
+            else if (cat === "video") root.defaultVideoPlayer = id;
+            else root.defaultPdfViewer = id;
+            DefaultApps.applyFileType(cat, id);
+        } else if (cat === "browser") {
             root.defaultBrowser = clean;
             root.run(["xdg-settings", "set", "default-web-browser", desktopFile]);
             root.run(["xdg-mime", "default", desktopFile, "x-scheme-handler/http", "x-scheme-handler/https", "text/html"]);
+            // Types left to the browser move with it.
+            if (root.defaultImageViewer === "@browser") DefaultApps.applyFileType("image", "@browser");
+            if (root.defaultVideoPlayer === "@browser") DefaultApps.applyFileType("video", "@browser");
+            if (root.defaultPdfViewer === "@browser") DefaultApps.applyFileType("pdf", "@browser");
         } else if (cat === "terminal") {
             root.defaultTerminal = clean;
         } else if (cat === "fileManager") {
@@ -799,12 +821,19 @@ Item {
             root.run(["xdg-mime", "default", desktopFile, "inode/directory"]);
         } else if (cat === "editor") {
             root.defaultEditor = clean;
-            root.run(["xdg-mime", "default", desktopFile, "text/plain"]);
+            // Plain text and every script / source type: text/plain alone left shell
+            // scripts to the terminal (kitty-open) and C files to vim.
+            DefaultApps.applyFileType("editor", desktopFile.replace(/\.desktop$/, ""));
         } else if (cat === "monitor") {
             root.defaultMonitor = clean;
         } else {
             return;
         }
+        saveConfig();
+    }
+
+    function setFileTypeDefaultsApplied() {
+        root.fileTypeDefaultsApplied = true;
         saveConfig();
     }
 
@@ -968,7 +997,11 @@ Item {
                 terminal: root.defaultTerminal,
                 fileManager: root.defaultFileManager,
                 editor: root.defaultEditor,
-                monitor: root.defaultMonitor
+                monitor: root.defaultMonitor,
+                image: root.defaultImageViewer,
+                video: root.defaultVideoPlayer,
+                pdf: root.defaultPdfViewer,
+                fileTypesApplied: root.fileTypeDefaultsApplied
             },
             music: {
                 preferredPlayer: root.musicPreferredPlayer,
