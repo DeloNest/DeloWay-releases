@@ -119,6 +119,7 @@ Item {
     property string defaultImageViewer: ""
     property string defaultVideoPlayer: ""
     property string defaultPdfViewer: ""
+    property string defaultArchiveManager: ""
     property bool fileTypeDefaultsApplied: false   // first run of the by-type defaults done
 
     // Music Settings (P10)
@@ -376,6 +377,7 @@ Item {
                 if (cfg.defaultApps.image) root.defaultImageViewer = cfg.defaultApps.image;
                 if (cfg.defaultApps.video) root.defaultVideoPlayer = cfg.defaultApps.video;
                 if (cfg.defaultApps.pdf) root.defaultPdfViewer = cfg.defaultApps.pdf;
+                if (cfg.defaultApps.archive) root.defaultArchiveManager = cfg.defaultApps.archive;
                 root.fileTypeDefaultsApplied = !!cfg.defaultApps.fileTypesApplied;
             }
             if (cfg.music) {
@@ -813,12 +815,13 @@ Item {
         const clean = value.replace(/\.desktop$/, "");
         const entry = ApplicationManager.resolveAppEntry(clean);
         const desktopFile = (entry ? entry.id.replace(/\.desktop$/, "") : clean) + ".desktop";
-        if (cat === "image" || cat === "video" || cat === "pdf") {
+        if (cat === "image" || cat === "video" || cat === "pdf" || cat === "archive") {
             // By file type; "@browser" follows the default browser.
             const id = (clean === "@browser") ? clean : desktopFile.replace(/\.desktop$/, "");
             if (cat === "image") root.defaultImageViewer = id;
             else if (cat === "video") root.defaultVideoPlayer = id;
-            else root.defaultPdfViewer = id;
+            else if (cat === "pdf") root.defaultPdfViewer = id;
+            else root.defaultArchiveManager = id;
             DefaultApps.applyFileType(cat, id);
         } else if (cat === "browser") {
             root.defaultBrowser = clean;
@@ -1015,6 +1018,7 @@ Item {
                 image: root.defaultImageViewer,
                 video: root.defaultVideoPlayer,
                 pdf: root.defaultPdfViewer,
+                archive: root.defaultArchiveManager,
                 fileTypesApplied: root.fileTypeDefaultsApplied
             },
             music: {

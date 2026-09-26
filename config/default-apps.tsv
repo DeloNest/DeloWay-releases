@@ -4,7 +4,7 @@
 # here are offered too; this list adds the ones worth installing.
 #
 # Columns (tab-separated):
-#   role      browser | terminal | fileManager | editor | monitor | image | video | pdf
+#   role      browser | terminal | fileManager | editor | monitor | image | video | pdf | archive
 #             (image/video/pdf: the default by file type — Settings also offers the browser)
 #   command   what delo-app runs (the executable)
 #   desktop   desktop-entry id (without .desktop), used for icons, xdg defaults, the Dock
@@ -44,3 +44,5 @@ video	vlc	vlc	vlc	repo	VLC
 pdf	papers	org.gnome.Papers	papers	repo	Papers	default
 pdf	evince	org.gnome.Evince	evince	repo	Document Viewer (Evince)
 pdf	okular	org.kde.okular	okular breeze	repo	Okular
+archive	ark	org.kde.ark	ark 7zip unrar	repo	Ark	default
+archive	file-roller	org.gnome.FileRoller	file-roller 7zip unrar	repo	File Roller

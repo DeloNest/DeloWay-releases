@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """DeloWay default apps by file type: which installed apps can open images, videos,
-PDFs and code, which one does now, and making one the default.
+PDFs, archives and code, which one does now, and making one the default.
 
     deloway-default-app.py status                 → JSON {apps: {role: [ids]}, current: {role: id}}
     deloway-default-app.py set ROLE DESKTOP_ID [--web]
@@ -37,7 +37,24 @@ ROLES = {
                                       "application/x-gzpdf", "application/x-xzpdf"),
             "web": ["application/pdf"]},
     "editor": {"key": "text/plain", "common": ["text/plain"], "family": lambda m: m in EDITOR_TYPES, "web": []},
+    "archive": {"key": "application/zip", "common": ["application/zip", "application/x-7z-compressed"],
+                "family": lambda m: m in ARCHIVE_TYPES, "web": []},
 }
+
+# Compressed archives. Not disk images (ISO), packages (deb/rpm), AppImages or Java
+# archives, which Ark also lists but which have better handlers than an archive manager.
+ARCHIVE_TYPES = [
+    "application/zip", "application/x-zip-compressed", "application/x-7z-compressed",
+    "application/vnd.rar", "application/x-rar", "application/x-rar-compressed",
+    "application/x-tar", "application/x-compressed-tar", "application/x-bzip-compressed-tar",
+    "application/x-bzip2-compressed-tar", "application/x-xz-compressed-tar",
+    "application/x-zstd-compressed-tar", "application/x-lzma-compressed-tar",
+    "application/x-lz4-compressed-tar", "application/x-lzip-compressed-tar", "application/x-tarz",
+    "application/gzip", "application/x-gzip", "application/x-bzip", "application/x-bzip2",
+    "application/x-xz", "application/zstd", "application/x-lzma", "application/x-lz4",
+    "application/x-lzip", "application/x-compress", "application/x-cpio", "application/x-arj",
+    "application/arj", "application/x-lha", "application/vnd.ms-cab-compressed",
+]
 
 # Plain text, source code and scripts — never text/html (the browser's) or .desktop files.
 EDITOR_TYPES = [

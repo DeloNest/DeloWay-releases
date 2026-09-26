@@ -203,7 +203,9 @@ Item {
                     { role: "video", icon: "video-x-generic-symbolic", title: I18n.tr("video_player"),
                       subtitle: I18n.tr("video_player_desc") },
                     { role: "pdf", icon: "x-office-document-symbolic", title: I18n.tr("pdf_viewer"),
-                      subtitle: I18n.tr("pdf_viewer_desc") }
+                      subtitle: I18n.tr("pdf_viewer_desc") },
+                    { role: "archive", icon: "package-x-generic-symbolic", title: I18n.tr("archive_manager"),
+                      subtitle: I18n.tr("archive_manager_desc") }
                 ]
 
                 delegate: DefaultAppRow {

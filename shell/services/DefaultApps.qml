@@ -14,11 +14,11 @@ import Quickshell.Io
 Item {
     id: root
 
-    readonly property var roles: ["browser", "terminal", "fileManager", "editor", "monitor", "image", "video", "pdf"]
+    readonly property var roles: ["browser", "terminal", "fileManager", "editor", "monitor", "image", "video", "pdf", "archive"]
     // Defaults by file type: the real current app is read from the system (xdg-mime), the
     // installed apps come from their MimeType= (scripts/deloway-default-app.py), and the
     // browser is offered as a choice too.
-    readonly property var fileTypeRoles: ["image", "video", "pdf"]
+    readonly property var fileTypeRoles: ["image", "video", "pdf", "archive"]
     function isFileTypeRole(role) { return root.fileTypeRoles.indexOf(role) >= 0; }
     readonly property string helper: ConfigManager.projectDir + "/scripts/deloway-default-app.py"
 
@@ -63,6 +63,7 @@ Item {
         case "image": return ConfigManager.defaultImageViewer;
         case "video": return ConfigManager.defaultVideoPlayer;
         case "pdf": return ConfigManager.defaultPdfViewer;
+        case "archive": return ConfigManager.defaultArchiveManager;
         }
         return "";
     }
@@ -109,7 +110,7 @@ Item {
             list.push({ desktop: e.id, name: e.name, icon: e.icon || e.id, pkg: "", aur: false, installed: true });
         }
         const browser = root.browserEntry();
-        if (root.isFileTypeRole(role) && browser) {
+        if (root.isFileTypeRole(role) && browser && role !== "archive") {
             list.push({ desktop: "@browser", name: I18n.tr("default_app_in_browser").replace("%1", browser.name),
                         icon: browser.icon || browser.id, pkg: "", aur: false, installed: true });
         }
@@ -203,18 +204,18 @@ Item {
         }
     }
 
-    // First run of the by-type defaults: the catalog defaults that are installed become
-    // the defaults (images opened in the browser only because nothing else was set), and
-    // scripts / source files go to the text editor. Roles whose default is not installed
-    // yet stay empty and are set when it is installed from Settings.
+    // By-type roles never chosen in DeloWay get the catalog default once it is installed
+    // (images opened in the browser only because nothing else was set) — also when it is
+    // installed later, outside Settings. On the first run scripts / source files also go
+    // to the text editor.
     function _firstRunDefaults() {
-        if (ConfigManager.fileTypeDefaultsApplied) return;
         for (const role of root.fileTypeRoles) {
             if (root.value(role)) continue;
             const def = (root.catalog[role] || []).find(a => a.isDefault);
             const installed = ((root.fileStatus.apps || {})[role] || []).indexOf(def ? def.desktop : "") >= 0;
             if (installed) ConfigManager.setDefaultApp(role, def.desktop);
         }
+        if (ConfigManager.fileTypeDefaultsApplied) return;
         ConfigManager.setDefaultApp("editor", ConfigManager.defaultEditor);
         ConfigManager.setFileTypeDefaultsApplied();
     }
