@@ -459,6 +459,19 @@ queue_core_packages() {
     pacman -Q loupe &>/dev/null || PKGS_TO_INSTALL+=("loupe")
     pacman -Q papers &>/dev/null || PKGS_TO_INSTALL+=("papers")
     pacman -Q cine &>/dev/null || AUR_PKGS_TO_INSTALL+=("cine")
+
+    # Archives: Ark gives the file manager its Compress / Extract menus (Dolphin through
+    # Ark's own plugins, Thunar through thunar-archive-plugin, which drives Ark) and opens
+    # archives. Backends: libarchive (tar, tar.gz/xz/bz2/zst — already a dependency),
+    # libzip (zip, an Ark dependency), 7zip (7z; the 7z command) and unrar (RAR
+    # extraction; freeware, Ark does not read RAR through 7zip). zip/unzip for scripts.
+    local archive_pkg
+    for archive_pkg in ark 7zip unrar zip unzip; do
+        pacman -Q "$archive_pkg" &>/dev/null || PKGS_TO_INSTALL+=("$archive_pkg")
+    done
+    if pacman -Q thunar &>/dev/null && ! pacman -Q thunar-archive-plugin &>/dev/null; then
+        PKGS_TO_INSTALL+=("thunar-archive-plugin")
+    fi
     command -v pamac &>/dev/null || AUR_PKGS_TO_INSTALL+=("pamac-aur")
 
     # Optional Tools: Satty & SwayOSD (Explicitly separated from code integration)
