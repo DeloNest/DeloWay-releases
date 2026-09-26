@@ -204,6 +204,59 @@ Item {
                     }
                 }
             }
+
+            // Number Format: the digits of every DeloWay surface and of Qt/KDE apps
+            SettingsRow {
+                title: I18n.tr("number_format_title")
+                subtitle: I18n.tr("number_format_desc")
+                icon: "preferences-desktop-font-symbolic"
+                showDivider: false
+
+                RowLayout {
+                    spacing: Theme.space4
+                    LayoutMirroring.enabled: I18n.isRTL
+                    LayoutMirroring.childrenInherit: true
+
+                    Repeater {
+                        model: [
+                            { val: "western", label: "0123" },
+                            { val: "eastern", label: "٠١٢٣" }
+                        ]
+                        delegate: Rectangle {
+                            id: digitPill
+                            required property var modelData
+                            readonly property bool isSelected: ConfigManager.numberFormat === modelData.val
+
+                            height: 28
+                            implicitWidth: digitText.implicitWidth + Theme.space24
+                            radius: 14
+                            color: digitPill.isSelected ? Theme.notchSurfaceActive : (digitMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            border.color: digitPill.isSelected ? Theme.notchBorderHighlight : (digitMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
+                            border.width: 1
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                            Text {
+                                id: digitText
+                                anchors.centerIn: parent
+                                text: digitPill.modelData.label
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(12)
+                                font.weight: digitPill.isSelected ? Font.DemiBold : Font.Normal
+                                color: digitPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
+                            }
+
+                            MouseArea {
+                                id: digitMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: ConfigManager.setNumberFormat(digitPill.modelData.val)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         SettingsSection {

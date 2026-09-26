@@ -1,6 +1,5 @@
-// Apps — three sub-sections: Default Apps (the app for each role / file type, and the
-// music player), All Apps (every installed app: info, uninstall, per-app language) and
-// Number Format (Western / Eastern digits everywhere).
+// Apps — two sub-sections: Default Apps (the app for each role / file type, and the
+// music player) and All Apps (every installed app: info, uninstall, per-app language).
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -21,7 +20,7 @@ Item {
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
-    // "defaults" | "all" | "numbers"
+    // "defaults" | "all"
     property string section: ShellState.appInfoId !== "" ? "all" : "defaults"
     Connections {
         target: ShellState
@@ -140,8 +139,7 @@ Item {
                 Repeater {
                     model: [
                         { id: "defaults", label: I18n.tr("apps_section_defaults") },
-                        { id: "all", label: I18n.tr("apps_section_all") },
-                        { id: "numbers", label: I18n.tr("apps_section_numbers") }
+                        { id: "all", label: I18n.tr("apps_section_all") }
                     ]
                     delegate: Rectangle {
                         id: seg
@@ -422,90 +420,6 @@ Item {
                         }
                     }
                 }
-            }
-        }
-
-        // ── Number Format ────────────────────────────────────────────
-        SettingsSection {
-            visible: root.section === "numbers"
-            title: I18n.tr("apps_section_numbers")
-
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.margins: Theme.space16
-                spacing: Theme.space12
-
-                Repeater {
-                    model: [
-                        { id: "western", label: I18n.tr("number_format_western"), sample: "0123456789", clock: "12:45" },
-                        { id: "eastern", label: I18n.tr("number_format_eastern"), sample: "٠١٢٣٤٥٦٧٨٩", clock: "١٢:٤٥" }
-                    ]
-                    delegate: Rectangle {
-                        id: fmtCard
-                        required property var modelData
-                        readonly property bool selected: ConfigManager.numberFormat === fmtCard.modelData.id
-                        Layout.fillWidth: true
-                        implicitHeight: fmtCol.implicitHeight + Theme.space24
-                        radius: Theme.notchRadiusCard
-                        color: fmtCard.selected ? Theme.inverseSurface : (fmtMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
-                        border.width: 1
-                        border.color: fmtCard.selected ? Theme.inverseSurface : Theme.notchBorderSubtle
-                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                        ColumnLayout {
-                            id: fmtCol
-                            anchors.centerIn: parent
-                            spacing: 4
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: fmtCard.modelData.clock
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(26)
-                                font.weight: Font.DemiBold
-                                renderType: Theme.renderType
-                                color: fmtCard.selected ? Theme.inverseText : Theme.notchText
-                            }
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: fmtCard.modelData.sample
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(13)
-                                renderType: Theme.renderType
-                                color: fmtCard.selected ? Theme.inverseText : Theme.notchTextSecondary
-                            }
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                text: fmtCard.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(12)
-                                font.weight: Font.DemiBold
-                                renderType: Theme.renderType
-                                color: fmtCard.selected ? Theme.inverseText : Theme.notchText
-                            }
-                        }
-                        MouseArea {
-                            id: fmtMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: ConfigManager.setNumberFormat(fmtCard.modelData.id)
-                        }
-                    }
-                }
-            }
-
-            Text {
-                Layout.fillWidth: true
-                Layout.leftMargin: Theme.space16
-                Layout.rightMargin: Theme.space16
-                Layout.bottomMargin: Theme.space16
-                horizontalAlignment: Text.AlignLeft
-                wrapMode: Text.WordWrap
-                text: I18n.tr("number_format_scope")
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                renderType: Theme.renderType
-                color: Theme.notchTextSecondary
             }
         }
     }
