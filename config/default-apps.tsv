@@ -7,7 +7,8 @@
 #   role      browser | terminal | fileManager | editor | monitor
 #   command   what delo-app runs (the executable)
 #   desktop   desktop-entry id (without .desktop), used for icons, xdg defaults, the Dock
-#   package   Arch package that provides it
+#   package   Arch package(s) that provide it, space-separated (companions included,
+#             e.g. the Breeze style that KDE apps need to look right)
 #   source    repo | aur
 #   name      shown in the menus
 #   default   "default" marks the preselected choice of the role (exactly one per role)
@@ -21,7 +22,7 @@ terminal	alacritty	Alacritty	alacritty	repo	Alacritty
 terminal	foot	foot	foot	repo	Foot
 terminal	konsole	org.kde.konsole	konsole	repo	Konsole
 fileManager	thunar	thunar	thunar	repo	Thunar	default
-fileManager	dolphin	org.kde.dolphin	dolphin	repo	Dolphin
+fileManager	dolphin	org.kde.dolphin	dolphin breeze	repo	Dolphin
 fileManager	nautilus	org.gnome.Nautilus	nautilus	repo	Files (Nautilus)
 fileManager	pcmanfm-qt	pcmanfm-qt	pcmanfm-qt	repo	PCManFM-Qt
 editor	gnome-text-editor	org.gnome.TextEditor	gnome-text-editor	repo	Text Editor	default

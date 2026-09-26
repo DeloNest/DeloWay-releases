@@ -126,7 +126,9 @@ Item {
         installQueue = installQueue.slice(1);
         installProc.job = job;
         // pamac build: AUR packages; pamac install: repositories.
-        installProc.command = ["env", "LC_ALL=C", "pamac", job.aur ? "build" : "install", "--no-confirm", job.pkg];
+        // job.pkg may name companions too ("dolphin breeze"): one pamac run for all of them.
+        installProc.command = ["env", "LC_ALL=C", "pamac", job.aur ? "build" : "install", "--no-confirm"]
+                              .concat(String(job.pkg).split(/\s+/).filter(p => p.length > 0));
         installProc.running = true;
     }
 }

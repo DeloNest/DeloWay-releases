@@ -251,8 +251,14 @@ select_default_app() {
         i=$((choice - 1))
         REPLY_APP="${cmds[i]}"
         if ! command -v "${cmds[i]}" &>/dev/null; then
-            if [ "${srcs[i]}" = "aur" ]; then AUR_PKGS_TO_INSTALL+=("${pkgs[i]}")
-            else PKGS_TO_INSTALL+=("${pkgs[i]}"); fi
+            # shellcheck disable=SC2206  # the column may list companions: split on spaces
+            if [ "${srcs[i]}" = "aur" ]; then AUR_PKGS_TO_INSTALL+=(${pkgs[i]})
+            else PKGS_TO_INSTALL+=(${pkgs[i]}); fi
+        fi
+        # KDE apps need the Breeze style to look right (deloway-theme-apply.py), also
+        # when the app itself was installed before.
+        if [ "${cmds[i]}" = "dolphin" ] && command -v dolphin &>/dev/null && ! pacman -Q breeze &>/dev/null; then
+            PKGS_TO_INSTALL+=("breeze")
         fi
     fi
 }
