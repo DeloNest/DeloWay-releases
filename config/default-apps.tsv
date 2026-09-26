@@ -30,6 +30,7 @@ editor	gnome-text-editor	org.gnome.TextEditor	gnome-text-editor	repo	Text Editor
 editor	kate	org.kde.kate	kate	repo	Kate
 editor	mousepad	org.xfce.mousepad	mousepad	repo	Mousepad
 editor	code-oss	code-oss	code	repo	Code - OSS
+editor	codium	codium	vscodium-bin	aur	VSCodium
 monitor	missioncenter	io.missioncenter.MissionCenter	mission-center	repo	Mission Center	default
 monitor	gnome-system-monitor	org.gnome.SystemMonitor	gnome-system-monitor	repo	System Monitor
 monitor	plasma-systemmonitor	org.kde.plasma-systemmonitor	plasma-systemmonitor	repo	Plasma System Monitor
