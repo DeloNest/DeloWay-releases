@@ -1129,6 +1129,125 @@ def write_kdeglobals(mode: str, font_family: str, font_scale: float, icon_theme:
     return atomic_write_if_changed(target, "\n".join(lines), dry_run=dry_run)
 
 
+# Dolphin's side panels live in QMainWindow dock areas, which Qt places physically: in an
+# Arabic UI the places panel stayed on the left while everything else read right to
+# left. On a language switch the saved layout (~/.local/state/dolphinstaterc) is mirrored
+# — left and right dock areas swap, every other choice (sizes, hidden panels, toolbars)
+# is kept — and the side it was mirrored for is remembered, so it happens once.
+DOCK_STATE_MARKER, DOCK_SEQUENCE, DOCK_WIDGET, DOCK_TABBED = 0xfd, 0xfc, 0xfb, 0xfa
+
+
+def _dock_area_offsets(blob: bytes) -> list:
+    """Offsets of each dock area's position int in a QMainWindow::saveState() blob."""
+    import struct
+    p = 0
+
+    def u8():
+        nonlocal p
+        p += 1
+        return blob[p - 1]
+
+    def i32():
+        nonlocal p
+        p += 4
+        return struct.unpack_from(">i", blob, p - 4)[0]
+
+    def skip_string():
+        nonlocal p
+        n = struct.unpack_from(">I", blob, p)[0]
+        p += 4 + (0 if n == 0xFFFFFFFF else n)
+
+    def area_info():
+        marker = u8()
+        if marker == DOCK_TABBED:
+            i32()
+        elif marker != DOCK_SEQUENCE:
+            raise ValueError("unexpected dock layout marker")
+        u8()                                   # orientation
+        for _ in range(i32()):
+            item = u8()
+            if item == DOCK_WIDGET:
+                skip_string()                  # object name
+                u8()                           # flags
+                for _ in range(4):
+                    i32()                      # pos/size (or floating geometry)
+            elif item == DOCK_SEQUENCE:
+                for _ in range(4):
+                    i32()
+                area_info()
+            else:
+                raise ValueError("unexpected dock item marker")
+
+    if i32() != 0xFF:
+        raise ValueError("not a QMainWindow state")
+    i32()                                      # version
+    if u8() != DOCK_STATE_MARKER:
+        raise ValueError("no dock areas")
+    offsets = []
+    for _ in range(i32()):
+        offsets.append(p)
+        i32()                                  # position: 0 left, 1 right, 2 top, 3 bottom
+        i32()
+        i32()                                  # area size
+        area_info()
+    return offsets
+
+
+def mirror_dock_areas(blob: bytes) -> bytes:
+    import struct
+    out = bytearray(blob)
+    for off in _dock_area_offsets(blob):
+        pos = struct.unpack_from(">i", blob, off)[0]
+        if pos in (0, 1):
+            struct.pack_into(">i", out, off, 1 - pos)
+    return bytes(out)
+
+
+def dolphin_window_open() -> bool:
+    try:
+        out = subprocess.run(["hyprctl", "clients", "-j"], capture_output=True, text=True, timeout=3).stdout
+        return any(c.get("class") == "org.kde.dolphin" for c in json.loads(out or "[]"))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return True   # cannot tell: leave the layout alone this time
+
+
+def sync_dolphin_panel_side(ui_language: str, dry_run: bool = False) -> bool:
+    import base64
+    import configparser
+    state_home = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local" / "state")
+    target = state_home / "dolphinstaterc"
+    want = "right" if ui_language == "ar" else "left"
+    if not target.exists():
+        return False                            # no saved layout yet: next time
+    cfg = configparser.RawConfigParser(strict=False, delimiters=("=",), comment_prefixes=("#",))
+    cfg.optionxform = str
+    try:
+        cfg.read(target, encoding="utf-8")
+    except configparser.Error:
+        return False
+    side = cfg.get("DeloWay", "PlacesPanelSide", fallback="left")   # Dolphin's own default
+    if side == want or not cfg.has_option("State", "State"):
+        return False
+    # An open window writes its layout back when it closes, over ours.
+    if dolphin_window_open():
+        return False
+    try:
+        blob = base64.b64decode(cfg.get("State", "State"))
+        mirrored = base64.b64encode(mirror_dock_areas(blob)).decode("ascii")
+    except (ValueError, IndexError):
+        return False                            # unknown layout format: leave it
+    cfg.set("State", "State", mirrored)
+    if not cfg.has_section("DeloWay"):
+        cfg.add_section("DeloWay")
+    cfg.set("DeloWay", "PlacesPanelSide", want)
+    lines = []
+    for group in cfg.sections():
+        lines.append(f"[{group}]")
+        lines.extend(f"{k}={v}" for k, v in cfg.items(group))
+        lines.append("")
+    return atomic_write_if_changed(target, "\n".join(lines), dry_run=dry_run)
+
+
 def apply_qt_environment(dry_run: bool = False):
     """Qt5/Qt6 → gtk3 platform theme (palette + fonts from the DeloWay GTK theme).
     Persisted for new sessions (environment.d) and pushed into the running one."""
@@ -1254,6 +1373,7 @@ def main():
     write_kde_color_schemes(Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share"),
                             dry_run=args.dry_run)
     write_kdeglobals(mode, font_family, font_scale, icon_theme, config_home, dry_run=args.dry_run)
+    sync_dolphin_panel_side(ui_language, dry_run=args.dry_run)
     fonts_changed = write_fontconfig(font_family, dry_run=args.dry_run)
     apply_qt_environment(dry_run=args.dry_run)
 
