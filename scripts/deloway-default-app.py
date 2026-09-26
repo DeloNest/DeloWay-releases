@@ -23,16 +23,20 @@ import sys
 from pathlib import Path
 
 ROLES = {
-    "image": {"key": "image/png", "family": lambda m: m.startswith("image/"),
+    # common: an app is offered for the role when it opens one of these (Papers lists
+    # image/tiff for multi-page scans; that does not make it an image viewer).
+    "image": {"key": "image/png", "common": ["image/png", "image/jpeg"],
+              "family": lambda m: m.startswith("image/"),
               "web": ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml",
                       "image/avif", "image/bmp"]},
-    "video": {"key": "video/mp4", "family": lambda m: m.startswith("video/"),
+    "video": {"key": "video/mp4", "common": ["video/mp4", "video/webm", "video/x-matroska"],
+              "family": lambda m: m.startswith("video/"),
               "web": ["video/mp4", "video/webm", "video/ogg"]},
-    "pdf": {"key": "application/pdf",
+    "pdf": {"key": "application/pdf", "common": ["application/pdf"],
             "family": lambda m: m in ("application/pdf", "application/x-pdf", "application/x-bzpdf",
                                       "application/x-gzpdf", "application/x-xzpdf"),
             "web": ["application/pdf"]},
-    "editor": {"key": "text/plain", "family": lambda m: m in EDITOR_TYPES, "web": []},
+    "editor": {"key": "text/plain", "common": ["text/plain"], "family": lambda m: m in EDITOR_TYPES, "web": []},
 }
 
 # Plain text, source code and scripts — never text/html (the browser's) or .desktop files.
@@ -109,7 +113,7 @@ def status():
         if role == "editor":
             continue   # editors come from their Categories (the shell knows them)
         apps[role] = sorted((i for i, e in entries.items()
-                             if not e["hidden"] and any(spec["family"](m) for m in e["mimes"])),
+                             if not e["hidden"] and any(m in spec["common"] for m in e["mimes"])),
                             key=lambda i: entries[i]["name"].lower())
     current = {role: current_default(spec["key"]) for role, spec in ROLES.items()}
     print(json.dumps({"apps": apps, "current": current}))
