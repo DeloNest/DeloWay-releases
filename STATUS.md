@@ -2,7 +2,7 @@
 
 > **الغرض من الملف**: مرجع شامل وكافٍ بذاته لأي نموذج ذكاء اصطناعي "عقل تخطيط" (مثل Claude Code أو غيره) للعمل والتخطيط وتقديم حلول وتشخيصات تقنية دقيقة ومتسقة مع الكود الحالي دون الحاجة للبحث المضني في كل ملفات المشروع على القرص.
 > **قاعدة التحديث الإلزامية**: في نهاية أي مهمة برمجية معتمدة ولها commit، يتم تحديث الأقسام (6، 7، 8، 9) لتعكس واقع Git والقرص الفعلي. الأقسام (1 إلى 5) شبه ثابتة، وتُعدّل عند حدوث قرار معماري أو تعديل جذري في نظام التصميم.
-> **آخر تحديث موثق**: 26 سبتمبر 2026 — Settings → Apps بثلاثة أقسام وصيغة الأرقام ولغة لكل تطبيق (7-ح)؛ وقبلها Dolphin (Breeze، اتجاه اللوحة، اللغة)، التطبيقات الافتراضية للصور والفيديو وPDF والسكربتات (القسم 7-ز). قبله: 25 سبتمبر 2026 (مساءً) — المشاركة عبر LocalSend في النوتش، الجدار الناري والهوتسبوت، وجرد التطبيقات الافتراضية (القسم 7-د إلى 7-و). سجل Git هو المرجع النهائي عند أي تعارض.
+> **آخر تحديث موثق**: 26 سبتمبر 2026 — الضغط وفك الضغط (7-ط)، Settings → Apps بثلاثة أقسام وصيغة الأرقام ولغة لكل تطبيق (7-ح)؛ وقبلها Dolphin (Breeze، اتجاه اللوحة، اللغة)، التطبيقات الافتراضية للصور والفيديو وPDF والسكربتات (القسم 7-ز). قبله: 25 سبتمبر 2026 (مساءً) — المشاركة عبر LocalSend في النوتش، الجدار الناري والهوتسبوت، وجرد التطبيقات الافتراضية (القسم 7-د إلى 7-و). سجل Git هو المرجع النهائي عند أي تعارض.
 
 ---
 
@@ -219,6 +219,11 @@
 * `def3b37` - feat(settings): Apps in three sections — Default Apps, All Apps, Number Format
 * `f7dc60c` - feat(settings): All Apps — every installed app, its details and its language
 
+26 سبتمبر (نقل صيغة الأرقام، الضغط وفك الضغط):
+* `1956fd9` - fix(settings): Number Format belongs with the fonts, not with the apps
+* `9166905` - feat(apps): an Archive Manager default, Ark by default
+* `228bb9e` - feat(install): Compress / Extract in the file manager
+
 ما يلي أقدم من جلستَي 23 و25 سبتمبر:
 * `6fdb1e1` - fix: make scroll-wheel expand/collapse symmetric across all Notch zones
 * `c4eccaf` - fix: eliminate TimeCapsule sticking to Notch on expand (static right margin)
@@ -355,6 +360,13 @@
 - **لغة لكل تطبيق** (`scripts/deloway-app-language.py` + `AppActions.appLanguages`): نسخة مستخدم من ملف `.desktop` في `~/.local/share/applications` تشغّل كل `Exec` عبر `env LANGUAGE=… LC_MESSAGES=…` وتعطّل `DBusActivatable` (وإلا يتجاهل ناقل D-Bus الـ Exec)، مع `X-DeloWay-Language`. «لغة النظام» يحذفها؛ ملف التطبيق الموجود أصلاً في مجلد المستخدم يُعدَّل في مكانه ويُستعاد حرفياً. إلغاء التثبيت يحذف النسخة. لا يؤثر على ما يُشغَّل بالأمر مباشرة (مثل `delo-app` للطرفية)، والمتصفحات تتبع إعداد لغتها الخاص.
 - **صيغة الأرقام** (Settings → المظهر → الخطوط، بعد حجم الخط؛ `system.numberFormat`: `western` افتراضياً | `eastern`): كانت مفتاح كبسولة الوقت `topBar.timeCapsuleArabicDigits` افتراضيه `true` فتُفرض الأرقام الشرقية في العربية دون اختيار؛ لم يُنقل. تحكم في `I18n.arabicDigits` (كل واجهات الشيل) وفي `LC_NUMERIC` لتطبيقات Qt/KDE (`ar_SA.UTF-8` ↔ `en_US.UTF-8`: في `deloway-session`، وكل تشغيل من الشيل، وHyprland وD-Bus عند التغيير، و`environment.d` عبر `deloway-locale-apply.py --numbers [--env-only]`). تطبيقات GTK تطبع أرقاماً غربية دائماً.
 - **مُتحقَّق في الجلسة المعزولة** بالعربية والإنجليزية. **على الجهاز الحقيقي**: يلزم إعادة تشغيل الشيل (الساعة تصبح غربية لأن الإعداد لم يُختر بعد)، وتسجيل دخول جديد ليأخذ `deloway-session` اللغة وLC_NUMERIC من البداية.
+
+
+### ط) 26 سبتمبر 2026: الضغط وفك الضغط في مدير الملفات
+- **السبب**: لا أداة أرشفة مثبتة (لا Ark ولا File Roller ولا thunar-archive-plugin)، فلا «ضغط/استخراج» في Dolphin ولا Thunar؛ ولا 7zip/unrar/zip.
+- **الحل**: Ark (يضيف لـ Dolphin قائمتي «اضغطه» و«استخراج» عبر ملحقاته، ولـ Thunar عبر thunar-archive-plugin الذي يشغّل Ark) + الخلفيات: libarchive (tar وأنواعه، مثبت)، libzip (zip، تبعية لـ Ark)، 7zip (7z)، unrar (فك RAR — Ark لا يقرأ RAR عبر 7zip، مُختبر). دور «مدير الأرشيف» في Settings → Apps (Ark افتراضي، File Roller بديل) يضبط فتح الأرشيفات المضغوطة فقط (لا ISO/deb/rpm/AppImage/jar).
+- **مُتحقَّق في الجلسة المعزولة** (الحزم مستخرجة في مسار مؤقت بتواقيع Arch سليمة): إنشاء zip وtar.gz (مجلد باسم عربي) و7z وفكها، وفك RAR، كلها مطابقة بايتاً ببايت؛ حوارات Ark ونافذة التقدم عربية RTL وأحادية. Thunar لم يُختبر بعد (يلزم تثبيت الإضافة).
+- **على الجهاز الحقيقي**: يلزم `sudo pacman -S ark 7zip unrar zip unzip thunar-archive-plugin` ثم إعادة تشغيل الشيل (يُعيَّن Ark تلقائياً لأن الدور لم يُختر بعد).
 
 ---
 
