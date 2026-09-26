@@ -9,6 +9,11 @@ import "../"
 Item {
     id: root
     property string screenName: ""   // this desktop's screen: the context menu opens there
+    // Where every icon goes on this screen (DesktopManager.layout: a cell each, no overlap).
+    // The first screen keeps the cells it chose for new icons; others only follow.
+    readonly property bool primaryScreen: Quickshell.screens.length === 0 || root.screenName === ""
+                                          || Quickshell.screens[0].name === root.screenName
+    readonly property var placement: DesktopManager.layout(root.width, root.height, root.primaryScreen)
     anchors.fill: parent
 
     // ----------------------------------------------------
@@ -127,8 +132,9 @@ Item {
                 readonly property bool isSelected: DesktopManager.isItemSelected(modelData.id)
                 readonly property bool isEditing: DesktopManager.editingItemId === modelData.id
 
-                property real targetX: DesktopManager.getItemX(modelData.id, index, root.width, root.height)
-                property real targetY: DesktopManager.getItemY(modelData.id, index, root.width, root.height)
+                readonly property var placed: root.placement[modelData.id] || ({ x: 0, y: 0 })
+                property real targetX: placed.x
+                property real targetY: placed.y
 
                 onTargetXChanged: {
                     if (!itemMouse.drag.active) {

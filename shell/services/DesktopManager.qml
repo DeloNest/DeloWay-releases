@@ -185,6 +185,14 @@ Item {
             return;
         }
         renameProcess.targetName = name;
+        // The icon keeps its place under its new name.
+        const pos = root.iconPositions[item.id];
+        if (pos) {
+            const updated = Object.assign({}, root.iconPositions);
+            updated["user:" + name] = pos;
+            root.iconPositions = updated;
+            savePositionsTimer.restart();
+        }
         renameProcess.exec(["sh", "-c", '[ -e "$2" ] && exit 3; mv -n -- "$1" "$2"',
                             "sh", item.path, root.desktopDir + "/" + name]);
         editingItemId = "";
@@ -227,86 +235,175 @@ Item {
     // ----------------------------------------------------
     // POSITION CALCULATION & PERSISTENCE
     // ----------------------------------------------------
-    function getItemX(id, index, parentW, parentH) {
-        // Dependency on revision to re-evaluate on changes
-        const _rev = root.positionsRevision;
-        if (root.iconPositions && root.iconPositions[id] && root.iconPositions[id].x !== undefined) {
-            return root.iconPositions[id].x;
-        }
-        const pW = (parentW && parentW > 0) ? parentW : 1920;
-        const pH = (parentH && parentH > 0) ? parentH : 1080;
-        const availableH = Math.max(200, pH - root.topMargin - 60);
-        const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
-        const col = Math.floor(index / itemsPerCol);
-        const xOffset = Math.round((root.cellWidth - root.itemWidth) / 2);
+    // Every icon has a cell of its own. Saved positions are grid cells — c counted from
+    // the reading-start edge (the right in Arabic), r from the top — so they survive a
+    // language switch or another screen size; with "Align to Grid" off, a free position
+    // in pixels ({x, y, free}). layout() places the saved ones first; any icon without a
+    // position, whose cell is taken or off this screen, goes to the next free cell. It
+    // used to put such an icon in the cell of its index in the list, whatever was there:
+    // a new file sat on top of a saved one, and pixel positions from a wider screen were
+    // off-screen.
+    readonly property real bottomMargin: 110   // the Dock
 
-        if (I18n.isRTL) {
-            return Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth) + xOffset);
-        } else {
-            return root.sideMargin + (col * root.cellWidth) + xOffset;
+    function gridFor(parentW, parentH) {
+        const W = (parentW && parentW > 0) ? parentW : 1920;
+        const H = (parentH && parentH > 0) ? parentH : 1080;
+        return {
+            W: W, H: H,
+            cols: Math.max(1, Math.floor((W - 2 * root.sideMargin) / root.cellWidth)),
+            rows: Math.max(1, Math.floor((H - root.topMargin - root.bottomMargin) / root.cellHeight))
+        };
+    }
+
+    function cellXY(g, c, r) {
+        const xOff = Math.round((root.cellWidth - root.itemWidth) / 2);
+        const yOff = Math.round((root.cellHeight - root.itemHeight) / 2);
+        const x = I18n.isRTL ? g.W - root.sideMargin - (c + 1) * root.cellWidth + xOff
+                             : root.sideMargin + c * root.cellWidth + xOff;
+        return { x: Math.round(x), y: Math.round(root.topMargin + r * root.cellHeight + yOff) };
+    }
+
+    // The cell under an icon whose top-left corner is at (x, y), clamped to the grid.
+    function cellAt(g, x, y) {
+        const cx = x + root.itemWidth / 2;
+        const cy = y + root.itemHeight / 2;
+        const c = I18n.isRTL ? Math.floor((g.W - root.sideMargin - cx) / root.cellWidth)
+                             : Math.floor((cx - root.sideMargin) / root.cellWidth);
+        const r = Math.floor((cy - root.topMargin) / root.cellHeight);
+        return { c: Math.max(0, Math.min(g.cols - 1, c)), r: Math.max(0, Math.min(g.rows - 1, r)) };
+    }
+
+    function _key(c, r) { return c + ":" + r; }
+
+    // Next free cell, column by column from the reading-start edge.
+    function _nextFree(g, taken, from) {
+        let i = from.i;
+        for (;; i++) {
+            const c = Math.floor(i / g.rows), r = i % g.rows;
+            if (c >= g.cols) { from.i = i + 1; return { c: c, r: r }; }   // more icons than cells
+            if (!taken[root._key(c, r)]) { from.i = i + 1; return { c: c, r: r }; }
         }
     }
 
-    function getItemY(id, index, parentW, parentH) {
-        const _rev = root.positionsRevision;
-        if (root.iconPositions && root.iconPositions[id] && root.iconPositions[id].y !== undefined) {
-            return root.iconPositions[id].y;
-        }
-        const pH = (parentH && parentH > 0) ? parentH : 1080;
-        const availableH = Math.max(200, pH - root.topMargin - 60);
-        const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
-        const row = index % itemsPerCol;
-        const yOffset = Math.round((root.cellHeight - root.itemHeight) / 2);
-        return root.topMargin + yOffset + (row * root.cellHeight);
-    }
-
-    function saveItemPosition(id, rawX, rawY, parentW, parentH) {
-        let finalX = Math.round(rawX);
-        let finalY = Math.round(rawY);
-
-        if (root.snapToGrid) {
-            const pW = (parentW && parentW > 0) ? parentW : 1920;
-            const xOffset = Math.round((root.cellWidth - root.itemWidth) / 2);
-            const yOffset = Math.round((root.cellHeight - root.itemHeight) / 2);
-            finalY = root.topMargin + yOffset + Math.max(0, Math.round((finalY - root.topMargin - yOffset) / root.cellHeight)) * root.cellHeight;
-            if (I18n.isRTL) {
-                // RTL columns snap from right
-                const col = Math.max(0, Math.round((pW - root.sideMargin - root.cellWidth - (finalX - xOffset)) / root.cellWidth));
-                finalX = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth) + xOffset);
-            } else {
-                const col = Math.max(0, Math.round((finalX - root.sideMargin - xOffset) / root.cellWidth));
-                finalX = root.sideMargin + (col * root.cellWidth) + xOffset;
+    // The free cell nearest to a target cell.
+    function _nearestFree(g, taken, target) {
+        let best = null, bestD = Infinity;
+        for (let c = 0; c < g.cols; c++) {
+            for (let r = 0; r < g.rows; r++) {
+                if (taken[root._key(c, r)]) continue;
+                const d = (c - target.c) * (c - target.c) + (r - target.r) * (r - target.r);
+                if (d < bestD) { bestD = d; best = { c: c, r: r }; }
             }
         }
+        return best || target;
+    }
 
-        let updated = Object.assign({}, root.iconPositions);
-        updated[id] = { "x": finalX, "y": finalY };
+    // { id: {x, y} } for every desktop item on a screen of this size. `persist`: write the
+    // cells it had to choose (new icons, converted old pixel positions) so they stay put —
+    // done by one screen only, other screen sizes must not overwrite them.
+    function layout(parentW, parentH, persist) {
+        const _rev = root.positionsRevision;
+        const _rtl = I18n.isRTL;
+        const g = root.gridFor(parentW, parentH);
+        const saved = root.iconPositions || {};
+        const taken = {};
+        const out = {};
+        const chosen = {};
+        const dropped = [];                    // old-id keys now saved under the new id
+        const pending = [];
+        // Positions saved under the old ids still count where that id named one file only.
+        const legacyCount = {};
+        for (const item of root.allItems)
+            if (item.legacyId) legacyCount[item.legacyId] = (legacyCount[item.legacyId] || 0) + 1;
+
+        for (const item of root.allItems) {
+            let p = saved[item.id];
+            let migrated = false;
+            if (!p && item.legacyId && legacyCount[item.legacyId] === 1 && saved[item.legacyId]) {
+                p = saved[item.legacyId];
+                migrated = true;
+            }
+            if (!p) { pending.push(item); continue; }
+            if (p.free && !root.snapToGrid) {
+                const x = Math.max(8, Math.min(g.W - root.itemWidth - 8, p.x));
+                const y = Math.max(root.topMargin, Math.min(g.H - root.itemHeight - root.bottomMargin, p.y));
+                const cell = root.cellAt(g, x, y);
+                const k = root._key(cell.c, cell.r);
+                if (taken[k]) { pending.push(item); continue; }
+                taken[k] = item.id;
+                out[item.id] = { x: Math.round(x), y: Math.round(y) };
+                continue;
+            }
+            // Grid cell; an old pixel position (or a free one, now aligned) maps to its cell.
+            const legacy = p.c === undefined;
+            const cell = legacy ? root.cellAt(g, p.x, p.y) : { c: p.c, r: p.r };
+            const k = root._key(cell.c, cell.r);
+            if (cell.c >= g.cols || cell.r >= g.rows || taken[k]) { pending.push(item); continue; }
+            taken[k] = item.id;
+            out[item.id] = root.cellXY(g, cell.c, cell.r);
+            if (legacy || migrated) chosen[item.id] = cell;
+            if (migrated) dropped.push(item.legacyId);
+        }
+        const cursor = { i: 0 };
+        for (const item of pending) {
+            const cell = root._nextFree(g, taken, cursor);
+            taken[root._key(cell.c, cell.r)] = item.id;
+            out[item.id] = root.cellXY(g, cell.c, cell.r);
+            chosen[item.id] = cell;
+        }
+        if (persist && Object.keys(chosen).length > 0) Qt.callLater(root._rememberCells, chosen, dropped);
+        return out;
+    }
+
+    function _rememberCells(cells, dropped) {
+        const updated = Object.assign({}, root.iconPositions);
+        let changed = false;
+        for (const old of (dropped || [])) {
+            if (updated[old] !== undefined) { delete updated[old]; changed = true; }
+        }
+        for (const id in cells) {
+            const cur = updated[id];
+            if (cur && cur.c === cells[id].c && cur.r === cells[id].r) continue;
+            updated[id] = { c: cells[id].c, r: cells[id].r };
+            changed = true;
+        }
+        if (!changed) return;
+        root.iconPositions = updated;
+        root.positionsRevision++;
+        savePositionsTimer.restart();
+    }
+
+    // A drop: the cell under the icon, or the free one nearest to it when another icon
+    // is there; with "Align to Grid" off, the exact spot unless it covers another icon.
+    function saveItemPosition(id, rawX, rawY, parentW, parentH) {
+        const g = root.gridFor(parentW, parentH);
+        const current = root.layout(parentW, parentH, false);
+        const taken = {};
+        for (const other in current) {
+            if (other === id) continue;
+            const cell = root.cellAt(g, current[other].x, current[other].y);
+            taken[root._key(cell.c, cell.r)] = other;
+        }
+        const updated = Object.assign({}, root.iconPositions);
+        const covers = other => Math.abs(current[other].x - rawX) < root.itemWidth
+                                && Math.abs(current[other].y - rawY) < root.itemHeight;
+        if (!root.snapToGrid && !Object.keys(current).some(o => o !== id && covers(o))) {
+            updated[id] = { x: Math.round(rawX), y: Math.round(rawY), free: true };
+        } else {
+            const target = root.cellAt(g, rawX, rawY);
+            const cell = taken[root._key(target.c, target.r)] ? root._nearestFree(g, taken, target) : target;
+            updated[id] = { c: cell.c, r: cell.r };
+        }
         root.iconPositions = updated;
         root.positionsRevision++;
         savePositionsTimer.restart();
     }
 
     function autoArrangeIcons(parentW, parentH) {
-        const pW = parentW || 1920;
-        const pH = parentH || 1080;
-        const availableH = Math.max(200, pH - root.topMargin - 60);
-        const itemsPerCol = Math.max(1, Math.floor(availableH / root.cellHeight));
-        const xOffset = Math.round((root.cellWidth - root.itemWidth) / 2);
-        const yOffset = Math.round((root.cellHeight - root.itemHeight) / 2);
-
-        let updated = {};
+        const g = root.gridFor(parentW, parentH);
+        const updated = {};
         for (let i = 0; i < root.allItems.length; i++) {
-            const item = root.allItems[i];
-            const col = Math.floor(i / itemsPerCol);
-            const row = i % itemsPerCol;
-            const y = root.topMargin + yOffset + (row * root.cellHeight);
-            let x = 0;
-            if (I18n.isRTL) {
-                x = Math.max(10, pW - root.sideMargin - root.cellWidth - (col * root.cellWidth) + xOffset);
-            } else {
-                x = root.sideMargin + (col * root.cellWidth) + xOffset;
-            }
-            updated[item.id] = { "x": Math.round(x), "y": Math.round(y) };
+            updated[root.allItems[i].id] = { c: Math.floor(i / g.rows), r: i % g.rows };
         }
         root.iconPositions = updated;
         root.positionsRevision++;
@@ -432,7 +529,11 @@ Item {
 
                     const fullP = root.desktopDir + "/" + fileName;
                     const newItem = {
-                        "id": "user_" + fileName.replace(/[^a-zA-Z0-9]/g, "_"),
+                        // The exact name: unique in the folder. The old id replaced every
+                        // non-ASCII letter with "_", so two Arabic names of the same length
+                        // shared one id — one position (stacked icons), one selection.
+                        "id": "user:" + fileName,
+                        "legacyId": "user_" + fileName.replace(/[^a-zA-Z0-9]/g, "_"),
                         "name": displayName,
                         "fileName": fileName,
                         "icon": icon,
