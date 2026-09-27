@@ -322,6 +322,24 @@ Item {
             "apps_section_defaults": "Default Apps",
             "apps_search_placeholder": "Search installed apps…",
             "apps_search_none": "No app matches",
+            "clip_search": "Search clipboard history…",
+            "clip_empty": "Nothing copied yet",
+            "clip_empty_hint": "Text and images you copy show up here",
+            "clip_unavailable": "Clipboard history needs cliphist and wl-clipboard",
+            "clip_no_match": "No entry matches %1",
+            "clip_image": "Image",
+            "clip_text": "Text",
+            "clip_link": "Link",
+            "clip_color": "Colour",
+            "clip_path": "Path",
+            "clip_binary": "Data",
+            "clip_copy": "Copy",
+            "clip_delete": "Delete",
+            "clip_clear_all": "Clear all",
+            "clip_clear_confirm": "Clear all?",
+            "clip_hint_paste": "Paste",
+            "clip_hint_copy": "Copy",
+            "clip_hint_delete": "Delete",
             "app_language": "App Language",
             "app_language_note": "Takes effect the next time the app starts. Some apps (browsers) follow their own language setting.",
             "app_language_system": "System language",
@@ -859,6 +877,24 @@ Item {
             "apps_section_defaults": "التطبيقات الافتراضية",
             "apps_search_placeholder": "ابحث في التطبيقات المثبتة…",
             "apps_search_none": "لا يوجد تطبيق مطابق",
+            "clip_search": "ابحث في سجل الحافظة…",
+            "clip_empty": "لم يُنسخ شيء بعد",
+            "clip_empty_hint": "ما تنسخه من نصوص وصور يظهر هنا",
+            "clip_unavailable": "سجل الحافظة يحتاج cliphist و wl-clipboard",
+            "clip_no_match": "لا يوجد عنصر يطابق %1",
+            "clip_image": "صورة",
+            "clip_text": "نص",
+            "clip_link": "رابط",
+            "clip_color": "لون",
+            "clip_path": "مسار",
+            "clip_binary": "بيانات",
+            "clip_copy": "نسخ",
+            "clip_delete": "حذف",
+            "clip_clear_all": "مسح الكل",
+            "clip_clear_confirm": "مسح الكل؟",
+            "clip_hint_paste": "لصق",
+            "clip_hint_copy": "نسخ",
+            "clip_hint_delete": "حذف",
             "app_language": "لغة التطبيق",
             "app_language_note": "تُطبَّق عند تشغيل التطبيق في المرة القادمة. بعض التطبيقات (مثل المتصفحات) تتبع إعداد اللغة الخاص بها.",
             "app_language_system": "لغة النظام",
@@ -1200,6 +1236,9 @@ Item {
     }
     function charsCount(n) {
         return root.plural(n, ["character", "characters"], ["حرف واحد", "حرفان", "أحرف", "حرفًا", "حرف"]);
+    }
+    function entriesCount(n) {
+        return root.plural(n, ["entry", "entries"], ["عنصر واحد", "عنصران", "عناصر", "عنصرًا", "عنصر"]);
     }
     function threadsCount(n) {
         return root.plural(n, ["thread", "threads"], ["مسار واحد", "مساران", "مسارات", "مسارًا", "مسار"]);
