@@ -380,8 +380,7 @@ queue_core_packages() {
         "bluez"
         "jq"
         "libnotify"
-        "cliphist"
-        "fuzzel"
+        "cliphist"               # clipboard history (Super + V, ClipboardManager)
         "ttf-jetbrains-mono-nerd"
         "pavucontrol"
         # Called unconditionally by the shell / helpers (missing = silently broken feature):
