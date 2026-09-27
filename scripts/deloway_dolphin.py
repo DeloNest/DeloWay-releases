@@ -3,6 +3,7 @@
 kdeglobals already gives every KDE app (deloway-theme-apply.py).
 
     deloway_dolphin.py apply [--dry-run]         layout, toolbar, sidebar, context menu, style
+    deloway_dolphin.py terminal DESKTOP_ID       "Open Terminal Here" runs this terminal
 
 What it sets, and how often:
 - Layout (dolphinrc): tabs are not restored, no selection "+" on hover, two-line names,
@@ -22,6 +23,7 @@ close, and the sidebar file is shared with every KDE file dialog.
 """
 
 import configparser
+import json
 import os
 import re
 import subprocess
@@ -272,9 +274,67 @@ def apply_places(dry_run: bool) -> bool:
     return changed
 
 
+# ── Terminal ──
+
+def _desktop_file_exists(desktop_id: str) -> bool:
+    dirs = [data_home()] + [Path(d) for d in (os.environ.get("XDG_DATA_DIRS") or "/usr/local/share:/usr/share").split(":") if d]
+    return any((d / "applications" / f"{desktop_id}.desktop").is_file() for d in dirs)
+
+
+def resolve_terminal(value: str):
+    """(command, desktop id or "") for the stored choice, which may be either: the catalog
+    (config/default-apps.tsv) pairs "ghostty" with com.mitchellh.ghostty."""
+    value = value[:-len(".desktop")] if value.endswith(".desktop") else value
+    command, desktop = value, value
+    catalog = Path(__file__).resolve().parent.parent / "config" / "default-apps.tsv"
+    try:
+        for line in catalog.read_text(encoding="utf-8").splitlines():
+            cols = line.split("\t")
+            if len(cols) >= 3 and cols[0] == "terminal" and value in (cols[1], cols[2]):
+                command, desktop = cols[1], cols[2]
+                break
+    except OSError:
+        pass
+    return command, (desktop if _desktop_file_exists(desktop) else "")
+
+
+def set_terminal(value: str, dry_run: bool = False) -> bool:
+    """kdeglobals' terminal: Dolphin's "Open Terminal Here" (and every KDE app's) ran
+    Konsole, which DeloWay does not install. KIO tries TerminalService first and, when it
+    names no installed desktop file, falls back to Konsole without reading
+    TerminalApplication — so the service is only written when it exists."""
+    if not value:
+        return False
+    command, desktop = resolve_terminal(value)
+    path = config_home() / "kdeglobals"
+    try:
+        cfg = read_kconfig(path)
+    except configparser.Error:
+        return False
+    merge(cfg, {"General": {"TerminalApplication": command}})
+    if desktop:
+        cfg.set("General", "TerminalService", f"{desktop}.desktop")
+    else:
+        cfg.remove_option("General", "TerminalService")
+    text = kconfig_text(cfg)
+    header = "# Colours, icons and fonts below are managed by DeloWay (scripts/deloway-theme-apply.py)"
+    if path.exists() and path.read_text(encoding="utf-8", errors="replace").startswith(header):
+        text = header + "\n\n" + text
+    return write_if_changed(path, text, dry_run)
+
+
+def configured_terminal() -> str:
+    cfg_path = Path(os.environ.get("DELOWAY_CONFIG") or config_home() / "deloway" / "deloway.json")
+    try:
+        return json.loads(cfg_path.read_text(encoding="utf-8")).get("defaultApps", {}).get("terminal", "")
+    except (OSError, ValueError):
+        return ""
+
+
 def apply(dry_run: bool = False) -> bool:
     apply_style(dry_run)
     apply_item_actions(dry_run)
+    set_terminal(configured_terminal(), dry_run)
     if dolphin_running():
         return False
     apply_layout(dry_run)
@@ -287,6 +347,9 @@ def main(argv):
     dry = "--dry-run" in argv
     if len(argv) >= 2 and argv[1] == "apply":
         apply(dry)
+        return 0
+    if len(argv) >= 3 and argv[1] == "terminal":
+        set_terminal(argv[2], dry)
         return 0
     print(__doc__.split("\n\n")[1], file=sys.stderr)
     return 2

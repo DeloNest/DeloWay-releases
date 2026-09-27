@@ -833,6 +833,8 @@ Item {
             if (root.defaultPdfViewer === "@browser") DefaultApps.applyFileType("pdf", "@browser");
         } else if (cat === "terminal") {
             root.defaultTerminal = clean;
+            // KDE apps' "Open Terminal Here" (Dolphin) reads it from kdeglobals
+            root.run(["python3", root.projectDir + "/scripts/deloway_dolphin.py", "terminal", clean]);
         } else if (cat === "fileManager") {
             root.defaultFileManager = clean;
             root.run(["xdg-mime", "default", desktopFile, "inode/directory"]);
