@@ -23,7 +23,7 @@ terminal	alacritty	Alacritty	alacritty	repo	Alacritty
 terminal	foot	foot	foot	repo	Foot
 terminal	konsole	org.kde.konsole	konsole	repo	Konsole
 fileManager	thunar	thunar	thunar thunar-archive-plugin	repo	Thunar	default
-fileManager	dolphin	org.kde.dolphin	dolphin breeze	repo	Dolphin
+fileManager	dolphin	org.kde.dolphin	dolphin breeze ffmpegthumbs kdegraphics-thumbnailers	repo	Dolphin
 fileManager	nautilus	org.gnome.Nautilus	nautilus	repo	Files (Nautilus)
 fileManager	pcmanfm-qt	pcmanfm-qt	pcmanfm-qt	repo	PCManFM-Qt
 editor	gnome-text-editor	org.gnome.TextEditor	gnome-text-editor	repo	Text Editor	default
