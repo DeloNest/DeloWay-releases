@@ -1037,10 +1037,15 @@ def build_kdeglobals_groups(mode: str, font_family: str, font_scale: float, icon
     alt = "#0a0a0a" if dark else "#f8fafc"
     button = "#141414" if dark else "#f1f5f9"
     tooltip = "#111111" if dark else "#ffffff"
-    # Selected rows/tiles: a high-luminance neutral surface under the normal text, as in
-    # Thunar. Dolphin keeps the normal text colour on a selected item, so the solid inverse
-    # fill (white) made the selected file's name vanish (white on white).
-    selection = "#2e2e2e" if dark else "#e2e3e5"
+    # Selection: the identity's active colour (white on black / slate on white), as the GTK
+    # themes use it. Breeze fills progress bars, sliders and checked boxes with it: the
+    # dark grey used before (#2e2e2e) left a copy's progress nearly invisible.
+    # In an inactive window the places panel keeps the selected row filled but draws its
+    # name in the normal text colour (KFilePlacesView), so white there was white on white:
+    # inactive windows get their own mid-grey selection ([Colors:Selection][Inactive]),
+    # readable under the normal text and still visible as a fill.
+    selection = pal["accent_bg"]
+    selection_inactive = "#5c5c5c" if dark else "#cbd5e1"
 
     def role(bg, fg, bg_alt=None):
         return {
@@ -1074,13 +1079,17 @@ def build_kdeglobals_groups(mode: str, font_family: str, font_scale: float, icon
         # their own rc, falling back to kdeglobals; unset, they picked Breeze (Dark)
         # themselves on a non-Plasma desktop. Set once here for all of them.
         "UiSettings": {"ColorScheme": "DeloWay" + ("Dark" if dark else "Light")},
-        "Colors:Window": role(pal["window_bg"], pal["window_fg"], alt),
+        # Window (sidebars, status bar, dialogs) one step above View (the file list, text
+        # areas), as the GTK themes layer sidebar_bg over view_bg: with both pure black
+        # Dolphin's places panel, toolbar and files ran together as one flat surface.
+        "Colors:Window": role(pal["sidebar_bg"], pal["window_fg"], alt),
         "Colors:View": role(pal["view_bg"], pal["view_fg"], alt),
         "Colors:Button": role(button, pal["window_fg"]),
         "Colors:Header": role(pal["headerbar_bg"], pal["headerbar_fg"]),
         "Colors:Tooltip": role(tooltip, pal["window_fg"]),
         "Colors:Complementary": role(pal["window_bg"], pal["window_fg"]),
-        "Colors:Selection": role(selection, pal["window_fg"]),
+        "Colors:Selection": role(selection, pal["accent_fg"]),
+        "Colors:Selection][Inactive": role(selection_inactive, pal["window_fg"]),
         "WM": {
             "activeBackground": _kde_rgb(pal["headerbar_bg"]), "activeForeground": _kde_rgb(pal["headerbar_fg"]),
             "inactiveBackground": _kde_rgb(pal["headerbar_bg"]), "inactiveForeground": _kde_rgb(muted),
@@ -1092,7 +1101,8 @@ def build_kdeglobals_groups(mode: str, font_family: str, font_scale: float, icon
 
 
 COLOR_GROUPS = ("Colors:Window", "Colors:View", "Colors:Button", "Colors:Header", "Colors:Tooltip",
-                "Colors:Complementary", "Colors:Selection", "WM", "ColorEffects:Inactive")
+                "Colors:Complementary", "Colors:Selection", "Colors:Selection][Inactive", "WM",
+                "ColorEffects:Inactive")
 
 
 def write_kde_color_schemes(data_home: Path, dry_run: bool = False):
