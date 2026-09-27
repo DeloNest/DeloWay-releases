@@ -13,6 +13,9 @@ import subprocess
 import argparse
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import deloway_dolphin  # noqa: E402
+
 
 def get_gsettings_value(key: str) -> str:
     """Read an org.gnome.desktop.interface gsettings key cleanly."""
@@ -1395,6 +1398,7 @@ def main():
                             dry_run=args.dry_run)
     write_kdeglobals(mode, font_family, font_scale, icon_theme, config_home, dry_run=args.dry_run)
     sync_dolphin_panel_side(ui_language, dry_run=args.dry_run)
+    deloway_dolphin.apply(dry_run=args.dry_run)      # layout, toolbar, sidebar, Breeze style
     fonts_changed = write_fontconfig(font_family, dry_run=args.dry_run)
     apply_qt_environment(dry_run=args.dry_run)
 
