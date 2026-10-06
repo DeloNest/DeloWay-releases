@@ -38,8 +38,8 @@ Item {
                 property alias menuActive: menuLoader.active
 
                 visible: modelData.status !== Status.Passive
-                implicitWidth: visible ? 28 : 0
-                implicitHeight: visible ? 28 : 0
+                implicitWidth: visible ? 30 : 0
+                implicitHeight: visible ? 30 : 0
                 Layout.alignment: Qt.AlignVCenter
 
                 hoverEnabled: true
@@ -60,8 +60,8 @@ Item {
                 // icons (Discord, Steam, …) keep their colours instead of becoming blobs.
                 TrayGlyph {
                     anchors.centerIn: parent
-                    width: 20
-                    height: 20
+                    width: 22
+                    height: 22
                     source: IconResolver.safeUrl(modelData.icon)
                 }
 
@@ -173,16 +173,25 @@ Item {
                 ctx.clearRect(0, 0, 16, 16);
                 ctx.drawImage(probe.loaded, 0, 0, 16, 16);
                 const d = ctx.getImageData(0, 0, 16, 16).data;
-                let n = 0, satSum = 0;
+                let n = 0, colourful = 0, lumSum = 0, lumSq = 0;
                 for (let i = 0; i < d.length; i += 4) {
                     if (d[i + 3] < 64) continue;                    // ignore transparent pixels
                     const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255;
                     const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-                    satSum += mx > 0 ? (mx - mn) / mx : 0;
+                    if (mx > 0.2 && (mx - mn) / mx > 0.35) colourful++;
+                    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    lumSum += lum;
+                    lumSq += lum * lum;
                     n++;
                 }
-                // Unreadable (e.g. provider refused pixels) → assume monochrome glyph.
-                glyph.monochrome = n === 0 ? true : (satSum / n) < 0.18;
+                // A glyph to tint is one colour on transparency (Claude: white). The mean
+                // saturation used before called a white app tile with a coloured logo
+                // (Antigravity) "monochrome" and painted it a solid white square: an icon
+                // with a fair share of coloured pixels, or light and dark parts of its
+                // own, keeps its pixels. Unreadable (provider refused pixels) → a glyph.
+                const lumMean = n > 0 ? lumSum / n : 0;
+                const lumStd = n > 0 ? Math.sqrt(Math.max(0, lumSq / n - lumMean * lumMean)) : 0;
+                glyph.monochrome = n === 0 ? true : (colourful / n < 0.06 && lumStd < 0.18);
             }
         }
 
