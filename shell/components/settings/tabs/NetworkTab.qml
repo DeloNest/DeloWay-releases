@@ -1,4 +1,5 @@
-// Network & Internet — Wi-Fi, personal hotspot, saved networks and IP details.
+// Network & Internet — wired link, Wi-Fi and personal hotspot (each only when the
+// machine has it), saved networks and IP details.
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -34,9 +35,29 @@ Item {
         LayoutMirroring.childrenInherit: true
 
         // ═════════════════════════════════════════════════════════════
+        // 0. WIRED (whenever a cable is connected; the whole page without Wi-Fi)
+        // ═════════════════════════════════════════════════════════════
+        SettingsSection {
+            visible: NetworkService.ethernetConnected
+            title: I18n.isRTL ? "الاتصال السلكي" : "Wired Connection"
+
+            SettingsRow {
+                title: I18n.isRTL ? "إيثرنت" : "Ethernet"
+                subtitle: (SystemMonitor.internet === "limited"
+                           ? (I18n.isRTL ? "متصل · بلا إنترنت" : "Connected · No internet")
+                           : (I18n.isRTL ? "متصل بالإنترنت" : "Connected to the internet"))
+                          + (NetworkService.ethernetDevice ? "  ·  " + NetworkService.ethernetDevice : "")
+                          + (NetworkService.ethernetIp ? "  ·  " + I18n.ltr(NetworkService.ethernetIp) : "")
+                icon: "network-ethernet-symbolic"
+                showDivider: false
+            }
+        }
+
+        // ═════════════════════════════════════════════════════════════
         // 1. WI-FI MANAGEMENT SECTION
         // ═════════════════════════════════════════════════════════════
         SettingsSection {
+            visible: NetworkService.wifiAvailable          // only with a Wi-Fi adapter
             title: I18n.isRTL ? "شبكة Wi-Fi والاتصال اللاسلكي" : "Wi-Fi & Wireless Network"
 
             // Wi-Fi Master Toggle
@@ -344,6 +365,7 @@ Item {
         // 2. PERSONAL HOTSPOT SECTION
         // ═════════════════════════════════════════════════════════════
         SettingsSection {
+            visible: NetworkService.hotspotSupported       // an adapter that can be an access point
             title: I18n.isRTL ? "نقطة الاتصال الشخصية (Hotspot)" : "Personal Hotspot"
 
             // Master Hotspot Toggle

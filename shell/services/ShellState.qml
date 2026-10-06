@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import "."
 
 QtObject {
     id: root
@@ -207,13 +208,16 @@ QtObject {
     // ── Settings navigation registry (single source of truth) ───────────
     // Sidebar groups, page order, icons and source files all come from here, so the
     // sidebar and the page loader can never disagree.
+    // Bluetooth is listed only when the machine has an adapter (as Windows does); it comes
+    // back as soon as one is plugged in (NetworkService watches udev).
     readonly property var settingsGroups: [
-        { id: "connectivity",    pages: ["network", "bluetooth"] },
+        { id: "connectivity",    pages: BluetoothService.available ? ["network", "bluetooth"] : ["network"] },
         { id: "personalization", pages: ["appearance", "wallpaper", "topbar", "dock"] },
         { id: "system",          pages: ["windows", "notifications", "power", "apps", "time_language", "about"] }
     ]
     readonly property var settingsPages: ({
-        "network":       { icon: "network-wireless-symbolic",                 file: "NetworkTab.qml" },
+        "network":       { icon: NetworkService.wifiAvailable ? "network-wireless-symbolic"
+                                                                  : "network-ethernet-symbolic", file: "NetworkTab.qml" },
         "bluetooth":     { icon: "bluetooth-active-symbolic",                 file: "BluetoothTab.qml" },
         "appearance":    { icon: "applications-graphics-symbolic",            file: "AppearanceTab.qml" },
         "wallpaper":     { icon: "preferences-desktop-wallpaper-symbolic",    file: "WallpaperTab.qml" },
@@ -234,11 +238,14 @@ QtObject {
         "language": "time_language", "time": "time_language",
         "shortcuts": "about", "theme": "appearance"
     })
+    // A page that is not listed now (Bluetooth without an adapter) opens Network instead.
+    function settingsPageListed(id) {
+        return settingsGroups.some(g => g.pages.indexOf(id) >= 0);
+    }
     function resolveSettingsTab(tabId) {
         if (!tabId) return "network";
-        if (settingsPages[tabId]) return tabId;
-        const alias = settingsAliases[tabId];
-        return (alias && settingsPages[alias]) ? alias : "network";
+        const id = settingsPages[tabId] ? tabId : settingsAliases[tabId];
+        return (id && settingsPages[id] && settingsPageListed(id)) ? id : "network";
     }
 
     property string activeSettingsTab: "network"

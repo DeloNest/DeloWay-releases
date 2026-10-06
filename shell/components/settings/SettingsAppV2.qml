@@ -422,7 +422,9 @@ PanelWindow {
                                     }
 
                                     Text {
-                                        text: I18n.tr("settings_page_" + root.activeTab + "_desc")
+                                        text: I18n.tr("settings_page_" + root.activeTab + "_desc"
+                                                     // no Wi-Fi adapter: the page is about the wired link only
+                                                     + (root.activeTab === "network" && !NetworkService.wifiAvailable ? "_wired" : ""))
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         color: Theme.notchTextSecondary

@@ -687,6 +687,8 @@ Item {
         // 3. Settings
         for (let i = 0; i < settingsIndex.length; i++) {
             const s = settingsIndex[i];
+            // A page hidden for missing hardware (Bluetooth without an adapter) is not offered
+            if (ShellState.settingsPages[s.id] && !ShellState.settingsPageListed(s.id)) continue;
             const normName = normalizeText(s.name);
             const normDesc = normalizeText(s.desc);
             const matchesKw = s.keywords.some(k => normalizeText(k).includes(normQ));
