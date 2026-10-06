@@ -1,0 +1,1259 @@
+{
+ "_doc": "DeloWay keyboard shortcuts: the one catalog. scripts/deloway-shortcuts.py gen writes config/hypr-binds.conf from it (Hyprland's defaults); Settings → Shortcuts and the cheat sheet read it; user changes live in deloway.json (shortcuts) and are applied at runtime. $delowayDir is the repo path.",
+ "groups": [
+  {
+   "id": "shell",
+   "ar": "الواجهة",
+   "en": "Shell"
+  },
+  {
+   "id": "apps",
+   "ar": "التطبيقات",
+   "en": "Apps"
+  },
+  {
+   "id": "windows",
+   "ar": "النوافذ",
+   "en": "Windows"
+  },
+  {
+   "id": "workspaces",
+   "ar": "مساحات العمل",
+   "en": "Workspaces"
+  },
+  {
+   "id": "tools",
+   "ar": "الأدوات",
+   "en": "Tools"
+  },
+  {
+   "id": "session",
+   "ar": "الجلسة",
+   "en": "Session"
+  },
+  {
+   "id": "media",
+   "ar": "الوسائط والعتاد",
+   "en": "Media & hardware"
+  }
+ ],
+ "actions": [
+  {
+   "id": "launcher",
+   "group": "shell",
+   "ar": "درج التطبيقات والبحث",
+   "en": "App drawer & search",
+   "dispatcher": "global",
+   "arg": "quickshell:drawerToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "Space"
+    }
+   ]
+  },
+  {
+   "id": "quick_settings",
+   "group": "shell",
+   "ar": "الإعدادات السريعة",
+   "en": "Quick Settings",
+   "dispatcher": "global",
+   "arg": "quickshell:quickSettingsToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "M"
+    }
+   ]
+  },
+  {
+   "id": "smart_notch",
+   "group": "shell",
+   "ar": "النوتش",
+   "en": "Smart Notch",
+   "dispatcher": "global",
+   "arg": "quickshell:smartNotchToggle",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "N"
+    }
+   ]
+  },
+  {
+   "id": "sidebar_left",
+   "group": "shell",
+   "ar": "الشريط الجانبي الأيسر",
+   "en": "Left sidebar",
+   "dispatcher": "global",
+   "arg": "quickshell:sidebarLeftToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "A"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "A"
+    }
+   ]
+  },
+  {
+   "id": "sidebar_right",
+   "group": "shell",
+   "ar": "الشريط الجانبي الأيمن",
+   "en": "Right sidebar",
+   "dispatcher": "global",
+   "arg": "quickshell:sidebarRightToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "N"
+    }
+   ]
+  },
+  {
+   "id": "clipboard",
+   "group": "shell",
+   "ar": "سجل الحافظة",
+   "en": "Clipboard history",
+   "dispatcher": "global",
+   "arg": "quickshell:clipboardToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "V"
+    }
+   ]
+  },
+  {
+   "id": "settings",
+   "group": "shell",
+   "ar": "إعدادات DeloWay",
+   "en": "DeloWay Settings",
+   "dispatcher": "global",
+   "arg": "quickshell:settingsToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "I"
+    }
+   ]
+  },
+  {
+   "id": "cheatsheet",
+   "group": "shell",
+   "ar": "دليل الاختصارات",
+   "en": "Shortcuts guide",
+   "dispatcher": "global",
+   "arg": "quickshell:cheatsheetToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "slash"
+    },
+    {
+     "mods": "SUPER",
+     "key": "T"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "slash"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "question"
+    }
+   ]
+  },
+  {
+   "id": "shell_toggle",
+   "group": "shell",
+   "ar": "إخفاء/إظهار الشريط والـ Dock",
+   "en": "Hide / show bar & Dock",
+   "dispatcher": "global",
+   "arg": "quickshell:shellToggle",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "F"
+    }
+   ]
+  },
+  {
+   "id": "osk",
+   "group": "shell",
+   "ar": "لوحة المفاتيح على الشاشة",
+   "en": "On-screen keyboard",
+   "dispatcher": "exec",
+   "arg": "killall wvkbd-mobintl || wvkbd-mobintl -L 300",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "K"
+    }
+   ]
+  },
+  {
+   "id": "wallpaper",
+   "group": "shell",
+   "ar": "تغيير الخلفية",
+   "en": "Change wallpaper",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/scripts/change-wallpaper.sh || waypaper",
+   "binds": [
+    {
+     "mods": "CTRL SUPER",
+     "key": "T"
+    }
+   ]
+  },
+  {
+   "id": "restart_shell",
+   "group": "shell",
+   "ar": "إعادة تشغيل الواجهة",
+   "en": "Restart the shell",
+   "dispatcher": "exec",
+   "arg": "killall quickshell; sleep 1.5; quickshell -p $delowayDir/shell",
+   "binds": [
+    {
+     "mods": "CTRL SUPER",
+     "key": "R"
+    }
+   ]
+  },
+  {
+   "id": "terminal",
+   "group": "apps",
+   "ar": "الطرفية",
+   "en": "Terminal",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app terminal",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "Return"
+    }
+   ]
+  },
+  {
+   "id": "files",
+   "group": "apps",
+   "ar": "مدير الملفات",
+   "en": "File manager",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app files",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "E"
+    }
+   ]
+  },
+  {
+   "id": "browser",
+   "group": "apps",
+   "ar": "المتصفح",
+   "en": "Browser",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app browser",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "W"
+    }
+   ]
+  },
+  {
+   "id": "code",
+   "group": "apps",
+   "ar": "محرر الشيفرة",
+   "en": "Code editor",
+   "dispatcher": "exec",
+   "arg": "antigravity-ide || code",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "C"
+    }
+   ]
+  },
+  {
+   "id": "office",
+   "group": "apps",
+   "ar": "حزمة المكتب",
+   "en": "Office suite",
+   "dispatcher": "exec",
+   "arg": "libreoffice",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "W"
+    }
+   ]
+  },
+  {
+   "id": "editor",
+   "group": "apps",
+   "ar": "محرر النصوص",
+   "en": "Text editor",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app editor",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "X"
+    }
+   ]
+  },
+  {
+   "id": "monitor",
+   "group": "apps",
+   "ar": "مراقب النظام",
+   "en": "System monitor",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app monitor",
+   "binds": [
+    {
+     "mods": "CTRL SHIFT",
+     "key": "Escape"
+    }
+   ]
+  },
+  {
+   "id": "mixer",
+   "group": "apps",
+   "ar": "التحكم بالصوت",
+   "en": "Volume mixer",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app mixer",
+   "binds": [
+    {
+     "mods": "CTRL SUPER",
+     "key": "V"
+    }
+   ]
+  },
+  {
+   "id": "edit_config",
+   "group": "apps",
+   "ar": "تحرير إعدادات Hyprland",
+   "en": "Edit the Hyprland config",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/bin/delo-app editor $delowayDir/config/hyprland.conf",
+   "binds": [
+    {
+     "mods": "CTRL SUPER",
+     "key": "slash"
+    },
+    {
+     "mods": "CTRL SUPER ALT",
+     "key": "slash"
+    }
+   ]
+  },
+  {
+   "id": "close",
+   "group": "windows",
+   "ar": "إغلاق النافذة",
+   "en": "Close window",
+   "dispatcher": "killactive",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "Q"
+    }
+   ]
+  },
+  {
+   "id": "force_kill",
+   "group": "windows",
+   "ar": "إنهاء نافذة بالقوة",
+   "en": "Force-kill a window",
+   "dispatcher": "exec",
+   "arg": "hyprctl kill",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT ALT",
+     "key": "Q"
+    }
+   ]
+  },
+  {
+   "id": "float",
+   "group": "windows",
+   "ar": "عائمة / مرصوفة",
+   "en": "Float / tile",
+   "dispatcher": "togglefloating",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "space"
+    }
+   ]
+  },
+  {
+   "id": "maximize",
+   "group": "windows",
+   "ar": "تكبير",
+   "en": "Maximize",
+   "dispatcher": "fullscreen",
+   "arg": "1",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "D"
+    }
+   ]
+  },
+  {
+   "id": "fullscreen",
+   "group": "windows",
+   "ar": "ملء الشاشة",
+   "en": "Fullscreen",
+   "dispatcher": "fullscreen",
+   "arg": "0",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "F"
+    }
+   ]
+  },
+  {
+   "id": "fake_fullscreen",
+   "group": "windows",
+   "ar": "ملء شاشة وهمي",
+   "en": "Fake fullscreen",
+   "dispatcher": "fullscreenstate",
+   "arg": "-1 2",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "F"
+    }
+   ]
+  },
+  {
+   "id": "pin",
+   "group": "windows",
+   "ar": "تثبيت فوق الكل",
+   "en": "Pin on top",
+   "dispatcher": "pin",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "P"
+    }
+   ]
+  },
+  {
+   "id": "toggle_split",
+   "group": "windows",
+   "ar": "تبديل اتجاه التقسيم",
+   "en": "Toggle split direction",
+   "dispatcher": "layoutmsg",
+   "arg": "togglesplit",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "Backslash"
+    }
+   ]
+  },
+  {
+   "id": "split_less",
+   "group": "windows",
+   "ar": "تصغير نسبة التقسيم",
+   "en": "Shrink split ratio",
+   "dispatcher": "layoutmsg",
+   "arg": "splitratio -0.1",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "semicolon"
+    }
+   ],
+   "flags": "e"
+  },
+  {
+   "id": "split_more",
+   "group": "windows",
+   "ar": "تكبير نسبة التقسيم",
+   "en": "Grow split ratio",
+   "dispatcher": "layoutmsg",
+   "arg": "splitratio +0.1",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "apostrophe"
+    }
+   ],
+   "flags": "e"
+  },
+  {
+   "id": "group",
+   "group": "windows",
+   "ar": "تجميع / فك التجميع",
+   "en": "Group / ungroup",
+   "dispatcher": "togglegroup",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "G"
+    }
+   ]
+  },
+  {
+   "id": "group_next",
+   "group": "windows",
+   "ar": "النافذة التالية في المجموعة",
+   "en": "Next window in group",
+   "dispatcher": "changegroupactive",
+   "arg": "f",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "Tab"
+    }
+   ]
+  },
+  {
+   "id": "focus_dir",
+   "group": "windows",
+   "ar": "التركيز باتجاه",
+   "en": "Focus in a direction",
+   "dispatcher": "movefocus",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "left",
+     "arg": "l"
+    },
+    {
+     "mods": "SUPER",
+     "key": "right",
+     "arg": "r"
+    },
+    {
+     "mods": "SUPER",
+     "key": "up",
+     "arg": "u"
+    },
+    {
+     "mods": "SUPER",
+     "key": "down",
+     "arg": "d"
+    }
+   ],
+   "fixed": true,
+   "display": "← → ↑ ↓"
+  },
+  {
+   "id": "move_dir",
+   "group": "windows",
+   "ar": "نقل باتجاه",
+   "en": "Move in a direction",
+   "dispatcher": "movewindow",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "left",
+     "arg": "l"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "right",
+     "arg": "r"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "up",
+     "arg": "u"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "down",
+     "arg": "d"
+    }
+   ],
+   "fixed": true,
+   "display": "← → ↑ ↓"
+  },
+  {
+   "id": "resize_dir",
+   "group": "windows",
+   "ar": "تغيير الحجم",
+   "en": "Resize",
+   "dispatcher": "resizeactive",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "left",
+     "arg": "-25 0"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "right",
+     "arg": "25 0"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "up",
+     "arg": "0 -25"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "down",
+     "arg": "0 25"
+    }
+   ],
+   "flags": "e",
+   "fixed": true,
+   "display": "← → ↑ ↓"
+  },
+  {
+   "id": "mouse_move",
+   "group": "windows",
+   "ar": "تحريك بالفأرة",
+   "en": "Move with the mouse",
+   "dispatcher": "movewindow",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "mouse:272"
+    }
+   ],
+   "flags": "m",
+   "fixed": true,
+   "display": "LMB"
+  },
+  {
+   "id": "mouse_resize",
+   "group": "windows",
+   "ar": "تغيير الحجم بالفأرة",
+   "en": "Resize with the mouse",
+   "dispatcher": "resizewindow",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "mouse:273"
+    }
+   ],
+   "flags": "m",
+   "fixed": true,
+   "display": "RMB"
+  },
+  {
+   "id": "workspace_n",
+   "group": "workspaces",
+   "ar": "الانتقال إلى مساحة العمل",
+   "en": "Go to workspace",
+   "dispatcher": "workspace",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "1",
+     "arg": "1"
+    },
+    {
+     "mods": "SUPER",
+     "key": "2",
+     "arg": "2"
+    },
+    {
+     "mods": "SUPER",
+     "key": "3",
+     "arg": "3"
+    },
+    {
+     "mods": "SUPER",
+     "key": "4",
+     "arg": "4"
+    },
+    {
+     "mods": "SUPER",
+     "key": "5",
+     "arg": "5"
+    },
+    {
+     "mods": "SUPER",
+     "key": "6",
+     "arg": "6"
+    },
+    {
+     "mods": "SUPER",
+     "key": "7",
+     "arg": "7"
+    },
+    {
+     "mods": "SUPER",
+     "key": "8",
+     "arg": "8"
+    },
+    {
+     "mods": "SUPER",
+     "key": "9",
+     "arg": "9"
+    },
+    {
+     "mods": "SUPER",
+     "key": "0",
+     "arg": "10"
+    }
+   ],
+   "fixed": true,
+   "display": "1 … 0"
+  },
+  {
+   "id": "send_n",
+   "group": "workspaces",
+   "ar": "إرسال النافذة إلى مساحة العمل",
+   "en": "Send window to workspace",
+   "dispatcher": "movetoworkspacesilent",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "1",
+     "arg": "1"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "2",
+     "arg": "2"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "3",
+     "arg": "3"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "4",
+     "arg": "4"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "5",
+     "arg": "5"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "6",
+     "arg": "6"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "7",
+     "arg": "7"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "8",
+     "arg": "8"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "9",
+     "arg": "9"
+    },
+    {
+     "mods": "SUPER ALT",
+     "key": "0",
+     "arg": "10"
+    }
+   ],
+   "fixed": true,
+   "display": "1 … 0"
+  },
+  {
+   "id": "ws_prev",
+   "group": "workspaces",
+   "ar": "مساحة العمل السابقة",
+   "en": "Previous workspace",
+   "dispatcher": "workspace",
+   "arg": "e-1",
+   "binds": [
+    {
+     "mods": "CTRL SUPER",
+     "key": "left"
+    },
+    {
+     "mods": "SUPER",
+     "key": "Prior"
+    },
+    {
+     "mods": "SUPER",
+     "key": "Page_Up"
+    }
+   ]
+  },
+  {
+   "id": "ws_next",
+   "group": "workspaces",
+   "ar": "مساحة العمل التالية",
+   "en": "Next workspace",
+   "dispatcher": "workspace",
+   "arg": "e+1",
+   "binds": [
+    {
+     "mods": "CTRL SUPER",
+     "key": "right"
+    },
+    {
+     "mods": "SUPER",
+     "key": "Next"
+    },
+    {
+     "mods": "SUPER",
+     "key": "Page_Down"
+    }
+   ]
+  },
+  {
+   "id": "ws_wheel",
+   "group": "workspaces",
+   "ar": "تبديل المساحات بعجلة الفأرة",
+   "en": "Switch workspaces with the wheel",
+   "dispatcher": "workspace",
+   "arg": "",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "mouse_down",
+     "arg": "e+1"
+    },
+    {
+     "mods": "SUPER",
+     "key": "mouse_up",
+     "arg": "e-1"
+    }
+   ],
+   "fixed": true,
+   "display": "Scroll"
+  },
+  {
+   "id": "send_prev",
+   "group": "workspaces",
+   "ar": "إرسال إلى المساحة السابقة",
+   "en": "Send to previous workspace",
+   "dispatcher": "movetoworkspace",
+   "arg": "e-1",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "Prior"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "Page_Up"
+    },
+    {
+     "mods": "SUPER SHIFT CTRL",
+     "key": "left"
+    }
+   ]
+  },
+  {
+   "id": "send_next",
+   "group": "workspaces",
+   "ar": "إرسال إلى المساحة التالية",
+   "en": "Send to next workspace",
+   "dispatcher": "movetoworkspace",
+   "arg": "e+1",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "Next"
+    },
+    {
+     "mods": "SUPER SHIFT",
+     "key": "Page_Down"
+    },
+    {
+     "mods": "SUPER SHIFT CTRL",
+     "key": "right"
+    }
+   ]
+  },
+  {
+   "id": "special",
+   "group": "workspaces",
+   "ar": "إظهار المساحة المخفية",
+   "en": "Show the hidden workspace",
+   "dispatcher": "togglespecialworkspace",
+   "arg": "special",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "S"
+    }
+   ]
+  },
+  {
+   "id": "send_special",
+   "group": "workspaces",
+   "ar": "إرسال إلى المساحة المخفية",
+   "en": "Send to the hidden workspace",
+   "dispatcher": "movetoworkspace",
+   "arg": "special:special",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "S"
+    }
+   ]
+  },
+  {
+   "id": "shot_area",
+   "group": "tools",
+   "ar": "لقطة لجزء من الشاشة",
+   "en": "Screenshot a region",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/scripts/screenshot.sh area",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "S"
+    }
+   ]
+  },
+  {
+   "id": "shot_full",
+   "group": "tools",
+   "ar": "لقطة للشاشة كاملة",
+   "en": "Screenshot the screen",
+   "dispatcher": "exec",
+   "arg": "$delowayDir/scripts/screenshot.sh full",
+   "binds": [
+    {
+     "mods": "",
+     "key": "Print"
+    },
+    {
+     "mods": "CTRL",
+     "key": "Print"
+    }
+   ]
+  },
+  {
+   "id": "color_pick",
+   "group": "tools",
+   "ar": "التقاط لون إلى الحافظة",
+   "en": "Pick a colour to the clipboard",
+   "dispatcher": "exec",
+   "arg": "hyprpicker -a",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "C"
+    }
+   ]
+  },
+  {
+   "id": "record",
+   "group": "tools",
+   "ar": "تسجيل منطقة (بدون صوت)",
+   "en": "Record a region (no sound)",
+   "dispatcher": "exec",
+   "arg": "wf-recorder -g \"$(slurp)\" -f ~/Videos/recording_$(date +%s).mp4",
+   "binds": [
+    {
+     "mods": "SUPER ALT",
+     "key": "R"
+    }
+   ]
+  },
+  {
+   "id": "record_audio",
+   "group": "tools",
+   "ar": "تسجيل منطقة (مع الصوت)",
+   "en": "Record a region (with sound)",
+   "dispatcher": "exec",
+   "arg": "wf-recorder --audio -g \"$(slurp)\" -f ~/Videos/recording_$(date +%s).mp4",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT ALT",
+     "key": "R"
+    }
+   ]
+  },
+  {
+   "id": "zoom_reset",
+   "group": "tools",
+   "ar": "إلغاء تكبير المؤشر",
+   "en": "Reset cursor zoom",
+   "dispatcher": "exec",
+   "arg": "hyprctl keyword cursor:zoom_factor 1.0",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "minus"
+    }
+   ]
+  },
+  {
+   "id": "zoom_in",
+   "group": "tools",
+   "ar": "تكبير حول المؤشر",
+   "en": "Zoom around the cursor",
+   "dispatcher": "exec",
+   "arg": "hyprctl keyword cursor:zoom_factor 1.5",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "equal"
+    }
+   ]
+  },
+  {
+   "id": "session_menu",
+   "group": "session",
+   "ar": "قائمة الجلسة",
+   "en": "Session menu",
+   "dispatcher": "global",
+   "arg": "quickshell:sessionMenuToggle",
+   "binds": [
+    {
+     "mods": "CTRL ALT",
+     "key": "Delete"
+    }
+   ]
+  },
+  {
+   "id": "lock",
+   "group": "session",
+   "ar": "قفل الشاشة",
+   "en": "Lock the screen",
+   "dispatcher": "exec",
+   "arg": "qs ipc -p $delowayDir/shell call deloway lock || hyprlock",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "L"
+    }
+   ]
+  },
+  {
+   "id": "suspend",
+   "group": "session",
+   "ar": "سكون",
+   "en": "Suspend",
+   "dispatcher": "exec",
+   "arg": "systemctl suspend || loginctl suspend",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "L"
+    }
+   ]
+  },
+  {
+   "id": "media_play",
+   "group": "media",
+   "ar": "تشغيل / إيقاف مؤقت",
+   "en": "Play / pause",
+   "dispatcher": "exec",
+   "arg": "playerctl play-pause",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "P"
+    }
+   ]
+  },
+  {
+   "id": "media_next",
+   "group": "media",
+   "ar": "المقطع التالي",
+   "en": "Next track",
+   "dispatcher": "exec",
+   "arg": "playerctl next",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "N"
+    }
+   ]
+  },
+  {
+   "id": "media_prev",
+   "group": "media",
+   "ar": "المقطع السابق",
+   "en": "Previous track",
+   "dispatcher": "exec",
+   "arg": "playerctl previous",
+   "binds": [
+    {
+     "mods": "SUPER SHIFT",
+     "key": "B"
+    }
+   ]
+  },
+  {
+   "id": "hw_play",
+   "group": "media",
+   "ar": "تشغيل / إيقاف (مفتاح الوسائط)",
+   "en": "Play / pause (media key)",
+   "dispatcher": "exec",
+   "arg": "playerctl play-pause",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioPlay"
+    }
+   ],
+   "fixed": true
+  },
+  {
+   "id": "hw_next",
+   "group": "media",
+   "ar": "التالي (مفتاح الوسائط)",
+   "en": "Next (media key)",
+   "dispatcher": "exec",
+   "arg": "playerctl next",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioNext"
+    }
+   ],
+   "fixed": true
+  },
+  {
+   "id": "hw_prev",
+   "group": "media",
+   "ar": "السابق (مفتاح الوسائط)",
+   "en": "Previous (media key)",
+   "dispatcher": "exec",
+   "arg": "playerctl previous",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioPrev"
+    }
+   ],
+   "fixed": true
+  },
+  {
+   "id": "hw_stop",
+   "group": "media",
+   "ar": "إيقاف (مفتاح الوسائط)",
+   "en": "Stop (media key)",
+   "dispatcher": "exec",
+   "arg": "playerctl stop",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioStop"
+    }
+   ],
+   "fixed": true
+  },
+  {
+   "id": "hw_vol_up",
+   "group": "media",
+   "ar": "رفع الصوت",
+   "en": "Volume up",
+   "dispatcher": "exec",
+   "arg": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioRaiseVolume"
+    }
+   ],
+   "flags": "e",
+   "fixed": true
+  },
+  {
+   "id": "hw_vol_down",
+   "group": "media",
+   "ar": "خفض الصوت",
+   "en": "Volume down",
+   "dispatcher": "exec",
+   "arg": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioLowerVolume"
+    }
+   ],
+   "flags": "e",
+   "fixed": true
+  },
+  {
+   "id": "hw_mute",
+   "group": "media",
+   "ar": "كتم الصوت",
+   "en": "Mute",
+   "dispatcher": "exec",
+   "arg": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioMute"
+    }
+   ],
+   "fixed": true
+  },
+  {
+   "id": "hw_mic_mute",
+   "group": "media",
+   "ar": "كتم الميكروفون",
+   "en": "Mute the microphone",
+   "dispatcher": "exec",
+   "arg": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86AudioMicMute"
+    }
+   ],
+   "fixed": true
+  },
+  {
+   "id": "hw_bright_up",
+   "group": "media",
+   "ar": "رفع السطوع",
+   "en": "Brightness up",
+   "dispatcher": "exec",
+   "arg": "brightnessctl set 5%+",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86MonBrightnessUp"
+    }
+   ],
+   "flags": "e",
+   "fixed": true
+  },
+  {
+   "id": "hw_bright_down",
+   "group": "media",
+   "ar": "خفض السطوع",
+   "en": "Brightness down",
+   "dispatcher": "exec",
+   "arg": "brightnessctl set 5%-",
+   "binds": [
+    {
+     "mods": "",
+     "key": "XF86MonBrightnessDown"
+    }
+   ],
+   "flags": "e",
+   "fixed": true
+  }
+ ]
+}
