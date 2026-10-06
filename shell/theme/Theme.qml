@@ -257,13 +257,13 @@ Item {
     // never change the row width (and therefore never resizes the Notch).
     readonly property int wsDotSize:            7     // empty workspace dot
     readonly property int wsEmptySlot:          12    // fixed slot around the dot (hit target)
-    readonly property int wsCircleSize:         30    // occupied workspace
+    readonly property int wsCircleSize:         32    // occupied workspace (as tall as the active pill)
     readonly property int wsPillHeight:         32    // active workspace
     readonly property int wsPillBase:           32    // pill width: number only (active, no icons)
     readonly property int wsPillIconGap:        5     // gap between number and icon area in pill
-    readonly property int wsIconSizeSingle:     17    // icon size when 1 shown (circle or pill)
-    readonly property int wsIconSizeDouble:     14    // each icon size when 2 overlapping
-    readonly property int wsIconOverlapOffset:  9     // horizontal offset of 2nd icon centre
+    readonly property int wsIconSizeSingle:     20    // icon size when 1 shown (circle or pill)
+    readonly property int wsIconSizeDouble:     17    // each icon size when 2 overlapping
+    readonly property int wsIconOverlapOffset:  11    // horizontal offset of 2nd icon centre
     readonly property int wsBadgeSize:          14
     readonly property int wsIndicatorSpacing:   6
 
