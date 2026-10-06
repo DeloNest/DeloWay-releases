@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Io
 
 // IconResolver: the one place theme icons are turned into image URLs.
 //
@@ -24,6 +25,36 @@ Item {
             if (root.has(n)) return Quickshell.iconPath(n, "");
         }
         return "";
+    }
+
+    // /usr/share/pixmaps, the icon spec's last place to look: some apps install their icon
+    // only there (Antigravity), where hasThemeIcon() cannot see it. The folder is read once
+    // (name → file, svg over png over xpm) so only files that exist are ever requested.
+    property var pixmaps: ({})
+    Process {
+        running: true
+        command: ["sh", "-c", "ls -1 /usr/share/pixmaps 2>/dev/null"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const rank = { "svg": 3, "png": 2, "xpm": 1 };
+                const map = {};
+                for (const file of text.split("\n")) {
+                    const m = /^(.+)\.(svg|png|xpm)$/i.exec(file);
+                    if (!m) continue;
+                    const key = m[1].toLowerCase();
+                    const prev = map[key];
+                    if (!prev || rank[m[2].toLowerCase()] > rank[prev.split(".").pop().toLowerCase()]) map[key] = file;
+                }
+                root.pixmaps = map;
+            }
+        }
+    }
+
+    // file:// URL of the pixmap called `name` (any extension), or "".
+    function pixmapUrl(name) {
+        if (!name) return "";
+        const file = root.pixmaps[String(name).toLowerCase().replace(/\.(svg|png|xpm)$/i, "")];
+        return file ? "file:///usr/share/pixmaps/" + file : "";
     }
 
     // Icons that point somewhere (log out, external link, speaker…) have "-rtl" variants in

@@ -127,23 +127,42 @@ Item {
         visible: localImg.status !== Image.Ready && root.hasSysThemeIcon && status === Image.Ready
     }
 
-    // 3. Third Tier: Kirigami Icon fallback (only if successfully loaded, status === Image.Ready)
+    // 3. Third Tier: /usr/share/pixmaps (IconResolver), the icon spec's last place to look.
+    // Apps that install their icon only there (Antigravity) fell through to the monogram.
+    readonly property string pixmapUrl: {
+        if (!source || source.startsWith("/") || source.includes("://") || hasSysThemeIcon) return "";
+        return IconResolver.pixmapUrl(source);
+    }
+
+    Image {
+        id: pixmapImg
+        anchors.fill: parent
+        source: localImg.status !== Image.Ready ? root.pixmapUrl : ""
+        sourceSize.width: root.iconSize * 2
+        sourceSize.height: root.iconSize * 2
+        fillMode: Image.PreserveAspectFit
+        smooth: true
+        mipmap: true
+        visible: status === Image.Ready && localImg.status !== Image.Ready && !sysIcon.visible
+    }
+
+    // 4. Fourth Tier: Kirigami Icon fallback (only if successfully loaded, status === Image.Ready)
     Kirigami.Icon {
         id: kiriIcon
         anchors.fill: parent
-        source: (!root.hasSysThemeIcon && localImg.status !== Image.Ready) ? (root.source || "") : ""
+        source: (!root.hasSysThemeIcon && localImg.status !== Image.Ready && !pixmapImg.visible) ? (root.source || "") : ""
         roundToIconSize: false
-        visible: localImg.status !== Image.Ready && (!sysIcon.visible) && status === Image.Ready
+        visible: localImg.status !== Image.Ready && (!sysIcon.visible) && !pixmapImg.visible && status === Image.Ready
     }
 
-    // 4. Fourth Tier: Clean Fluent Monogram Fallback
+    // 5. Fifth Tier: Clean Fluent Monogram Fallback
     Rectangle {
         anchors.fill: parent
         radius: Theme.radius.dockItem
         color: Theme.colors.surfaceElevated
         border.color: Theme.colors.border
         border.width: 1
-        visible: localImg.status !== Image.Ready && (!sysIcon.visible) && (!kiriIcon.visible)
+        visible: localImg.status !== Image.Ready && (!sysIcon.visible) && !pixmapImg.visible && (!kiriIcon.visible)
 
         Text {
             anchors.centerIn: parent
