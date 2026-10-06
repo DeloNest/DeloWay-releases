@@ -34,7 +34,10 @@ Item {
     component Watcher: Process {
         id: watcher
         property string type: ""
-        command: ["wl-paste", "--type", watcher.type, "--watch", "cliphist", "store"]
+        // setpriv --pdeathsig: the kernel ends the watcher when the shell dies, however it
+        // dies (killall on a restart left one orphaned pair per restart, all recording).
+        command: ["setpriv", "--pdeathsig", "TERM", "--",
+                  "wl-paste", "--type", watcher.type, "--watch", "cliphist", "store"]
         running: root.isAvailable
         onExited: if (root.isAvailable) restartTimer.restart()
         readonly property Timer restartTimer: Timer {

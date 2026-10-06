@@ -345,7 +345,10 @@ Item {
     Process {
         id: deviceWatch
         running: true
-        command: ["udevadm", "monitor", "--udev", "--subsystem-match=net",
+        // Ends with the shell (setpriv --pdeathsig): udevadm only notices a closed pipe at
+        // its next event, so every restart used to leave one behind.
+        command: ["setpriv", "--pdeathsig", "TERM", "--",
+                  "udevadm", "monitor", "--udev", "--subsystem-match=net",
                   "--subsystem-match=bluetooth", "--subsystem-match=rfkill"]
         stdout: SplitParser {
             onRead: line => {
