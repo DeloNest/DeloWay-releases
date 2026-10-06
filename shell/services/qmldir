@@ -10,6 +10,7 @@ singleton I18n 1.0 I18n.qml
 singleton LocalSendService 1.0 LocalSendService.qml
 singleton HardwareService 1.0 HardwareService.qml
 singleton ClipboardService 1.0 ClipboardService.qml
+singleton ShortcutService 1.0 ShortcutService.qml
 singleton LauncherIndex 1.0 LauncherIndex.qml
 singleton NetworkService 1.0 NetworkService.qml
 singleton BluetoothService 1.0 BluetoothService.qml

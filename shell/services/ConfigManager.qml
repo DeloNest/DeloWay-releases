@@ -79,6 +79,11 @@ Item {
     // Sides of the top bar capsules around the Notch. Physical and the same in every
     // language: "clockLeft" (default: clock left, Quick Settings right) | "clockRight".
     property string capsuleOrder: "clockLeft"
+    // Scrolling the wheel over a capsule opens (down) or closes (up) it
+    property bool capsuleWheel: true
+    // Keyboard shortcuts changed in Settings → Shortcuts: {action id: ["MODS|KEY", …]}
+    // ([] = no shortcut); ShortcutService applies them over config/shortcuts.json.
+    property var shortcutOverrides: ({})
     readonly property bool clockOnRight: capsuleOrder === "clockRight"
     property bool timeCapsuleEnabled: true
     property bool timeCapsuleShowHijri: true
@@ -342,6 +347,7 @@ Item {
                 if (cfg.topBar.workspaceIndicatorStyle) root.workspaceIndicatorStyle = cfg.topBar.workspaceIndicatorStyle;
                 if (cfg.topBar.capsuleOrder === "clockLeft" || cfg.topBar.capsuleOrder === "clockRight")
                     root.capsuleOrder = cfg.topBar.capsuleOrder;
+                if (cfg.topBar.capsuleWheel !== undefined) root.capsuleWheel = !!cfg.topBar.capsuleWheel;
                 if (cfg.topBar.timeCapsuleEnabled !== undefined) root.timeCapsuleEnabled = cfg.topBar.timeCapsuleEnabled;
                 if (cfg.topBar.timeCapsuleShowHijri !== undefined) root.timeCapsuleShowHijri = cfg.topBar.timeCapsuleShowHijri;
                 if (cfg.topBar.timeCapsuleWeekStart) root.timeCapsuleWeekStart = cfg.topBar.timeCapsuleWeekStart;
@@ -353,6 +359,8 @@ Item {
                 if (cfg.topBar.timeCapsuleShowGpu !== undefined) root.timeCapsuleShowGpu = cfg.topBar.timeCapsuleShowGpu;
                 if (cfg.topBar.timeCapsuleShowTemps !== undefined) root.timeCapsuleShowTemps = cfg.topBar.timeCapsuleShowTemps;
             }
+            if (cfg.shortcuts && typeof cfg.shortcuts === "object" && !Array.isArray(cfg.shortcuts))
+                root.shortcutOverrides = cfg.shortcuts;
             if (cfg.windows) {
                 if (cfg.windows.activeBorder) {
                     const ab = cfg.windows.activeBorder.toString().toLowerCase();
@@ -712,6 +720,16 @@ Item {
         if (root.applySystemTheme) updateGtkThemes();
     }
 
+    function setCapsuleWheel(val) {
+        root.capsuleWheel = !!val;
+        saveConfig();
+    }
+
+    function setShortcutOverrides(o) {
+        root.shortcutOverrides = o || {};
+        saveConfig();
+    }
+
     function setCapsuleOrder(order) {
         if (order !== "clockLeft" && order !== "clockRight") return;
         root.capsuleOrder = order;
@@ -1006,8 +1024,10 @@ Item {
                 timeCapsuleShowCpu: root.timeCapsuleShowCpu,
                 timeCapsuleShowRam: root.timeCapsuleShowRam,
                 timeCapsuleShowGpu: root.timeCapsuleShowGpu,
-                timeCapsuleShowTemps: root.timeCapsuleShowTemps
+                timeCapsuleShowTemps: root.timeCapsuleShowTemps,
+                capsuleWheel: root.capsuleWheel
             },
+            shortcuts: root.shortcutOverrides,
             windows: {
                 activeBorder: root.activeBorder.toString(),
                 inactiveBorder: root.inactiveBorder.toString(),

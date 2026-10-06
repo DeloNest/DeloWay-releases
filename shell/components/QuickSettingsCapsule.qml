@@ -706,6 +706,8 @@ Item {
                         }
                     }
                     onWheel: (wheel) => {
+                        // Settings → Shortcuts → "Open capsules with the wheel"
+                        if (!ConfigManager.capsuleWheel) { wheel.accepted = false; return; }
                         wheel.accepted = true;
                         if (wheel.angleDelta.y < 0) {
                             ShellState.openQuickSettingsCapsule("main");
@@ -969,6 +971,8 @@ Item {
                     enabled: root.isExpanded
                     acceptedButtons: Qt.NoButton
                     onWheel: (wheel) => {
+                        // Settings → Shortcuts → "Open capsules with the wheel"
+                        if (!ConfigManager.capsuleWheel) { wheel.accepted = false; return; }
                         wheel.accepted = true;
                         if (wheel.angleDelta.y < 0) {
                             ShellState.openQuickSettingsCapsule("main");

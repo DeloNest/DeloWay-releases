@@ -213,7 +213,7 @@ QtObject {
     readonly property var settingsGroups: [
         { id: "connectivity",    pages: BluetoothService.available ? ["network", "bluetooth"] : ["network"] },
         { id: "personalization", pages: ["appearance", "wallpaper", "topbar", "dock"] },
-        { id: "system",          pages: ["windows", "notifications", "power", "apps", "time_language", "about"] }
+        { id: "system",          pages: ["windows", "shortcuts", "notifications", "power", "apps", "time_language", "about"] }
     ]
     readonly property var settingsPages: ({
         "network":       { icon: NetworkService.wifiAvailable ? "network-wireless-symbolic"
@@ -224,6 +224,7 @@ QtObject {
         "topbar":        { icon: "preferences-desktop-display-symbolic",      file: "TopBarTab.qml" },
         "dock":          { icon: "view-app-grid-symbolic",                    file: "DockTab.qml" },
         "windows":       { icon: "window-new-symbolic",                       file: "WindowsTab.qml" },
+        "shortcuts":     { icon: "preferences-desktop-keyboard-shortcuts-symbolic", file: "ShortcutsTab.qml" },
         "notifications": { icon: "preferences-system-notifications-symbolic", file: "NotificationsTab.qml" },
         "power":         { icon: "system-shutdown-symbolic",                  file: "PowerTab.qml" },
         "apps":          { icon: "applications-system-symbolic",              file: "AppsTab.qml" },
@@ -236,7 +237,7 @@ QtObject {
         "desktop": "wallpaper", "workspaces": "windows",
         "system": "about", "applications": "apps", "default_apps": "apps", "music": "apps",
         "language": "time_language", "time": "time_language",
-        "shortcuts": "about", "theme": "appearance"
+        "keyboard": "shortcuts", "keybindings": "shortcuts", "theme": "appearance"
     })
     // A page that is not listed now (Bluetooth without an adapter) opens Network instead.
     function settingsPageListed(id) {

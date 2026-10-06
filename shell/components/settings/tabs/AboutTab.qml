@@ -66,7 +66,7 @@ Item {
                 title: I18n.tr("about_shell_title")
                 subtitle: (I18n.isRTL ? "نواة لينكس: " : "Linux Kernel: ") + I18n.ltr((root.osKernel || "Arch Linux") + " • " + (root.osHostname || "localhost"))
                 icon: "distributor-logo-symbolic"
-                showDivider: true
+                showDivider: false
 
                 Rectangle {
                     height: 24
@@ -84,44 +84,6 @@ Item {
                         font.pixelSize: Theme.fontSize(10)
                         font.weight: Font.DemiBold
                         color: Theme.notchText
-                    }
-                }
-            }
-
-            // Keyboard Shortcuts Cheat Sheet Launcher
-            SettingsRow {
-                title: I18n.isRTL ? "دليل اختصارات لوحة المفاتيح" : "Keyboard Shortcuts Cheat Sheet"
-                subtitle: I18n.isRTL ? "استعراض كافة اختصارات النظام ومجموعات المفاتيح (" + I18n.ltr("Super + ?") + ")" : "View all desktop keybindings and commands (Super + ?)"
-                icon: "preferences-desktop-keyboard-shortcuts-symbolic"
-                showDivider: false
-                clickable: true
-                onClicked: ShellState.toggleCheatSheet()
-
-                Rectangle {
-                    height: 28
-                    implicitWidth: csBtnText.implicitWidth + Theme.space24
-                    radius: 14
-                    color: csMa.pressed ? Theme.notchSurfaceActive : (csMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
-                    border.color: csMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
-                    border.width: 1
-                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-
-                    Text {
-                        id: csBtnText
-                        anchors.centerIn: parent
-                        text: I18n.isRTL ? "فتح الدليل" : "Open Guide"
-                        font.family: Theme.typography.fontFamily
-                        font.pixelSize: Theme.fontSize(11)
-                        font.weight: Font.DemiBold
-                        color: csMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
-                    }
-
-                    MouseArea {
-                        id: csMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: ShellState.toggleCheatSheet()
                     }
                 }
             }

@@ -445,6 +445,9 @@ ShellRoot {
     }
 
     Component.onCompleted: {
+        // Shortcuts changed in Settings are runtime binds: start the service so it applies
+        // them now (it re-applies after every Hyprland config reload).
+        ShortcutService.refresh();
         const screenCount = Quickshell.screens.length;
         console.log("[Deloway] Shell initialised — "
                     + screenCount + " screen(s), "

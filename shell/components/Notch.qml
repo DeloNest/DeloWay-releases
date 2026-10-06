@@ -116,6 +116,8 @@ Item {
                         }
                     }
                     onWheel: (wheel) => {
+                        // Settings → Shortcuts → "Open capsules with the wheel"
+                        if (!ConfigManager.capsuleWheel) { wheel.accepted = false; return; }
                         wheel.accepted = true;
                         if (wheel.angleDelta.y < 0) {
                             ShellState.openSmartNotch();
@@ -189,6 +191,8 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onWheel: (wheel) => {
+                                // Settings → Shortcuts → "Open capsules with the wheel"
+                                if (!ConfigManager.capsuleWheel) { wheel.accepted = false; return; }
                                 wheel.accepted = true;
                                 if (wheel.angleDelta.y < 0) {
                                     ShellState.openSmartNotch();
