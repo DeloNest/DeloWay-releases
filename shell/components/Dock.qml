@@ -370,6 +370,7 @@ PanelWindow {
                 // Divider before the trash
                 Rectangle {
                     Layout.alignment: Qt.AlignCenter
+                    visible: ConfigManager.dockShowTrash
                     Layout.preferredWidth: root.isVertical ? Math.round(root.iconSz * 0.66) : 1
                     Layout.preferredHeight: root.isVertical ? 1 : Math.round(root.iconSz * 0.66)
                     Layout.leftMargin: root.isVertical ? 0 : 2
@@ -382,6 +383,7 @@ PanelWindow {
                 // 3 · Trash
                 DockSlot {
                     isTrash: true
+                    visible: ConfigManager.dockShowTrash
                     appKey: "__trash__"
                 }
             }
@@ -519,7 +521,11 @@ PanelWindow {
         //   launching    breathing dim dot until the first window maps
         Item {
             id: indicator
-            visible: !slot.isTrash && ConfigManager.showUnderline && (slot.running || slot.launching)
+            // Settings → Dock → indicator: every running app, the active one only, or none.
+            // An app asking for attention (urgent, red) always shows.
+            visible: !slot.isTrash && (slot.running || slot.launching)
+                     && (slot.urgent || ConfigManager.dockIndicator === "all"
+                         || (ConfigManager.dockIndicator === "active" && slot.active))
             readonly property real len: slot.urgent ? 6
                 : slot.active ? Math.round(root.iconSz * 0.38)
                 : (slot.windowCount > 1 ? 11 : 5)

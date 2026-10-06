@@ -61,7 +61,11 @@ Item {
     property bool dockEnabled: dockMode !== "disabled"
     property string dockPosition: "bottom"
     property int dockIconSize: 38
-    property bool showUnderline: true
+    property bool dockShowTrash: true
+    // Dots under running apps: "all" (every running app, the active one longer), "active"
+    // (the focused app only) or "none". Monochrome: the identity's active colour; red stays
+    // reserved for an app asking for attention.
+    property string dockIndicator: "all"
     // null until the user pins/unpins: the Dock then shows the chosen default apps
     // (ApplicationManager.defaultPinnedAppIds). [] is a real choice — an empty Dock.
     property var pinnedApps: null
@@ -317,7 +321,14 @@ Item {
                 }
                 if (cfg.dock.position) root.dockPosition = cfg.dock.position;
                 if (cfg.dock.iconSize) root.dockIconSize = cfg.dock.iconSize;
-                if (cfg.dock.showUnderline !== undefined) root.showUnderline = cfg.dock.showUnderline;
+                if (cfg.dock.showTrash !== undefined) root.dockShowTrash = !!cfg.dock.showTrash;
+                if (["all", "active", "none"].indexOf(cfg.dock.indicator) >= 0) {
+                    root.dockIndicator = cfg.dock.indicator;
+                } else {
+                    // Before: an on/off "underline" and a colour list whose last entry was "none"
+                    root.dockIndicator = (cfg.dock.showUnderline === false || cfg.dock.indicatorColor === "none")
+                                         ? "none" : "all";
+                }
                 if (Array.isArray(cfg.dock.pinnedApps)) root.pinnedApps = cfg.dock.pinnedApps;
             }
             if (cfg.drawer && (cfg.drawer.groupBy === "category" || cfg.drawer.groupBy === "alpha")) {
@@ -478,8 +489,14 @@ Item {
         saveConfig();
     }
 
-    function setShowUnderline(val) {
-        root.showUnderline = val;
+    function setDockIndicator(val) {
+        if (["all", "active", "none"].indexOf(val) < 0) return;
+        root.dockIndicator = val;
+        saveConfig();
+    }
+
+    function setDockShowTrash(val) {
+        root.dockShowTrash = !!val;
         saveConfig();
     }
 
@@ -560,7 +577,8 @@ Item {
         setDockMode("always");
         setDockPosition("bottom");
         setDockIconSize(48);
-        setShowUnderline(true);
+        setDockIndicator("all");
+        setDockShowTrash(true);
         setWindowGaps(5, 10);
         setWindowRounding(8);
         setFollowMouse(true);
@@ -968,7 +986,8 @@ Item {
                 enabled: root.dockEnabled,
                 position: root.dockPosition,
                 iconSize: root.dockIconSize,
-                showUnderline: root.showUnderline,
+                showTrash: root.dockShowTrash,
+                indicator: root.dockIndicator,
                 pinnedApps: root.pinnedApps
             },
             topBar: {

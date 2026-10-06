@@ -83,7 +83,7 @@ Item {
                         implicitWidth: isHorizontal ? (miniDockLayout.implicitWidth + 20) : previewDockH
                         width: implicitWidth
                         height: implicitHeight
-                        radius: Math.min(previewDockH / 2, Theme.radiusLarge)   // scales with the corner-radius setting, like the real Dock
+                        radius: Math.min(previewDockH / 2, Theme.radiusDock)   // scales with the corner-radius setting, like the real Dock
                         color: Theme.dockGlass            // the real Dock's surface, in both modes
                         border.color: Theme.notchBorderHighlight
                         border.width: 1
@@ -143,18 +143,22 @@ Item {
                                         }
                                     }
 
-                                    // Active window indicator dot
+                                    // Running-app indicator, as the Dock draws it: the first two
+                                    // preview apps are open, the first one active (longer dot).
                                     Rectangle {
-                                        visible: ConfigManager.showUnderline && (previewItem.index < 2)
+                                        readonly property bool isActive: previewItem.index === 0
+                                        visible: ConfigManager.dockIndicator === "all" ? previewItem.index < 2
+                                               : (ConfigManager.dockIndicator === "active" && isActive)
                                         // Physical x/y (like Dock.qml): conditional anchors flip at
                                         // runtime and are swapped by the tab's RTL mirroring.
                                         x: miniDock.isHorizontal ? Math.round((parent.width - width) / 2)
                                            : (ConfigManager.dockPosition === "left" ? parent.width - width : 0)
                                         y: miniDock.isHorizontal ? parent.height - height : Math.round((parent.height - height) / 2)
-                                        width: 3
-                                        height: 3
+                                        width: miniDock.isHorizontal && isActive ? 8 : 3
+                                        height: !miniDock.isHorizontal && isActive ? 8 : 3
                                         radius: 1.5
-                                        color: Theme.dockDot
+                                        color: isActive ? Theme.dockIndicator : Theme.dockIndicatorIdle
+                                        Behavior on width { NumberAnimation { duration: Theme.motionFast } }
                                     }
                                 }
                             }
@@ -184,6 +188,36 @@ Item {
                                         iconSize: Math.round(miniDock.previewIconSz * 0.55)
                                         source: "view-app-grid"
                                         iconColor: Theme.notchText
+                                    }
+                                }
+                            }
+
+                            // Trash divider & icon preview
+                            Rectangle {
+                                visible: ConfigManager.dockShowTrash
+                                Layout.preferredWidth: miniDock.isHorizontal ? 1 : Math.round(miniDock.previewIconSz * 0.7)
+                                Layout.preferredHeight: miniDock.isHorizontal ? Math.round(miniDock.previewIconSz * 0.7) : 1
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignHCenter
+                                color: Theme.notchBorderHighlight
+                            }
+
+                            Item {
+                                visible: ConfigManager.dockShowTrash
+                                implicitWidth: miniDock.previewIconSz
+                                implicitHeight: miniDock.previewIconSz + (miniDock.isHorizontal ? 6 : 0)
+
+                                Rectangle {
+                                    anchors.centerIn: parent
+                                    width: miniDock.previewIconSz
+                                    height: miniDock.previewIconSz
+                                    radius: width / 2
+                                    color: "transparent"
+
+                                    SymbolicIcon {
+                                        anchors.centerIn: parent
+                                        iconSize: Math.round(miniDock.previewIconSz * 0.55)
+                                        source: "user-trash-symbolic"
+                                        iconColor: Theme.notchTextSecondary
                                     }
                                 }
                             }
@@ -225,203 +259,107 @@ Item {
             }
         }
 
-        // ── 2. Dock Appearance & Behavior ────────────────────────────
+        // ── 2. Look: size and screen edge ────────────────────────────
         SettingsSection {
-            title: I18n.isRTL ? "إعدادات شريط المهام (Dock)" : "Dock Configuration"
+            title: I18n.tr("dock_section_look")
 
-            // Icon Size
             SettingsRow {
                 title: I18n.tr("dock_icon_size")
                 subtitle: I18n.tr("dock_icon_size_desc")
-                icon: "preferences-desktop-font-symbolic"
-                showDivider: true
+                icon: "zoom-in-symbolic"
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { val: 36, label: I18n.isRTL ? "صغير (36px)" : "Small (36px)" },
-                            { val: 44, label: I18n.isRTL ? "متوسط (44px)" : "Medium (44px)" },
-                            { val: 48, label: I18n.isRTL ? "قياسي (48px)" : "Standard (48px)" },
-                            { val: 56, label: I18n.isRTL ? "كبير (56px)" : "Large (56px)" }
-                        ]
-                        delegate: Rectangle {
-                            id: szPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.dockIconSize === modelData.val
-
-                            height: 28
-                            implicitWidth: szText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: szPill.isSelected ? Theme.notchSurfaceActive : (szMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: szPill.isSelected ? Theme.notchBorderHighlight : (szMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: szText
-                                anchors.centerIn: parent
-                                text: szPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: szPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: szPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: szMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setDockIconSize(szPill.modelData.val)
-                            }
-                        }
-                    }
+                SettingsChoice {
+                    options: [
+                        { value: 36, label: I18n.tr("dock_size_small") },
+                        { value: 44, label: I18n.tr("dock_size_medium") },
+                        { value: 48, label: I18n.tr("dock_size_standard") },
+                        { value: 56, label: I18n.tr("dock_size_large") }
+                    ]
+                    current: ConfigManager.dockIconSize
+                    onChosen: v => ConfigManager.setDockIconSize(v)
                 }
             }
 
-            // Dock Position
             SettingsRow {
                 title: I18n.tr("dock_position")
                 subtitle: I18n.tr("dock_position_desc")
                 icon: "view-fullscreen-symbolic"
-                showDivider: true
-
-                // Physical screen edges: laid out Left · Bottom · Right in both languages
-                // (mirroring put "Right" on the left in Arabic).
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: false
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { val: "left",   label: I18n.isRTL ? "اليسار" : "Left" },
-                            { val: "bottom", label: I18n.isRTL ? "أسفل الشاشة" : "Bottom" },
-                            { val: "right",  label: I18n.isRTL ? "اليمين" : "Right" }
-                        ]
-                        delegate: Rectangle {
-                            id: posPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.dockPosition === modelData.val
-
-                            height: 28
-                            implicitWidth: posText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: posPill.isSelected ? Theme.notchSurfaceActive : (posMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: posPill.isSelected ? Theme.notchBorderHighlight : (posMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: posText
-                                anchors.centerIn: parent
-                                text: posPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: posPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: posPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: posMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setDockPosition(posPill.modelData.val)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Dock Display Mode (Always / Auto-Hide / Disabled)
-            SettingsRow {
-                title: I18n.isRTL ? "وضع عرض شريط المهام" : "Dock Display Mode"
-                subtitle: {
-                    if (ConfigManager.dockMode === "disabled")
-                        return I18n.isRTL ? "معطل تماماً ولا يستهلك أي موارد" : "Completely disabled, zero resource usage";
-                    if (ConfigManager.dockMode === "intellihide")
-                        return I18n.isRTL ? "يختفي فقط عندما تغطيه نافذة، ويظهر عند الاقتراب من الحافة"
-                                          : "Hides only when a window overlaps it; reveal at the screen edge";
-                    if (ConfigManager.dockMode === "autohide")
-                        return I18n.isRTL ? "يختفي تلقائياً ويتمدد سطح المكتب لكامل الشاشة" : "Auto-hides, windows expand to full screen";
-                    return I18n.isRTL ? "ظاهر دائماً مع حجز مساحة حقيقي للنوافذ" : "Always visible with reserved screen space";
-                }
-                icon: "settings-symbolic"
-                showDivider: true
-
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { id: "always",   label: I18n.isRTL ? "دائماً" : "Always" },
-                            { id: "autohide", label: I18n.isRTL ? "إخفاء تلقائي" : "Auto-Hide" },
-                            { id: "intellihide", label: I18n.isRTL ? "إخفاء ذكي" : "Intellihide" },
-                            { id: "disabled", label: I18n.isRTL ? "معطل" : "Disabled" }
-                        ]
-                        delegate: Rectangle {
-                            id: modePill
-                            required property var modelData
-                            readonly property bool isSelected: (ConfigManager.dockMode || "always") === modelData.id
-
-                            height: 28
-                            implicitWidth: modeText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: modePill.isSelected ? Theme.notchSurfaceActive : (modeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: modePill.isSelected ? Theme.notchBorderHighlight : (modeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: modeText
-                                anchors.centerIn: parent
-                                text: modePill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: modePill.isSelected ? Font.DemiBold : Font.Normal
-                                color: modePill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                                renderType: Theme.renderType
-                            }
-
-                            MouseArea {
-                                id: modeMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setDockMode(modePill.modelData.id)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Active Window Underline
-            SettingsRow {
-                title: I18n.tr("dock_underline")
-                subtitle: I18n.tr("dock_underline_desc")
-                icon: "display-brightness-symbolic"
                 showDivider: false
-                clickable: true
-                onClicked: ConfigManager.setShowUnderline(!ConfigManager.showUnderline)
 
-                SettingsToggle {
-                    checked: ConfigManager.showUnderline
-                    onToggled: ch => ConfigManager.setShowUnderline(ch)
+                // Physical screen edges: Left · Bottom · Right in both languages
+                SettingsChoice {
+                    mirror: false
+                    options: [
+                        { value: "left",   label: I18n.tr("dock_edge_left") },
+                        { value: "bottom", label: I18n.tr("dock_edge_bottom") },
+                        { value: "right",  label: I18n.tr("dock_edge_right") }
+                    ]
+                    current: ConfigManager.dockPosition
+                    onChosen: v => ConfigManager.setDockPosition(v)
                 }
             }
         }
 
-        // ── 3. Pinned Applications ───────────────────────────────────
+        // ── 3. Behaviour: when the Dock shows ────────────────────────
+        SettingsSection {
+            title: I18n.tr("dock_section_behavior")
+
+            SettingsRow {
+                title: I18n.tr("dock_mode")
+                subtitle: I18n.tr("dock_mode_desc_" + (ConfigManager.dockMode || "always"))
+                icon: "view-reveal-symbolic"
+                showDivider: false
+
+                SettingsChoice {
+                    options: [
+                        { value: "always",      label: I18n.tr("dock_mode_always") },
+                        { value: "intellihide", label: I18n.tr("dock_mode_intellihide") },
+                        { value: "autohide",    label: I18n.tr("dock_mode_autohide") },
+                        { value: "disabled",    label: I18n.tr("dock_mode_disabled") }
+                    ]
+                    current: ConfigManager.dockMode || "always"
+                    onChosen: v => ConfigManager.setDockMode(v)
+                }
+            }
+        }
+
+        // ── 4. Contents: running-app indicator and trash ─────────────
+        SettingsSection {
+            visible: ConfigManager.dockMode !== "disabled"
+            title: I18n.tr("dock_section_contents")
+
+            SettingsRow {
+                title: I18n.tr("dock_indicator")
+                subtitle: I18n.tr("dock_indicator_desc_" + ConfigManager.dockIndicator)
+                icon: "media-record-symbolic"
+
+                SettingsChoice {
+                    options: [
+                        { value: "all",    label: I18n.tr("dock_indicator_all") },
+                        { value: "active", label: I18n.tr("dock_indicator_active") },
+                        { value: "none",   label: I18n.tr("dock_indicator_none") }
+                    ]
+                    current: ConfigManager.dockIndicator
+                    onChosen: v => ConfigManager.setDockIndicator(v)
+                }
+            }
+
+            SettingsRow {
+                title: I18n.tr("dock_trash")
+                subtitle: I18n.tr("dock_trash_desc")
+                icon: "user-trash-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setDockShowTrash(!ConfigManager.dockShowTrash)
+
+                SettingsToggle {
+                    checked: ConfigManager.dockShowTrash
+                    onToggled: ch => ConfigManager.setDockShowTrash(ch)
+                }
+            }
+        }
+
+        // ── 5. Pinned Applications ───────────────────────────────────
         SettingsSection {
             title: (I18n.isRTL ? "إدارة التطبيقات المثبتة (" : "Pinned Applications (") +
                    (ApplicationManager.pinnedAppIds ? ApplicationManager.pinnedAppIds.length : 0) + ")"
