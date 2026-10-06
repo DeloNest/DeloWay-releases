@@ -30,6 +30,8 @@ QtObject {
     property string netIp: ""
     property bool isWifi: false
     property bool isOnline: false
+    // "full" | "limited" (a link, but NetworkManager finds no internet behind it) | "none"
+    property string internet: "none"
 
     // Real Bluetooth Metrics
     property bool bluetoothOn: true
@@ -90,6 +92,7 @@ QtObject {
                         root.netIp = data.netIp;
                         root.isWifi = data.isWifi;
                         root.isOnline = (data.online !== undefined) ? data.online : data.netDevice.length > 0;
+                        root.internet = data.internet || (root.isOnline ? "full" : "none");
                     }
                     if (data.bluetoothOn !== undefined) {
                         root.bluetoothOn = data.bluetoothOn;

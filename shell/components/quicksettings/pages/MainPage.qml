@@ -102,10 +102,17 @@ ColumnLayout {
             available: root.qs.wifiAvailable || NetworkService.ethernetConnected
             busy: NetworkService.connectingSsid.length > 0
             hasDetails: true
+            // A link without internet behind it (NetworkManager: limited / portal) says so.
+            readonly property bool noInternet: SystemMonitor.isOnline && SystemMonitor.internet === "limited"
+            readonly property string wiredText: noInternet ? root.t("سلكي · بلا إنترنت", "Wired · No internet")
+                                                           : root.t("سلكي · متصل", "Wired · Connected")
             subtitle: !root.qs.wifiAvailable
-                      ? (NetworkService.ethernetConnected ? root.t("سلكي · متصل", "Wired · Connected") : root.t("غير متوفر", "Unavailable"))
+                      ? (NetworkService.ethernetConnected ? wiredText : root.t("غير متوفر", "Unavailable"))
                       : (!root.qs.wifiEnabled ? root.t("متوقف", "Off")
-                         : (root.qs.wifiSsid || (NetworkService.ethernetConnected ? root.t("سلكي · متصل", "Wired · Connected") : root.t("غير متصل", "Not connected"))))
+                         : (root.qs.wifiSsid ? (noInternet && SystemMonitor.isWifi
+                                                ? root.qs.wifiSsid + root.t(" · بلا إنترنت", " · No internet")
+                                                : root.qs.wifiSsid)
+                            : (NetworkService.ethernetConnected ? wiredText : root.t("غير متصل", "Not connected"))))
             onToggled: root.qs.toggleWifi()
             onDetailsRequested: root.go("wifi")
         }

@@ -820,14 +820,33 @@ Item {
                             anchors.centerIn: parent
                             spacing: 5
 
-                            SymbolicIcon {
-                                iconSize: 16
-                                source: SystemMonitor.isWifi
-                                        ? "network-wireless-symbolic"
-                                        : "network-wired-symbolic"
-                                iconColor: SystemMonitor.isOnline
-                                           ? Theme.notchText
-                                           : Theme.notchTextTertiary
+                            // Wi-Fi / Ethernet when there is a link; a crossed globe when
+                            // there is none. A link without internet behind it (NetworkManager
+                            // says limited or captive portal) keeps its glyph and gets an
+                            // amber status dot.
+                            Item {
+                                implicitWidth: 16
+                                implicitHeight: 16
+
+                                SymbolicIcon {
+                                    anchors.fill: parent
+                                    iconSize: 16
+                                    source: !SystemMonitor.isOnline ? "network-offline-symbolic"
+                                          : (SystemMonitor.isWifi ? "network-wireless-symbolic" : "network-ethernet-symbolic")
+                                    iconColor: SystemMonitor.isOnline ? Theme.notchText : Theme.notchTextSecondary
+                                }
+
+                                Rectangle {
+                                    visible: SystemMonitor.isOnline && SystemMonitor.internet === "limited"
+                                    width: 7
+                                    height: 7
+                                    radius: 3.5
+                                    x: parent.width - 5
+                                    y: parent.height - 5
+                                    color: Theme.colors.warning
+                                    border.width: 1.5
+                                    border.color: Theme.notchBackground   // cut out of the glyph
+                                }
                             }
 
                             Text {

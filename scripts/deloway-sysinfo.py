@@ -61,6 +61,19 @@ except Exception:
 
 is_wifi = dev.startswith("wl")
 
+# Internet, not just a link: a route to the internet exists, but is the internet behind it?
+# NetworkManager's own connectivity check answers that (its cached result: no request is
+# made here). "limited"/"portal"/"none" with a route = connected, no internet; "unknown"
+# (the check is disabled) trusts the route.
+internet = "none"
+if online:
+    try:
+        conn = subprocess.check_output(["nmcli", "-t", "-f", "CONNECTIVITY", "general"], text=True,
+                                       timeout=2, env=dict(os.environ, LC_ALL="C")).strip()
+    except Exception:
+        conn = "unknown"
+    internet = "limited" if conn in ("limited", "portal", "none") else "full"
+
 # Bluetooth
 try:
     rf_out = subprocess.check_output(["rfkill", "list", "bluetooth"], text=True, env=dict(os.environ, LC_ALL="C"))
@@ -81,6 +94,7 @@ res = {
     "netIp": ip,
     "isWifi": is_wifi,
     "online": online,
+    "internet": internet,
     "bluetoothOn": bt_on
 }
 
