@@ -56,6 +56,11 @@ Item {
     // Why a hotspot cannot start here (no adapter, no AP mode, no dnsmasq), translated;
     // "" when nothing is known to be missing.
     property string hotspotProblem: ""
+    // A hotspot can exist here: there is a Wi-Fi adapter and its driver can be an access
+    // point. A missing dnsmasq (software, fixable) still shows the hotspot with its reason.
+    property string hotspotErrorCode: ""
+    readonly property bool hotspotSupported: wifiAvailable && hotspotErrorCode !== "no_device"
+                                             && hotspotErrorCode !== "no_ap_mode"
     property string hotspotSaveSuccess: ""
     property var hotspotClients: []
     property bool hotspotActionRunning: hotspotActionProc.running
@@ -98,6 +103,7 @@ Item {
                         if (parsed.hotspot.password) root.hotspotPassword = parsed.hotspot.password;
                         if (parsed.hotspot.clients !== undefined) root.hotspotClients = parsed.hotspot.clients;
                         root.hotspotProblem = parsed.hotspot.error_code ? root.hotspotMessage(parsed.hotspot) : "";
+                        root.hotspotErrorCode = parsed.hotspot.error_code || "";
                     }
                 } catch (e) {
                     root.networkError = I18n.isRTL ? "تعذر قراءة بيانات الشبكة" : "Failed to parse network data";
@@ -329,6 +335,39 @@ Item {
             }
         }
         onExited: root.refresh()
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Adapters coming and going (a USB Wi-Fi dongle, a Bluetooth stick): udev reports
+    // each network or Bluetooth device added or removed, and the Wi-Fi, hotspot and
+    // Bluetooth sections appear or disappear at once — no polling.
+    // ─────────────────────────────────────────────────────────────────────────
+    Process {
+        id: deviceWatch
+        running: true
+        command: ["udevadm", "monitor", "--udev", "--subsystem-match=net",
+                  "--subsystem-match=bluetooth", "--subsystem-match=rfkill"]
+        stdout: SplitParser {
+            onRead: line => {
+                if (/\b(add|remove)\b/.test(line)) deviceSettle.restart();
+            }
+        }
+        onExited: deviceWatchRestart.restart()
+    }
+    Timer {
+        id: deviceWatchRestart
+        interval: 5000
+        onTriggered: deviceWatch.running = true
+    }
+    // A dongle brings several events (usb, net, rfkill) and NetworkManager needs a moment
+    // to take the new device: one refresh after they settle.
+    Timer {
+        id: deviceSettle
+        interval: 1500
+        onTriggered: {
+            root.refresh();
+            BluetoothService.refresh();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

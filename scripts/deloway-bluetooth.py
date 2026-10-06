@@ -3,6 +3,7 @@
 Deloway Bluetooth Helper
 Direct integration with system D-Bus (org.bluez) for device management without bluez-utils dependency.
 """
+import glob
 import sys
 import re
 import json
@@ -74,6 +75,11 @@ def get_devices():
             pass
     return devices
 
+def adapter_present():
+    """A Bluetooth controller exists (the kernel's view: /sys/class/bluetooth/hciN), whether
+    or not BlueZ is running or the radio is blocked — the shell shows Bluetooth only then."""
+    return bool(glob.glob("/sys/class/bluetooth/hci*"))
+
 def is_powered():
     adapter = get_adapter_path()
     try:
@@ -122,9 +128,11 @@ def device_path(adapter, mac):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] == "list":
+        present = adapter_present()
         print(json.dumps({
-            "powered": is_powered(),
-            "devices": get_devices()
+            "available": present,
+            "powered": is_powered() if present else False,
+            "devices": get_devices() if present else []
         }))
         return
     verb = sys.argv[1]

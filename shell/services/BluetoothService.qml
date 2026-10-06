@@ -11,7 +11,9 @@ Item {
     // Reactive Properties
     // ─────────────────────────────────────────────────────────────────────────
     property var bluetoothData: null
-    property bool available: true
+    // A Bluetooth adapter exists (deloway-bluetooth.py list → /sys/class/bluetooth). False
+    // until the first answer, so Bluetooth never shows up and then vanishes at startup.
+    property bool available: false
     property bool powered: false
     property bool isScanning: false
     property var devices: []
@@ -47,6 +49,7 @@ Item {
                     const parsed = JSON.parse(data.trim());
                     root.bluetoothData = parsed;
                     root.error = "";
+                    root.available = parsed.available !== undefined ? !!parsed.available : true;
                     root.powered = !!parsed.powered;
                     const allDevs = parsed.devices || [];
                     root.devices = root.sortedBluetoothDevices(allDevs);
