@@ -56,6 +56,13 @@ Item {
     readonly property bool isExpanded: ShellState.quickSettingsCapsuleExpanded
     readonly property string currentView: ShellState.quickSettingsCapsuleView
 
+    // A detail page whose hardware is gone (Wi-Fi dongle or Bluetooth stick unplugged
+    // while it is open) returns to the main page instead of staying on dead controls.
+    readonly property bool currentViewGone: (currentView === "wifi" && !NetworkService.wifiAvailable)
+                                         || (currentView === "hotspot" && !NetworkService.hotspotSupported)
+                                         || (currentView === "bluetooth" && !BluetoothService.available)
+    onCurrentViewGoneChanged: if (currentViewGone) ShellState.quickSettingsCapsuleView = "main"
+
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(108, compactRow.implicitWidth + 36)
     readonly property real expandedWidth: 456

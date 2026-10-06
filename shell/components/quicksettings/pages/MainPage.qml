@@ -6,8 +6,9 @@ import "../.."
 import ".."
 
 // MainPage — control-center home.
-//   Header  : avatar · user@host ··· [screenshot] [settings] [lock] [power ›]
-//   Tiles   : 2-column split tiles (toggle + details)
+//   Header  : [screenshot] [settings] [lock] [power ›], centred
+//   Tiles   : 2-column split tiles (toggle + details); Wi-Fi, Bluetooth and hotspot only
+//             when the machine has the hardware (they appear when a dongle is plugged in)
 //   Sliders : volume (› outputs) · microphone · brightness
 ColumnLayout {
     id: root
@@ -22,51 +23,10 @@ ColumnLayout {
     function t(ar, en) { return root.rtl ? ar : en; }
     function go(view) { ShellState.quickSettingsCapsuleView = view; }
 
-    // ── Header ───────────────────────────────────────────────────────────
+    // ── Header: the four system actions, centred ─────────────────────────
     RowLayout {
-        Layout.fillWidth: true
-        spacing: 8
-
-        Rectangle {
-            implicitWidth: 36
-            implicitHeight: 36
-            radius: 18
-            color: Theme.qsTileActive
-            Text {
-                anchors.centerIn: parent
-                text: (ControlCenterService.userName.charAt(0) || "?").toUpperCase()
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(15)
-                font.weight: Font.Bold
-                color: Theme.qsTileIconActive
-            }
-        }
-
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: -2
-            Text {
-                Layout.fillWidth: true
-                text: ControlCenterService.userName
-                horizontalAlignment: Text.AlignLeft
-                elide: Text.ElideRight
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(13)
-                font.weight: Font.Bold
-                color: Theme.notchText
-                renderType: Theme.renderType
-            }
-            Text {
-                Layout.fillWidth: true
-                text: ControlCenterService.hostName
-                horizontalAlignment: Text.AlignLeft
-                elide: Text.ElideRight
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(10)
-                color: Theme.notchTextTertiary
-                renderType: Theme.renderType
-            }
-        }
+        Layout.alignment: Qt.AlignHCenter
+        spacing: 12
 
         QSIconButton {
             iconName: "applets-screenshooter-symbolic"
@@ -96,6 +56,7 @@ ColumnLayout {
         QSTile {
             Layout.fillWidth: true
             Layout.preferredWidth: 1
+            visible: NetworkService.wifiAvailable
             title: "Wi-Fi"
             iconName: root.qs.wifiEnabled ? "network-wireless-symbolic" : "network-wireless-disabled-symbolic"
             active: root.qs.wifiEnabled
@@ -120,6 +81,7 @@ ColumnLayout {
         QSTile {
             Layout.fillWidth: true
             Layout.preferredWidth: 1
+            visible: BluetoothService.available
             title: root.t("بلوتوث", "Bluetooth")
             iconName: root.qs.bluetoothEnabled ? "bluetooth-active-symbolic" : "bluetooth-disabled-symbolic"
             active: root.qs.bluetoothEnabled
@@ -136,6 +98,7 @@ ColumnLayout {
             Layout.fillWidth: true
             Layout.preferredWidth: 1
             title: root.t("نقطة اتصال", "Hotspot")
+            visible: NetworkService.hotspotSupported
             iconName: "network-wireless-hotspot-symbolic"
             active: root.qs.hotspotEnabled
             available: root.qs.hotspotAvailable
