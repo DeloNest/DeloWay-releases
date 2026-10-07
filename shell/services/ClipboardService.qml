@@ -113,17 +113,24 @@ Item {
     // ── Thumbnails ───────────────────────────────────────────────────────
     // Decodes the images without a cached file, removes files no longer in the history,
     // then points the items at their files (a new list, so bindings update).
+    // Only files that exist get a thumbnail: an entry can leave the history between the
+    // listing and the decoding (copying the same image again gives it a new id), and its
+    // file then never appears — the Image warned "Cannot open" for it.
     Process {
         id: thumbProcess
-        onExited: {
-            const dir = root.cacheDir;
-            let recent = 0;
-            root.items = root.items.map(item => {
-                if (item.kind !== "image") return item;
-                const copy = Object.assign({}, item);
-                copy.thumb = recent++ < root.maxThumbnails ? "file://" + dir + "/" + item.id + "." + item.format : "";
-                return copy;
-            });
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const present = {};
+                for (const name of text.split("\n")) if (name) present[name] = true;
+                const dir = root.cacheDir;
+                root.items = root.items.map(item => {
+                    if (item.kind !== "image") return item;
+                    const copy = Object.assign({}, item);
+                    const name = item.id + "." + item.format;
+                    copy.thumb = present[name] ? "file://" + dir + "/" + name : "";
+                    return copy;
+                });
+            }
         }
     }
 
@@ -136,7 +143,8 @@ Item {
             'while [ $# -ge 2 ]; do f="$dir/$2"; keep="$keep$2 "; ' +
             '  if [ ! -s "$f" ]; then cliphist decode "$1" > "$f.part" && mv -f "$f.part" "$f"; fi; shift 2; done; ' +
             'for f in "$dir"/*; do [ -e "$f" ] || continue; n="${f##*/}"; ' +
-            '  case "$keep" in *" $n "*) ;; *) rm -f "$f" ;; esac; done';
+            '  case "$keep" in *" $n "*) ;; *) rm -f "$f" ;; esac; done; ' +
+            'for f in "$dir"/*; do [ -s "$f" ] && printf "%s\\n" "${f##*/}"; done';
         const args = ["sh", "-c", script, "sh", root.cacheDir];
         images.forEach(i => args.push(i.id, i.id + "." + i.format));
         thumbProcess.exec(args);
