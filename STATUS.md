@@ -404,7 +404,9 @@
 - **الثيم**: Flatpak لا يرى `~/.config/gtk-4.0` فظهر بـ Adwaita (رمادي، «اليوم» أزرق). أُصلح لكل تطبيقات libadwaita المثبتة كـ Flatpak: theme-apply يمنح `--filesystem=xdg-config/gtk-4.0:ro` مرة واحدة (`configure_flatpak_theming`). تطبيقات GTK3 الـ Flatpak غير مشمولة (ثيماتنا تستورد adw-gtk3 من /usr/share).
 - **إصلاح عام في ثيم GTK4**: القاعدة `*:selected` جعلت عناصر libadwaita المحددة (يوم «اليوم» في التقويم) أسود على أسود؛ صارت للتحديد النصي فقط، والعناصر المحددة بيضاء بنص أسود (الهوية).
 - **اللغة**: إعداد Flatpak `languages` غير مضبوط فثُبّت `org.gnome.Calendar.Locale` بالإنجليزية فقط. install.sh يضيف `extra-languages ar` الآن؛ على الجهاز الحالي يلزم: `sudo flatpak config --system --set extra-languages ar && sudo flatpak update`.
-- **التوصية**: النسخة الأصلية (`pacman -S gnome-calendar`، 50.0، ~43MB تنزيل لأن webkit2gtk-4.1 مثبت) بدل Flatpak: ثيمنا وترجمتها العربية تلقائياً، ويمكن للشيل لاحقاً قراءة الأحداث من evolution-data-server (كبسولة الوقت). **حدود التطبيق**: لا تقويم هجري؛ الحسابات عبر الإنترنت (Google/Nextcloud) تحتاج GNOME Online Accounts وإعدادات GNOME — غير متاحة في Deloway؛ التقويمات المحلية والاشتراك بروابط ICS/webcal تعمل.
+- **اتجاه RTL لتطبيقات GTK4 (عام)**: GTK4/libadwaita يأخذ الاتجاه من لغة `LC_CTYPE` لا من `LANGUAGE` (بخلاف GTK3 وQt)؛ كان `en_US` فظهرت التقويم وLoupe وPapers ومحرر النصوص بنص عربي في تخطيط من اليسار. الآن `LC_CTYPE=ar_SA.UTF-8` مع واجهة عربية (إن كانت اللغة مولّدة) في: deloway-session، وConfigManager (Hyprland وD-Bus)، وApplicationManager.launchEnvironment، وenvironment.d.
+- **مُنفَّذ**: أُزيل Flatpak (مع runtimes) وثُبّتت النسخة الأصلية `gnome-calendar 50.0`: ثيمنا والعربية وRTL تعمل. أسماء الأيام والشهور بالإنجليزية لأن `LC_TIME=en_US` (قرار منفصل مثل صيغة الأرقام).
+- **التوصية (السابقة)**: النسخة الأصلية (`pacman -S gnome-calendar`، 50.0، ~43MB تنزيل لأن webkit2gtk-4.1 مثبت) بدل Flatpak: ثيمنا وترجمتها العربية تلقائياً، ويمكن للشيل لاحقاً قراءة الأحداث من evolution-data-server (كبسولة الوقت). **حدود التطبيق**: لا تقويم هجري؛ الحسابات عبر الإنترنت (Google/Nextcloud) تحتاج GNOME Online Accounts وإعدادات GNOME — غير متاحة في Deloway؛ التقويمات المحلية والاشتراك بروابط ICS/webcal تعمل.
 
 ---
 
