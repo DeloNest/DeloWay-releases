@@ -80,6 +80,14 @@ def numeric_locale(numbers: str) -> str:
     return "en_US.UTF-8"
 
 
+def ctype_locale(lang: str) -> str:
+    """LC_CTYPE: GTK4 / libadwaita take their text direction (RTL) from its language, not
+    from LANGUAGE. An Arabic one only when it is generated (C would mean no UTF-8)."""
+    if lang == "ar":
+        return available_arabic_locale() or "en_US.UTF-8"
+    return "en_US.UTF-8"
+
+
 def apply_environment_d(lang: str, numbers: str = "western", dry_run: bool = False) -> None:
     env_dir = Path.home() / ".config" / "environment.d"
     target_file = env_dir / "90-deloway-locale.conf"
@@ -89,6 +97,7 @@ def apply_environment_d(lang: str, numbers: str = "western", dry_run: bool = Fal
             MANAGED_HEADER
             + f"LANG={main_locale_for('ar')}\n"
             + "LANGUAGE=ar:en\n"
+            + f"LC_CTYPE={ctype_locale('ar')}\n"
             + f"LC_NUMERIC={numeric_locale(numbers)}\n"
             + "LC_TIME=en_US.UTF-8\n"
             + "LC_COLLATE=C\n"
@@ -98,6 +107,7 @@ def apply_environment_d(lang: str, numbers: str = "western", dry_run: bool = Fal
             MANAGED_HEADER
             + "LANG=en_US.UTF-8\n"
             + "LANGUAGE=en_US:en\n"
+            + "LC_CTYPE=en_US.UTF-8\n"
             + f"LC_NUMERIC={numeric_locale(numbers)}\n"
             + "LC_TIME=en_US.UTF-8\n"
             + "LC_COLLATE=C\n"
@@ -202,12 +212,14 @@ def update_running_session(lang: str, dry_run: bool = False) -> None:
         try:
             subprocess.run(["hyprctl", "keyword", "env", f"LANGUAGE,{lang_val}"], capture_output=True, timeout=2)
             subprocess.run(["hyprctl", "keyword", "env", f"LANG,{main_lang}"], capture_output=True, timeout=2)
+            subprocess.run(["hyprctl", "keyword", "env", f"LC_CTYPE,{ctype_locale(lang)}"], capture_output=True, timeout=2)
         except Exception:
             pass
 
         # 2. systemd / D-Bus activation environment
         try:
-            subprocess.run(["dbus-update-activation-environment", "--systemd", f"LANG={main_lang}", f"LANGUAGE={lang_val}"], capture_output=True, timeout=2)
+            subprocess.run(["dbus-update-activation-environment", "--systemd", f"LANG={main_lang}", f"LANGUAGE={lang_val}",
+                            f"LC_CTYPE={ctype_locale(lang)}"], capture_output=True, timeout=2)
         except Exception:
             pass
 

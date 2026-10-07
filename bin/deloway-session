@@ -51,6 +51,13 @@ if [ "$UI_LANG" = "en" ]; then
 else
     export LANGUAGE="ar:en"
 fi
+# GTK4 / libadwaita apps take their direction (RTL) from LC_CTYPE's language, not from
+# LANGUAGE. Only a generated locale: a missing one would leave programs without UTF-8.
+if [ "$UI_LANG" != "en" ] && locale -a 2>/dev/null | grep -qi '^ar_SA.utf8$'; then
+    export LC_CTYPE="ar_SA.UTF-8"
+else
+    export LC_CTYPE="en_US.UTF-8"
+fi
 # Digits in Qt/KDE apps (Settings → Apps → Number Format): Eastern ٠١٢٣ come from an
 # Arabic LC_NUMERIC, Western 0123 from en_US.
 if [ "$(jq -r '.system.numberFormat // "western"' "$DELOWAY_CONFIG" 2>/dev/null)" = "eastern" ] \

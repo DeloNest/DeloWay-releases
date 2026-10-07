@@ -790,6 +790,25 @@ Item {
     // Qt/KDE apps take their digits from LC_NUMERIC; GTK apps print Western digits.
     readonly property string numericLocale: root.numberFormat === "eastern" ? "ar_SA.UTF-8" : "en_US.UTF-8"
 
+    // GTK4 / libadwaita lays an app out right to left from the default language's script,
+    // which comes from LC_CTYPE — not from the translations (LANGUAGE), as GTK3 and Qt do:
+    // with LC_CTYPE en_US, GNOME Calendar, Loupe, Papers… showed Arabic text in a left-to-
+    // right window. Arabic UI → an Arabic LC_CTYPE, only when that locale is generated
+    // (a missing one falls back to C: no UTF-8 at all).
+    property bool arabicLocaleAvailable: false
+    readonly property string ctypeLocale: (root.uiLanguage !== "en" && root.arabicLocaleAvailable)
+                                          ? "ar_SA.UTF-8" : "en_US.UTF-8"
+    Process {
+        running: true
+        command: ["sh", "-c", "locale -a 2>/dev/null | grep -qi '^ar_SA\\.utf-\\?8$'"]
+        onExited: exitCode => root.arabicLocaleAvailable = exitCode === 0
+    }
+    // Into Hyprland (what it starts) and D-Bus/systemd activation (apps started by the bus)
+    onCtypeLocaleChanged: {
+        root.run(["hyprctl", "keyword", "env", "LC_CTYPE," + root.ctypeLocale]);
+        root.run(["dbus-update-activation-environment", "--systemd", "LC_CTYPE=" + root.ctypeLocale]);
+    }
+
     function setNumberFormat(fmt) {
         if (fmt !== "eastern" && fmt !== "western") return;
         root.numberFormat = fmt;

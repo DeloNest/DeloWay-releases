@@ -575,7 +575,8 @@ Item {
     // without it, stale after a language switch — so apps from the App Drawer came up in
     // English while the same app from a shortcut (started by Hyprland) was Arabic.
     readonly property var launchEnvironment: ({ "LANGUAGE": ConfigManager.uiLanguage === "en" ? "en_US:en" : "ar:en",
-                                                  "LC_NUMERIC": ConfigManager.numericLocale })
+                                                  "LC_NUMERIC": ConfigManager.numericLocale,
+                                                  "LC_CTYPE": ConfigManager.ctypeLocale })   // GTK4 direction
 
     function run(command, workingDirectory) {
         const context = { command: command, environment: root.launchEnvironment };
