@@ -899,8 +899,11 @@ popover.menu > contents, toast, .osd {{ border-radius: {r["medium"]}px; }}
 window.dialog, dialog-host > dialog > sheet, .dialog-sheet, window.messagedialog,
 floating-sheet > sheet, bottom-sheet > sheet {{ border-radius: {r["large"]}px; }}
 
-/* Selection + focus in neutral contrast (never a hue) */
-selection, *:selected {{ background-color: alpha(currentColor, 0.18); }}
+/* Selection + focus in neutral contrast (never a hue). Text selection only: the accent
+   is already neutral (white on dark, slate on light), so selected widgets keep
+   libadwaita's accent fill with its accent text — a translucent fill of their own text
+   colour made GNOME Calendar's "today" black on black. */
+selection {{ background-color: alpha(currentColor, 0.18); }}
 *:focus-visible {{ outline-color: alpha(currentColor, 0.55); }}
 """
 
@@ -1289,6 +1292,28 @@ def apply_qt_environment(dry_run: bool = False):
                    capture_output=True, timeout=5)
 
 
+def configure_flatpak_theming(dry_run: bool = False):
+    """Flatpak apps built on libadwaita (GNOME Calendar…) cannot see ~/.config/gtk-4.0 and
+    drew Adwaita: dark grey, blue accent. A user-wide, read-only override lets every one of
+    them load the DeloWay stylesheet (self-contained, no imports; it follows the colour
+    scheme the portal reports, so they switch with the shell). Set once; nothing else in
+    the user's Flatpak overrides is touched. GTK3 Flatpaks are not covered: our GTK3
+    themes import adw-gtk3 from /usr/share, which a Flatpak does not have."""
+    grant = "xdg-config/gtk-4.0:ro"
+    try:
+        shown = subprocess.run(["flatpak", "override", "--user", "--show"], capture_output=True,
+                               text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return                                    # no Flatpak on this system
+    if grant in shown:
+        return
+    if dry_run:
+        print(f"[dry-run] flatpak override --user --filesystem={grant}")
+        return
+    subprocess.run(["flatpak", "override", "--user", f"--filesystem={grant}"], capture_output=True, timeout=10)
+    print(f"[deloway-theme] Flatpak apps may read the DeloWay GTK4 stylesheet ({grant})")
+
+
 def set_gsettings_raw(schema: str, key: str, val: str, dry_run: bool = False):
     """Set any schema/key (skips missing keys on older GNOME schemas)."""
     try:
@@ -1401,6 +1426,7 @@ def main():
     deloway_dolphin.apply(dry_run=args.dry_run)      # layout, toolbar, sidebar, Breeze style
     fonts_changed = write_fontconfig(font_family, dry_run=args.dry_run)
     apply_qt_environment(dry_run=args.dry_run)
+    configure_flatpak_theming(dry_run=args.dry_run)
 
     # 7. Apply gsettings — these are what running apps react to (via the portal):
     #    color-scheme → libadwaita/GTK4 + Qt6; gtk-theme → GTK3 (+ Qt via gtk3 theme)
