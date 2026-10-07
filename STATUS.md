@@ -399,6 +399,13 @@
 - **دليل الاختصارات** (Super+/) يقرأ نفس الكتالوج فيعرض الاختصارات الحالية (كان قائمة يدوية متباعدة عن الواقع).
 - **إطار النافذة النشطة** (7 أكتوبر، الإعدادات → النوافذ): أربع درجات أحادية بطلب صاحب المشروع (تباين عالٍ افتراضي / ناعم / خافت / بلا تمييز)، تتبع الوضع الداكن/الفاتح، `windows.activeBorderStyle`، يُعاد تطبيقها بعد كل reload. أُزيلت الخاصية الميتة `activeBorder/inactiveBorder`. صفوف التباعد والاستدارة صارت `SettingsChoice` مثل بقية الصفحة.
 
+### ن) 7 أكتوبر 2026: تقييم GNOME Calendar
+- **المثبت**: Flatpak من Flathub (51.0) على runtime ‏org.gnome.Platform 51 (‏1.1GB) + أطقم الرسوميات (~1.4GB)، وهو تطبيق Flatpak الوحيد على الجهاز. يحمل evolution-data-server داخله.
+- **الثيم**: Flatpak لا يرى `~/.config/gtk-4.0` فظهر بـ Adwaita (رمادي، «اليوم» أزرق). أُصلح لكل تطبيقات libadwaita المثبتة كـ Flatpak: theme-apply يمنح `--filesystem=xdg-config/gtk-4.0:ro` مرة واحدة (`configure_flatpak_theming`). تطبيقات GTK3 الـ Flatpak غير مشمولة (ثيماتنا تستورد adw-gtk3 من /usr/share).
+- **إصلاح عام في ثيم GTK4**: القاعدة `*:selected` جعلت عناصر libadwaita المحددة (يوم «اليوم» في التقويم) أسود على أسود؛ صارت للتحديد النصي فقط، والعناصر المحددة بيضاء بنص أسود (الهوية).
+- **اللغة**: إعداد Flatpak `languages` غير مضبوط فثُبّت `org.gnome.Calendar.Locale` بالإنجليزية فقط. install.sh يضيف `extra-languages ar` الآن؛ على الجهاز الحالي يلزم: `sudo flatpak config --system --set extra-languages ar && sudo flatpak update`.
+- **التوصية**: النسخة الأصلية (`pacman -S gnome-calendar`، 50.0، ~43MB تنزيل لأن webkit2gtk-4.1 مثبت) بدل Flatpak: ثيمنا وترجمتها العربية تلقائياً، ويمكن للشيل لاحقاً قراءة الأحداث من evolution-data-server (كبسولة الوقت). **حدود التطبيق**: لا تقويم هجري؛ الحسابات عبر الإنترنت (Google/Nextcloud) تحتاج GNOME Online Accounts وإعدادات GNOME — غير متاحة في Deloway؛ التقويمات المحلية والاشتراك بروابط ICS/webcal تعمل.
+
 ---
 
 ## 8. سجل القرارات المعمارية المحدثة (ADRs)
