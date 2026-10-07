@@ -97,8 +97,9 @@ Item {
     property bool timeCapsuleShowTemps: true
 
     // Windows & Hyprland Settings
-    property color activeBorder: "#ffffff"
-    property color inactiveBorder: "#2a3142"
+    // Active window border, in monochrome steps (Settings → Windows): "contrast" (white on
+    // dark / slate on light), "soft", "subtle" or "off" (like the inactive windows).
+    property string activeBorderStyle: "contrast"
     property int windowGapsIn: 5
     property int windowGapsOut: 10
     property int windowRounding: 10
@@ -279,10 +280,12 @@ Item {
                 ["misc:font_family", root.fontFamily],
                 ["group:groupbar:font_family", root.fontFamily]
             ];
-            // Window borders follow the theme mode (they used to stay white on light).
+            // Window borders follow the theme mode (they used to stay white on light) and the
+            // chosen step of the active border.
             const dark = root.themeMode !== "light";
-            pairs.push(["general:col.active_border", dark ? "rgba(ffffffdd)" : "rgba(0f172add)"]);
-            pairs.push(["general:col.inactive_border", dark ? "rgba(444444cc)" : "rgba(c8c8c8cc)"]);
+            const hex = c => c.replace("#", "");
+            pairs.push(["general:col.active_border", "rgba(" + hex(root.borderColor(root.activeBorderStyle, dark)) + "dd)"]);
+            pairs.push(["general:col.inactive_border", "rgba(" + hex(root.borderColor("inactive", dark)) + "cc)"]);
             root.hyprKeywords(pairs);
         } catch (err) {
             console.warn("[Deloway] Failed to sync Hyprland settings: " + err);
@@ -362,15 +365,8 @@ Item {
             if (cfg.shortcuts && typeof cfg.shortcuts === "object" && !Array.isArray(cfg.shortcuts))
                 root.shortcutOverrides = cfg.shortcuts;
             if (cfg.windows) {
-                if (cfg.windows.activeBorder) {
-                    const ab = cfg.windows.activeBorder.toString().toLowerCase();
-                    if (ab === "#0084ff" || ab === "#0ea5e9" || ab === "#8b5cf6") {
-                        root.activeBorder = "#ffffff";
-                    } else {
-                        root.activeBorder = cfg.windows.activeBorder;
-                    }
-                }
-                if (cfg.windows.inactiveBorder) root.inactiveBorder = cfg.windows.inactiveBorder;
+                if (root.borderStyles.indexOf(cfg.windows.activeBorderStyle) >= 0)
+                    root.activeBorderStyle = cfg.windows.activeBorderStyle;
                 if (cfg.windows.gapsIn !== undefined) root.windowGapsIn = cfg.windows.gapsIn;
                 if (cfg.windows.gapsOut !== undefined) root.windowGapsOut = cfg.windows.gapsOut;
                 if (cfg.windows.rounding !== undefined) root.windowRounding = cfg.windows.rounding;
@@ -569,9 +565,20 @@ Item {
         saveConfig();
     }
 
-    function setActiveBorder(col) {
-        root.activeBorder = col;
-        root.hyprKeywords([["general:col.active_border", root.hyprColor(col)]]);
+    readonly property var borderStyles: ["contrast", "soft", "subtle", "off"]
+
+    // Border colours as #rrggbb (the same steps on the Settings swatches), per mode.
+    // "off" is the inactive border: the focused window is not set apart.
+    function borderColor(style, dark) {
+        const steps = dark ? { contrast: "#ffffff", soft: "#a3a3a3", subtle: "#5c5c5c", off: "#444444", inactive: "#444444" }
+                           : { contrast: "#0f172a", soft: "#64748b", subtle: "#cbd5e1", off: "#c8c8c8", inactive: "#c8c8c8" };
+        return steps[style] || steps.contrast;
+    }
+
+    function setActiveBorderStyle(style) {
+        if (root.borderStyles.indexOf(style) < 0) return;
+        root.activeBorderStyle = style;
+        root.syncHyprlandWindowSettings();
         saveConfig();
     }
 
@@ -587,7 +594,8 @@ Item {
         setDockIconSize(48);
         setDockIndicator("all");
         setDockShowTrash(true);
-        setWindowGaps(5, 10);
+        setActiveBorderStyle("contrast");
+        setWindowGaps(6, 10);          // "Balanced", as config/deloway.json (5 matched no option)
         setWindowRounding(8);
         setFollowMouse(true);
         setDimInactive(false);
@@ -1029,8 +1037,7 @@ Item {
             },
             shortcuts: root.shortcutOverrides,
             windows: {
-                activeBorder: root.activeBorder.toString(),
-                inactiveBorder: root.inactiveBorder.toString(),
+                activeBorderStyle: root.activeBorderStyle,
                 gapsIn: root.windowGapsIn,
                 gapsOut: root.windowGapsOut,
                 rounding: root.windowRounding,

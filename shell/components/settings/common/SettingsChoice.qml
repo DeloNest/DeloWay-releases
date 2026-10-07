@@ -7,7 +7,7 @@ import "../../../services"
 // identity's active surface; the others stay outlined.
 //
 //   SettingsChoice {
-//       options: [{ value: "all", label: "…" }, …]
+//       options: [{ value: "all", label: "…" }, …]     // optional swatch: "#rrggbb" before the label
 //       current: ConfigManager.dockIndicator
 //       onChosen: v => ConfigManager.setDockIndicator(v)
 //   }
@@ -35,7 +35,7 @@ RowLayout {
             readonly property bool selected: root.current === pill.modelData.value
 
             implicitHeight: 28
-            implicitWidth: label.implicitWidth + Theme.space16
+            implicitWidth: content.implicitWidth + Theme.space16
             radius: 14
             color: pill.selected ? Theme.inverseSurface
                  : (ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
@@ -45,15 +45,29 @@ RowLayout {
             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
             Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
-            Text {
-                id: label
+            Row {
+                id: content
                 anchors.centerIn: parent
-                text: pill.modelData.label
-                font.family: Theme.typography.fontFamily
-                font.pixelSize: Theme.fontSize(11)
-                font.weight: pill.selected ? Font.DemiBold : Font.Normal
-                color: pill.selected ? Theme.inverseText : Theme.notchTextSecondary
-                renderType: Theme.renderType
+                spacing: 6
+
+                Rectangle {
+                    visible: !!pill.modelData.swatch
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 10
+                    height: 10
+                    radius: 5
+                    color: pill.modelData.swatch || "transparent"
+                    border.width: 1
+                    border.color: pill.selected ? Theme.inverseText : Theme.notchBorderHighlight
+                }
+                Text {
+                    text: pill.modelData.label
+                    font.family: Theme.typography.fontFamily
+                    font.pixelSize: Theme.fontSize(11)
+                    font.weight: pill.selected ? Font.DemiBold : Font.Normal
+                    color: pill.selected ? Theme.inverseText : Theme.notchTextSecondary
+                    renderType: Theme.renderType
+                }
             }
 
             MouseArea {

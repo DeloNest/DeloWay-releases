@@ -41,50 +41,16 @@ Item {
                 icon: "view-fullscreen-symbolic"
                 showDivider: true
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { gIn: 0,  gOut: 0,  label: I18n.isRTL ? "معدومة (0px)" : "None (0px)" },
-                            { gIn: 6,  gOut: 10, label: I18n.isRTL ? "متوازنة (6px)" : "Balanced (6px)" },
-                            { gIn: 12, gOut: 18, label: I18n.isRTL ? "واسعة (12px)" : "Wide (12px)" }
-                        ]
-                        delegate: Rectangle {
-                            id: gapPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.windowGapsIn === modelData.gIn
-
-                            height: 28
-                            implicitWidth: gapText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: gapPill.isSelected ? Theme.notchSurfaceActive : (gapMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: gapPill.isSelected ? Theme.notchBorderHighlight : (gapMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: gapText
-                                anchors.centerIn: parent
-                                text: gapPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: gapPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: gapPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: gapMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setWindowGaps(gapPill.modelData.gIn, gapPill.modelData.gOut)
-                            }
-                        }
-                    }
+                // Inner gap; the outer one follows it
+                SettingsChoice {
+                    readonly property var outer: ({ 0: 0, 6: 10, 12: 18 })
+                    options: [
+                        { value: 0,  label: I18n.isRTL ? "معدومة" : "None" },
+                        { value: 6,  label: I18n.isRTL ? "متوازنة" : "Balanced" },
+                        { value: 12, label: I18n.isRTL ? "واسعة" : "Wide" }
+                    ]
+                    current: ConfigManager.windowGapsIn
+                    onChosen: v => ConfigManager.setWindowGaps(v, outer[v])
                 }
             }
 
@@ -95,51 +61,33 @@ Item {
                 icon: "view-fullscreen-symbolic"
                 showDivider: true
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
+                SettingsChoice {
+                    options: [
+                        { value: 0,  label: I18n.isRTL ? "حادة" : "Sharp" },
+                        { value: 8,  label: "8px" },
+                        { value: 12, label: "12px" },
+                        { value: 16, label: "16px" }
+                    ]
+                    current: ConfigManager.windowRounding
+                    onChosen: v => ConfigManager.setWindowRounding(v)
+                }
+            }
 
-                    Repeater {
-                        model: [
-                            { val: 0,  label: I18n.isRTL ? "حادة (0px)" : "0px (Sharp)" },
-                            { val: 8,  label: I18n.isRTL ? "8px" : "8px" },
-                            { val: 12, label: I18n.isRTL ? "12px" : "12px" },
-                            { val: 16, label: I18n.isRTL ? "16px" : "16px" }
-                        ]
-                        delegate: Rectangle {
-                            id: roundPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.windowRounding === modelData.val
+            // Active window border: monochrome steps, each shown with its own colour
+            SettingsRow {
+                title: I18n.tr("win_border")
+                subtitle: I18n.tr("win_border_desc")
+                icon: "window-new-symbolic"
 
-                            height: 28
-                            implicitWidth: roundText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: roundPill.isSelected ? Theme.notchSurfaceActive : (roundMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: roundPill.isSelected ? Theme.notchBorderHighlight : (roundMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: roundText
-                                anchors.centerIn: parent
-                                text: roundPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: roundPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: roundPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: roundMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setWindowRounding(roundPill.modelData.val)
-                            }
-                        }
-                    }
+                SettingsChoice {
+                    readonly property bool dark: ConfigManager.themeMode !== "light"
+                    options: ["contrast", "soft", "subtle", "off"].map(v => ({
+                        value: v,
+                        label: I18n.tr("win_border_" + v),
+                        swatch: ConfigManager.borderColor(v, dark)
+                    }))
+                    current: ConfigManager.activeBorderStyle
+                    onChosen: v => ConfigManager.setActiveBorderStyle(v)
                 }
             }
 
