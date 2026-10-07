@@ -600,6 +600,24 @@ configure_locales() {
     sudo locale-gen || log_warn "locale-gen failed; Arabic app names need the ar_SA.UTF-8 locale."
 }
 
+# Flatpak apps get their translations as separate "Locale" extensions, and only for the
+# languages the installation is configured for: with the default (the system locale,
+# English here) GNOME Calendar and the rest stayed in English with the UI in Arabic.
+configure_flatpak_languages() {
+    command -v flatpak >/dev/null 2>&1 || return 0
+    local cur
+    cur="$(flatpak config --system --get extra-languages 2>/dev/null || true)"
+    case ";$cur;" in *";ar;"*) log_success "Flatpak apps install Arabic translations."; return ;; esac
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}[DRY-RUN]${NC} sudo flatpak config --system --set extra-languages ar && sudo flatpak update -y"
+        return
+    fi
+    sudo flatpak config --system --set extra-languages "ar" \
+        && sudo flatpak update -y --noninteractive >/dev/null 2>&1 \
+        && log_success "Flatpak apps install Arabic translations." \
+        || log_warn "Could not add Arabic to Flatpak: sudo flatpak config --system --set extra-languages ar && sudo flatpak update"
+}
+
 # ── 6b. Wi-Fi & Hotspot ───────────────────────────────────────────────────────
 # Everything a hotspot needs beyond the packages: the Wi-Fi country (without it the
 # kernel stays on the restrictive "world" domain 00) and, with Docker, forwarding for
@@ -854,6 +872,7 @@ main() {
     queue_core_packages
     install_packages
     configure_locales
+    configure_flatpak_languages
     configure_networking
     configure_deloway
     print_completion_summary
