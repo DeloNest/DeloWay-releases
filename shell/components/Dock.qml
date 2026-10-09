@@ -10,7 +10,8 @@ import "../services"
 // Dock: Apps button + pinned favourites + running apps + trash, on the bottom, left or right edge.
 //
 // Layout contract: every slot has a FIXED size; press, launch bounce and drag-to-reorder
-// are transforms only, so the row never reflows and can't jitter. Hovering changes nothing.
+// are transforms only, so the row never reflows and can't jitter. Hover shows a faint
+// plate behind the icon and nothing moves.
 // Delegates are keyed by app id (ScriptModel of strings), so they survive window
 // events and state changes (focus, minimize, urgent) animate instead of re-creating.
 //
@@ -475,18 +476,22 @@ PanelWindow {
         onRunningChanged: if (running) launching = false
         Timer { id: launchTimeout; interval: 6000; onTriggered: slot.launching = false }
 
-        // Focused-app well (Windows 11 style tonal plate)
+        // Tonal plate (Windows 11 style): the focused app's well, a fainter one on hover,
+        // a little stronger when the focused app is hovered. No motion, no scaling.
+        readonly property bool hovered: slotMouse.containsMouse && root.dragKey === ""
         Rectangle {
             anchors.centerIn: parent
             width: root.iconSz + 8
             height: root.iconSz + 8
             radius: Math.min(width / 2, Math.round(root.cardRadius * 0.62))
-            color: Theme.dockActiveWell
-            opacity: slot.active ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Easing.OutCubic } }
+            color: slot.active ? (slot.hovered ? Theme.dockActiveWellHover : Theme.dockActiveWell)
+                               : Theme.dockHoverWell
+            opacity: (slot.active || slot.hovered) ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
         }
 
-        // ── Icon (press + launch bounce; nothing on hover) ───────────────
+        // ── Icon (press + launch bounce; hover only lights the plate) ────
         Item {
             id: iconBox
             anchors.centerIn: parent
@@ -611,11 +616,12 @@ PanelWindow {
             anchors.rightMargin: root.isVertical ? 0 : -root.slotGap / 2
             anchors.topMargin: root.isVertical ? -root.slotGap / 2 : 0
             anchors.bottomMargin: root.isVertical ? -root.slotGap / 2 : 0
+            hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             preventStealing: true
             cursorShape: slot.dragging ? Qt.ClosedHandCursor : Qt.PointingHandCursor
 
-            // No hover effect and no floating labels. The name stays available to
+            // Hover = the plate only, no floating labels. The name stays available to
             // assistive tech.
             Accessible.role: Accessible.Button
             Accessible.name: slot.isTrash ? I18n.tr("trash_title")
