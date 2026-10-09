@@ -240,9 +240,7 @@ Item {
                         Text {
                             id: statusText
                             anchors.centerIn: parent
-                            text: (ConfigManager.dockMode === "intellihide"
-                                ? (I18n.isRTL ? "إخفاء ذكي" : "Intellihide")
-                                : ConfigManager.dockAutoHide
+                            text: (ConfigManager.dockAutoHide
                                 ? (I18n.isRTL ? "إخفاء تلقائي" : "Auto-Hide")
                                 : (I18n.isRTL ? "شريط ثابت" : "Fixed")) + " • " + (
                                 ConfigManager.dockPosition === "bottom" ? (I18n.isRTL ? "أسفل" : "Bottom") :
@@ -313,7 +311,6 @@ Item {
                 SettingsChoice {
                     options: [
                         { value: "always",      label: I18n.tr("dock_mode_always") },
-                        { value: "intellihide", label: I18n.tr("dock_mode_intellihide") },
                         { value: "autohide",    label: I18n.tr("dock_mode_autohide") },
                         { value: "disabled",    label: I18n.tr("dock_mode_disabled") }
                     ]

@@ -1,9 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
 import Quickshell.Wayland
-import Quickshell.Hyprland
 import "../theme"
 import "../services"
 
@@ -15,10 +13,9 @@ import "../services"
 // Delegates are keyed by app id (ScriptModel of strings), so they survive window
 // events and state changes (focus, minimize, urgent) animate instead of re-creating.
 //
-// Modes (Settings → Dock): always | autohide | intellihide | disabled
-//   autohide     hidden unless the pointer reaches the edge or the dock
-//   intellihide  visible until a window on this monitor's active workspace overlaps the
-//                dock area (or goes fullscreen); edge-reveal works like autohide
+// Modes (Settings → Dock): always | autohide | disabled
+//   autohide     hidden unless the pointer reaches the edge or the dock, or the App
+//                Drawer is open (it opens above the dock)
 PanelWindow {
     id: root
 
@@ -42,23 +39,22 @@ PanelWindow {
     // ── Visibility state machine ─────────────────────────────────────────
     readonly property string dockMode: ConfigManager.dockMode
     readonly property bool isAutoHide: dockMode === "autohide"
-    readonly property bool isIntelli: dockMode === "intellihide"
-    readonly property bool hidesItself: isAutoHide || isIntelli
+    readonly property bool hidesItself: isAutoHide
 
     property bool revealed: false          // edge/dock hover reveal (auto modes)
     property bool dockHovered: false
-    property bool windowOverlaps: false    // intellihide: something covers the dock area
     readonly property bool isMenuOpen: dockContextMenu.visible
+    readonly property bool drawerOpen: ShellState.appDrawerOpen
     readonly property bool dockVisible: !ShellState.shellHidden
-        && (!hidesItself || revealed || dockHovered || isMenuOpen || (isIntelli && !windowOverlaps))
+        && (!hidesItself || revealed || dockHovered || isMenuOpen || drawerOpen)
 
     visible: !ShellState.shellHidden
     exclusionMode: (hidesItself || ShellState.shellHidden) ? ExclusionMode.Ignore : ExclusionMode.Normal
     exclusiveZone: (hidesItself || ShellState.shellHidden) ? 0 : Theme.dockExclusiveZoneFor(dockH)
 
     // ── Geometry ─────────────────────────────────────────────────────────
-    readonly property int iconSz: ConfigManager.dockIconSize > 0 ? ConfigManager.dockIconSize : 48
-    readonly property int dockH: iconSz + 20
+    readonly property int iconSz: Theme.dockIconSize
+    readonly property int dockH: Theme.dockHeight
     readonly property int slotLen: iconSz + 8            // slot length along the dock axis
     readonly property int slotGap: 6
     // Follows Settings → Appearance → corner radius, capped at a full pill.
@@ -101,98 +97,30 @@ PanelWindow {
         showTimer.stop();
         hideTimer.stop();
         root.revealed = false;
-        root.windowOverlaps = false;
-        if (root.isIntelli) intelliDebounce.restart();
     }
     onIsMenuOpenChanged: {
         if (!isMenuOpen && !root.dockHovered && !triggerHover.hovered) hideTimer.restart();
     }
-
-    // ── Intellihide: window-overlap detection ────────────────────────────
-    readonly property var hyprMonitor: Hyprland.monitorFor(root.screen)
-
-    // Dock card rect in global layout coordinates (ignores the slide transform, so it
-    // is the rect the dock occupies when shown).
-    function dockGlobalRect() {
-        const s = root.screen;
-        const winX = s.x + (root.edge === "right" ? s.width - root.width : 0);
-        const winY = s.y + (root.edge === "bottom" ? s.height - root.height : 0);
-        return {
-            x: winX + slideWrapper.x + dockCard.x,
-            y: winY + slideWrapper.y + dockCard.y,
-            w: dockCard.width,
-            h: dockCard.height
-        };
+    onDrawerOpenChanged: {
+        if (!drawerOpen && !root.dockHovered && !triggerHover.hovered) hideTimer.restart();
     }
 
-    function evaluateOverlap(json) {
-        let clients;
-        try { clients = JSON.parse(json); } catch (e) { return; }
-        const mon = root.hyprMonitor;
-        const wsId = (mon && mon.activeWorkspace) ? mon.activeWorkspace.id : null;
-        if (wsId === null || !Array.isArray(clients)) return;
-        const r = root.dockGlobalRect();
-        let hit = false;
-        for (const c of clients) {
-            if (!c || !c.mapped || c.hidden || !c.workspace || c.workspace.id !== wsId) continue;
-            if (c.fullscreen === 2 || c.fullscreen === 3) { hit = true; break; }
-            const x = c.at[0], y = c.at[1], w = c.size[0], h = c.size[1];
-            if (x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y) { hit = true; break; }
-        }
-        if (hit) {
-            // Short confirmation delay: a window merely passing by doesn't flick the dock.
-            if (!root.windowOverlaps && !overlapConfirm.running) overlapConfirm.start();
-        } else {
-            overlapConfirm.stop();
-            root.windowOverlaps = false;
+    // Pointer over the dock: the gap to the edge (dockHitBox) or the card and its slots
+    // (slideWrapper). The slots' MouseAreas take the hover from the hit box, a sibling
+    // under them, so its handler alone lost the pointer on every icon: the dock hid,
+    // slid out from under the pointer, the hit box saw it again, and it came back.
+    // A HoverHandler on the slots' ancestor keeps seeing the pointer over them.
+    readonly property bool pointerOnDock: dockHoverHandler.hovered || cardHoverHandler.hovered
+    onPointerOnDockChanged: {
+        root.dockHovered = pointerOnDock;
+        if (pointerOnDock) {
+            showTimer.stop();
+            hideTimer.stop();
+            if (root.hidesItself) root.revealed = true;
+        } else if (root.hidesItself && !triggerHover.hovered && !root.isMenuOpen) {
+            hideTimer.restart();
         }
     }
-
-    Timer {
-        id: overlapConfirm
-        interval: 180
-        onTriggered: root.windowOverlaps = true
-    }
-
-    Process {
-        id: clientsProc
-        property bool pending: false
-        command: ["hyprctl", "-j", "clients"]
-        stdout: StdioCollector {
-            onStreamFinished: if (root.isIntelli) root.evaluateOverlap(this.text)
-        }
-        onExited: if (pending) { pending = false; running = true; }
-    }
-    Timer {
-        id: intelliDebounce
-        interval: 80
-        onTriggered: {
-            if (!root.isIntelli) return;
-            if (clientsProc.running) clientsProc.pending = true;
-            else clientsProc.running = true;
-        }
-    }
-    // Safety net for changes Hyprland emits no event for (dragging/resizing floats).
-    Timer {
-        interval: 1000
-        repeat: true
-        running: root.isIntelli && root.visible
-        onTriggered: intelliDebounce.restart()
-    }
-    Connections {
-        target: Hyprland
-        enabled: root.isIntelli
-        function onRawEvent(event) {
-            switch (event.name) {
-            case "openwindow": case "closewindow": case "movewindow": case "movewindowv2":
-            case "workspace": case "workspacev2": case "fullscreen": case "changefloatingmode":
-            case "activewindowv2": case "focusedmon": case "moveworkspace": case "moveworkspacev2":
-                intelliDebounce.restart();
-                break;
-            }
-        }
-    }
-    Component.onCompleted: if (root.isIntelli) intelliDebounce.restart()
 
     // ── Models (keyed by app id → delegates persist across window events) ─
     readonly property var entryById: {
@@ -296,19 +224,7 @@ PanelWindow {
                                : slideWrapper.width
         height: root.isVertical ? slideWrapper.height : parent.height - slideWrapper.y
 
-        HoverHandler {
-            id: dockHoverHandler
-            onHoveredChanged: {
-                root.dockHovered = hovered;
-                if (hovered) {
-                    showTimer.stop();
-                    hideTimer.stop();
-                    if (root.hidesItself) root.revealed = true;
-                } else if (root.hidesItself && !triggerHover.hovered && !root.isMenuOpen) {
-                    hideTimer.restart();
-                }
-            }
-        }
+        HoverHandler { id: dockHoverHandler }   // → root.pointerOnDock
     }
 
     // ── Slide container ──────────────────────────────────────────────────
@@ -320,6 +236,8 @@ PanelWindow {
         readonly property int edgeOffset: Theme.dockEdgeMargin - 6
         x: root.edge === "left" ? edgeOffset : (root.edge === "right" ? parent.width - width - edgeOffset : Math.round((parent.width - width) / 2))
         y: root.isVertical ? Math.round((parent.height - height) / 2) : parent.height - height - edgeOffset
+
+        HoverHandler { id: cardHoverHandler }   // → root.pointerOnDock
 
         // Slide fully past the edge; opacity trails slightly so nothing lingers at the edge.
         readonly property real hiddenOffset: root.dockVisible ? 0 : root.dockH + 30

@@ -17,7 +17,7 @@ works too.
 ## What's in it
 
 - **Top bar**: three capsules, one each for the clock/calendar, the notch (home, notifications, LocalSend sharing) and quick settings (Wi-Fi, Bluetooth, hotspot, audio, brightness, night light, power).
-- **Dock**: pinned and running apps, with an intellihide mode and a right-click menu for app info and uninstall.
+- **Dock**: pinned and running apps (drag to reorder), always shown or auto-hidden, and a right-click menu for app info and uninstall.
 - **Start menu / app drawer and search**: app search with a built-in calculator.
 - **Settings app**: network, Bluetooth, appearance, wallpaper, dock, top bar, windows, notifications, power, apps, time and language.
 - **Lock screen**: uses `ext-session-lock` with PAM.

@@ -56,8 +56,8 @@ Item {
     })
 
     // Dock Settings
-    property string dockMode: "always" // "always" | "autohide" | "intellihide" | "disabled"
-    property bool dockAutoHide: dockMode === "autohide" || dockMode === "intellihide"
+    property string dockMode: "always" // "always" | "autohide" | "disabled"
+    property bool dockAutoHide: dockMode === "autohide"
     property bool dockEnabled: dockMode !== "disabled"
     property string dockPosition: "bottom"
     property int dockIconSize: 38
@@ -321,7 +321,8 @@ Item {
             }
             if (cfg.dock) {
                 if (cfg.dock.mode) {
-                    root.dockMode = cfg.dock.mode;
+                    // "intellihide" (hide when a window covers the Dock) was removed: → always.
+                    root.dockMode = cfg.dock.mode === "intellihide" ? "always" : cfg.dock.mode;
                 } else if (cfg.dock.enabled === false) {
                     root.dockMode = "disabled";
                 } else if (cfg.dock.autoHide !== undefined) {
@@ -474,7 +475,7 @@ Item {
     }
 
     function setDockMode(mode) {
-        if (["always", "autohide", "intellihide", "disabled"].indexOf(mode) < 0) return;
+        if (["always", "autohide", "disabled"].indexOf(mode) < 0) return;
         root.dockMode = mode;
         saveConfig();
     }
@@ -487,7 +488,7 @@ Item {
         if (!val) {
             root.setDockMode("disabled");
         } else {
-            root.setDockMode(root.dockAutoHide ? (root.dockMode === "intellihide" ? "intellihide" : "autohide") : "always");
+            root.setDockMode(root.dockAutoHide ? "autohide" : "always");
         }
     }
 

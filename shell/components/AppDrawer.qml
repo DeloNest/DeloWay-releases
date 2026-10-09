@@ -47,9 +47,10 @@ PanelWindow {
     visible: isOpen || panel.opacity > 0.005
 
     // ── Geometry ─────────────────────────────────────────────────────────
-    // Sits above a bottom Dock the way a Start menu sits above the taskbar.
-    readonly property bool dockAtBottom: ConfigManager.dockMode === "always" && ConfigManager.dockPosition === "bottom"
-    readonly property int bottomGap: dockAtBottom ? Theme.dockReserved : Theme.space16
+    // Sits above a bottom Dock the way a Start menu sits above the taskbar — also when the
+    // Dock hides itself: it stays out while the drawer is open.
+    readonly property bool dockAtBottom: ConfigManager.dockMode !== "disabled" && ConfigManager.dockPosition === "bottom"
+    readonly property int bottomGap: dockAtBottom ? Theme.dockClearance : Theme.space16
     readonly property int panelWidth: Math.min(660, root.width - 32)
     readonly property int panelHeight: Math.min(740, root.height - Theme.topBarReserved - bottomGap - 24)
     readonly property int gridColumns: 6

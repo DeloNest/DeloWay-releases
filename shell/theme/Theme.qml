@@ -299,17 +299,17 @@ Item {
     readonly property int capsuleGap: space20        // minimum clearance between notch and a side capsule
     readonly property int capsuleEdgeMargin: space8  // minimum clearance between a capsule and the screen edge
 
-    readonly property int dockMarginBottom: 10
-    readonly property int dockGap: 8
     readonly property int dockEdgeMargin: 8          // screen edge → dock card
+    readonly property int dockIconSize: (typeof ConfigManager !== "undefined" && ConfigManager.dockIconSize > 0)
+                                        ? ConfigManager.dockIconSize : 48
+    readonly property int dockHeight: dockIconSize + 20                  // the card's thickness
     function dockExclusiveZoneFor(dockHeight) {
         return Math.max(0, dockEdgeMargin + (dockHeight > 0 ? dockHeight : 68)
                            + shellWindowSpacing - windowGapsOut);   // 86 − gaps_out
     }
-    function dockReservedFor(dockHeight) {
-        return Math.round((dockHeight > 0 ? dockHeight : 68) + dockMarginBottom + dockGap); // 86px
-    }
-    readonly property int dockReserved: dockReservedFor(68) // 86px
+    // Screen edge → just above the dock card, with the distance windows keep from it
+    // (the App Drawer opens there).
+    readonly property int dockClearance: dockEdgeMargin + dockHeight + shellWindowSpacing
 
     property var baseRadius: ({
         "xsmall": 4,
