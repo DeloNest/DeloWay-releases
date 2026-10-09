@@ -32,8 +32,8 @@
   "windows": {
     "activeBorder": "#ffffff",
     "inactiveBorder": "#444444",
-    "gapsIn": 6,
-    "gapsOut": 10,
+    "gapsIn": 4,
+    "gapsOut": 8,
     "rounding": 8
   },
   "notifications": {

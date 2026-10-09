@@ -37,17 +37,20 @@ Item {
             // Window Gaps
             SettingsRow {
                 title: I18n.isRTL ? "تباعد النوافذ (Gaps)" : "Window Gaps"
-                subtitle: I18n.isRTL ? "التحكم في المسافة الفاصلة بين النوافذ وحواف الشاشة" : "Control spacing between tiled windows and screen edges"
+                subtitle: I18n.isRTL ? "المسافة بين النوافذ وعلى جانبي الشاشة؛ البعد عن الكبسولات وشريط المهام ثابت" : "Space between windows and at the screen sides; the distance to the capsules and dock stays fixed"
                 icon: "view-fullscreen-symbolic"
                 showDivider: true
 
-                // Inner gap; the outer one follows it
+                // Inner gap; the screen-side one follows it (twice: the space between two
+                // windows is both their inner gaps). The distance to the capsules and the dock
+                // stays the same with every choice.
                 SettingsChoice {
-                    readonly property var outer: ({ 0: 0, 6: 10, 12: 18 })
+                    readonly property var outer: ({ 0: 0, 2: 4, 4: 8, 8: 16 })
                     options: [
-                        { value: 0,  label: I18n.isRTL ? "معدومة" : "None" },
-                        { value: 6,  label: I18n.isRTL ? "متوازنة" : "Balanced" },
-                        { value: 12, label: I18n.isRTL ? "واسعة" : "Wide" }
+                        { value: 0, label: I18n.isRTL ? "معدومة" : "None" },
+                        { value: 2, label: I18n.isRTL ? "متقاربة" : "Compact" },
+                        { value: 4, label: I18n.isRTL ? "متوازنة" : "Balanced" },
+                        { value: 8, label: I18n.isRTL ? "واسعة" : "Wide" }
                     ]
                     current: ConfigManager.windowGapsIn
                     onChosen: v => ConfigManager.setWindowGaps(v, outer[v])

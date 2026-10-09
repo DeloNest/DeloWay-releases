@@ -100,8 +100,8 @@ Item {
     // Active window border, in monochrome steps (Settings → Windows): "contrast" (white on
     // dark / slate on light), "soft", "subtle" or "off" (like the inactive windows).
     property string activeBorderStyle: "contrast"
-    property int windowGapsIn: 5
-    property int windowGapsOut: 10
+    property int windowGapsIn: 4
+    property int windowGapsOut: 8
     property int windowRounding: 10
     property bool followMouse: true
     property bool dimInactive: false
@@ -369,6 +369,9 @@ Item {
                     root.activeBorderStyle = cfg.windows.activeBorderStyle;
                 if (cfg.windows.gapsIn !== undefined) root.windowGapsIn = cfg.windows.gapsIn;
                 if (cfg.windows.gapsOut !== undefined) root.windowGapsOut = cfg.windows.gapsOut;
+                // Earlier presets (Balanced 6/10, Wide 12/18, the old default 5/10) → today's.
+                const oldGaps = { "5/10": [4, 8], "6/10": [4, 8], "12/18": [8, 16] }[root.windowGapsIn + "/" + root.windowGapsOut];
+                if (oldGaps) { root.windowGapsIn = oldGaps[0]; root.windowGapsOut = oldGaps[1]; }
                 if (cfg.windows.rounding !== undefined) root.windowRounding = cfg.windows.rounding;
                 if (cfg.windows.followMouse !== undefined) root.followMouse = cfg.windows.followMouse;
                 if (cfg.windows.dimInactive !== undefined) root.dimInactive = cfg.windows.dimInactive;
@@ -595,7 +598,7 @@ Item {
         setDockIndicator("all");
         setDockShowTrash(true);
         setActiveBorderStyle("contrast");
-        setWindowGaps(6, 10);          // "Balanced", as config/deloway.json (5 matched no option)
+        setWindowGaps(4, 8);           // "Balanced", as config/deloway.json
         setWindowRounding(8);
         setFollowMouse(true);
         setDimInactive(false);
