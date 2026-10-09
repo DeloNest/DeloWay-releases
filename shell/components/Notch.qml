@@ -18,7 +18,7 @@ Item {
 
     // Exposed to TopBar for the unified input mask / exclusive zone.
     readonly property alias maskItem: notchFrame
-    readonly property int reservedZone: root.isExpanded ? Theme.topBarReserved : Theme.topBarExclusiveZone
+    readonly property int reservedZone: Theme.topBarExclusiveZone   // the same expanded: windows never move
 
     // Dynamic width & height with smooth physics animations
     property bool isExpanded: ShellState.smartNotchExpanded

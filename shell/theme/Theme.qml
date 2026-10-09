@@ -277,12 +277,17 @@ Item {
 
     // Exclusion & Strut Geometry Tokens (Reserved Space)
     readonly property int topBarMarginTop: 8
-    // In layer-shell on Hyprland, windows are placed at (exclusiveZone + gaps_out).
-    // With gaps_out = 6, setting exclusiveZone = 54 results in window top at 60px.
-    // Since capsules sit from y = topBarMarginTop (8px) to 8 + 44 = 52px,
-    // this leaves exactly an 8px gap above (from screen top) and an 8px gap below (to window border).
-    readonly property int topBarExclusiveZone: 54 // 54px
-    readonly property int topBarReserved: 54 // 54px
+    readonly property int topBarCapsuleHeight: 44
+    // Fixed distance between a window's frame and the top capsules or the dock, whatever the
+    // window gaps are. Hyprland places windows at exclusiveZone + gaps_out, so both zones
+    // subtract gaps_out: "None" no longer lets windows touch the shell, "Wide" no longer
+    // pushes them away from it.
+    readonly property int shellWindowSpacing: 10
+    readonly property int windowGapsOut: (typeof ConfigManager !== "undefined") ? ConfigManager.windowGapsOut : 0
+    // Capsules end at 8 + 44 = 52px; windows start 10px below them.
+    readonly property int topBarExclusiveZone: Math.max(0, topBarMarginTop + topBarCapsuleHeight
+                                                         + shellWindowSpacing - windowGapsOut)
+    readonly property int topBarReserved: 54 // where content below the bar may start (toasts, drawer)
 
     // Top-bar capsule geometry (single source of truth for Notch + side capsules).
     // Side capsules are positioned INSIDE their own fixed layer surface relative to
@@ -294,8 +299,10 @@ Item {
 
     readonly property int dockMarginBottom: 10
     readonly property int dockGap: 8
+    readonly property int dockEdgeMargin: 8          // screen edge → dock card
     function dockExclusiveZoneFor(dockHeight) {
-        return Math.round((dockHeight > 0 ? dockHeight : 68) + dockGap); // 76px
+        return Math.max(0, dockEdgeMargin + (dockHeight > 0 ? dockHeight : 68)
+                           + shellWindowSpacing - windowGapsOut);   // 86 − gaps_out
     }
     function dockReservedFor(dockHeight) {
         return Math.round((dockHeight > 0 ? dockHeight : 68) + dockMarginBottom + dockGap); // 86px

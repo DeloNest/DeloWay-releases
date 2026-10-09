@@ -283,8 +283,10 @@ PanelWindow {
         id: slideWrapper
         width: root.isVertical ? root.dockH + 12 : dockCard.width + 24
         height: root.isVertical ? dockCard.height + 24 : root.dockH + 12
-        x: root.edge === "left" ? 8 : (root.edge === "right" ? parent.width - width - 8 : Math.round((parent.width - width) / 2))
-        y: root.isVertical ? Math.round((parent.height - height) / 2) : parent.height - height - 8
+        // The card sits 6px inside the wrapper: Theme.dockEdgeMargin from the screen edge.
+        readonly property int edgeOffset: Theme.dockEdgeMargin - 6
+        x: root.edge === "left" ? edgeOffset : (root.edge === "right" ? parent.width - width - edgeOffset : Math.round((parent.width - width) / 2))
+        y: root.isVertical ? Math.round((parent.height - height) / 2) : parent.height - height - edgeOffset
 
         // Slide fully past the edge; opacity trails slightly so nothing lingers at the edge.
         readonly property real hiddenOffset: root.dockVisible ? 0 : root.dockH + 30
