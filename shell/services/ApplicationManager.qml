@@ -166,6 +166,16 @@ Item {
         else pinApp(appId);
     }
 
+    // Moves a pinned app from one place to another (indexes in pinnedAppIds): the Dock's
+    // drag-to-reorder. Pins of apps that are not installed keep their places in the list.
+    function movePinned(from, to) {
+        const shown = root.pinnedAppIds.slice();
+        if (from === to || from < 0 || to < 0 || from >= shown.length || to >= shown.length) return;
+        shown.splice(to, 0, shown.splice(from, 1)[0]);
+        let k = 0;
+        ConfigManager.setPinnedApps(root._configuredPins().map(id => root.isInstalled(id) ? shown[k++] : id));
+    }
+
     // All installed applications: the built-ins, then every desktop entry on disk.
     // Newly installed packages appear through DesktopEntries' own rescan.
     readonly property var allApps: {

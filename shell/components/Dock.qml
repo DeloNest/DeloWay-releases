@@ -9,8 +9,8 @@ import "../services"
 
 // Dock: Apps button + pinned favourites + running apps + trash, on the bottom, left or right edge.
 //
-// Layout contract: every slot has a FIXED size; hover magnification, lift, press and
-// launch-bounce are transforms only, so the row never reflows and can't jitter.
+// Layout contract: every slot has a FIXED size; press, launch bounce and drag-to-reorder
+// are transforms only, so the row never reflows and can't jitter. Hovering changes nothing.
 // Delegates are keyed by app id (ScriptModel of strings), so they survive window
 // events and state changes (focus, minimize, urgent) animate instead of re-creating.
 //
@@ -63,10 +63,10 @@ PanelWindow {
     // Follows Settings → Appearance → corner radius, capped at a full pill.
     readonly property int cardRadius: Math.round(Math.min(dockH / 2, Theme.radiusDock * Theme.radiusScale))
 
-    // Card + edge gap + a little headroom for the magnified icon's lift. (No hover
-    // labels: the dock shows no floating text; the app menu is its own popup surface.)
-    implicitHeight: dockH + 24
-    implicitWidth: root.isVertical ? dockH + 24 : 0
+    // The card and its gap to the edge: nothing grows on hover, so no headroom. (No hover
+    // labels either: the app menu is its own popup surface.)
+    implicitHeight: dockH + 12 + slideWrapper.edgeOffset
+    implicitWidth: root.isVertical ? dockH + 12 + slideWrapper.edgeOffset : 0
     color: "transparent"
 
     WlrLayershell.namespace: "deloway:dock"
@@ -208,27 +208,59 @@ PanelWindow {
         values: ApplicationManager.dockApps.filter(e => !e.pinned).map(e => e.id)
     }
 
-    // ── Magnification (shared by every slot) ────────────────────────────
-    property string hoveredKey: ""
-    property real pointerAlong: 0          // pointer position along the dock axis (dockLayout coords)
-    readonly property real magMax: Theme.performanceTier === 0 ? 0.08 : 0.14
-    property real magAmount: hoveredKey !== "" && !isMenuOpen ? 1 : 0
-    Behavior on magAmount { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+    // ── Reordering pinned apps by dragging (shared by every slot) ─────────
+    // Press a pinned app and move it along the dock: the others step aside, the order is
+    // saved on release (ApplicationManager.movePinned). A drag never counts as a click.
+    property string dragKey: ""            // the pinned app being dragged
+    property int dragFrom: -1
+    property real dragDelta: 0             // pointer travel along the dock axis, in pixels
+    property bool dropping: false          // the new order is being applied: no slide-back
+    readonly property real pinStep: slotLen + slotGap
+    // Screen direction of a higher index: an Arabic horizontal dock runs right to left.
+    readonly property int pinDir: (I18n.isRTL && !isVertical) ? -1 : 1
+    readonly property int dragTo: {
+        if (dragKey === "") return -1;
+        const last = pinnedModel.values.length - 1;
+        return Math.max(0, Math.min(last, dragFrom + Math.round(pinDir * dragDelta / pinStep)));
+    }
 
-    // 0..1 bell curve of the pointer's distance to a slot centre.
-    function magnification(center) {
-        if (root.magAmount <= 0.001) return 0;
-        const d = root.pointerAlong - center;
-        const sigma = root.slotLen * 0.85;
-        return root.magAmount * Math.exp(-(d * d) / (2 * sigma * sigma));
+    // Slots a pinned app steps aside by, to open the gap where the dragged one would land.
+    function pinShift(index) {
+        if (dragKey === "" || index < 0 || index === dragFrom) return 0;
+        if (dragFrom < dragTo && index > dragFrom && index <= dragTo) return -1;
+        if (dragFrom > dragTo && index >= dragTo && index < dragFrom) return 1;
+        return 0;
     }
-    function trackPointer(area, mouse) {
+    function alongOf(area, mouse) {
         const p = area.mapToItem(dockLayout, mouse.x, mouse.y);
-        root.pointerAlong = root.isVertical ? p.y : p.x;
+        return root.isVertical ? p.y : p.x;
     }
-    function setHovered(key, on) {
-        if (on) root.hoveredKey = key;
-        else if (root.hoveredKey === key) root.hoveredKey = "";
+    function cancelDrag() {
+        root.dragKey = "";
+        root.dragFrom = -1;
+        root.dragDelta = 0;
+    }
+    function finishDrag() {
+        if (root.dragKey === "") return;
+        const from = root.dragFrom, to = root.dragTo;
+        if (to < 0 || to === from) { root.cancelDrag(); return; }   // slides back
+        // Hold the slots where they are until the reordered model lays them out there.
+        root.dropping = true;
+        dropTimeout.restart();
+        ApplicationManager.movePinned(from, to);
+    }
+    Connections {
+        target: pinnedModel
+        function onValuesChanged() {
+            if (!root.dropping) return;
+            root.cancelDrag();
+            Qt.callLater(() => root.dropping = false);
+        }
+    }
+    Timer {
+        id: dropTimeout
+        interval: 600
+        onTriggered: if (root.dropping) { root.cancelDrag(); root.dropping = false; }
     }
 
     // ── Reveal strip on the docked edge ──────────────────────────────────
@@ -345,7 +377,9 @@ PanelWindow {
                     model: pinnedModel
                     delegate: DockSlot {
                         required property string modelData
+                        required property int index
                         appKey: modelData
+                        pinIndex: index
                         entry: root.entryById[modelData] || null
                     }
                 }
@@ -408,6 +442,7 @@ PanelWindow {
         property var entry: null
         property bool isTrash: false
         property bool isLauncher: false
+        property int pinIndex: -1              // place among the pinned apps, -1 when not pinned
         readonly property bool isApp: !isTrash && !isLauncher
 
         // The Apps button reuses the "running + focused" indicator while the drawer is open.
@@ -423,12 +458,19 @@ PanelWindow {
         Layout.preferredWidth: implicitWidth
         Layout.preferredHeight: implicitHeight
         Layout.alignment: Qt.AlignCenter
-        z: root.hoveredKey === appKey ? 10 : 1
+        z: dragging ? 10 : 1
 
-        // Centre along the dock axis → bell-curve magnification (pure function of the
-        // pointer, so there's nothing to jitter).
-        readonly property real axisCenter: root.isVertical ? y + height / 2 : x + width / 2
-        readonly property real mag: root.magnification(axisCenter)
+        // Drag-to-reorder: the dragged slot follows the pointer, the others step aside.
+        readonly property bool dragging: root.dragKey !== "" && root.dragKey === appKey
+        property real shift: dragging ? root.dragDelta : root.pinStep * root.pinDir * root.pinShift(pinIndex)
+        Behavior on shift {
+            enabled: !slot.dragging && !root.dropping
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
+        transform: Translate {
+            x: root.isVertical ? 0 : slot.shift
+            y: root.isVertical ? slot.shift : 0
+        }
 
         onRunningChanged: if (running) launching = false
         Timer { id: launchTimeout; interval: 6000; onTriggered: slot.launching = false }
@@ -444,7 +486,7 @@ PanelWindow {
             Behavior on opacity { NumberAnimation { duration: Theme.motionBase; easing.type: Easing.OutCubic } }
         }
 
-        // ── Icon (magnify + lift + press + launch bounce) ────────────────
+        // ── Icon (press + launch bounce; nothing on hover) ───────────────
         Item {
             id: iconBox
             anchors.centerIn: parent
@@ -456,10 +498,10 @@ PanelWindow {
             property real bounce: 0
 
             transformOrigin: root.edge === "left" ? Item.Left : (root.edge === "right" ? Item.Right : Item.Bottom)
-            scale: (1 + root.magMax * slot.mag) * pressScale
+            scale: pressScale
             transform: Translate {
-                x: root.inwardX * (3 * slot.mag + iconBox.bounce)
-                y: root.inwardY * (3 * slot.mag + iconBox.bounce)
+                x: root.inwardX * iconBox.bounce
+                y: root.inwardY * iconBox.bounce
             }
             opacity: slot.allMinimized ? 0.72 : 1
             Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
@@ -569,22 +611,41 @@ PanelWindow {
             anchors.rightMargin: root.isVertical ? 0 : -root.slotGap / 2
             anchors.topMargin: root.isVertical ? -root.slotGap / 2 : 0
             anchors.bottomMargin: root.isVertical ? -root.slotGap / 2 : 0
-            hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-            cursorShape: Qt.PointingHandCursor
+            preventStealing: true
+            cursorShape: slot.dragging ? Qt.ClosedHandCursor : Qt.PointingHandCursor
 
-            // Hover = magnification only (no floating labels). The name stays available
-            // to assistive tech.
+            // No hover effect and no floating labels. The name stays available to
+            // assistive tech.
             Accessible.role: Accessible.Button
             Accessible.name: slot.isTrash ? I18n.tr("trash_title")
                            : slot.isLauncher ? I18n.tr("app_menu_title")
                            : (slot.entry ? (slot.entry.name || slot.entry.id) : "")
 
-            onContainsMouseChanged: root.setHovered(slot.appKey, containsMouse)
-            onPositionChanged: (mouse) => root.trackPointer(slotMouse, mouse)
-            onEntered: root.trackPointer(slotMouse, { x: mouseX, y: mouseY })
+            // Drag-to-reorder (pinned apps, left button): starts after 8px along the dock.
+            property real pressAlong: 0
+            property bool dragged: false
+            onPressed: (mouse) => {
+                slotMouse.dragged = false;
+                slotMouse.pressAlong = root.alongOf(slotMouse, mouse);
+            }
+            onPositionChanged: (mouse) => {
+                if (slot.pinIndex < 0 || !(slotMouse.pressedButtons & Qt.LeftButton) || root.dropping) return;
+                const d = root.alongOf(slotMouse, mouse) - slotMouse.pressAlong;
+                if (!slot.dragging) {
+                    if (Math.abs(d) < 8 || root.dragKey !== "") return;
+                    slotMouse.dragged = true;
+                    dockContextMenu.hide();
+                    root.dragFrom = slot.pinIndex;
+                    root.dragKey = slot.appKey;
+                }
+                root.dragDelta = d;
+            }
+            onReleased: if (slot.dragging) root.finishDrag()
+            onCanceled: if (slot.dragging) root.cancelDrag()
 
             onClicked: (mouse) => {
+                if (slotMouse.dragged) return;
                 if (slot.isTrash) {
                     if (mouse.button === Qt.LeftButton) ApplicationManager.run(["xdg-open", "trash://"]);
                     return;
@@ -617,6 +678,6 @@ PanelWindow {
             }
         }
 
-        Component.onDestruction: if (root.hoveredKey === slot.appKey) root.hoveredKey = ""
+        Component.onDestruction: if (slot.dragging) root.cancelDrag()
     }
 }
