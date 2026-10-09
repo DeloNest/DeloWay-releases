@@ -36,7 +36,10 @@ PanelWindow {
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
 
-    WlrLayershell.namespace: "deloway:launcher"
+    // Its own namespace: hyprland.conf turns the compositor's layer slide off for it. That
+    // slide moved this full-screen surface in from the nearest edge — the top — over the
+    // panel's own rise from the dock.
+    WlrLayershell.namespace: "deloway:appdrawer"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: ShellState.appDrawerOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
@@ -306,11 +309,11 @@ PanelWindow {
         x: Math.round((root.width - width) / 2)
         y: root.height - height - root.bottomGap
 
-        // Snappy rise + fade (Start-menu style); faster on close.
+        // Rises from the dock and fades in (Start-menu style); sinks back, faster, on close.
         opacity: root.isOpen ? 1 : 0
         transform: Translate {
-            y: root.isOpen ? 0 : 18
-            Behavior on y { NumberAnimation { duration: root.isOpen ? 180 : 110; easing.type: root.isOpen ? Easing.OutCubic : Easing.InCubic } }
+            y: root.isOpen ? 0 : 40
+            Behavior on y { NumberAnimation { duration: root.isOpen ? 220 : 130; easing.type: root.isOpen ? Easing.OutCubic : Easing.InCubic } }
         }
         Behavior on opacity { NumberAnimation { duration: root.isOpen ? 140 : 100; easing.type: root.isOpen ? Easing.OutCubic : Easing.InCubic } }
 
