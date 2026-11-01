@@ -58,7 +58,7 @@ PanelWindow {
     readonly property int slotLen: iconSz + 8            // slot length along the dock axis
     readonly property int slotGap: 6
     // Follows Settings → Appearance → corner radius, capped at a full pill.
-    readonly property int cardRadius: Math.round(Math.min(dockH / 2, Theme.radiusDock * Theme.radiusScale))
+    readonly property int cardRadius: Math.round(Math.min(dockH / 2, Theme.radiusDock))
 
     // The card and its gap to the edge: nothing grows on hover, so no headroom. (No hover
     // labels either: the app menu is its own popup surface.)
@@ -197,8 +197,8 @@ PanelWindow {
         id: triggerStrip
         x: root.edge === "right" ? parent.width - width : 0
         y: root.edge === "bottom" ? parent.height - height : 0
-        width: !root.hidesItself ? 0 : (root.isVertical ? 2 : parent.width)
-        height: !root.hidesItself ? 0 : (root.isVertical ? parent.height : 2)
+        width: !root.hidesItself ? 0 : (root.isVertical ? (root.dockVisible ? 12 : 5) : parent.width)
+        height: !root.hidesItself ? 0 : (root.isVertical ? parent.height : (root.dockVisible ? 12 : 5))
 
         HoverHandler {
             id: triggerHover
@@ -324,8 +324,8 @@ PanelWindow {
 
                 // Divider before the trash
                 Rectangle {
-                    Layout.alignment: Qt.AlignCenter
                     visible: ConfigManager.dockShowTrash
+                    Layout.alignment: Qt.AlignCenter
                     Layout.preferredWidth: root.isVertical ? Math.round(root.iconSz * 0.66) : 1
                     Layout.preferredHeight: root.isVertical ? 1 : Math.round(root.iconSz * 0.66)
                     Layout.leftMargin: root.isVertical ? 0 : 2
@@ -337,8 +337,8 @@ PanelWindow {
 
                 // 3 · Trash
                 DockSlot {
-                    isTrash: true
                     visible: ConfigManager.dockShowTrash
+                    isTrash: true
                     appKey: "__trash__"
                 }
             }

@@ -37,7 +37,7 @@ Everything else is installed by `install.sh`.
 ## Install
 
 ```bash
-git clone https://github.com/IWLED/Deloway.git ~/Projects/Deloway
+git clone https://github.com/DeloNest/DeloWay-releases.git ~/Projects/Deloway
 cd ~/Projects/Deloway
 ./install.sh
 ```

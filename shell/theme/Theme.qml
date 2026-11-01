@@ -217,7 +217,7 @@ Item {
     readonly property int notchRadiusPanel: scaledRadius(16)
     readonly property int notchRadiusCard: scaledRadius(12)
     readonly property int notchRadiusPill: scaledRadius(8)
-    readonly property int radiusDock: 24
+    readonly property int radiusDock: scaledRadius(18)
 
     // Dock Tokens (Unified with OLED Notch/Capsule aesthetic)
     // Flat and opaque: no blur, shadow or glow around the Dock (clean edges on any wallpaper).
@@ -358,7 +358,7 @@ Item {
 
     property var baseTypography: ({
         "fontFamily": root.fontFamily,
-        "fontFamilies": ["Cairo", "Readex Pro", "Rubik", "Noto Kufi Arabic", "Inter", "sans-serif"],
+        "fontFamilies": ["Cairo", "SF Pro", "SF Arabic", "Readex Pro", "Rubik", "Noto Kufi Arabic", "Inter", "sans-serif"],
         "terminalFont": "JetBrainsMono Nerd Font",
 
         // 4-Level Semantic Type Scale
@@ -382,7 +382,7 @@ Item {
 
     readonly property var typography: ({
         "fontFamily": root.fontFamily,
-        "fontFamilies": baseTypography.fontFamilies || ["Cairo", "Readex Pro", "Rubik", "Noto Kufi Arabic", "Inter", "sans-serif"],
+        "fontFamilies": baseTypography.fontFamilies || ["Cairo", "SF Pro", "SF Arabic", "Readex Pro", "Rubik", "Noto Kufi Arabic", "Inter", "sans-serif"],
         "terminalFont": baseTypography.terminalFont || "JetBrainsMono Nerd Font",
 
         // 4-Level Semantic Type Scale (Scaled dynamically)

@@ -970,6 +970,12 @@ def write_fontconfig(font_family: str = "Cairo", dry_run: bool = False):
       fontconfig's default sans-serif fallback (which would be the UI typeface).
     """
     ui = font_family.replace("&", "&amp;").replace("<", "&lt;")
+    extra_prefer = ""
+    if font_family == "SF Pro":
+        extra_prefer = "<family>SF Arabic</family>"
+    elif font_family == "SF Arabic":
+        extra_prefer = "<family>SF Pro</family>"
+
     conf = f"""<?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
 <!-- Managed by DeloWay (deloway-theme-apply.py). -->
@@ -985,9 +991,19 @@ def write_fontconfig(font_family: str = "Cairo", dry_run: bool = False):
   </match>
 
   <!-- The UI typeface for every generic UI family, in every language -->
-  <alias binding="strong"><family>sans-serif</family><prefer><family>{ui}</family></prefer></alias>
-  <alias binding="strong"><family>system-ui</family><prefer><family>{ui}</family></prefer></alias>
-  <alias binding="strong"><family>serif</family><prefer><family>{ui}</family></prefer></alias>
+  <alias binding="strong"><family>sans-serif</family><prefer><family>{ui}</family>{extra_prefer}</prefer></alias>
+  <alias binding="strong"><family>system-ui</family><prefer><family>{ui}</family>{extra_prefer}</prefer></alias>
+  <alias binding="strong"><family>serif</family><prefer><family>{ui}</family>{extra_prefer}</prefer></alias>
+
+  <!-- Pair Apple's SF Pro and SF Arabic bidirectionally for seamless multilingual typography -->
+  <match target="pattern">
+    <test name="family"><string>SF Pro</string></test>
+    <edit name="family" mode="append" binding="strong"><string>SF Arabic</string></edit>
+  </match>
+  <match target="pattern">
+    <test name="family"><string>SF Arabic</string></test>
+    <edit name="family" mode="append" binding="strong"><string>SF Pro</string></edit>
+  </match>
 
   <!-- Terminals keep their monospace font. Characters it lacks (Arabic) come from a
        monospace face placed right after it, ahead of the sans-serif fallback. -->

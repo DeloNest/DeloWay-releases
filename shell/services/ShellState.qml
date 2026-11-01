@@ -213,7 +213,7 @@ QtObject {
     readonly property var settingsGroups: [
         { id: "connectivity",    pages: BluetoothService.available ? ["network", "bluetooth"] : ["network"] },
         { id: "personalization", pages: ["appearance", "wallpaper", "topbar", "dock"] },
-        { id: "system",          pages: ["windows", "shortcuts", "notifications", "power", "apps", "time_language", "about"] }
+        { id: "system",          pages: ["windows", "shortcuts", "notifications", "power", "apps", "time_language", "updates", "about"] }
     ]
     readonly property var settingsPages: ({
         "network":       { icon: NetworkService.wifiAvailable ? "network-wireless-symbolic"
@@ -229,6 +229,7 @@ QtObject {
         "power":         { icon: "system-shutdown-symbolic",                  file: "PowerTab.qml" },
         "apps":          { icon: "applications-system-symbolic",              file: "AppsTab.qml" },
         "time_language": { icon: "preferences-desktop-locale-symbolic",       file: "TimeLanguageTab.qml" },
+        "updates":       { icon: "software-update-available-symbolic",        file: "UpdatesTab.qml" },
         "about":         { icon: "help-about-symbolic",                       file: "AboutTab.qml" }
     })
     // Old / external ids (launcher shortcuts, desktop menu, IPC, saved state) → current page.

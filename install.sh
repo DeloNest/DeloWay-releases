@@ -450,6 +450,18 @@ queue_core_packages() {
     if ! fc-list -q "Cairo" 2>/dev/null; then
         AUR_PKGS_TO_INSTALL+=("ttf-cairo")
     fi
+
+    # Apple San Francisco fonts (SF Pro & SF Arabic from bradleyhodges/SFWindows)
+    if ! fc-list -q "SF Pro" 2>/dev/null; then
+        log_info "Downloading and installing SF Pro & SF Arabic fonts..."
+        local sf_dir="$HOME/.local/share/fonts/SF-Pro"
+        mkdir -p "$sf_dir"
+        curl -L -s -o "$sf_dir/SF-Pro.ttf" "https://raw.githubusercontent.com/bradleyhodges/SFWindows/main/SF%20Pro/SF-Pro.ttf"
+        curl -L -s -o "$sf_dir/SF-Pro-Italic.ttf" "https://raw.githubusercontent.com/bradleyhodges/SFWindows/main/SF%20Pro/SF-Pro-Italic.ttf"
+        curl -L -s -o "$sf_dir/SF-Arabic.ttf" "https://raw.githubusercontent.com/bradleyhodges/SFWindows/main/SF%20Multilingual%20Extensions/SF%20Arabic/SF-Arabic.ttf"
+        curl -L -s -o "$sf_dir/SF-Arabic-Rounded.ttf" "https://raw.githubusercontent.com/bradleyhodges/SFWindows/main/SF%20Multilingual%20Extensions/SF%20Arabic/SF-Arabic-Rounded.ttf"
+        fc-cache -f "$sf_dir"
+    fi
     # (Notch → Share needs no LocalSend app: scripts/deloway-localsend.py speaks the protocol.)
 
     # Default viewers by file type (config/default-apps.tsv): images, videos, PDFs. The

@@ -147,6 +147,7 @@ Item {
     // Eastern) that the whole shell silently followed in Arabic.
     property string numberFormat: "western"
     property var keyboardLayouts: ["us", "ara"]
+    property string updateChannel: "dev"
 
     // Setup Wizard State
     property bool setupCompleted: true
@@ -410,6 +411,7 @@ Item {
                 if (cfg.system.numberFormat === "eastern" || cfg.system.numberFormat === "western")
                     root.numberFormat = cfg.system.numberFormat;
                 if (cfg.system.keyboardLayouts) root.keyboardLayouts = cfg.system.keyboardLayouts;
+                if (cfg.system.updateChannel) root.updateChannel = cfg.system.updateChannel;
             }
             if (cfg.setupCompleted !== undefined) {
                 root.setupCompleted = cfg.setupCompleted;
@@ -999,6 +1001,16 @@ Item {
         root.run(["hyprctl", "keyword", "input:kb_layout", layoutStr]);
     }
 
+    function setUpdateChannel(channel) {
+        if (channel !== "dev" && channel !== "stable") return;
+        if (root.updateChannel === channel) return;
+        root.updateChannel = channel;
+        saveConfig();
+        if (typeof UpdateService !== "undefined") {
+            UpdateService.checkForUpdates();
+        }
+    }
+
     // Coalesce bursts (e.g. resetToDefaults → 20 setters) into one full write.
     Timer {
         id: saveDebounce
@@ -1102,7 +1114,8 @@ Item {
             system: {
                 uiLanguage: root.uiLanguage,
                 numberFormat: root.numberFormat,
-                keyboardLayouts: root.keyboardLayouts
+                keyboardLayouts: root.keyboardLayouts,
+                updateChannel: root.updateChannel
             },
             setupCompleted: root.setupCompleted
         };

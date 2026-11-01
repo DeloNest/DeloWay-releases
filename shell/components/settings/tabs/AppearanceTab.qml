@@ -110,6 +110,8 @@ Item {
                         // without being installed: picking one silently fell back).
                         model: [
                             { family: "Cairo",            label: "Cairo" },
+                            { family: "SF Pro",           label: "SF Pro" },
+                            { family: "SF Arabic",        label: "SF Arabic" },
                             { family: "Readex Pro",       label: "Readex Pro" },
                             { family: "Rubik",            label: "Rubik" },
                             { family: "Noto Kufi Arabic", label: "Noto Kufi" },
