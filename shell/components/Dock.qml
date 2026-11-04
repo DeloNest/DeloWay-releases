@@ -252,7 +252,7 @@ PanelWindow {
             Behavior on y { NumberAnimation { duration: root.dockVisible ? 300 : 240; easing.type: root.dockVisible ? Easing.OutQuint : Easing.InOutCubic } }
         }
 
-        // ── Card: flat, opaque, 1px border (no shadow, glow or blur) ──────
+        // ── Card: glass fill, 1px border, compositor blur ────────────────
         Rectangle {
             id: dockCard
             width: root.isVertical ? root.dockH : dockLayout.implicitWidth + 20
