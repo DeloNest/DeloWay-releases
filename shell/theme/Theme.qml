@@ -49,6 +49,8 @@ Item {
     // -------------------------------------------------------------------------
     readonly property int motionFast: 120
     readonly property int motionBase: (performanceTier === 0) ? 140 : 220
+    readonly property int motionThemeFade: (performanceTier === 0) ? 0 : 200
+    readonly property int easingTheme: Easing.InOutQuad
     readonly property int motionWallpaperFade: (performanceTier === 0) ? 0 : 400
     readonly property int easingWallpaper: Easing.OutCubic
     readonly property int easingEnter: Easing.OutCubic

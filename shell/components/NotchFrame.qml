@@ -47,7 +47,7 @@ Item {
         z: 1
 
         ShapePath {
-            fillColor: Theme.capsuleFill
+            fillColor: notchBody.color
             strokeColor: "transparent"
             startX: 0
             startY: 0
@@ -73,7 +73,7 @@ Item {
         z: 1
 
         ShapePath {
-            fillColor: Theme.capsuleFill
+            fillColor: notchBody.color
             strokeColor: "transparent"
             startX: 0
             startY: 0
@@ -109,7 +109,7 @@ Item {
         readonly property real br: root.bottomRadius
 
         ShapePath {
-            strokeColor: Theme.capsuleBorder
+            strokeColor: notchBody.border.color
             strokeWidth: 1
             fillColor: "transparent"
             joinStyle: ShapePath.RoundJoin
@@ -152,6 +152,8 @@ Item {
         height: root.currentHeight
         color: Theme.capsuleFill
         border.color: Theme.capsuleBorder
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
         // Full border only for the floating pill; attached state uses attachedOutline.
         border.width: root.isExpanded ? 0 : 1
         clip: root.clipContent

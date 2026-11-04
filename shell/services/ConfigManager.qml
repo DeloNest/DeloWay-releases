@@ -224,6 +224,17 @@ Item {
         }
     }
 
+    Timer {
+        id: deferredSyncTimer
+        interval: Theme.motionThemeFade
+        repeat: false
+        onTriggered: {
+            root.syncThemeToCompositor();
+            root.syncHyprlandWindowSettings();
+            root.syncHyprlandVisualEffects();
+        }
+    }
+
     Component.onCompleted: {
         root.syncThemeToCompositor();
         root.syncHyprlandWindowSettings();
@@ -497,12 +508,26 @@ Item {
             console.warn("[ConfigManager] Unknown theme:", name);
             return;
         }
+        const prevTheme = root.themeName;
+        const wasDeferred = deferredSyncTimer.running;
         root.themeName = target;
         root.themeMode = (target === "light" ? "light" : "dark");
         saveConfig();
-        syncThemeToCompositor();
-        syncHyprlandWindowSettings();
-        syncHyprlandVisualEffects();
+
+        deferredSyncTimer.stop();
+
+        // When leaving Glass (to Dark or Light), defer compositor sync by Theme.motionThemeFade
+        // so surface colors reach 100% opacity before Hyprland drops the blur layer rules.
+        // Switching INTO Glass or between dark/light stays immediate.
+        // Rapid successive calls restart the timer, so the last call wins.
+        if ((prevTheme === "glass" || wasDeferred) && target !== "glass" && Theme.motionThemeFade > 0) {
+            deferredSyncTimer.interval = Theme.motionThemeFade;
+            deferredSyncTimer.restart();
+        } else {
+            syncThemeToCompositor();
+            syncHyprlandWindowSettings();
+            syncHyprlandVisualEffects();
+        }
 
         if (root.applySystemTheme) {
             updateGtkThemes();

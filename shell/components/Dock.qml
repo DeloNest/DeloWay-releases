@@ -264,6 +264,8 @@ PanelWindow {
             radius: root.cardRadius
             border.color: Theme.dockBorder
             border.width: 1
+            Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+            Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
             Behavior on width { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
             Behavior on height { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
 

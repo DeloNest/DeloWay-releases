@@ -559,7 +559,7 @@ Item {
             z: 1
 
             ShapePath {
-                fillColor: Theme.capsuleFill
+                fillColor: capsuleBody.color
                 strokeColor: "transparent"
                 startX: 0
                 startY: 0
@@ -586,7 +586,7 @@ Item {
             z: 1
 
             ShapePath {
-                fillColor: Theme.capsuleFill
+                fillColor: capsuleBody.color
                 strokeColor: "transparent"
                 startX: 0
                 startY: 0
@@ -621,7 +621,7 @@ Item {
             readonly property real br: capsuleBody.bottomLeftRadius
 
             ShapePath {
-                strokeColor: Theme.capsuleBorder
+                strokeColor: capsuleBody.border.color
                 strokeWidth: 1
                 fillColor: "transparent"
                 joinStyle: ShapePath.RoundJoin
@@ -662,6 +662,8 @@ Item {
             height: root.currentHeight
             color: Theme.capsuleFill
             border.color: Theme.capsuleBorder
+            Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+            Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
             // Full border only while (mostly) floating; attached state uses attachedOutline.
             border.width: root.expandProgress < 0.5 ? 1 : 0
             clip: true
