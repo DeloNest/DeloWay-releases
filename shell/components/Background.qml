@@ -28,32 +28,132 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     // ----------------------------------------------------
-    // 1. MAIN BACKDROP WALLPAPER
+    // 1. MAIN BACKDROP WALLPAPER (Smooth Crossfade §5.8)
     // ----------------------------------------------------
-    Image {
-        id: bgImage
+    Item {
+        id: wallpaperCrossfade
         anchors.fill: parent
+
         readonly property string bundled: "file://" + ConfigManager.projectDir + "/assets/wallpapers/01-noir-gradient.jpeg"
         readonly property string configured: (ConfigManager.wallpaper && ConfigManager.wallpaper.length > 0)
                 ? ConfigManager.fileUrl(ConfigManager.wallpaper)
                 : ""
-        // A configured path that no longer exists falls back to the bundled wallpaper
-        // instead of leaving a black desktop.
         property bool configuredFailed: false
         onConfiguredChanged: configuredFailed = false
-        onStatusChanged: if (status === Image.Error && source.toString() === configured) configuredFailed = true
-        source: (configured.length > 0 && !configuredFailed) ? configured : bundled
-        fillMode: Image.PreserveAspectCrop
-        // Decode at the output's pixel size (a 4K JPEG on a 1440p screen was ~33 MB decoded).
-        sourceSize.width: Math.round(width * Screen.devicePixelRatio)
-        sourceSize.height: Math.round(height * Screen.devicePixelRatio)
-        cache: false
-        asynchronous: true
+
+        readonly property string targetSource: (configured.length > 0 && !configuredFailed) ? configured : bundled
+
+        property bool activeIsA: true
+        property string currentSource: ""
+        property string pendingSource: ""
+
+        function handleSourceChange() {
+            var target = targetSource;
+            if (!target || target.length === 0) return;
+            if (target === currentSource && (activeIsA ? layerA.status === Image.Ready : layerB.status === Image.Ready)) {
+                return;
+            }
+
+            if (currentSource === "") {
+                currentSource = target;
+                layerA.source = target;
+                layerA.opacity = 1.0;
+                layerA.z = 0;
+                layerB.opacity = 0.0;
+                layerB.z = 1;
+                layerB.source = "";
+                return;
+            }
+
+            if (fadeAnim.running) {
+                return; // Will be picked up in onFinished
+            }
+
+            pendingSource = target;
+            var incoming = activeIsA ? layerB : layerA;
+            incoming.z = 1;
+            incoming.opacity = 0.0;
+            incoming.source = target;
+            if (incoming.status === Image.Ready && !fadeAnim.running) {
+                fadeAnim.start();
+            }
+        }
+
+        onTargetSourceChanged: handleSourceChange()
+        Component.onCompleted: handleSourceChange()
+
+        NumberAnimation {
+            id: fadeAnim
+            target: wallpaperCrossfade.activeIsA ? layerB : layerA
+            property: "opacity"
+            from: 0.0
+            to: 1.0
+            duration: Theme.motionWallpaperFade
+            easing.type: Theme.easingWallpaper
+            onFinished: {
+                wallpaperCrossfade.activeIsA = !wallpaperCrossfade.activeIsA;
+                wallpaperCrossfade.currentSource = wallpaperCrossfade.pendingSource;
+                if (wallpaperCrossfade.activeIsA) {
+                    layerA.z = 0;
+                    layerB.source = "";
+                    layerB.opacity = 0.0;
+                    layerB.z = 1;
+                } else {
+                    layerB.z = 0;
+                    layerA.source = "";
+                    layerA.opacity = 0.0;
+                    layerA.z = 1;
+                }
+                if (wallpaperCrossfade.targetSource !== wallpaperCrossfade.currentSource) {
+                    wallpaperCrossfade.handleSourceChange();
+                }
+            }
+        }
+
+        Image {
+            id: layerA
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectCrop
+            sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+            sourceSize.height: Math.round(height * Screen.devicePixelRatio)
+            cache: false
+            asynchronous: true
+            opacity: 1.0
+            z: 0
+            onStatusChanged: {
+                if (status === Image.Ready && !wallpaperCrossfade.activeIsA && wallpaperCrossfade.pendingSource === source.toString()) {
+                    if (!fadeAnim.running) fadeAnim.start();
+                } else if (status === Image.Error && source.toString() === wallpaperCrossfade.configured) {
+                    wallpaperCrossfade.configuredFailed = true;
+                }
+            }
+        }
+
+        Image {
+            id: layerB
+            anchors.fill: parent
+            fillMode: Image.PreserveAspectCrop
+            sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+            sourceSize.height: Math.round(height * Screen.devicePixelRatio)
+            cache: false
+            asynchronous: true
+            opacity: 0.0
+            z: 1
+            onStatusChanged: {
+                if (status === Image.Ready && wallpaperCrossfade.activeIsA && wallpaperCrossfade.pendingSource === source.toString()) {
+                    if (!fadeAnim.running) fadeAnim.start();
+                } else if (status === Image.Error && source.toString() === wallpaperCrossfade.configured) {
+                    wallpaperCrossfade.configuredFailed = true;
+                }
+            }
+        }
 
         // Dark Mica Calm Overlay
         Rectangle {
             anchors.fill: parent
             color: Theme.wallpaperTint
+            z: 10
+            Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
         }
     }
 

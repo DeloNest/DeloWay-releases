@@ -424,21 +424,25 @@ Item {
                         width: 240
                         height: 150
                         radius: Theme.notchRadiusCard
-                        color: Theme.notchSurface
-                        scale: themeDelegate.isSelected ? 1.0 : 0.88
-                        opacity: themeDelegate.isSelected ? 1.0 : 0.65
+                        color: "transparent"
+                        scale: themeDelegate.isSelected ? 1.0 : (themeCardMa.containsMouse ? 0.94 : 0.92)
+                        opacity: themeDelegate.isSelected ? 1.0 : (themeCardMa.containsMouse ? 0.88 : 0.70)
                         border.width: themeDelegate.isSelected ? 2 : 1
-                        border.color: themeDelegate.isSelected ? Theme.notchText : Theme.notchBorder
-                        clip: true
+                        border.color: themeDelegate.isSelected
+                                      ? Theme.cardBorderSelected
+                                      : (themeCardMa.containsMouse ? Theme.cardBorderHover : Theme.cardBorderUnselected)
 
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
                         Behavior on opacity { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
                         Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
-                        // ── Theme Preview Container ──
-                        Item {
+                        // ── Inset Theme Preview Container ──
+                        Rectangle {
+                            id: innerThemePreview
                             anchors.fill: parent
-                            anchors.margins: themeDelegate.isSelected ? 2 : 1
+                            anchors.margins: 3
+                            radius: Math.max(0, Theme.notchRadiusCard - 3)
+                            color: Theme.notchSurface
                             clip: true
 
                             // 1. Theme Canvas Base
@@ -551,23 +555,34 @@ Item {
                             }
                         }
 
-                        // Top-corner dot for currently applied theme
+                        // Top-corner checkmark badge for currently applied theme
                         Rectangle {
                             visible: themeDelegate.isApplied
-                            width: 8
-                            height: 8
-                            radius: 4
+                            width: 22
+                            height: 22
+                            radius: 11
                             color: Theme.inverseSurface
-                            border.width: 1
+                            border.width: 1.5
                             border.color: Theme.notchBackground
                             anchors.top: parent.top
                             anchors.topMargin: 8
                             x: I18n.isRTL ? 8 : (parent.width - width - 8)
                             z: 10
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: Font.Bold
+                                color: Theme.inverseText
+                            }
                         }
 
                         MouseArea {
+                            id: themeCardMa
                             anchors.fill: parent
+                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 themesView.currentIndex = index;
@@ -656,53 +671,75 @@ Item {
                         width: 240
                         height: 150
                         radius: Theme.notchRadiusCard
-                        color: Theme.notchSurface
-                        scale: cardDelegate.isSelected ? 1.0 : 0.88
-                        opacity: cardDelegate.isSelected ? 1.0 : 0.65
+                        color: "transparent"
+                        scale: cardDelegate.isSelected ? 1.0 : (cardMa.containsMouse ? 0.94 : 0.92)
+                        opacity: cardDelegate.isSelected ? 1.0 : (cardMa.containsMouse ? 0.88 : 0.70)
                         border.width: cardDelegate.isSelected ? 2 : 1
-                        border.color: cardDelegate.isSelected ? Theme.notchText : Theme.notchBorder
-                        clip: true
+                        border.color: cardDelegate.isSelected
+                                      ? Theme.cardBorderSelected
+                                      : (cardMa.containsMouse ? Theme.cardBorderHover : Theme.cardBorderUnselected)
 
                         Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
                         Behavior on opacity { NumberAnimation { duration: Theme.motionFast; easing.type: Easing.OutCubic } }
                         Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
-                        Image {
-                            id: thumbImg
-                            anchors.fill: parent
-                            anchors.margins: cardDelegate.isSelected ? 2 : 1
-                            source: (cardDelegate.itemThumb && (cardDelegate.itemThumbExists || root.thumbnailGenVersion > 0))
-                                    ? ConfigManager.fileUrl(cardDelegate.itemThumb) : ""
-                            asynchronous: true
-                            cache: true
-                            fillMode: Image.PreserveAspectCrop
-                            smooth: true
-                            visible: status === Image.Ready
-                        }
-
-                        // Subtle placeholder while thumbnail is being generated or decoded
+                        // ── Inset Wallpaper Preview Container ──
                         Rectangle {
+                            id: innerWpPreview
                             anchors.fill: parent
-                            color: Theme.notchSurfaceElevated
-                            visible: thumbImg.status !== Image.Ready
+                            anchors.margins: 3
+                            radius: Math.max(0, Theme.notchRadiusCard - 3)
+                            color: Theme.notchSurface
+                            clip: true
+
+                            Image {
+                                id: thumbImg
+                                anchors.fill: parent
+                                source: (cardDelegate.itemThumb && (cardDelegate.itemThumbExists || root.thumbnailGenVersion > 0))
+                                        ? ConfigManager.fileUrl(cardDelegate.itemThumb) : ""
+                                asynchronous: true
+                                cache: true
+                                fillMode: Image.PreserveAspectCrop
+                                smooth: true
+                                visible: status === Image.Ready
+                            }
+
+                            // Subtle placeholder while thumbnail is being generated or decoded
+                            Rectangle {
+                                anchors.fill: parent
+                                color: Theme.notchSurfaceElevated
+                                visible: thumbImg.status !== Image.Ready
+                            }
                         }
 
-                        // Top-corner dot for currently applied wallpaper
+                        // Top-corner checkmark badge for currently applied wallpaper
                         Rectangle {
                             visible: cardDelegate.isApplied
-                            width: 8
-                            height: 8
-                            radius: 4
+                            width: 22
+                            height: 22
+                            radius: 11
                             color: Theme.inverseSurface
-                            border.width: 1
+                            border.width: 1.5
                             border.color: Theme.notchBackground
                             anchors.top: parent.top
                             anchors.topMargin: 8
                             x: I18n.isRTL ? 8 : (parent.width - width - 8)
+                            z: 10
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✓"
+                                font.family: Theme.typography.fontFamily
+                                font.pixelSize: Theme.fontSize(11)
+                                font.weight: Font.Bold
+                                color: Theme.inverseText
+                            }
                         }
 
                         MouseArea {
+                            id: cardMa
                             anchors.fill: parent
+                            hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 carouselView.currentIndex = index;

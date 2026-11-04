@@ -49,8 +49,15 @@ Item {
     // -------------------------------------------------------------------------
     readonly property int motionFast: 120
     readonly property int motionBase: (performanceTier === 0) ? 140 : 220
+    readonly property int motionWallpaperFade: (performanceTier === 0) ? 0 : 400
+    readonly property int easingWallpaper: Easing.OutCubic
     readonly property int easingEnter: Easing.OutCubic
     readonly property int easingExit: Easing.InCubic
+
+    // Appearance Tab Card Tokens (refined Apple-like restraint)
+    readonly property color cardBorderSelected: isDark ? Qt.rgba(1, 1, 1, 0.38) : Qt.rgba(0, 0, 0, 0.32)
+    readonly property color cardBorderUnselected: isDark ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(0, 0, 0, 0.08)
+    readonly property color cardBorderHover: isDark ? Qt.rgba(1, 1, 1, 0.20) : Qt.rgba(0, 0, 0, 0.16)
 
     // -------------------------------------------------------------------------
     // Radius Tokens (NewPlan.md §4.2)
