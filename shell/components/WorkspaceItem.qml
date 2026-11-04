@@ -187,7 +187,7 @@ Item {
             width: Math.max(Theme.wsBadgeSize, badgeLabel.implicitWidth + 6)
             height: Theme.wsBadgeSize
             radius: height / 2
-            color: Theme.notchBackground
+            color: Theme.capsuleBackground
             border.color: Theme.notchBorderHighlight
             border.width: 1
             anchors.right: parent.right

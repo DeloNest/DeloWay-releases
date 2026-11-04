@@ -94,7 +94,7 @@ ColumnLayout {
                 width: 44
                 height: 24
                 radius: 12
-                color: root.hotspotEnabled ? Theme.inverseSurface : Theme.notchBackground
+                color: root.hotspotEnabled ? Theme.inverseSurface : Theme.capsuleBackground
                 border.color: Theme.notchBorder
                 border.width: 1
                 opacity: root.hotspotAvailable && !root.actionRunning ? 1.0 : 0.5
@@ -166,7 +166,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     height: 26
                     radius: Theme.notchRadiusPill
-                    color: Theme.notchBackground
+                    color: Theme.capsuleBackground
                     border.color: ssidInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
 
@@ -207,7 +207,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     height: 26
                     radius: Theme.notchRadiusPill
-                    color: Theme.notchBackground
+                    color: Theme.capsuleBackground
                     border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
 
@@ -298,7 +298,7 @@ ColumnLayout {
                     implicitWidth: 60
                     implicitHeight: 24
                     radius: Theme.notchRadiusPill
-                    color: saveBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchBackground
+                    color: saveBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.capsuleBackground
                     border.color: canSave ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
                     opacity: canSave && !root.configureRunning ? 1.0 : 0.4

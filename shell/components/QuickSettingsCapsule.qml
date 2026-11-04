@@ -559,7 +559,7 @@ Item {
             z: 1
 
             ShapePath {
-                fillColor: Theme.notchBackground
+                fillColor: Theme.capsuleFill
                 strokeColor: "transparent"
                 startX: 0
                 startY: 0
@@ -586,7 +586,7 @@ Item {
             z: 1
 
             ShapePath {
-                fillColor: Theme.notchBackground
+                fillColor: Theme.capsuleFill
                 strokeColor: "transparent"
                 startX: 0
                 startY: 0
@@ -603,14 +603,14 @@ Item {
         }
 
         // ──────────────────────────────────────────────────────────────────────
-        // LIGHT-MODE OUTLINE (attached state)
+        // CAPSULE OUTLINE (attached state)
         // One continuous stroke: left ear arc → left side → bottom → right side → right ear
         // arc. Never along the screen edge, and no seam where the ears meet the body — a
-        // plain rectangle border drew both, which read as black lines/corners in light mode.
+        // plain rectangle border drew both, which read as black lines/corners.
         // ──────────────────────────────────────────────────────────────────────
         Shape {
             id: attachedOutline
-            visible: !Theme.isDark && opacity > 0.01
+            visible: opacity > 0.01
             opacity: Math.max(0, (root.expandProgress - 0.5) * 2)
             z: 3
             preferredRendererType: Shape.CurveRenderer
@@ -621,7 +621,7 @@ Item {
             readonly property real br: capsuleBody.bottomLeftRadius
 
             ShapePath {
-                strokeColor: Theme.notchBorder
+                strokeColor: Theme.capsuleBorder
                 strokeWidth: 1
                 fillColor: "transparent"
                 joinStyle: ShapePath.RoundJoin
@@ -660,10 +660,10 @@ Item {
             y: 0
             width: root.currentWidth
             height: root.currentHeight
-            color: Theme.notchBackground
-            border.color: Theme.notchBorderSubtle
+            color: Theme.capsuleFill
+            border.color: Theme.capsuleBorder
             // Full border only while (mostly) floating; attached state uses attachedOutline.
-            border.width: (!Theme.isDark && root.expandProgress < 0.5) ? 1 : 0
+            border.width: root.expandProgress < 0.5 ? 1 : 0
             clip: true
             z: 2
 
@@ -853,8 +853,7 @@ Item {
                                     x: parent.width - 5
                                     y: parent.height - 5
                                     color: Theme.colors.warning
-                                    border.width: 1.5
-                                    border.color: Theme.notchBackground   // cut out of the glyph
+                                    border.width: 0
                                 }
                             }
 

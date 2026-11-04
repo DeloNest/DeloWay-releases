@@ -47,7 +47,7 @@ Item {
         z: 1
 
         ShapePath {
-            fillColor: Theme.notchBackground
+            fillColor: Theme.capsuleFill
             strokeColor: "transparent"
             startX: 0
             startY: 0
@@ -73,7 +73,7 @@ Item {
         z: 1
 
         ShapePath {
-            fillColor: Theme.notchBackground
+            fillColor: Theme.capsuleFill
             strokeColor: "transparent"
             startX: 0
             startY: 0
@@ -91,14 +91,14 @@ Item {
 
 
     // ──────────────────────────────────────────────────────────────────────
-    // LIGHT-MODE OUTLINE (attached state)
+    // CAPSULE OUTLINE (attached state)
     // One continuous stroke: left ear arc → left side → bottom → right side → right ear
     // arc. Never along the screen edge, and no seam where the ears meet the body — a
-    // plain rectangle border drew both, which read as black lines/corners in light mode.
+    // plain rectangle border drew both, which read as black lines/corners.
     // ──────────────────────────────────────────────────────────────────────
     Shape {
         id: attachedOutline
-        visible: root.isExpanded && !Theme.isDark
+        visible: root.isExpanded
         opacity: 1
         z: 3
         preferredRendererType: Shape.CurveRenderer
@@ -109,7 +109,7 @@ Item {
         readonly property real br: root.bottomRadius
 
         ShapePath {
-            strokeColor: Theme.notchBorder
+            strokeColor: Theme.capsuleBorder
             strokeWidth: 1
             fillColor: "transparent"
             joinStyle: ShapePath.RoundJoin
@@ -142,7 +142,7 @@ Item {
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // MAIN NOTCH BODY (Pure solid deep black, macOS Retina/OLED feel)
+    // MAIN NOTCH BODY (Retina/OLED deep surface)
     // ──────────────────────────────────────────────────────────────────────
     Rectangle {
         id: notchBody
@@ -150,10 +150,10 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         width: root.currentWidth
         height: root.currentHeight
-        color: Theme.notchBackground
-        border.color: Theme.notchBorderSubtle
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         // Full border only for the floating pill; attached state uses attachedOutline.
-        border.width: (!Theme.isDark && !root.isExpanded) ? 1 : 0
+        border.width: root.isExpanded ? 0 : 1
         clip: root.clipContent
         z: 2
 

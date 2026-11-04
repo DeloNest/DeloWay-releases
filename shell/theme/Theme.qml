@@ -197,6 +197,10 @@ Item {
     // Dynamic Deep Black / Notch Surface Tokens (Unified OLED / Clean Light)
     // -------------------------------------------------------------------------
     readonly property color notchBackground: isDark ? "#000000" : "#ffffff"
+    readonly property real capsuleAlpha: isDark ? 0.85 : 1.0
+    readonly property color capsuleBackground: isDark ? "#2d2b29" : "#ffffff"
+    readonly property color capsuleFill: isDark ? Qt.rgba(capsuleBackground.r, capsuleBackground.g, capsuleBackground.b, capsuleAlpha) : capsuleBackground
+    readonly property color capsuleBorder: isDark ? Qt.rgba(1, 1, 1, 0.10) : notchBorder
     readonly property color notchText: isDark ? "#ffffff" : "#0f172a"
     readonly property color notchTextSecondary: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.65)
     readonly property color notchTextTertiary: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)

@@ -174,8 +174,7 @@ Item {
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
                     color: Theme.colors.success
-                    border.width: 1.5
-                    border.color: Theme.notchBackground
+                    border.width: 0
                 }
             }
 
