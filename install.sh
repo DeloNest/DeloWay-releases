@@ -814,6 +814,15 @@ EOF
         log_success "Generated $user_hypr for $DELOWAY_DIR"
     fi
 
+    # 4c. Per-user theme compositor config (hyprland.conf sources ~/.config/deloway/hypr-theme.conf)
+    local user_theme="$USER_CONFIG_DIR/hypr-theme.conf"
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${CYAN}[DRY-RUN]${NC} set up $user_theme"
+    elif [ ! -f "$user_theme" ]; then
+        cp "$DELOWAY_DIR/config/hypr-theme.conf" "$user_theme"
+        log_success "Created initial $user_theme"
+    fi
+
     # 5. Register the session with the display manager. SDDM / GDM / LightDM only read the
     # system session folders, so this needs sudo: link the wrapper into /usr/local/bin (a
     # link, so updates reach it) and install the .desktop entry pointing at it.

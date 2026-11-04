@@ -227,6 +227,16 @@ ShellRoot {
         }
         function disableAlarm() { TimeKeeperService.setAlarmEnabled(false); }
         function removeReminder(id: string) { TimeKeeperService.removeEvent(id); }
+        // Theme selection: `qs ipc call deloway setTheme <dark|glass|light>`
+        function setTheme(theme: string): string {
+            if (!theme) return "error: missing theme name";
+            ConfigManager.setTheme(theme);
+            return ConfigManager.themeName;
+        }
+        function getTheme(): string {
+            return ConfigManager.themeName;
+        }
+
         // Generic settings hook: `ipc call deloway setSetting performanceTier 0`
         // Calls the SAME ConfigManager setter the Settings UI uses (set<Key>).
         function setSetting(key: string, value: string): bool {

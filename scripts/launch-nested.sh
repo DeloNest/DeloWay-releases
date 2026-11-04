@@ -53,6 +53,7 @@ if [ "$FRESH" = true ] && [ -d "$SANDBOX" ]; then
     rm -rf -- "$SANDBOX"
 fi
 mkdir -p "$SANDBOX/.config/deloway" "$SANDBOX/Desktop"
+[ -f "$SANDBOX/.config/deloway/hypr-theme.conf" ] || cp "$PROJECT_DIR/config/hypr-theme.conf" "$SANDBOX/.config/deloway/hypr-theme.conf" 2>/dev/null || true
 touch "$SANDBOX/.deloway-nested"
 
 # Nested config: the real hyprland.conf with the repo path pinned (HOME changes below),

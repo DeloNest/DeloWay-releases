@@ -69,6 +69,7 @@ fi
 
 # Ensure user directories exist
 mkdir -p "$HOME/.config/deloway" "$HOME/.local/share/applications" "$HOME/Desktop"
+[ -f "$HOME/.config/deloway/hypr-theme.conf" ] || cp "$DELOWAY_DIR/config/hypr-theme.conf" "$HOME/.config/deloway/hypr-theme.conf" 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
 # 2. Compositor Configuration Resolution (Completely isolated from ~/.config/hypr)

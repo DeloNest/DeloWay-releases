@@ -11,8 +11,16 @@ Item {
     // nothing is read from or written to theme.json at runtime any more (that file
     // used to override the mode and fed scaled font sizes back in as the base).
     // The typeof guard stays: Theme and ConfigManager import each other.
+    readonly property string themeName: {
+        if (typeof ConfigManager !== "undefined" && ConfigManager.themeName) {
+            const t = ConfigManager.themeName;
+            if (t === "dark" || t === "glass" || t === "light") return t;
+        }
+        return "dark";
+    }
+    readonly property bool isGlass: themeName === "glass"
     readonly property string mode: (typeof ConfigManager !== "undefined" && ConfigManager.themeMode === "light")
-                                   ? "light" : "dark"
+                                   ? "light" : (themeName === "light" ? "light" : "dark")
     readonly property bool isDark: mode === "dark"
     readonly property real fontScale: (typeof ConfigManager !== "undefined" && ConfigManager.fontSizeScale)
                                      ? ConfigManager.fontSizeScale : 1.0
@@ -197,10 +205,14 @@ Item {
     // Dynamic Deep Black / Notch Surface Tokens (Unified OLED / Clean Light)
     // -------------------------------------------------------------------------
     readonly property color notchBackground: isDark ? "#000000" : "#ffffff"
-    readonly property real capsuleAlpha: isDark ? 0.38 : 1.0
-    readonly property color capsuleBackground: isDark ? "#1e1e1e" : "#ffffff"
-    readonly property color capsuleFill: isDark ? Qt.rgba(capsuleBackground.r, capsuleBackground.g, capsuleBackground.b, capsuleAlpha) : capsuleBackground
-    readonly property color capsuleBorder: isDark ? Qt.rgba(1, 1, 1, 0.14) : notchBorder
+    readonly property real capsuleAlpha: isGlass ? 0.38 : 1.0
+    readonly property color capsuleBackground: isGlass ? "#1e1e1e" : (isDark ? "#000000" : "#ffffff")
+    readonly property color capsuleFill: isGlass
+        ? Qt.rgba(capsuleBackground.r, capsuleBackground.g, capsuleBackground.b, capsuleAlpha)
+        : (isDark ? "#000000" : "#ffffff")
+    readonly property color capsuleBorder: isGlass
+        ? Qt.rgba(1, 1, 1, 0.14)
+        : (isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10))
     readonly property color notchText: isDark ? "#ffffff" : "#0f172a"
     readonly property color notchTextSecondary: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.65)
     readonly property color notchTextTertiary: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
@@ -216,7 +228,9 @@ Item {
     readonly property color notchBorder: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10)
     readonly property color notchBorderSubtle: isDark ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color notchBorderHighlight: isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.18)
-    readonly property color notchShadow: isDark ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(0, 0, 0, 0.12)
+    readonly property color notchShadow: isGlass
+        ? Qt.rgba(0, 0, 0, 0.12)
+        : (isDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.12))
     readonly property int notchRadiusWindow: 26
     readonly property int notchRadiusPanel: scaledRadius(16)
     readonly property int notchRadiusCard: scaledRadius(12)

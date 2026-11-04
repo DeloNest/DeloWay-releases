@@ -30,7 +30,9 @@ Item {
     }
 
     // Theme Settings (Strict Monochrome)
-    property string themeMode: "dark"
+    property string themeName: "dark"
+    property string themeMode: themeName === "light" ? "light" : "dark"
+    readonly property string hyprThemeConfigPath: userConfigDir + "/hypr-theme.conf"
     readonly property color accentColor: Theme.colors.accent
     property string wallpaper: projectDir + "/assets/wallpaper.jpg"
     property real fontSizeScale: 1.0
@@ -202,6 +204,15 @@ Item {
         }
     }
 
+    FileView {
+        id: hyprThemeFile
+        path: root.hyprThemeConfigPath
+        watchChanges: false
+        preload: false
+        atomicWrites: true
+        printErrors: false
+    }
+
     Timer {
         id: hyprSyncDebounce
         interval: 200
@@ -213,14 +224,57 @@ Item {
     }
 
     Component.onCompleted: {
+        root.syncThemeToCompositor();
         root.syncHyprlandWindowSettings();
         root.syncHyprlandVisualEffects();
     }
 
-    // Graphics & Visual Effects tier → compositor effects (blur / shadows).
-    //   0 Efficient : no blur, no shadows      (shell drop-shadows also off via Theme.enableShadows)
-    //   1 Balanced  : blur 8×2, shadow 14      (the stock DeloWay values)
-    //   2 High      : blur 10×3, shadow 22
+    function syncThemeToCompositor() {
+        let content = "";
+        const isGlass = root.themeName === "glass";
+        if (isGlass) {
+            content = "# Deloway Theme: Glass\n" +
+                      "decoration:blur:size = 10\n" +
+                      "decoration:blur:passes = 3\n" +
+                      "decoration:blur:brightness = 1.12\n" +
+                      "decoration:blur:vibrancy = 0.30\n" +
+                      "layerrule = blur on, match:namespace deloway-capsule\n" +
+                      "layerrule = ignore_alpha 0.20, match:namespace deloway-capsule\n" +
+                      "layerrule = blur_popups on, match:namespace deloway-capsule\n" +
+                      "layerrule = blur on, match:namespace deloway:dock\n" +
+                      "layerrule = ignore_alpha 0.20, match:namespace deloway:dock\n" +
+                      "layerrule = blur_popups on, match:namespace deloway:dock\n" +
+                      "layerrule = blur on, match:namespace deloway:appdrawer\n" +
+                      "layerrule = ignore_alpha 0.20, match:namespace deloway:appdrawer\n" +
+                      "layerrule = blur_popups on, match:namespace deloway:appdrawer\n" +
+                      "layerrule = blur on, match:namespace deloway:desktop-menu\n" +
+                      "layerrule = ignore_alpha 0.20, match:namespace deloway:desktop-menu\n";
+        } else if (root.themeName === "light") {
+            content = "# Deloway Theme: Light (Clean high-contrast neutrals)\n" +
+                      "decoration:blur:size = 8\n" +
+                      "decoration:blur:passes = 2\n" +
+                      "decoration:blur:brightness = 1.0\n" +
+                      "decoration:blur:vibrancy = 0.0\n";
+        } else {
+            content = "# Deloway Theme: Dark (Default solid OLED)\n" +
+                      "decoration:blur:size = 8\n" +
+                      "decoration:blur:passes = 2\n" +
+                      "decoration:blur:brightness = 1.0\n" +
+                      "decoration:blur:vibrancy = 0.0\n";
+        }
+
+        hyprThemeFile.setText(content);
+
+        const sig = Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE");
+        if (sig && sig.length > 0) {
+            root.run(["hyprctl", "-i", sig, "reload"]);
+        } else {
+            root.run(["hyprctl", "reload"]);
+        }
+    }
+
+    // Graphics & Visual Effects tier → compositor effects (blur on/off / shadows).
+    // Blur size/passes/brightness/vibrancy are owned exclusively by hypr-theme.conf.
     function syncHyprlandVisualEffects() {
         const t = root.performanceTier;
         const pairs = [
@@ -228,8 +282,6 @@ Item {
             ["decoration:shadow:enabled", t >= 1 ? "true" : "false"]
         ];
         if (t >= 1) {
-            pairs.push(["decoration:blur:size", t >= 2 ? 10 : 8]);
-            pairs.push(["decoration:blur:passes", t >= 2 ? 3 : 2]);
             pairs.push(["decoration:shadow:range", t >= 2 ? 22 : 14]);
         }
         root.hyprKeywords(pairs);
@@ -259,7 +311,12 @@ Item {
     // Several Hyprland keywords in ONE hyprctl call (atomic, one round-trip).
     function hyprKeywords(pairs) {
         const batch = pairs.map(p => "keyword " + p[0] + " " + p[1]).join(" ; ");
-        root.run(["hyprctl", "--batch", batch]);
+        const sig = Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE");
+        if (sig && sig.length > 0) {
+            root.run(["hyprctl", "-i", sig, "--batch", batch]);
+        } else {
+            root.run(["hyprctl", "--batch", batch]);
+        }
     }
 
     // Qt colour → Hyprland colour literal (rgba(rrggbbaa)); "#ffffff" is not accepted.
@@ -297,9 +354,15 @@ Item {
         try {
             const cfg = JSON.parse(raw);
             if (cfg.theme) {
-                if (cfg.theme.mode) {
-                    root.themeMode = cfg.theme.mode;
+                if (cfg.theme.themeName) {
+                    const tn = String(cfg.theme.themeName).toLowerCase().trim();
+                    if (tn === "dark" || tn === "glass" || tn === "light") {
+                        root.themeName = tn;
+                    }
+                } else if (cfg.theme.mode) {
+                    root.themeName = cfg.theme.mode === "light" ? "light" : "dark";
                 }
+                root.themeMode = root.themeName === "light" ? "light" : "dark";
                 // Legacy accentColor compatibility: safely ignored in strict monochrome identity
                 if (cfg.theme.wallpaper !== undefined) root.wallpaper = cfg.theme.wallpaper;
                 if (cfg.theme.fontSizeScale !== undefined) root.fontSizeScale = cfg.theme.fontSizeScale;
@@ -426,15 +489,28 @@ Item {
     }
 
 
-    function setThemeMode(mode) {
-        if (mode !== "dark" && mode !== "light") return;
-        root.themeMode = mode;
+    function setTheme(name) {
+        if (!name) return;
+        const target = String(name).toLowerCase().trim();
+        if (target !== "dark" && target !== "glass" && target !== "light") {
+            console.warn("[ConfigManager] Unknown theme:", name);
+            return;
+        }
+        root.themeName = target;
+        root.themeMode = (target === "light" ? "light" : "dark");
         saveConfig();
+        syncThemeToCompositor();
         syncHyprlandWindowSettings();
+        syncHyprlandVisualEffects();
 
         if (root.applySystemTheme) {
             updateGtkThemes();
         }
+    }
+
+    function setThemeMode(mode) {
+        if (mode !== "dark" && mode !== "light") return;
+        setTheme(mode);
     }
 
     function setAccentColor(col) {
@@ -1025,6 +1101,7 @@ Item {
     function writeConfigNow() {
         const configData = {
             theme: {
+                themeName: root.themeName,
                 mode: root.themeMode,
                 wallpaper: root.wallpaper,
                 fontSizeScale: root.fontSizeScale,
