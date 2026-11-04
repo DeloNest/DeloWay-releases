@@ -28,3 +28,8 @@ venv/
 # Backups and crash reports
 backups/
 *.bak
+
+# Local test assets
+Wallpapers
+Wallpapers/
+
