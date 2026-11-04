@@ -197,10 +197,10 @@ Item {
     // Dynamic Deep Black / Notch Surface Tokens (Unified OLED / Clean Light)
     // -------------------------------------------------------------------------
     readonly property color notchBackground: isDark ? "#000000" : "#ffffff"
-    readonly property real capsuleAlpha: isDark ? 0.85 : 1.0
-    readonly property color capsuleBackground: isDark ? "#2d2b29" : "#ffffff"
+    readonly property real capsuleAlpha: isDark ? 0.38 : 1.0
+    readonly property color capsuleBackground: isDark ? "#1e1e1e" : "#ffffff"
     readonly property color capsuleFill: isDark ? Qt.rgba(capsuleBackground.r, capsuleBackground.g, capsuleBackground.b, capsuleAlpha) : capsuleBackground
-    readonly property color capsuleBorder: isDark ? Qt.rgba(1, 1, 1, 0.10) : notchBorder
+    readonly property color capsuleBorder: isDark ? Qt.rgba(1, 1, 1, 0.14) : notchBorder
     readonly property color notchText: isDark ? "#ffffff" : "#0f172a"
     readonly property color notchTextSecondary: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.65)
     readonly property color notchTextTertiary: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)
@@ -216,7 +216,7 @@ Item {
     readonly property color notchBorder: isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10)
     readonly property color notchBorderSubtle: isDark ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.06)
     readonly property color notchBorderHighlight: isDark ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(0, 0, 0, 0.18)
-    readonly property color notchShadow: isDark ? Qt.rgba(0, 0, 0, 0.50) : Qt.rgba(0, 0, 0, 0.12)
+    readonly property color notchShadow: isDark ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(0, 0, 0, 0.12)
     readonly property int notchRadiusWindow: 26
     readonly property int notchRadiusPanel: scaledRadius(16)
     readonly property int notchRadiusCard: scaledRadius(12)
@@ -224,9 +224,8 @@ Item {
     readonly property int radiusDock: scaledRadius(18)
 
     // Dock Tokens (Unified with OLED Notch/Capsule aesthetic)
-    // Flat and opaque: no blur, shadow or glow around the Dock (clean edges on any wallpaper).
-    readonly property color dockGlass: notchBackground
-    readonly property color dockBorder: notchBorder
+    readonly property color dockGlass: capsuleFill
+    readonly property color dockBorder: capsuleBorder
     readonly property color dockDot: isDark ? Qt.rgba(1, 1, 1, 0.95) : Qt.rgba(0, 0, 0, 0.85)
     readonly property color dockDivider: notchBorderHighlight
     readonly property color dockDividerFaint: notchBorder               // pinned | running

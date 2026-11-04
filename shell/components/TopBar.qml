@@ -34,7 +34,7 @@ PanelWindow {
     color: "transparent"
     visible: !ShellState.shellHidden
 
-    WlrLayershell.namespace: "deloway:topbar"
+    WlrLayershell.namespace: "deloway-capsule"
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.keyboardFocus: (ShellState.smartNotchExpanded
                                   || ShellState.timeCapsuleExpanded
