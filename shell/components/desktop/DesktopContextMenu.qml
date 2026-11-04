@@ -62,8 +62,8 @@ PanelWindow {
         x: Math.max(12, Math.min(I18n.isRTL ? DesktopManager.contextMenuX - width : DesktopManager.contextMenuX, root.width - width - 12))
         y: Math.max(12, Math.min(DesktopManager.contextMenuY, root.height - height - 12))
         radius: Theme.radiusLarge
-        color: Theme.notchBackground
-        border.color: Theme.notchBorder
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
 
         LayoutMirroring.enabled: I18n.isRTL

@@ -72,8 +72,8 @@ PopupWindow {
         width: Math.max(180, Math.min(320, (stackView.currentItem ? stackView.currentItem.implicitWidth : 180) + 16))
         height: Math.max(38, Math.min(600, (stackView.currentItem ? stackView.currentItem.implicitHeight : 38) + 16))
         radius: Theme.radiusMedium
-        color: Theme.notchBackground
-        border.color: Theme.notchBorder
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
 
         LayoutMirroring.enabled: I18n.isRTL

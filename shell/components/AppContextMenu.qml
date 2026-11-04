@@ -235,8 +235,8 @@ PopupWindow {
         x: root.placement === "right" ? root.pad + root.gap : root.pad
         y: root.pad
         radius: Theme.radiusLarge
-        color: Theme.notchBackground
-        border.color: Theme.notchBorder
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
 
         LayoutMirroring.enabled: I18n.isRTL

@@ -325,8 +325,8 @@ PanelWindow {
             id: card
             anchors.fill: parent
             radius: Theme.notchRadiusWindow
-            color: Theme.notchBackground
-            border.color: Theme.notchBorder
+            color: Theme.capsuleFill
+            border.color: Theme.capsuleBorder
             border.width: 1
 
             LayoutMirroring.enabled: I18n.isRTL
@@ -870,8 +870,8 @@ PanelWindow {
                         width: 30
                         height: 30
                         radius: 9
-                        color: Theme.notchBackground
-                        border.color: Theme.notchBorder
+                        color: Theme.notchSurface
+                        border.color: Theme.notchBorderSubtle
                         border.width: 1
                         Text {
                             anchors.centerIn: parent
