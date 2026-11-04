@@ -33,7 +33,7 @@ PanelWindow {
     Image {
         id: bgImage
         anchors.fill: parent
-        readonly property string bundled: "file://" + ConfigManager.projectDir + "/assets/wallpaper.jpg"
+        readonly property string bundled: "file://" + ConfigManager.projectDir + "/assets/wallpapers/01-noir-gradient.jpeg"
         readonly property string configured: (ConfigManager.wallpaper && ConfigManager.wallpaper.length > 0)
                 ? ConfigManager.fileUrl(ConfigManager.wallpaper)
                 : ""

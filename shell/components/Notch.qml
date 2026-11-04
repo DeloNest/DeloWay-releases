@@ -32,7 +32,7 @@ Item {
     }
     readonly property real compactHeight: 44
     readonly property real expandedWidth: Theme.notchExpandedWidth
-    readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : 176
+    readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : ((ShellState.smartNotchTab === 3) ? 320 : 176)
     property real expandedHeight: baseExpandedHeight
     Behavior on expandedHeight {
         NumberAnimation {
@@ -383,6 +383,45 @@ Item {
                                     }
                                 }
                             }
+
+                            // Tab 4: Appearance
+                            Rectangle {
+                                implicitWidth: tabAppearanceRow.implicitWidth + 18
+                                implicitHeight: 24
+                                radius: 12
+                                color: swipeView.currentIndex === 3
+                                       ? Theme.notchSurfaceActive
+                                       : (tabAppearanceMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                RowLayout {
+                                    id: tabAppearanceRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    SymbolicIcon {
+                                        source: "preferences-desktop-appearance-symbolic"
+                                        iconSize: 13
+                                        iconColor: (swipeView.currentIndex === 3 || tabAppearanceMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+
+                                    Text {
+                                        text: I18n.tr("notch_tab_appearance")
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(12)
+                                        font.weight: swipeView.currentIndex === 3 ? Font.DemiBold : Font.Normal
+                                        color: (swipeView.currentIndex === 3 || tabAppearanceMa.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: tabAppearanceMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: ShellState.setSmartNotchTab(3)
+                                }
+                            }
                         }
 
                         // Settings Icon (⚙) — Decoupled from tabs, anchored to trailing edge
@@ -441,6 +480,11 @@ Item {
                             NotchLocalSend {
                                 id: notchLocalSendItem
                                 expanded: true
+                            }
+
+                            // Page 3: Appearance Tab (Wallpapers + Themes)
+                            NotchAppearance {
+                                id: notchAppearanceItem
                             }
                         }
                     }

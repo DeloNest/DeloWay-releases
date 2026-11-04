@@ -304,14 +304,14 @@ Item {
                                     anchors.fill: parent
                                     anchors.leftMargin: Theme.space8
                                     anchors.rightMargin: Theme.space8
-                                    text: wpCard.modelData.name
+                                    text: (I18n.isRTL && wpCard.modelData.name_ar) ? wpCard.modelData.name_ar : (wpCard.modelData.name || wpCard.modelData.filename)
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(10)
                                     font.weight: Font.Medium
                                     color: wpCard.isSelected ? Theme.notchText : Theme.notchTextSecondary
                                     elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
-                                    horizontalAlignment: Text.AlignLeft
+                                    horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
                                 }
                             }
 

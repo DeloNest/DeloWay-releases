@@ -159,6 +159,11 @@ ShellRoot {
         function openSmartNotch()      { ShellState.openSmartNotch(); }
         function closeSmartNotch()     { ShellState.closeSmartNotch(); }
         function setSmartNotchTab(tab: string) { ShellState.setSmartNotchTab(tab); }
+        function openAppearance(view: string) { ShellState.openAppearance(view); }
+        function appearanceNext()             { ShellState.appearanceNext(); }
+        function appearancePrev()             { ShellState.appearancePrev(); }
+        function appearanceApply()            { ShellState.appearanceApply(); }
+        function appearanceToggleView()       { ShellState.appearanceToggleView(); }
         function stageLocalSend(path: string) {
             if (!path) return;   // no test-fixture fallback
             ShellState.setSmartNotchTab(2);

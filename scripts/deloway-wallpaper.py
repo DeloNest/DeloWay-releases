@@ -32,13 +32,19 @@ def normalize_path(raw_path: str) -> str:
 
 def open_file_dialog() -> str:
     """Opens a file dialog to choose an image."""
+    start_dir = os.path.join(DELOWAY_PROJECT_DIR, "Wallpapers")
+    if not os.path.isdir(start_dir):
+        start_dir = os.path.join(DELOWAY_PROJECT_DIR, "assets", "wallpapers")
+    if not os.path.isdir(start_dir):
+        start_dir = os.path.expanduser("~/Pictures")
+
     try:
         # Prefer kdialog
         res = subprocess.run(
             [
                 "kdialog",
                 "--getopenfilename",
-                os.path.expanduser("~/Pictures"),
+                start_dir,
                 "*.png *.jpg *.jpeg *.webp *.jxl *.bmp|Images (*.png *.jpg *.jpeg *.webp *.jxl *.bmp)"
             ],
             stdout=subprocess.PIPE,
@@ -56,6 +62,7 @@ def open_file_dialog() -> str:
             [
                 "zenity",
                 "--file-selection",
+                f"--filename={start_dir}/",
                 "--file-filter=Image files (png,jpg,jpeg,webp) | *.png *.jpg *.jpeg *.webp *.jxl"
             ],
             stdout=subprocess.PIPE,

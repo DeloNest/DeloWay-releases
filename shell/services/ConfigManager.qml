@@ -34,7 +34,7 @@ Item {
     property string themeMode: themeName === "light" ? "light" : "dark"
     readonly property string hyprThemeConfigPath: userConfigDir + "/hypr-theme.conf"
     readonly property color accentColor: Theme.colors.accent
-    property string wallpaper: projectDir + "/assets/wallpaper.jpg"
+    property string wallpaper: projectDir + "/assets/wallpapers/01-noir-gradient.jpeg"
     property real fontSizeScale: 1.0
     property string fontFamily: "Cairo"
     property int transparencyLevel: 85
@@ -365,7 +365,7 @@ Item {
                 }
                 root.themeMode = root.themeName === "light" ? "light" : "dark";
                 // Legacy accentColor compatibility: safely ignored in strict monochrome identity
-                if (cfg.theme.wallpaper !== undefined) root.wallpaper = cfg.theme.wallpaper;
+                if (cfg.theme.wallpaper !== undefined && String(cfg.theme.wallpaper).trim().length > 0) root.wallpaper = cfg.theme.wallpaper;
                 if (cfg.theme.fontSizeScale !== undefined) root.fontSizeScale = cfg.theme.fontSizeScale;
                 if (cfg.theme.fontFamily !== undefined) root.fontFamily = cfg.theme.fontFamily;
                 if (cfg.theme.transparencyLevel !== undefined) root.transparencyLevel = cfg.theme.transparencyLevel;

@@ -47,6 +47,27 @@ QtObject {
         smartNotchTab = parseInt(index) || 0;
     }
 
+    property string appearanceSubView: "wallpapers"
+
+    signal appearanceNextRequested()
+    signal appearancePrevRequested()
+    signal appearanceApplyRequested()
+    signal appearanceToggleViewRequested()
+
+    function appearanceNext() { appearanceNextRequested(); }
+    function appearancePrev() { appearancePrevRequested(); }
+    function appearanceApply() { appearanceApplyRequested(); }
+    function appearanceToggleView() { appearanceToggleViewRequested(); }
+
+    function openAppearance(view) {
+        if (view === "themes") {
+            appearanceSubView = "themes";
+        } else {
+            appearanceSubView = "wallpapers";
+        }
+        openSmartNotch(3);
+    }
+
     property bool timeCapsuleExpanded: false
     // 0 = Time & Utilities, 1 = System & Hardware. Survives open/close.
     property int timeCapsuleTab: 0
