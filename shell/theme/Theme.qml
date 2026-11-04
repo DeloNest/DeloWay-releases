@@ -237,6 +237,25 @@ Item {
     readonly property int notchRadiusPill: scaledRadius(8)
     readonly property int radiusDock: scaledRadius(18)
 
+    // Theme Preview Tokens (for Theme selection in Appearance Tab)
+    readonly property color themeDarkBackground: darkPalette.background
+    readonly property color themeDarkSurface: darkPalette.surfaceLayer2
+    readonly property color themeDarkBorder: darkPalette.border
+    readonly property color themeDarkText: darkPalette.textPrimary
+    readonly property color themeDarkTextSecondary: darkPalette.textSecondary
+
+    readonly property color themeGlassBackground: darkPalette.backgroundAlt
+    readonly property color themeGlassSurface: Qt.rgba(0.118, 0.118, 0.118, 0.38)
+    readonly property color themeGlassBorder: Qt.rgba(1, 1, 1, 0.14)
+    readonly property color themeGlassText: darkPalette.textPrimary
+    readonly property color themeGlassTextSecondary: darkPalette.textSecondary
+
+    readonly property color themeLightBackground: lightPalette.background
+    readonly property color themeLightSurface: lightPalette.surface
+    readonly property color themeLightBorder: lightPalette.border
+    readonly property color themeLightText: lightPalette.textPrimary
+    readonly property color themeLightTextSecondary: lightPalette.textSecondary
+
     // Dock Tokens (Unified with OLED Notch/Capsule aesthetic)
     readonly property color dockGlass: capsuleFill
     readonly property color dockBorder: capsuleBorder

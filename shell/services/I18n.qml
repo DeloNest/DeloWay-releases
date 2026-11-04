@@ -17,6 +17,12 @@ Item {
             "notch_tab_home": "Home",
             "notch_tab_share": "Share",
             "notch_tab_notifications": "Notifications",
+            "theme_dark": "Dark",
+            "theme_glass": "Glass",
+            "theme_light": "Light",
+            "theme_dark_desc": "OLED Black",
+            "theme_glass_desc": "Acrylic 38%",
+            "theme_light_desc": "Clean Light",
 
             // Common
             "settings": "Settings",
@@ -641,6 +647,12 @@ Item {
             "notch_tab_home": "الرئيسية",
             "notch_tab_share": "مشاركة",
             "notch_tab_notifications": "الإشعارات",
+            "theme_dark": "داكن",
+            "theme_glass": "زجاجي",
+            "theme_light": "فاتح",
+            "theme_dark_desc": "أسود OLED",
+            "theme_glass_desc": "أكريليك 38%",
+            "theme_light_desc": "فاتح نقي",
 
             // Common
             "settings": "الإعدادات",

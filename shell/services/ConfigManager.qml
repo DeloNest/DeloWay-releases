@@ -218,6 +218,7 @@ Item {
         interval: 200
         repeat: false
         onTriggered: {
+            root.syncThemeToCompositor();
             root.syncHyprlandWindowSettings();
             root.syncHyprlandVisualEffects();
         }
