@@ -69,6 +69,7 @@ Item {
         "user-home": "desktop/user-home.svg",
         "home": "desktop/user-home.svg",
         "user-trash": "desktop/user-trash.svg",
+        "user-trash-full": "desktop/user-trash.svg",
         "folder-trash": "desktop/folder-trash.svg",
         "trash": "desktop/user-trash.svg",
         "folder-projects": "desktop/folder-projects.svg",
