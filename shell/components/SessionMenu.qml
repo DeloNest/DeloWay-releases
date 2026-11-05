@@ -122,9 +122,12 @@ PanelWindow {
             width: 520
             implicitHeight: cardCol.implicitHeight + 40
             radius: Theme.radius.xlarge
-            color: Theme.colors.surfaceElevated
-            border.color: Theme.colors.borderHighlight
+            color: Theme.capsuleFill
+            border.color: Theme.capsuleBorder
             border.width: 1
+
+            Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+            Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -242,8 +245,8 @@ PanelWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 38
                     radius: Theme.radius.medium
-                    color: Theme.colors.surfaceVariant
-                    border.color: Theme.colors.borderSubtle
+                    color: Theme.notchSurface
+                    border.color: Theme.notchBorderSubtle
                     border.width: 1
 
                     RowLayout {
@@ -294,9 +297,9 @@ PanelWindow {
         Layout.preferredHeight: 82
         radius: Theme.radius.large
         // Danger is signalled by the glyph colour only (semantic colours never fill surfaces).
-        color: tileMouse.pressed ? Theme.colors.surfaceActive
-               : (tileMouse.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surface)
-        border.color: tileMouse.containsMouse ? Theme.colors.borderHighlight : Theme.colors.borderSubtle
+        color: tileMouse.pressed ? Theme.notchSurfaceActive
+               : (tileMouse.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
+        border.color: tileMouse.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
         border.width: 1
 
         Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
@@ -335,8 +338,8 @@ PanelWindow {
             width: 16
             height: 16
             radius: 8
-            color: Theme.colors.surfaceVariant
-            border.color: Theme.colors.borderSubtle
+            color: Theme.notchSurfaceElevated
+            border.color: Theme.notchBorderSubtle
             border.width: 1
             visible: tileRoot.keyHint.length > 0
 

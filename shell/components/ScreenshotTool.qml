@@ -65,9 +65,12 @@ PanelWindow {
             implicitWidth: contentRow.implicitWidth + 24
             implicitHeight: 52
             radius: 26
-            color: Theme.colors.surface
-            border.color: Theme.colors.borderHighlight
+            color: Theme.capsuleFill
+            border.color: Theme.capsuleBorder
             border.width: 1
+
+            Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+            Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
 
             LayoutMirroring.enabled: I18n.isRTL
             LayoutMirroring.childrenInherit: true
@@ -91,8 +94,8 @@ PanelWindow {
                     implicitWidth: areaRow.implicitWidth + 18
                     implicitHeight: 38
                     radius: 19
-                    color: areaMouse.pressed ? Theme.colors.surfaceActive : (areaMouse.containsMouse ? Theme.colors.surfaceHover : "transparent")
-                    border.color: areaMouse.containsMouse ? Theme.colors.borderHighlight : "transparent"
+                    color: areaMouse.pressed ? Theme.notchSurfaceActive : (areaMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.color: areaMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1
 
                     scale: areaMouse.pressed ? 0.95 : (areaMouse.containsMouse ? 1.04 : 1.0)
@@ -137,8 +140,8 @@ PanelWindow {
                     implicitWidth: winRow.implicitWidth + 18
                     implicitHeight: 38
                     radius: 19
-                    color: winMouse.pressed ? Theme.colors.surfaceActive : (winMouse.containsMouse ? Theme.colors.surfaceHover : "transparent")
-                    border.color: winMouse.containsMouse ? Theme.colors.borderHighlight : "transparent"
+                    color: winMouse.pressed ? Theme.notchSurfaceActive : (winMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.color: winMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1
 
                     scale: winMouse.pressed ? 0.95 : (winMouse.containsMouse ? 1.04 : 1.0)
@@ -183,8 +186,8 @@ PanelWindow {
                     implicitWidth: fullRow.implicitWidth + 18
                     implicitHeight: 38
                     radius: 19
-                    color: fullMouse.pressed ? Theme.colors.surfaceActive : (fullMouse.containsMouse ? Theme.colors.surfaceHover : "transparent")
-                    border.color: fullMouse.containsMouse ? Theme.colors.borderHighlight : "transparent"
+                    color: fullMouse.pressed ? Theme.notchSurfaceActive : (fullMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.color: fullMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1
 
                     scale: fullMouse.pressed ? 0.95 : (fullMouse.containsMouse ? 1.04 : 1.0)

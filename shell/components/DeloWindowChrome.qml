@@ -21,9 +21,12 @@ Rectangle {
     signal minimizeClicked()
 
     radius: Theme.radiusLarge
-    color: Theme.colors.surface
-    border.color: Theme.hairline
+    color: Theme.capsuleFill
+    border.color: Theme.capsuleBorder
     border.width: 1
+
+    Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+    Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
 
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true

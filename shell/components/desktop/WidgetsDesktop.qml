@@ -60,9 +60,12 @@ Item {
         // with larger text (Cairo metrics, Settings → text size).
         height: clockCol.implicitHeight + 36
         radius: Theme.radiusLarge
-        color: Theme.colors.surface
-        border.color: Theme.colors.border
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
         z: 10
 
         x: root.posX("clock", root.defaultX(60, width), width)
@@ -176,9 +179,12 @@ Item {
         // with larger text (Cairo metrics, Settings → text size).
         height: weatherCol.implicitHeight + 36
         radius: Theme.radiusLarge
-        color: Theme.colors.surface
-        border.color: Theme.colors.border
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
         z: 10
 
         x: root.posX("weather", root.defaultX(370, width), width)
@@ -302,9 +308,12 @@ Item {
         // with larger text (Cairo metrics, Settings → text size).
         height: sysCol.implicitHeight + 36
         radius: Theme.radiusLarge
-        color: Theme.colors.surface
-        border.color: Theme.colors.border
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
         z: 10
 
         x: root.posX("system_monitor", root.defaultX(60, width), width)
@@ -381,7 +390,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 6
                     radius: 3
-                    color: Theme.colors.surfaceVariant
+                    color: Theme.notchSurfaceElevated
 
                     Rectangle {
                         anchors.left: parent.left   // fills from the reading start (mirrored)
@@ -409,7 +418,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 6
                     radius: 3
-                    color: Theme.colors.surfaceVariant
+                    color: Theme.notchSurfaceElevated
 
                     Rectangle {
                         anchors.left: parent.left
@@ -452,9 +461,12 @@ Item {
         width: 290
         height: 180
         radius: Theme.radiusLarge
-        color: Theme.colors.surface
-        border.color: Theme.colors.border
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
         z: 10
 
         x: root.posX("notes", root.defaultX(370, width), width)
@@ -520,8 +532,8 @@ Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: Theme.radiusSmall
-                color: Theme.colors.surfaceVariant
-                border.color: noteArea.activeFocus ? Theme.colors.borderHighlight : Theme.colors.borderSubtle
+                color: Theme.notchSurfaceElevated
+                border.color: noteArea.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                 border.width: 1
 
                 ScrollView {

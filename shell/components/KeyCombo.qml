@@ -30,8 +30,8 @@ RowLayout {
                 implicitHeight: 22
                 implicitWidth: keyDel.isSuper ? 26 : Math.max(22, keyText.implicitWidth + Theme.space8)
                 radius: Theme.radiusSmall
-                color: Theme.colors.surfaceElevated
-                border.color: Theme.hairline
+                color: Theme.notchSurfaceElevated
+                border.color: Theme.notchBorderSubtle
                 border.width: 1
                 opacity: root.dim ? 0.55 : 1
 

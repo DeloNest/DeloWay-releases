@@ -6,10 +6,10 @@ Rectangle {
 
     property bool hoverable: false
     property bool selected: false
-    property color surfaceColor: Theme.colors.surfaceCard
-    property color surfaceHoverColor: Theme.colors.surfaceHover
-    property color borderColor: Theme.hairline
-    property color borderHoverColor: Theme.colors.borderHighlight
+    property color surfaceColor: Theme.notchSurface
+    property color surfaceHoverColor: Theme.notchSurfaceHover
+    property color borderColor: Theme.notchBorderSubtle
+    property color borderHoverColor: Theme.notchBorderHighlight
     property color selectedColor: Theme.selectedSurface
     property color selectedBorderColor: Theme.inverseSurface
     property int cardRadius: Theme.radiusMedium

@@ -65,9 +65,12 @@ PanelWindow {
         width: Math.min(720, parent.width - 48)
         height: Math.min(560, parent.height - 60)
         radius: Theme.radiusLarge
-        color: Theme.colors.surface
-        border.color: Theme.colors.borderHighlight
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
 
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
@@ -95,8 +98,8 @@ PanelWindow {
                     width: 44
                     height: 44
                     radius: Theme.radiusMedium
-                    color: Theme.colors.surfaceElevated
-                    border.color: Theme.colors.borderHighlight
+                    color: Theme.notchSurfaceElevated
+                    border.color: Theme.notchBorderSubtle
                     border.width: 1
 
                     Grid {
@@ -870,8 +873,8 @@ PanelWindow {
                                         implicitWidth: keyText.implicitWidth + 12
                                         implicitHeight: 22
                                         radius: 4
-                                        color: Theme.colors.surfaceElevated
-                                        border.color: Theme.colors.borderHighlight
+                                        color: Theme.notchSurfaceElevated
+                                        border.color: Theme.notchBorderSubtle
                                         border.width: 1
 
                                         Text {

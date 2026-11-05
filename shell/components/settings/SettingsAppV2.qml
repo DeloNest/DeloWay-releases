@@ -177,10 +177,13 @@ PanelWindow {
         x: root.isFullScreen ? 0 : root.clampedX
         y: root.isFullScreen ? 0 : root.clampedY
         radius: root.isFullScreen ? 0 : Theme.notchRadiusWindow
-        color: Theme.notchBackground
-        border.color: root.isFullScreen ? "transparent" : Theme.notchBorderSubtle
+        color: Theme.capsuleFill
+        border.color: root.isFullScreen ? "transparent" : Theme.capsuleBorder
         border.width: root.isFullScreen ? 0 : 1
         clip: true
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
 
         opacity: root.isOpen ? 1.0 : 0.0
         transform: Scale {

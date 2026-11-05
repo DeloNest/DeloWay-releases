@@ -164,10 +164,13 @@ PanelWindow {
 
         height: headerHeight + 1 + bodyHeight + 1 + footerHeight
         radius: Theme.notchRadiusWindow
-        color: Theme.notchBackground
-        border.color: Theme.notchBorder
+        color: Theme.capsuleFill
+        border.color: Theme.capsuleBorder
         border.width: 1
         clip: true
+
+        Behavior on color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
+        Behavior on border.color { ColorAnimation { duration: Theme.motionThemeFade; easing.type: Theme.easingTheme } }
 
         readonly property bool isOpen: ShellState.clipboardOpen
         opacity: isOpen ? 1.0 : 0.0
