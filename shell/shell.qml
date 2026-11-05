@@ -431,13 +431,41 @@ ShellRoot {
             // NOTE: previously missing. GlobalShortcut "sessionMenuToggle" and
             // IpcHandler.toggleSessionMenu() both called ShellState.toggleSessionMenu(),
             // but no visual surface ever rendered it — Ctrl+Alt+Delete did nothing.
-            SessionMenu      { targetScreen: screenScope.modelData }
+            LazyWindowLoader {
+                shouldOpen: ShellState.sessionMenuOpen
+                sourceComponent: Component {
+                    SessionMenu { targetScreen: screenScope.modelData }
+                }
+            }
 
-            // ── Full-screen apps / tools ────────────────────────────────────
-            SettingsAppV2  { targetScreen: screenScope.modelData }
-            SetupWizard    { targetScreen: screenScope.modelData }
-            ScreenshotTool { targetScreen: screenScope.modelData }
-            CheatSheet     { targetScreen: screenScope.modelData }
+            // ── Full-screen apps / tools (loaded on-demand to minimise idle footprint) ──
+            LazyWindowLoader {
+                shouldOpen: ShellState.settingsAppOpen
+                sourceComponent: Component {
+                    SettingsAppV2 { targetScreen: screenScope.modelData }
+                }
+            }
+
+            LazyWindowLoader {
+                shouldOpen: !ConfigManager.setupCompleted || ShellState.setupWizardOpen
+                sourceComponent: Component {
+                    SetupWizard { targetScreen: screenScope.modelData }
+                }
+            }
+
+            LazyWindowLoader {
+                shouldOpen: ShellState.screenshotToolOpen
+                sourceComponent: Component {
+                    ScreenshotTool { targetScreen: screenScope.modelData }
+                }
+            }
+
+            LazyWindowLoader {
+                shouldOpen: ShellState.cheatSheetOpen
+                sourceComponent: Component {
+                    CheatSheet { targetScreen: screenScope.modelData }
+                }
+            }
         }
     }
 

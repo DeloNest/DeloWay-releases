@@ -129,12 +129,25 @@ QtObject {
     }
 
     // Refresh timers
-    // CPU/RAM/weather are only drawn by the Widgets desktop. Outside that mode the top bar
-    // needs just battery + network state, so poll 3 s there and 10 s otherwise.
+    // CPU/RAM/weather are only drawn by the Widgets desktop or expanded capsules.
+    // Poll fast (3s) when an active telemetry consumer is visible, and back off (30s/60s) at idle.
     readonly property bool widgetsVisible: ConfigManager.showDesktopContent && ConfigManager.desktopMode === "widgets"
+    readonly property bool activeConsumerVisible: root.widgetsVisible
+                                                  || ShellState.quickSettingsCapsuleExpanded
+                                                  || ShellState.timeCapsuleExpanded
+
+    property var capsuleWatcher: Connections {
+        target: ShellState
+        function onQuickSettingsCapsuleExpandedChanged() {
+            if (ShellState.quickSettingsCapsuleExpanded) procSys.running = true;
+        }
+        function onTimeCapsuleExpandedChanged() {
+            if (ShellState.timeCapsuleExpanded) procSys.running = true;
+        }
+    }
 
     property var sysTimer: Timer {
-        interval: root.widgetsVisible ? 3000 : 10000
+        interval: root.activeConsumerVisible ? 3000 : (root.hasBattery ? 30000 : 60000)
         repeat: true
         running: true
         triggeredOnStart: true
