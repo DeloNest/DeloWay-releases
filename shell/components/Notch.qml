@@ -26,13 +26,19 @@ Item {
 
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
+        if (!notchHomeItem) return 200;
         if (notchHomeItem.notificationActive) return 440;
-        if (notchHomeItem.hasPlayer) return Math.min(520, Math.max(320, notchHomeItem.workspaceContentWidth + notchHomeItem.playerContentWidth + 48));
-        return Math.max(110, notchHomeItem.workspaceContentWidth + 24);
+        if (notchHomeItem.hasPlayer) return Math.min(520, Math.max(320, (notchHomeItem.workspaceContentWidth || 0) + (notchHomeItem.playerContentWidth || 0) + 48));
+        return Math.max(110, (notchHomeItem.workspaceContentWidth || 0) + 24);
     }
     readonly property real compactHeight: 44
     readonly property real expandedWidth: Theme.notchExpandedWidth
-    readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : ((ShellState.smartNotchTab === 3) ? 320 : 176)
+    readonly property real baseExpandedHeight: {
+        if (ShellState.smartNotchTab === 1) return 400;
+        if (ShellState.smartNotchTab === 3) return 320;
+        if (ShellState.smartNotchTab === 0 && notchHomeItem && notchHomeItem.hasPlayer) return 224;
+        return 176;
+    }
     property real expandedHeight: baseExpandedHeight
     Behavior on expandedHeight {
         NumberAnimation {
@@ -64,11 +70,24 @@ Item {
         NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter }
     }
 
-    readonly property real currentWidth: Math.round(root.animatedCompactWidth + (root.expandedWidth - root.animatedCompactWidth) * root.expandProgress)
-    readonly property real currentHeight: Math.round(root.compactHeight + (root.expandedHeight - root.compactHeight) * root.expandProgress)
+    readonly property real currentWidth: {
+        const cw = root.animatedCompactWidth || 200;
+        const ew = root.expandedWidth || 560;
+        const w = cw + (ew - cw) * root.expandProgress;
+        return isNaN(w) ? 200 : Math.round(w);
+    }
+    readonly property real currentHeight: {
+        const ch = root.compactHeight || 44;
+        const eh = root.expandedHeight || 176;
+        const h = ch + (eh - ch) * root.expandProgress;
+        return isNaN(h) ? 44 : Math.round(h);
+    }
     readonly property real currentY: Math.round(Theme.topBarMarginTop * (1.0 - root.expandProgress))
 
-    readonly property real outerWidth: Math.round(currentWidth + root.earRadius * 2 * root.expandProgress)
+    readonly property real outerWidth: {
+        const ow = currentWidth + root.earRadius * 2 * root.expandProgress;
+        return isNaN(ow) ? 200 : Math.round(ow);
+    }
 
     onOuterWidthChanged: ShellState.smartNotchCurrentWidth = outerWidth
     Component.onCompleted: ShellState.smartNotchCurrentWidth = outerWidth
@@ -256,13 +275,13 @@ Item {
                                     spacing: 6
 
                                     SymbolicIcon {
-                                        source: "notch-nook"
+                                        source: (notchHomeItem && notchHomeItem.hasPlayer) ? "applications-multimedia" : "notch-nook"
                                         iconSize: 13
                                         iconColor: (swipeView.currentIndex === 0 || tab0Ma.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
 
                                     Text {
-                                        text: I18n.tr("notch_tab_home")
+                                        text: (notchHomeItem && notchHomeItem.hasPlayer) ? I18n.tr("notch_tab_music") : I18n.tr("notch_tab_home")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal
