@@ -50,6 +50,7 @@ Item {
     readonly property bool volumeSupported: hasPlayer && activePlayer.volumeSupported
     readonly property bool shuffleSupported: hasPlayer && activePlayer.shuffleSupported
     readonly property bool loopSupported: hasPlayer && activePlayer.loopSupported
+    readonly property bool isBridgeQueueActive: SpotifyBridgeService.connected && SpotifyBridgeService.upNext && SpotifyBridgeService.upNext.length > 0
 
     // Live Playback Timeline & Position Tracking
     property real playbackPosition: 0.0
@@ -900,6 +901,36 @@ Item {
                                 onClicked: root.cycleLoop()
                             }
                         }
+
+                        // Like / Heart Button (Optional: visible ONLY when SpotifyBridgeService.connected)
+                        Rectangle {
+                            id: likeBtn
+                            visible: SpotifyBridgeService.connected
+                            implicitWidth: 28
+                            implicitHeight: 28
+                            radius: 14
+                            color: SpotifyBridgeService.liked
+                                   ? Theme.notchSurfaceActive
+                                   : (likeHover.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                            SymbolicIcon {
+                                anchors.centerIn: parent
+                                source: SpotifyBridgeService.liked ? "heart-symbolic" : "heart-outline-symbolic"
+                                iconSize: 13
+                                iconColor: SpotifyBridgeService.liked
+                                           ? Theme.notchText
+                                           : (likeHover.containsMouse ? Theme.notchText : Theme.notchTextSecondary)
+                            }
+
+                            MouseArea {
+                                id: likeHover
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: SpotifyBridgeService.toggleLike()
+                            }
+                        }
                     }
                 }
             }
@@ -928,13 +959,13 @@ Item {
                             spacing: 6
 
                             SymbolicIcon {
-                                source: "view-list-symbolic"
+                                source: isBridgeQueueActive ? "view-media-playlist-symbolic" : "view-list-symbolic"
                                 iconSize: 13
                                 iconColor: Theme.notchTextSecondary
                             }
 
                             Text {
-                                text: I18n.tr("notch_quick_switch")
+                                text: isBridgeQueueActive ? I18n.tr("notch_up_next") : I18n.tr("notch_quick_switch")
                                 font.family: Theme.typography.fontFamily
                                 font.pixelSize: Theme.fontSize(11)
                                 font.weight: Font.DemiBold
@@ -943,9 +974,9 @@ Item {
 
                             Item { Layout.fillWidth: true }
 
-                            // Track number badge if present
+                            // Track / queue badge
                             Rectangle {
-                                visible: root.trackNumber > 0
+                                visible: isBridgeQueueActive || root.trackNumber > 0
                                 implicitWidth: trackNumText.implicitWidth + 8
                                 implicitHeight: 16
                                 radius: 8
@@ -954,7 +985,9 @@ Item {
                                 Text {
                                     id: trackNumText
                                     anchors.centerIn: parent
-                                    text: I18n.tr("notch_track_number") + " " + I18n.digits(root.trackNumber)
+                                    text: isBridgeQueueActive
+                                          ? (I18n.digits(SpotifyBridgeService.upNext.length) + " " + I18n.tr("notch_next_track"))
+                                          : (I18n.tr("notch_track_number") + " " + I18n.digits(root.trackNumber))
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(9)
                                     font.weight: Font.Bold
@@ -963,8 +996,70 @@ Item {
                             }
                         }
 
-                        // Option 1: Liked Songs (المفضلة)
+                        // Up Next Queue Rows (Active when Spicetify bridge is connected)
+                        Repeater {
+                            model: isBridgeQueueActive ? SpotifyBridgeService.upNext.slice(0, 3) : []
+
+                            delegate: Rectangle {
+                                required property var modelData
+                                required property int index
+                                Layout.fillWidth: true
+                                implicitHeight: 28
+                                radius: 6
+                                color: upNextMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
+                                border.color: upNextMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                                border.width: 1
+                                Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                                Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 8
+                                    spacing: 8
+
+                                    Text {
+                                        text: I18n.digits(index + 1)
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(10)
+                                        font.weight: Font.Bold
+                                        color: Theme.notchTextTertiary
+                                        Layout.preferredWidth: 14
+                                    }
+
+                                    Text {
+                                        text: modelData.title || ""
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(11)
+                                        font.weight: Font.Medium
+                                        color: upNextMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
+
+                                    Text {
+                                        text: modelData.artist || ""
+                                        font.family: Theme.typography.fontFamily
+                                        font.pixelSize: Theme.fontSize(10)
+                                        font.weight: Font.Normal
+                                        color: Theme.notchTextTertiary
+                                        elide: Text.ElideRight
+                                        Layout.maximumWidth: 90
+                                        visible: text.length > 0
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: upNextMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                }
+                            }
+                        }
+
+                        // Option 1: Liked Songs (المفضلة) - Fallback when bridge queue inactive
                         Rectangle {
+                            visible: !isBridgeQueueActive
                             Layout.fillWidth: true
                             implicitHeight: 28
                             radius: 6
@@ -1014,8 +1109,9 @@ Item {
                             }
                         }
 
-                        // Option 2: Playlists (قوائم التشغيل)
+                        // Option 2: Playlists (قوائم التشغيل) - Fallback when bridge queue inactive
                         Rectangle {
+                            visible: !isBridgeQueueActive
                             Layout.fillWidth: true
                             implicitHeight: 28
                             radius: 6
@@ -1065,8 +1161,9 @@ Item {
                             }
                         }
 
-                        // Option 3: Current Album or Open in Player
+                        // Option 3: Current Album or Open in Player - Fallback when bridge queue inactive
                         Rectangle {
+                            visible: !isBridgeQueueActive
                             Layout.fillWidth: true
                             implicitHeight: 28
                             radius: 6
