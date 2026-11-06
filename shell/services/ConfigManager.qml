@@ -141,6 +141,7 @@ Item {
     // LocalSend app's own favourites once).
     property var shareDevices: null
     property var musicLaunchTarget: ({ "type": "app", "value": "spotify", "webApp": false })
+    property bool spotifyBridgeEnabled: false
 
     // System & Localization Settings
     property string uiLanguage: "en"
@@ -503,6 +504,7 @@ Item {
             if (cfg.music) {
                 if (cfg.music.preferredPlayer !== undefined) root.musicPreferredPlayer = cfg.music.preferredPlayer;
                 if (cfg.music.launchTarget !== undefined) root.musicLaunchTarget = cfg.music.launchTarget;
+                if (cfg.music.spotifyBridgeEnabled !== undefined) root.spotifyBridgeEnabled = Boolean(cfg.music.spotifyBridgeEnabled);
             }
             if (cfg.share && Array.isArray(cfg.share.devices)) root.shareDevices = cfg.share.devices;
             if (cfg.system) {
@@ -1063,6 +1065,11 @@ Item {
         saveConfig();
     }
 
+    function setSpotifyBridgeEnabled(enabled) {
+        root.spotifyBridgeEnabled = Boolean(enabled);
+        saveConfig();
+    }
+
     property bool _musicLaunching: false
     Timer {
         id: musicLaunchDebounce
@@ -1234,7 +1241,8 @@ Item {
             },
             music: {
                 preferredPlayer: root.musicPreferredPlayer,
-                launchTarget: root.musicLaunchTarget
+                launchTarget: root.musicLaunchTarget,
+                spotifyBridgeEnabled: root.spotifyBridgeEnabled
             },
             share: {
                 devices: root.shareDevices
