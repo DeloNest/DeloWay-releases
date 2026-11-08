@@ -32,6 +32,7 @@ EXEMPT_FILES = {
     SHELL_DIR / "theme" / "theme.json",
     SHELL_DIR / "theme" / "themes" / "deloos-dark.json",
     SHELL_DIR / "theme" / "themes" / "deloos-light.json",
+    SHELL_DIR / "theme" / "themes" / "deloos-glass.json",
     SHELL_DIR / "services" / "ConfigManager.qml",
 }
 
@@ -158,6 +159,28 @@ def main():
 
     print("\n" + "-" * 65)
     print(f"Scanned: {total_files} files")
+
+    # ── Single Source of Truth Drift Verification ──
+    print("\nVerifying theme synchronization against Theme.qml...")
+    scripts_dir = Path(__file__).resolve().parent
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("generate_theme_palettes", scripts_dir / "generate-theme-palettes.py")
+        if spec and spec.loader:
+            gen_mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(gen_mod)
+            drift_code = gen_mod.generate_palettes(check_only=True)
+            if drift_code != 0:
+                total_violations += 1
+                files_with_issues += 1
+        else:
+            print("❌ Cannot find generate-theme-palettes.py")
+            total_violations += 1
+    except Exception as e:
+        print(f"❌ Failed to execute drift verification: {e}")
+        total_violations += 1
+
+    print("-" * 65)
     if total_violations == 0:
         print("\033[1;32m✔ SUCCESS: 100% Monochrome compliance. Zero accent violations found.\033[0m")
         print("=" * 65)

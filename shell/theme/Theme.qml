@@ -164,7 +164,105 @@ Item {
         "folderEmblem": "#ffffff"
     })
 
-    readonly property var colors: isDark ? darkPalette : lightPalette
+    readonly property var glassPalette: ({
+        "background": "#000000",
+        "backgroundAlpha": 0.85,
+        "shellBase": "#1e1e1e",
+        "shellAlpha": 0.38,
+        "backgroundAlt": "#0a0a0a",
+        "surface": "#0d0d0d",
+        "surfaceLayer1": "#0d0d0d",
+        "surfaceLayer2": "#141414",
+        "surfaceCard": "#0d0d0d",
+        "surfaceElevated": "#141414",
+        "surfaceHover": "#1c1c1c",
+        "surfaceActive": "#262626",
+        "surfaceVariant": "#0a0a0a",
+        "border": "#262626",
+        "borderSubtle": "#1a1a1a",
+        "borderHighlight": "#404040",
+        "primary": "#ffffff",
+        "primaryHover": "#e5e5e5",
+        "primaryActive": "#d4d4d4",
+        "accent": "#ffffff",
+        "accentSecondary": "#a3a3a3",
+        "accentText": "#000000",
+        "text": "#ffffff",
+        "textPrimary": "#ffffff",
+        "textSecondary": "#a3a3a3",
+        "textTertiary": "#8e8e8e",
+        "textMuted": "#8e8e8e",
+        "activeIndicator": "#ffffff",
+        "urgent": "#ef4444",
+        "danger": "#ef4444",
+        "warning": "#f59e0b",
+        "success": "#10b981",
+        "folderBase": "#d4d4d4",
+        "folderAccent": "#a3a3a3",
+        "folderHighlight": "#e5e5e5",
+        "folderEmblem": "#ffffff"
+    })
+
+    readonly property var darkAnsi: ({
+        "color0": "#383a42",
+        "color1": "#e06c75",
+        "color2": "#7ec794",
+        "color3": "#deb06c",
+        "color4": "#6cb6eb",
+        "color5": "#c678dd",
+        "color6": "#56b6c2",
+        "color7": "#dcdcdc",
+        "color8": "#767676",
+        "color9": "#f08080",
+        "color10": "#8ae6a4",
+        "color11": "#e5c07b",
+        "color12": "#80c8ff",
+        "color13": "#d896ec",
+        "color14": "#70d4e0",
+        "color15": "#ffffff"
+    })
+
+    readonly property var lightAnsi: ({
+        "color0": "#18181b",
+        "color1": "#b91c1c",
+        "color2": "#166534",
+        "color3": "#854d0e",
+        "color4": "#1d4ed8",
+        "color5": "#7e22ce",
+        "color6": "#0e7490",
+        "color7": "#71717a",
+        "color8": "#52525b",
+        "color9": "#dc2626",
+        "color10": "#15803d",
+        "color11": "#a16207",
+        "color12": "#2563eb",
+        "color13": "#9333ea",
+        "color14": "#155e75",
+        "color15": "#09090b"
+    })
+
+    readonly property var glassAnsi: ({
+        "color0": "#404040",
+        "color1": "#e06c75",
+        "color2": "#7ec794",
+        "color3": "#deb06c",
+        "color4": "#6cb6eb",
+        "color5": "#c678dd",
+        "color6": "#56b6c2",
+        "color7": "#dcdcdc",
+        "color8": "#8e8e8e",
+        "color9": "#f08080",
+        "color10": "#8ae6a4",
+        "color11": "#e5c07b",
+        "color12": "#80c8ff",
+        "color13": "#d896ec",
+        "color14": "#70d4e0",
+        "color15": "#ffffff"
+    })
+
+    readonly property var ansi: isGlass ? glassAnsi : (isDark ? darkAnsi : lightAnsi)
+
+    readonly property var colors: isGlass ? glassPalette : (isDark ? darkPalette : lightPalette)
 
     // ── Mode-aware tokens that replace raw `isDark ? "#hex" : "#hex"` in components ──
     readonly property color inverseSurface: isDark ? "#ffffff" : "#0f172a"   // selected pill / primary fill
