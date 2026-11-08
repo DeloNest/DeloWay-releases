@@ -37,7 +37,17 @@
     "folderBase": "#d4d4d4",
     "folderAccent": "#a3a3a3",
     "folderHighlight": "#e5e5e5",
-    "folderEmblem": "#ffffff"
+    "folderEmblem": "#ffffff",
+    "selectionForeground": "#000000",
+    "selectionBackground": "#e5e5e5",
+    "cursor": "#ffffff",
+    "cursorTextColor": "#000000",
+    "urlColor": "#d4d4d4",
+    "activeTabForeground": "#000000",
+    "activeTabBackground": "#ffffff",
+    "inactiveTabForeground": "#a3a3a3",
+    "inactiveTabBackground": "#141414",
+    "tabBarBackground": "#000000"
   },
   "ansi": {
     "color0": "#404040",

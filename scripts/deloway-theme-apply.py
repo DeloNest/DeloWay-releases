@@ -1347,10 +1347,120 @@ def set_gsettings_raw(schema: str, key: str, val: str, dry_run: bool = False):
         print(f"[deloway-theme] gsettings {key} failed: {e}", file=sys.stderr)
 
 
+def signal_kitty_instances() -> int:
+    """Send SIGUSR1 to all Kitty processes belonging to the current user."""
+    import signal
+    uid = os.getuid()
+    pids = []
+    try:
+        res = subprocess.run(["pgrep", "-u", str(uid), "-x", "kitty"], capture_output=True, text=True, check=False)
+        for line in res.stdout.strip().splitlines():
+            if line.strip().isdigit():
+                pids.append(int(line.strip()))
+    except Exception:
+        for p in os.listdir("/proc"):
+            if not p.isdigit():
+                continue
+            try:
+                if os.stat(f"/proc/{p}").st_uid != uid:
+                    continue
+                with open(f"/proc/{p}/comm", "r") as f:
+                    if f.read().strip() == "kitty":
+                        pids.append(int(p))
+            except Exception:
+                continue
+
+    signaled_count = 0
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGUSR1)
+            signaled_count += 1
+        except (ProcessLookupError, PermissionError):
+            pass
+    return signaled_count
+
+
+def sync_kitty_theme(theme_name: str, project_dir: Path, config_home: Path, dry_run: bool = False) -> bool:
+    """Generate ~/.config/deloway/kitty-theme.conf from the active theme and signal running Kitty instances."""
+    themes_dir = project_dir / "shell" / "theme" / "themes"
+    theme_json_path = themes_dir / f"deloos-{theme_name}.json"
+    if not theme_json_path.exists():
+        theme_json_path = themes_dir / "deloos-dark.json"
+
+    try:
+        with open(theme_json_path, "r", encoding="utf-8") as f:
+            theme_data = json.load(f)
+    except Exception as e:
+        print(f"[deloway-theme] Warning: Cannot read {theme_json_path}: {e}", file=sys.stderr)
+        return False
+
+    colors = theme_data.get("colors", {})
+    ansi = theme_data.get("ansi", {})
+
+    bg = colors.get("background", "#000000")
+    fg = colors.get("text", "#ffffff")
+    opacity = colors.get("backgroundAlpha", 1.0)
+    if theme_name == "glass":
+        opacity = 0.85
+    else:
+        opacity = 1.0
+
+    lines = [
+        "# ==============================================================================",
+        "# DeloWay Kitty Theme (Auto-generated from Theme.qml — do not edit manually)",
+        f"# Active Theme: {theme_name} | Background Opacity: {opacity:.2f}",
+        "# ==============================================================================",
+        "dynamic_background_opacity yes",
+        f"background {bg}",
+        f"foreground {fg}",
+        f"background_opacity {opacity:.2f}",
+        "",
+        "# Selection & Cursor (from Theme.qml)",
+        f"selection_foreground   {colors.get('selectionForeground', fg)}",
+        f"selection_background   {colors.get('selectionBackground', bg)}",
+        f"cursor                 {colors.get('cursor', fg)}",
+        f"cursor_text_color      {colors.get('cursorTextColor', bg)}",
+        f"url_color              {colors.get('urlColor', fg)}",
+        "",
+        "# Tab Bar & Window Borders (from Theme.qml)",
+        f"active_tab_foreground   {colors.get('activeTabForeground', fg)}",
+        f"active_tab_background   {colors.get('activeTabBackground', bg)}",
+        f"inactive_tab_foreground {colors.get('inactiveTabForeground', fg)}",
+        f"inactive_tab_background {colors.get('inactiveTabBackground', bg)}",
+        f"tab_bar_background      {colors.get('tabBarBackground', bg)}",
+        f"active_border_color     {colors.get('borderHighlight', fg)}",
+        f"inactive_border_color   {colors.get('borderSubtle', bg)}",
+        "",
+        "# 16-color ANSI Palette (Calibrated for strict monochrome & WCAG AA)",
+    ]
+    for i in range(16):
+        key = f"color{i}"
+        hex_code = ansi.get(key, "#ffffff")
+        lines.append(f"{key:<8} {hex_code}")
+
+    content = "\n".join(lines) + "\n"
+    deloway_conf_dir = config_home / "deloway"
+    target_file = deloway_conf_dir / "kitty-theme.conf"
+
+    if dry_run:
+        print(f"[dry-run] Would write {target_file} for theme '{theme_name}' (opacity: {opacity})")
+        return True
+
+    deloway_conf_dir.mkdir(parents=True, exist_ok=True)
+    target_file.write_text(content, encoding="utf-8")
+    print(f"[deloway-theme] Kitty theme written -> {target_file} (mode: {theme_name}, opacity: {opacity})")
+
+    signaled = signal_kitty_instances()
+    if signaled > 0:
+        print(f"[deloway-theme] Signaled {signaled} running Kitty instance(s) with SIGUSR1")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser(description="DeloWay Dynamic System Theme Engine")
     parser.add_argument("--dry-run", action="store_true", help="Preview changes without writing files or setting gsettings")
     parser.add_argument("--theme-json", type=str, default="", help="Path to theme.json (defaults to project theme.json)")
+    parser.add_argument("--theme", type=str, default="", choices=["dark", "light", "glass"], help="Theme name")
     parser.add_argument("--mode", type=str, default="", choices=["dark", "light"], help="Force theme mode")
     parser.add_argument("--font-scale", type=float, default=0.0, help="Override font size scale factor (e.g. 0.85, 1.0, 1.15)")
     parser.add_argument("--radius", type=float, default=-1.0, help="Shell corner radius setting in px (Settings → Appearance)")
@@ -1361,6 +1471,7 @@ def main():
     user_config_path = Path.home() / ".config" / "deloway" / "deloway.json"
 
     # 1. Determine theme mode, font scale, system language, and font family
+    theme_name = "dark"
     mode = "dark"
     font_scale = 1.0
     ui_language = "ar"
@@ -1372,6 +1483,7 @@ def main():
             with open(user_config_path, "r", encoding="utf-8") as f:
                 u_cfg = json.load(f)
             t_cfg = u_cfg.get("theme", {})
+            theme_name = t_cfg.get("themeName", "dark")
             mode = t_cfg.get("mode", mode)
             font_scale = float(t_cfg.get("fontSizeScale", font_scale))
             font_family = t_cfg.get("fontFamily", font_family)
@@ -1384,8 +1496,13 @@ def main():
     # The mode comes from deloway.json (or --mode) only. shell/theme/theme.json is no
     # longer written by the shell, so it must not override the user's choice.
 
-    if args.mode:
+    if args.theme:
+        theme_name = args.theme
+        mode = "light" if theme_name == "light" else "dark"
+    elif args.mode:
         mode = args.mode
+        if not args.theme:
+            theme_name = mode
     if args.font_scale > 0.0:
         font_scale = args.font_scale
     if args.radius >= 0:
@@ -1465,8 +1582,8 @@ def main():
     # 9. Configure Thunar defaults (hidden menubar, hamburger menu fallback)
     configure_thunar_defaults(dry_run=args.dry_run)
 
-    # 10. No Thunar restart needed any more: GTK3 reloads the DeloWay theme live on
-    #     the gtk-theme switch above. (reload_thunar_safely kept for manual use.)
+    # 10. Sync Kitty terminal theme & live signal
+    sync_kitty_theme(theme_name, project_dir, config_home, dry_run=args.dry_run)
 
     print("[deloway-theme] Completed successfully.")
 

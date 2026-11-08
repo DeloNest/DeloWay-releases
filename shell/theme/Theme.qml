@@ -125,7 +125,17 @@ Item {
         "folderBase": "#d4d4d4",
         "folderAccent": "#a3a3a3",
         "folderHighlight": "#e5e5e5",
-        "folderEmblem": "#ffffff"
+        "folderEmblem": "#ffffff",
+        "selectionForeground": "#000000",
+        "selectionBackground": "#e5e5e5",
+        "cursor": "#ffffff",
+        "cursorTextColor": "#000000",
+        "urlColor": "#d4d4d4",
+        "activeTabForeground": "#000000",
+        "activeTabBackground": "#ffffff",
+        "inactiveTabForeground": "#a3a3a3",
+        "inactiveTabBackground": "#141414",
+        "tabBarBackground": "#000000"
     })
 
     readonly property var lightPalette: ({
@@ -161,7 +171,17 @@ Item {
         "folderBase": "#525252",
         "folderAccent": "#404040",
         "folderHighlight": "#737373",
-        "folderEmblem": "#ffffff"
+        "folderEmblem": "#ffffff",
+        "selectionForeground": "#ffffff",
+        "selectionBackground": "#0f172a",
+        "cursor": "#0f172a",
+        "cursorTextColor": "#ffffff",
+        "urlColor": "#262626",
+        "activeTabForeground": "#ffffff",
+        "activeTabBackground": "#0f172a",
+        "inactiveTabForeground": "#525252",
+        "inactiveTabBackground": "#fafafa",
+        "tabBarBackground": "#f5f5f5"
     })
 
     readonly property var glassPalette: ({
@@ -200,7 +220,17 @@ Item {
         "folderBase": "#d4d4d4",
         "folderAccent": "#a3a3a3",
         "folderHighlight": "#e5e5e5",
-        "folderEmblem": "#ffffff"
+        "folderEmblem": "#ffffff",
+        "selectionForeground": "#000000",
+        "selectionBackground": "#e5e5e5",
+        "cursor": "#ffffff",
+        "cursorTextColor": "#000000",
+        "urlColor": "#d4d4d4",
+        "activeTabForeground": "#000000",
+        "activeTabBackground": "#ffffff",
+        "inactiveTabForeground": "#a3a3a3",
+        "inactiveTabBackground": "#141414",
+        "tabBarBackground": "#000000"
     })
 
     readonly property var darkAnsi: ({
