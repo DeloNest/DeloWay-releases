@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Hyprland
 import "../../../theme"
@@ -7,7 +8,7 @@ import "../../../services"
 import "../.."
 import ".."
 
-// PowerPage — session actions + power profile.
+// PowerPage — power profiles + session actions.
 // Destructive actions (log out / restart / shut down) need a second tap within 3s:
 // the row switches to "Tap again to …" instead of opening a separate dialog.
 ColumnLayout {
@@ -50,46 +51,83 @@ ColumnLayout {
         onBackClicked: ShellState.quickSettingsCapsuleView = "main"
     }
 
-    Repeater {
-        model: root.actions
-        delegate: QSRow {
-            required property var modelData
-            Layout.fillWidth: true
-            iconName: modelData.icon
-            title: root.armed === modelData.id ? root.t("اضغط مرة أخرى للتأكيد", "Tap again to confirm") : modelData.label
-            subtitle: root.armed === modelData.id ? modelData.label : ""
-            selected: root.armed === modelData.id
-            onClicked: root.run(modelData)
-        }
-    }
-
-    // Power profile (only with power-profiles-daemon)
-    Text {
-        visible: ControlCenterService.powerProfilesAvailable
+    Flickable {
+        id: flick
         Layout.fillWidth: true
-        Layout.topMargin: 6
-        Layout.leftMargin: 10
-        text: root.t("وضع الطاقة", "Power mode")
-        horizontalAlignment: Text.AlignLeft
-        font.family: Theme.typography.fontFamily
-        font.pixelSize: Theme.fontSize(10)
-        font.weight: Font.DemiBold
-        color: Theme.notchTextTertiary
-        renderType: Theme.renderType
-    }
-    Repeater {
-        model: ControlCenterService.powerProfilesAvailable ? ControlCenterService.powerProfiles : []
-        delegate: QSRow {
-            required property string modelData
-            Layout.fillWidth: true
-            iconName: "power-profile-" + modelData + "-symbolic"
-            title: ({ "power-saver": root.t("توفير الطاقة", "Power Saver"),
-                      "balanced": root.t("متوازن", "Balanced"),
-                      "performance": root.t("أداء عالٍ", "Performance") })[modelData]
-            selected: ControlCenterService.powerProfile === modelData
-            onClicked: ControlCenterService.setPowerProfile(modelData)
+        Layout.fillHeight: true
+        clip: true
+        contentHeight: col.implicitHeight
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollBar.vertical: ScrollBar {
+            policy: flick.contentHeight > flick.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+            width: 4
+            contentItem: Rectangle { implicitWidth: 4; radius: 2; color: Theme.notchBorderHighlight }
+        }
+
+        ColumnLayout {
+            id: col
+            width: flick.width - (flick.contentHeight > flick.height ? 8 : 0)
+            x: (I18n.isRTL && flick.contentHeight > flick.height) ? 8 : 0
+            spacing: 2
+
+            component SectionLabel: Text {
+                Layout.fillWidth: true
+                Layout.topMargin: 6
+                Layout.bottomMargin: 2
+                Layout.leftMargin: 10
+                horizontalAlignment: Text.AlignLeft
+                font.family: Theme.typography.fontFamily
+                font.pixelSize: Theme.fontSize(10)
+                font.weight: Font.DemiBold
+                color: Theme.notchTextTertiary
+                renderType: Theme.renderType
+            }
+
+            // ── Power Profiles (power-profiles-daemon) ───────────────────────
+            SectionLabel {
+                visible: ControlCenterService.powerProfilesAvailable
+                text: root.t("وضع الطاقة والأداء", "Power & Performance Mode")
+                Layout.topMargin: 0
+            }
+
+            Repeater {
+                model: ControlCenterService.powerProfilesAvailable ? ControlCenterService.powerProfiles : []
+                delegate: QSRow {
+                    required property string modelData
+                    Layout.fillWidth: true
+                    iconName: "power-profile-" + modelData + "-symbolic"
+                    title: ({ "power-saver": root.t("توفير الطاقة", "Power Saver"),
+                              "balanced": root.t("متوازن", "Balanced"),
+                              "performance": root.t("أداء عالٍ", "Performance") })[modelData]
+                    subtitle: ({
+                        "power-saver": root.t("تقليل الاستهلاك وإطالة عمر البطارية", "Reduced power usage for longer battery"),
+                        "balanced": root.t("موازنة تلقائية بين الأداء والاستهلاك", "Standard balance of performance and battery"),
+                        "performance": root.t("أقصى قدرة للمعالج وسرعة الاستجابة", "Maximum CPU throughput & responsiveness")
+                    })[modelData]
+                    selected: ControlCenterService.powerProfile === modelData
+                    onClicked: ControlCenterService.setPowerProfile(modelData)
+                }
+            }
+
+            // ── Session Actions ──────────────────────────────────────────────
+            SectionLabel {
+                text: root.t("إجراءات الجلسة", "Session Actions")
+                Layout.topMargin: 10
+            }
+
+            Repeater {
+                model: root.actions
+                delegate: QSRow {
+                    required property var modelData
+                    Layout.fillWidth: true
+                    iconName: modelData.icon
+                    title: root.armed === modelData.id ? root.t("اضغط مرة أخرى للتأكيد", "Tap again to confirm") : modelData.label
+                    subtitle: root.armed === modelData.id ? modelData.label : ""
+                    selected: root.armed === modelData.id
+                    danger: modelData.confirm && root.armed === modelData.id
+                    onClicked: root.run(modelData)
+                }
+            }
         }
     }
-
-    Item { Layout.fillHeight: true }
 }

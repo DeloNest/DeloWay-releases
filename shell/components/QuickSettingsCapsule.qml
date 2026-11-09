@@ -858,6 +858,32 @@ Item {
                         opacity: 0.5
                     }
 
+                    // ── Power Profile Badge ──
+                    Item {
+                        visible: ControlCenterService.powerProfilesAvailable && ControlCenterService.powerProfile !== "" && (ControlCenterService.powerProfile !== "balanced" || SystemMonitor.hasBattery)
+                        implicitWidth: 20
+                        implicitHeight: 20
+                        Layout.alignment: Qt.AlignVCenter
+
+                        SymbolicIcon {
+                            anchors.centerIn: parent
+                            iconSize: 14
+                            source: "power-profile-" + (ControlCenterService.powerProfile || "balanced") + "-symbolic"
+                            iconColor: ControlCenterService.powerProfile === "performance" ? Theme.notchText : Theme.notchTextSecondary
+                        }
+                    }
+
+                    // ── Separator dot ──
+                    Rectangle {
+                        visible: ControlCenterService.powerProfilesAvailable && ControlCenterService.powerProfile !== "" && (ControlCenterService.powerProfile !== "balanced" || SystemMonitor.hasBattery)
+                        width: 3
+                        height: 3
+                        radius: 1.5
+                        color: Theme.notchTextTertiary
+                        Layout.alignment: Qt.AlignVCenter
+                        opacity: 0.5
+                    }
+
                     // ── Background Apps (System Tray) ──
                     SystemTrayIndicators {
                         Layout.alignment: Qt.AlignVCenter

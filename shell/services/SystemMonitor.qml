@@ -24,6 +24,45 @@ QtObject {
     property bool hasBattery: false
     property int batteryPercent: 100
     property string batteryStatusText: ""    // raw sysfs status: "Charging" / "Discharging" / "Full"
+    property string _lastBatteryStatus: ""
+    property bool _warnedLowBattery: false
+
+    onBatteryStatusTextChanged: {
+        if (!root.hasBattery) return;
+        if (root._lastBatteryStatus && root.batteryStatusText && root._lastBatteryStatus !== root.batteryStatusText) {
+            if (root.batteryStatusText === "Charging") {
+                NotificationManager.postNotification(
+                    I18n.isRTL ? "مزود الطاقة" : "Power Supply",
+                    I18n.isRTL ? "متصل بالشاحن" : "Connected to AC Power",
+                    (I18n.isRTL ? "مستوى البطارية: " : "Battery level: ") + root.batteryPercent + "%",
+                    "battery-good-charging-symbolic"
+                );
+            } else if (root.batteryStatusText === "Discharging" && root._lastBatteryStatus === "Charging") {
+                NotificationManager.postNotification(
+                    I18n.isRTL ? "مزود الطاقة" : "Power Supply",
+                    I18n.isRTL ? "تم فصل الشاحن" : "Disconnected from AC Power",
+                    (I18n.isRTL ? "مستوى البطارية: " : "Battery level: ") + root.batteryPercent + "%",
+                    "battery-symbolic"
+                );
+            }
+        }
+        root._lastBatteryStatus = root.batteryStatusText;
+    }
+
+    onBatteryPercentChanged: {
+        if (!root.hasBattery) return;
+        if (root.batteryPercent <= 20 && !root._warnedLowBattery && root.batteryStatusText !== "Charging") {
+            root._warnedLowBattery = true;
+            NotificationManager.postNotification(
+                I18n.isRTL ? "تحذير البطارية" : "Low Battery",
+                I18n.isRTL ? "البطارية منخفضة" : "Battery is low",
+                (I18n.isRTL ? "المتبقي: " : "Remaining: ") + root.batteryPercent + "%",
+                "battery-low-symbolic"
+            );
+        } else if (root.batteryPercent > 25) {
+            root._warnedLowBattery = false;
+        }
+    }
 
     // Real Network Metrics
     property string netDevice: ""

@@ -132,9 +132,23 @@ Item {
     Process { id: ppWrite; onExited: ppRead.running = true }
     function setPowerProfile(p) {
         if (!root.powerProfilesAvailable) return;
+        const prev = root.powerProfile;
         root.powerProfile = p;
         ppWrite.command = ["powerprofilesctl", "set", p];
         ppWrite.running = true;
+        if (prev && prev !== p) {
+            const profileLabels = {
+                "power-saver": I18n.isRTL ? "توفير الطاقة" : "Power Saver",
+                "balanced": I18n.isRTL ? "متوازن" : "Balanced",
+                "performance": I18n.isRTL ? "أداء عالٍ" : "Performance"
+            };
+            NotificationManager.postNotification(
+                I18n.isRTL ? "نمط الطاقة" : "Power Profile",
+                I18n.isRTL ? "تم تغيير نمط الطاقة" : "Power Profile Changed",
+                profileLabels[p] || p,
+                "power-profile-" + p + "-symbolic"
+            );
+        }
     }
     function cyclePowerProfile() {
         const i = root.powerProfiles.indexOf(root.powerProfile);

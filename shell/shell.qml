@@ -401,6 +401,14 @@ ShellRoot {
             ShellState.openHotspot();
         }
 
+        function setPowerProfile(profile: string) {
+            ControlCenterService.setPowerProfile(profile);
+        }
+
+        function cyclePowerProfile() {
+            ControlCenterService.cyclePowerProfile();
+        }
+
         function toggleTimeCapsule() {
             ShellState.toggleTimeCapsule();
         }
