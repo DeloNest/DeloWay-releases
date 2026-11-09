@@ -81,6 +81,24 @@
    ]
   },
   {
+   "id": "overview",
+   "group": "shell",
+   "ar": "نظرة عامة على النوافذ ومساحات العمل",
+   "en": "Window & Workspace Overview",
+   "dispatcher": "global",
+   "arg": "quickshell:overviewToggle",
+   "binds": [
+    {
+     "mods": "SUPER",
+     "key": "Tab"
+    },
+    {
+     "mods": "SUPER",
+     "key": "O"
+    }
+   ]
+  },
+  {
    "id": "sidebar_left",
    "group": "shell",
    "ar": "الشريط الجانبي الأيسر",

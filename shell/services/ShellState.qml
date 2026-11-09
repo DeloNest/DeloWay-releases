@@ -24,6 +24,8 @@ QtObject {
     property string quickSettingsCapsuleView: "main"
     // ── Clipboard Manager ───────────────────────────────────────────────
     property bool clipboardOpen: false
+    // ── Overview (Mission Control) ──────────────────────────────────────
+    property bool overviewOpen: false
     // ── Settings navigation registry (single source of truth) ───────────
     // Sidebar groups, page order, icons and source files all come from here, so the
     // sidebar and the page loader can never disagree.
@@ -414,6 +416,25 @@ QtObject {
         cheatSheetOpen = false;
     }
 
+    // ── Overview (Mission Control) ─────────────────────────
+    function toggleOverview() {
+        if (!overviewOpen) {
+            closeAll();
+            overviewOpen = true;
+        } else {
+            overviewOpen = false;
+        }
+    }
+
+    function openOverview() {
+        closeAll();
+        overviewOpen = true;
+    }
+
+    function closeOverview() {
+        overviewOpen = false;
+    }
+
     // ── Sidebars ───────────────────────────────────────────
     function toggleLeftSidebar() {
         toggleAppDrawer();
@@ -468,6 +489,7 @@ QtObject {
         settingsAppOpen = false;
         screenshotToolOpen = false;
         cheatSheetOpen = false;
+        overviewOpen = false;
     }
 
 }

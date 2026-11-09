@@ -1,0 +1,742 @@
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls
+import Quickshell
+import Quickshell.Wayland
+import Quickshell.Hyprland
+import "../theme"
+import "../services"
+
+// Overview — Mission Control / Workspace Overview for DeloWay
+// Event-driven: Hyprland.toplevels + Hyprland.workspaces
+// OLED identity: Strict Monochrome OLED, high luminance contrast, Theme tokens only.
+PanelWindow {
+    id: root
+
+    required property ShellScreen targetScreen
+    screen: targetScreen
+
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
+
+    color: "transparent"
+
+    WlrLayershell.namespace: "deloway:overview"
+    WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: ShellState.overviewOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+
+    visible: ShellState.overviewOpen || backdrop.opacity > 0.01
+
+    // ── Live Hyprland Data ──────────────────────────────────────────────────
+    readonly property var hyprMonitor: targetScreen ? Hyprland.monitorFor(targetScreen) : (Hyprland.focusedMonitor || null)
+    readonly property var hlToplevels: Hyprland.toplevels.values
+    readonly property var activeWsObj: hyprMonitor ? hyprMonitor.activeWorkspace : (Hyprland.focusedWorkspace || null)
+    readonly property int activeWsId:  activeWsObj ? activeWsObj.id : 1
+
+    property int selectedWorkspaceId: activeWsId
+
+    // Synchronize selected workspace when overview opens
+    Connections {
+        target: ShellState
+        function onOverviewOpenChanged() {
+            if (ShellState.overviewOpen) {
+                root.selectedWorkspaceId = root.activeWsId;
+                root.draggedAddress = "";
+                root.hoveredDropWsId = -1;
+            }
+        }
+    }
+
+    // ── Drag & Drop State ───────────────────────────────────────────────────
+    property string draggedAddress: ""
+    property string draggedTitle: ""
+    property string draggedAppId: ""
+    property int hoveredDropWsId: -1
+
+    // ── Workspaces Map ──────────────────────────────────────────────────────
+    readonly property int staticWsCount: ConfigManager.workspacesCount || 5
+
+    // Map: wsId (int) → list of toplevel items
+    readonly property var toplevelsByWs: {
+        const list = root.hlToplevels;
+        const map = {};
+        for (let i = 0; i < list.length; i++) {
+            const hl = list[i];
+            if (!hl) continue;
+
+            let wid = 1;
+            if (hl.workspace && hl.workspace.id !== undefined) {
+                wid = hl.workspace.id;
+            } else if (hl.lastIpcObject && hl.lastIpcObject.workspace && hl.lastIpcObject.workspace.id !== undefined) {
+                wid = hl.lastIpcObject.workspace.id;
+            }
+            if (wid <= 0) continue;
+
+            let appId = "";
+            if (hl.wayland && hl.wayland.appId) {
+                appId = hl.wayland.appId;
+            } else if (hl.lastIpcObject) {
+                appId = hl.lastIpcObject.class || hl.lastIpcObject.initialClass || "";
+            }
+
+            const item = {
+                appId: appId,
+                title: hl.title || "",
+                address: hl.address || "",
+                activated: hl.activated || false,
+                workspaceId: wid,
+                raw: hl
+            };
+
+            if (!map[wid]) map[wid] = [];
+            map[wid].push(item);
+        }
+        return map;
+    }
+
+    // List of all workspaces to display (1..staticWsCount + any extra active workspaces)
+    readonly property var displayWsIds: {
+        const ids = [];
+        for (let n = 1; n <= root.staticWsCount; n++) ids.push(n);
+
+        const map = root.toplevelsByWs;
+        for (const k of Object.keys(map)) {
+            const wid = parseInt(k);
+            if (wid > root.staticWsCount && !ids.includes(wid)) {
+                ids.push(wid);
+            }
+        }
+        if (root.activeWsId > root.staticWsCount && !ids.includes(root.activeWsId)) {
+            ids.push(root.activeWsId);
+        }
+        ids.sort((a, b) => a - b);
+        return ids;
+    }
+
+    // Windows belonging to the currently selected workspace
+    readonly property var currentWindows: root.toplevelsByWs[root.selectedWorkspaceId] || []
+
+    // ── Shortcuts ───────────────────────────────────────────────────────────
+    Shortcut {
+        sequence: "Escape"
+        enabled: ShellState.overviewOpen
+        onActivated: ShellState.closeOverview()
+    }
+
+    Shortcut {
+        sequence: "Super+Tab"
+        enabled: ShellState.overviewOpen
+        onActivated: ShellState.toggleOverview()
+    }
+
+    Shortcut {
+        sequence: "Super+O"
+        enabled: ShellState.overviewOpen
+        onActivated: ShellState.toggleOverview()
+    }
+
+    Shortcut {
+        sequence: "Left"
+        enabled: ShellState.overviewOpen && root.draggedAddress === ""
+        onActivated: {
+            const ids = root.displayWsIds;
+            const idx = ids.indexOf(root.selectedWorkspaceId);
+            if (idx > 0) root.selectedWorkspaceId = ids[idx - 1];
+        }
+    }
+
+    Shortcut {
+        sequence: "Right"
+        enabled: ShellState.overviewOpen && root.draggedAddress === ""
+        onActivated: {
+            const ids = root.displayWsIds;
+            const idx = ids.indexOf(root.selectedWorkspaceId);
+            if (idx >= 0 && idx < ids.length - 1) root.selectedWorkspaceId = ids[idx + 1];
+        }
+    }
+
+    // ── Fullscreen Backdrop (Modal Scrim) ───────────────────────────────────
+    Rectangle {
+        id: backdrop
+        anchors.fill: parent
+        color: Theme.modalScrim
+        opacity: ShellState.overviewOpen ? 1.0 : 0.0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Theme.motionBase
+                easing.type: Theme.easingEnter
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: ShellState.closeOverview()
+        }
+    }
+
+    // ── Main Content Container ──────────────────────────────────────────────
+    Item {
+        id: contentContainer
+        anchors.fill: parent
+        opacity: ShellState.overviewOpen ? 1.0 : 0.0
+        scale: ShellState.overviewOpen ? 1.0 : 0.96
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Theme.motionBase
+                easing.type: Theme.easingEnter
+            }
+        }
+        Behavior on scale {
+            NumberAnimation {
+                duration: Theme.motionBase
+                easing.type: Theme.easingEnter
+            }
+        }
+
+        // Layout direction mirroring for RTL
+        LayoutMirroring.enabled: I18n.isRTL
+        LayoutMirroring.childrenInherit: true
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 32
+            spacing: 24
+
+            // ═══════════════════════════════════════════════════════════════
+            //  1. TOP SECTION: WORKSPACE CAROUSEL STRIP
+            // ═══════════════════════════════════════════════════════════════
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                spacing: 14
+
+                Repeater {
+                    model: root.displayWsIds
+
+                    Rectangle {
+                        id: wsCard
+                        readonly property int wsId: modelData
+                        readonly property bool isSelected: root.selectedWorkspaceId === wsId
+                        readonly property bool isLiveActive: root.activeWsId === wsId
+                        readonly property bool isDropTarget: root.hoveredDropWsId === wsId
+                        readonly property var wsWindows: root.toplevelsByWs[wsId] || []
+
+                        width: 154
+                        height: 96
+                        radius: Theme.radiusMedium
+
+                        // Strict Monochrome OLED Card Styling
+                        color: isSelected
+                            ? Theme.colors.surfaceHover
+                            : (wsMouse.containsMouse ? Theme.colors.surface : Theme.notchBackground)
+                        border.color: isDropTarget
+                            ? Theme.colors.borderHighlight
+                            : (isSelected ? Theme.colors.borderHighlight : (isLiveActive ? Theme.colors.textMuted : Theme.colors.border))
+                        border.width: (isSelected || isDropTarget) ? 2 : 1
+
+                        scale: isDropTarget ? 1.06 : (wsMouse.containsMouse ? 1.02 : 1.0)
+                        Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                        Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 6
+
+                            // Workspace Header (Badge & Title)
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 6
+
+                                Rectangle {
+                                    width: 22
+                                    height: 22
+                                    radius: Theme.radiusSmall
+                                    color: wsCard.isSelected ? Theme.colors.text : Theme.colors.surface
+                                    border.color: Theme.colors.border
+                                    border.width: 1
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: I18n.number(wsCard.wsId)
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSize(11)
+                                        font.bold: true
+                                        color: wsCard.isSelected ? Theme.notchBackground : Theme.colors.text
+                                    }
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: I18n.tr("overview_workspace") + " " + I18n.number(wsCard.wsId)
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize(12)
+                                    font.bold: wsCard.isSelected
+                                    color: wsCard.isSelected ? Theme.colors.text : Theme.colors.textMuted
+                                    elide: Text.ElideRight
+                                }
+
+                                // Active Live Indicator Dot
+                                Rectangle {
+                                    visible: wsCard.isLiveActive
+                                    width: 6
+                                    height: 6
+                                    radius: 3
+                                    color: Theme.colors.text
+                                }
+                            }
+
+                            // Miniature Workspace Canvas Preview (Mini Windows)
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: Theme.radiusSmall
+                                color: Theme.colors.surface
+                                border.color: Theme.colors.border
+                                border.width: 1
+                                clip: true
+
+                                Row {
+                                    anchors.centerIn: parent
+                                    spacing: 4
+
+                                    Repeater {
+                                        model: Math.min(wsCard.wsWindows.length, 4)
+
+                                        Rectangle {
+                                            width: wsCard.wsWindows.length === 1 ? 40 : 20
+                                            height: 26
+                                            radius: 3
+                                            color: Theme.colors.surfaceHover
+                                            border.color: Theme.colors.borderHighlight
+                                            border.width: 1
+
+                                            SymbolicIcon {
+                                                anchors.centerIn: parent
+                                                source: {
+                                                    const win = wsCard.wsWindows[index];
+                                                    return win ? root.resolveIcon(win.appId) : "window-new-symbolic";
+                                                }
+                                                iconSize: 12
+                                                iconColor: Theme.colors.text
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: wsCard.wsWindows.length === 0
+                                    text: "—"
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSize(12)
+                                    color: Theme.colors.textMuted
+                                }
+                            }
+                        }
+
+                        // Mouse interaction & Drop Zone handling
+                        MouseArea {
+                            id: wsMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+
+                            onClicked: {
+                                root.selectedWorkspaceId = wsCard.wsId;
+                            }
+
+                            onDoubleClicked: {
+                                Hyprland.dispatch("workspace " + wsCard.wsId);
+                                ShellState.closeOverview();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            //  2. CENTER SECTION: WINDOW EXPOSÉ CANVAS
+            // ═══════════════════════════════════════════════════════════════
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                // Empty State if no windows
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    visible: root.currentWindows.length === 0
+                    spacing: 16
+
+                    Rectangle {
+                        Layout.alignment: Qt.AlignHCenter
+                        width: 64
+                        height: 64
+                        radius: 32
+                        color: Theme.notchBackground
+                        border.color: Theme.colors.border
+                        border.width: 1
+
+                        SymbolicIcon {
+                            anchors.centerIn: parent
+                            source: "window-new-symbolic"
+                            iconSize: 28
+                            iconColor: Theme.colors.textMuted
+                        }
+                    }
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: I18n.tr("overview_no_windows")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize(15)
+                        color: Theme.colors.textMuted
+                    }
+                }
+
+                // Grid of Windows
+                Flow {
+                    anchors.centerIn: parent
+                    width: Math.min(parent.width - 64, Math.max(1, root.currentWindows.length) * 440)
+                    spacing: 20
+                    visible: root.currentWindows.length > 0
+
+                    Repeater {
+                        model: root.currentWindows
+
+                        Rectangle {
+                            id: windowCard
+                            readonly property var winData: modelData
+                            readonly property bool isActivated: winData ? winData.activated : false
+                            readonly property string winAddress: winData ? winData.address : ""
+                            readonly property string winAppId: winData ? winData.appId : ""
+                            readonly property string winTitle: winData ? winData.title : ""
+                            readonly property bool isBeingDragged: root.draggedAddress === winAddress
+
+                            // Responsive sizing based on window count
+                            width: root.currentWindows.length === 1 ? 580 : (root.currentWindows.length === 2 ? 460 : 360)
+                            height: root.currentWindows.length === 1 ? 380 : (root.currentWindows.length === 2 ? 310 : 250)
+                            radius: Theme.radiusLarge
+
+                            color: Theme.notchBackground
+                            border.color: cardMouse.containsMouse || isActivated ? Theme.colors.borderHighlight : Theme.colors.border
+                            border.width: (cardMouse.containsMouse || isActivated) ? 2 : 1
+
+                            opacity: isBeingDragged ? 0.35 : 1.0
+                            scale: cardMouse.containsMouse && !isBeingDragged ? 1.02 : 1.0
+
+                            Behavior on scale { NumberAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
+                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+                            Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 14
+                                spacing: 10
+
+                                // ── Window Header Bar ──
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 10
+
+                                    // App Icon
+                                    Rectangle {
+                                        width: 28
+                                        height: 28
+                                        radius: Theme.radiusSmall
+                                        color: Theme.colors.surface
+                                        border.color: Theme.colors.border
+                                        border.width: 1
+
+                                        SymbolicIcon {
+                                            anchors.centerIn: parent
+                                            source: root.resolveIcon(windowCard.winAppId)
+                                            iconSize: 16
+                                            iconColor: Theme.colors.text
+                                        }
+                                    }
+
+                                    // Window Title
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: windowCard.winTitle || windowCard.winAppId || "Window"
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fontSize(13)
+                                        font.bold: true
+                                        color: Theme.colors.text
+                                        elide: Text.ElideRight
+                                    }
+
+                                    // Close Button (Destructive Semantic Action)
+                                    Rectangle {
+                                        id: closeBtn
+                                        width: 26
+                                        height: 26
+                                        radius: 13
+                                        color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.surface
+                                        border.color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.border
+                                        border.width: 1
+
+                                        Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "✕"
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSize(11)
+                                            font.bold: true
+                                            color: closeMouse.containsMouse ? "#ffffff" : Theme.colors.text
+                                        }
+
+                                        MouseArea {
+                                            id: closeMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (windowCard.winAddress) {
+                                                    Hyprland.dispatch("closewindow address:" + windowCard.winAddress);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // ── Window Body Mockup / Preview ──
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    radius: Theme.radiusMedium
+                                    color: cardMouse.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surface
+                                    border.color: Theme.colors.border
+                                    border.width: 1
+
+                                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                                    ColumnLayout {
+                                        anchors.centerIn: parent
+                                        spacing: 12
+
+                                        Rectangle {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            width: 52
+                                            height: 52
+                                            radius: Theme.radiusMedium
+                                            color: Theme.notchBackground
+                                            border.color: Theme.colors.borderHighlight
+                                            border.width: 1
+
+                                            SymbolicIcon {
+                                                anchors.centerIn: parent
+                                                source: root.resolveIcon(windowCard.winAppId)
+                                                iconSize: 28
+                                                iconColor: Theme.colors.text
+                                            }
+                                        }
+
+                                        Text {
+                                            Layout.alignment: Qt.AlignHCenter
+                                            text: windowCard.winAppId
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSize(12)
+                                            color: Theme.colors.textMuted
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Card Interaction & Drag To Workspace
+                            MouseArea {
+                                id: cardMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: root.draggedAddress !== "" ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+
+                                property real startX: 0
+                                property real startY: 0
+                                property bool isDragging: false
+
+                                onPressed: (mouse) => {
+                                    startX = mouse.x;
+                                    startY = mouse.y;
+                                    isDragging = false;
+                                }
+
+                                onPositionChanged: (mouse) => {
+                                    if (!pressed) return;
+                                    const dx = mouse.x - startX;
+                                    const dy = mouse.y - startY;
+                                    if (!isDragging && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+                                        isDragging = true;
+                                        root.draggedAddress = windowCard.winAddress;
+                                        root.draggedTitle = windowCard.winTitle;
+                                        root.draggedAppId = windowCard.winAppId;
+                                    }
+
+                                    if (isDragging) {
+                                        // Update drag ghost coordinates
+                                        const globalPt = mapToItem(root.contentItem, mouse.x, mouse.y);
+                                        dragGhost.x = globalPt.x - dragGhost.width / 2;
+                                        dragGhost.y = globalPt.y - dragGhost.height / 2;
+
+                                        // Check if hovering over any workspace card
+                                        root.checkDropTarget(globalPt.x, globalPt.y);
+                                    }
+                                }
+
+                                onReleased: {
+                                    if (isDragging) {
+                                        if (root.hoveredDropWsId > 0 && root.hoveredDropWsId !== root.selectedWorkspaceId) {
+                                            Hyprland.dispatch("movetoworkspacesilent " + root.hoveredDropWsId + ",address:" + windowCard.winAddress);
+                                        }
+                                        root.draggedAddress = "";
+                                        root.hoveredDropWsId = -1;
+                                        isDragging = false;
+                                    } else {
+                                        // Normal click: focus window and close overview
+                                        if (windowCard.winAddress) {
+                                            Hyprland.dispatch("focuswindow address:" + windowCard.winAddress);
+                                            ShellState.closeOverview();
+                                        }
+                                    }
+                                }
+
+                                onCanceled: {
+                                    root.draggedAddress = "";
+                                    root.hoveredDropWsId = -1;
+                                    isDragging = false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            //  3. BOTTOM SECTION: NAVIGATION HINTS CAPSULE
+            // ═══════════════════════════════════════════════════════════════
+            Rectangle {
+                Layout.alignment: Qt.AlignHCenter
+                implicitWidth: hintRow.implicitWidth + 32
+                implicitHeight: 40
+                radius: 20
+                color: Theme.notchBackground
+                border.color: Theme.colors.border
+                border.width: 1
+
+                RowLayout {
+                    id: hintRow
+                    anchors.centerIn: parent
+                    spacing: 12
+
+                    SymbolicIcon {
+                        source: "help-about-symbolic"
+                        iconSize: 14
+                        iconColor: Theme.colors.textMuted
+                    }
+
+                    Text {
+                        text: I18n.tr("overview_hint")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSize(12)
+                        color: Theme.colors.textMuted
+                    }
+
+                    Rectangle {
+                        width: 32
+                        height: 20
+                        radius: 4
+                        color: Theme.colors.surface
+                        border.color: Theme.colors.border
+                        border.width: 1
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "ESC"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSize(10)
+                            font.bold: true
+                            color: Theme.colors.text
+                        }
+                    }
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  4. FLOATING DRAG GHOST (While dragging window card)
+        // ═══════════════════════════════════════════════════════════════
+        Rectangle {
+            id: dragGhost
+            visible: root.draggedAddress !== ""
+            width: 220
+            height: 120
+            radius: Theme.radiusMedium
+            color: Theme.colors.surfaceHover
+            border.color: Theme.colors.borderHighlight
+            border.width: 2
+            z: 999
+            opacity: 0.9
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 8
+
+                SymbolicIcon {
+                    Layout.alignment: Qt.AlignHCenter
+                    source: root.resolveIcon(root.draggedAppId)
+                    iconSize: 28
+                    iconColor: Theme.colors.text
+                }
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.maximumWidth: 190
+                    text: root.draggedTitle || root.draggedAppId
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSize(12)
+                    color: Theme.colors.text
+                    elide: Text.ElideRight
+                }
+            }
+        }
+    }
+
+    // ── Helper Methods ──────────────────────────────────────────────────────
+    function resolveIcon(appId) {
+        if (!appId) return "application-x-executable-symbolic";
+        const app = ApplicationManager.findApp(appId);
+        if (app && app.icon) return app.icon;
+        return IconResolver.resolve(appId) || "application-x-executable-symbolic";
+    }
+
+    // Hit-testing global point against workspace cards in the carousel strip
+    function checkDropTarget(globalX, globalY) {
+        // Strip is in top area (y between ~32 and ~160)
+        if (globalY < 20 || globalY > 170) {
+            root.hoveredDropWsId = -1;
+            return;
+        }
+
+        // Check horizontal position relative to workspace cards
+        const ids = root.displayWsIds;
+        const totalW = ids.length * 154 + (ids.length - 1) * 14;
+        const startX = (root.width - totalW) / 2;
+
+        if (globalX >= startX && globalX <= startX + totalW) {
+            const relX = globalX - startX;
+            const index = Math.floor(relX / (154 + 14));
+            if (index >= 0 && index < ids.length) {
+                root.hoveredDropWsId = ids[index];
+                return;
+            }
+        }
+        root.hoveredDropWsId = -1;
+    }
+}

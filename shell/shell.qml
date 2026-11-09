@@ -161,7 +161,26 @@ ShellRoot {
         onPressed: ShellState.toggleSmartNotch()
     }
 
+    GlobalShortcut {
+        name: "overviewToggle"
+        description: "Toggles Deloway Workspace Overview / Mission Control (Super + Tab / Super + O)"
+        onPressed: ShellState.toggleOverview()
+    }
+
     IpcHandler {
+        // ── Overview (Mission Control) ──────────────────────────────────────
+        function toggleOverview() {
+            ShellState.toggleOverview();
+        }
+
+        function openOverview() {
+            ShellState.openOverview();
+        }
+
+        function closeOverview() {
+            ShellState.closeOverview();
+        }
+
         // ── Session lock (Super+L runs `qs ipc … call deloway lock || hyprlock`) ─
         function lock() {
             lockScreen.lockSession();
@@ -809,6 +828,18 @@ ShellRoot {
 
                 sourceComponent: Component {
                     DisplayIdentifyOverlay {
+                        targetScreen: screenScope.modelData
+                    }
+
+                }
+
+            }
+
+            LazyWindowLoader {
+                shouldOpen: ShellState.overviewOpen
+
+                sourceComponent: Component {
+                    Overview {
                         targetScreen: screenScope.modelData
                     }
 

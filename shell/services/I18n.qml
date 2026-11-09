@@ -708,7 +708,13 @@ Item {
             "tc_disk": "Disk",
             "tc_load": "Load",
             "tc_threads": "threads",
-            "tc_free": "free"
+            "tc_free": "free",
+            "overview_title": "Overview",
+            "overview_no_windows": "No open windows in this workspace",
+            "overview_hint": "Click to focus · Drag to move workspace · Esc to close",
+            "overview_workspace": "Workspace",
+            "overview_close_window": "Close window",
+            "overview_windows_count": "Windows"
         },
         "ar": {
             "notch_tab_home": "الرئيسية",
@@ -1368,7 +1374,13 @@ Item {
             "tc_disk": "القرص",
             "tc_load": "الحمل",
             "tc_threads": "مسار",
-            "tc_free": "متاح"
+            "tc_free": "متاح",
+            "overview_title": "نظرة عامة",
+            "overview_no_windows": "لا توجد نوافذ مفتوحة في هذه المساحة",
+            "overview_hint": "انقر للتركيز على النافذة · اسحب لنقلها لمساحة أخرى · Esc للإغلاق",
+            "overview_workspace": "مساحة العمل",
+            "overview_close_window": "إغلاق النافذة",
+            "overview_windows_count": "نوافذ"
         }
     })
     // "3 windows" / Arabic dual & plural forms (١ نافذة، نافذتان، ٣ نوافذ، ١١ نافذة).
