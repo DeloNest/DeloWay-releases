@@ -96,6 +96,16 @@ PanelWindow {
                 }
             }
 
+            let posX = 0;
+            let posY = 0;
+            if (hl.lastIpcObject && hl.lastIpcObject.at) {
+                posX = hl.lastIpcObject.at[0] || 0;
+                posY = hl.lastIpcObject.at[1] || 0;
+            } else if (hl.wayland && hl.wayland.geometry) {
+                posX = hl.wayland.geometry.x || 0;
+                posY = hl.wayland.geometry.y || 0;
+            }
+
             const item = {
                 appId: appId,
                 title: hl.title || "",
@@ -103,11 +113,21 @@ PanelWindow {
                 activated: hl.activated || false,
                 workspaceId: wid,
                 wayland: tl,
-                raw: hl
+                raw: hl,
+                x: posX,
+                y: posY
             };
 
             if (!map[wid]) map[wid] = [];
             map[wid].push(item);
+        }
+
+        // Sort windows in each workspace strictly by real physical screen coordinates
+        for (const k of Object.keys(map)) {
+            map[k].sort((a, b) => {
+                if (Math.abs(a.y - b.y) > 120) return a.y - b.y;
+                return a.x - b.x;
+            });
         }
         return map;
     }
@@ -231,6 +251,8 @@ PanelWindow {
                 id: wsStrip
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 16
+                // Always LTR (Workspace 1 on the left, matching the center capsule)
+                LayoutMirroring.enabled: false
 
                 Repeater {
                     model: root.displayWsIds
@@ -275,7 +297,8 @@ PanelWindow {
                             // Workspace Header (Badge & Title)
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 6
+                                spacing: 8
+                                LayoutMirroring.enabled: false
 
                                 Rectangle {
                                     width: 24
@@ -296,13 +319,16 @@ PanelWindow {
                                 }
 
                                 Text {
-                                    Layout.fillWidth: true
-                                    text: I18n.tr("overview_workspace") + " " + I18n.number(wsCard.wsId)
+                                    text: I18n.tr("overview_workspace")
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize(12)
                                     font.bold: wsCard.isSelected
                                     color: wsCard.isSelected ? Theme.notchText : Theme.notchTextSecondary
                                     elide: Text.ElideRight
+                                }
+
+                                Item {
+                                    Layout.fillWidth: true
                                 }
 
                                 // Active Live Indicator Dot
@@ -328,6 +354,7 @@ PanelWindow {
                                 Row {
                                     anchors.centerIn: parent
                                     spacing: 6
+                                    LayoutMirroring.enabled: false
 
                                     Repeater {
                                         model: Math.min(wsCard.wsWindows.length, 4)
@@ -445,6 +472,7 @@ PanelWindow {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: parent.top
                     anchors.topMargin: 8
+                    LayoutMirroring.enabled: false
                     width: {
                         const n = root.currentWindows.length;
                         if (n <= 1) return 640;
@@ -809,10 +837,9 @@ PanelWindow {
 
         if (globalX >= startX && globalX <= startX + totalW) {
             const relX = globalX - startX;
-            const rawIndex = Math.floor(relX / (cardW + cardSpacing));
-            const index = I18n.isRTL ? (ids.length - 1 - rawIndex) : rawIndex;
+            const index = Math.floor(relX / (cardW + cardSpacing));
             if (index >= 0 && index < ids.length) {
-                const offsetInSlot = relX - rawIndex * (cardW + cardSpacing);
+                const offsetInSlot = relX - index * (cardW + cardSpacing);
                 if (offsetInSlot <= cardW) {
                     root.hoveredDropWsId = ids[index];
                     return;
