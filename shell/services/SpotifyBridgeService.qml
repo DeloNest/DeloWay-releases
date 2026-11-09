@@ -20,6 +20,7 @@ Item {
     property var internalQueue: []
 
     readonly property string helperScript: ConfigManager.projectDir + "/scripts/deloway-spotify-bridge.py"
+    readonly property int bridgePort: (ConfigManager.userConfigDir.indexOf("deloway-nested") >= 0) ? 9956 : 9955
 
     function toggleLike() {
         if (!internalConnected || !bridgeProc.running) return;
@@ -56,7 +57,7 @@ Item {
     Process {
         id: bridgeProc
         stdinEnabled: true
-        command: ["python3", root.helperScript]
+        command: ["python3", root.helperScript, "--port", root.bridgePort.toString()]
         running: root.bridgeEnabled
         stdout: SplitParser {
             splitMarker: "\n"

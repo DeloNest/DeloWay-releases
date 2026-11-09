@@ -100,7 +100,7 @@
         }
 
         try {
-            var url = "ws://127.0.0.1:" + WS_PORT + "/?token=" + encodeURIComponent(TOKEN);
+            var url = "ws://127.0.0.1:" + WS_PORT;
             ws = new WebSocket(url);
 
             ws.onopen = function() {
