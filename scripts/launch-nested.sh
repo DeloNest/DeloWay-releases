@@ -88,4 +88,8 @@ export DELOWAY_DIR="$PROJECT_DIR"
 export DELOWAY_CONFIG="$SANDBOX/.config/deloway/deloway.json"
 export AQ_NO_MODIFIERS=1
 
-exec Hyprland -c "$CONF"
+if command -v start-hyprland >/dev/null 2>&1; then
+    exec start-hyprland -- -c "$CONF"
+else
+    exec Hyprland -c "$CONF"
+fi

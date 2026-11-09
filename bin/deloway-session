@@ -80,7 +80,11 @@ if [ ! -f "$HYPR_CONF" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Launch Hyprland Compositor
+# 3. Launch Hyprland Compositor (via start-hyprland watchdog if available)
 # ------------------------------------------------------------------------------
 echo "==> Starting Deloway Session using configuration: $HYPR_CONF"
-exec Hyprland -c "$HYPR_CONF"
+if command -v start-hyprland >/dev/null 2>&1; then
+    exec start-hyprland -- -c "$HYPR_CONF"
+else
+    exec Hyprland -c "$HYPR_CONF"
+fi
