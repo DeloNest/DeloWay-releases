@@ -49,13 +49,6 @@ ColumnLayout {
             text: root.query
             onTextChanged: root.query = text
         }
-        Text {
-            text: I18n.appsCount(root.apps.length)
-            font.family: Theme.typography.fontFamily
-            font.pixelSize: Theme.fontSize(11)
-            renderType: Theme.renderType
-            color: Theme.notchTextSecondary
-        }
     }
 
     Rectangle {

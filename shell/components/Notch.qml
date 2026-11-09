@@ -33,12 +33,7 @@ Item {
     }
     readonly property real compactHeight: 44
     readonly property real expandedWidth: Theme.notchExpandedWidth
-    readonly property real baseExpandedHeight: {
-        if (ShellState.smartNotchTab === 1) return 400;
-        if (ShellState.smartNotchTab === 3) return 320;
-        if (ShellState.smartNotchTab === 0 && notchHomeItem && notchHomeItem.hasPlayer) return 224;
-        return 176;
-    }
+    readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : ((ShellState.smartNotchTab === 3) ? 320 : 176)
     property real expandedHeight: baseExpandedHeight
     Behavior on expandedHeight {
         NumberAnimation {
@@ -275,13 +270,13 @@ Item {
                                     spacing: 6
 
                                     SymbolicIcon {
-                                        source: (notchHomeItem && notchHomeItem.hasPlayer) ? "applications-multimedia" : "notch-nook"
+                                        source: "notch-nook"
                                         iconSize: 13
                                         iconColor: (swipeView.currentIndex === 0 || tab0Ma.containsMouse) ? Theme.notchText : Theme.notchTextSecondary
                                     }
 
                                     Text {
-                                        text: (notchHomeItem && notchHomeItem.hasPlayer) ? I18n.tr("notch_tab_music") : I18n.tr("notch_tab_home")
+                                        text: I18n.tr("notch_tab_home")
                                         font.family: Theme.typography.fontFamily
                                         font.pixelSize: Theme.fontSize(12)
                                         font.weight: swipeView.currentIndex === 0 ? Font.DemiBold : Font.Normal

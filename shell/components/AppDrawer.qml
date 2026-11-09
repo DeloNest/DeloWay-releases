@@ -452,9 +452,7 @@ PanelWindow {
                         SectionLabel {
                             Layout.fillWidth: true
                             text: I18n.tr("pinned")
-                            count: root.pinnedApps.length
                             labelSize: 13
-                            countSize: 12
                         }
 
                         GridView {
@@ -511,9 +509,7 @@ PanelWindow {
                             SectionLabel {
                                 Layout.fillWidth: true
                                 text: I18n.tr("all_apps")
-                                count: root.sortedApps.length
                                 labelSize: 13
-                                countSize: 12
                             }
                             ViewSwitch { Layout.alignment: Qt.AlignVCenter }
                         }
@@ -604,21 +600,6 @@ PanelWindow {
                                         font.weight: Font.DemiBold
                                         color: Theme.notchText
                                         renderType: Theme.renderType
-                                    }
-                                    Rectangle {
-                                        height: 22
-                                        implicitWidth: folderCount.implicitWidth + 14
-                                        radius: 11
-                                        color: Theme.notchSurface
-                                        Text {
-                                            id: folderCount
-                                            anchors.centerIn: parent
-                                            text: root.openGroup ? String(root.openGroup.apps.length) : ""
-                                            font.family: Theme.typography.fontFamily
-                                            font.pixelSize: Theme.fontSize(12)
-                                            color: Theme.notchTextSecondary
-                                            renderType: Theme.renderType
-                                        }
                                     }
                                     Item { Layout.fillWidth: true }
                                 }
@@ -715,9 +696,7 @@ PanelWindow {
                         SectionLabel {
                             Layout.fillWidth: true
                             text: I18n.isRTL ? "النتائج" : "Results"
-                            count: root.searchResults.length
                             labelSize: 13
-                            countSize: 12
                         }
 
                         ListView {
@@ -833,7 +812,7 @@ PanelWindow {
         property var group: null
         property bool selected: false
         readonly property int total: group ? group.apps.length : 0
-        readonly property int shown: total > 4 ? 3 : total
+        readonly property int shown: Math.min(4, total)
 
         Rectangle {
             id: fcBg
@@ -867,24 +846,6 @@ PanelWindow {
                             AppIcon { anchors.fill: parent; iconSize: 30; source: parent.modelData ? parent.modelData.icon : "" }
                         }
                     }
-                    Rectangle {
-                        visible: fc.total > 4
-                        width: 30
-                        height: 30
-                        radius: 9
-                        color: Theme.notchSurface
-                        border.color: Theme.notchBorderSubtle
-                        border.width: 1
-                        Text {
-                            anchors.centerIn: parent
-                            text: "+" + (fc.total - fc.shown)
-                            font.family: Theme.typography.fontFamily
-                            font.pixelSize: Theme.fontSize(12)
-                            font.weight: Font.DemiBold
-                            color: Theme.notchTextSecondary
-                            renderType: Theme.renderType
-                        }
-                    }
                 }
 
                 Item { Layout.fillHeight: true }
@@ -898,16 +859,6 @@ PanelWindow {
                     font.pixelSize: Theme.fontSize(15)
                     font.weight: Font.DemiBold
                     color: Theme.notchText
-                    renderType: Theme.renderType
-                }
-                Text {
-                    Layout.fillWidth: true
-                    Layout.topMargin: -3
-                    text: I18n.appsCount(fc.total)
-                    horizontalAlignment: Text.AlignLeft
-                    font.family: Theme.typography.fontFamily
-                    font.pixelSize: Theme.fontSize(12)
-                    color: Theme.notchTextMeta
                     renderType: Theme.renderType
                 }
             }

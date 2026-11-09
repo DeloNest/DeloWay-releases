@@ -127,10 +127,6 @@ Item {
         "view-list-symbolic": "status/view-list-symbolic.svg",
         "starred": "status/starred-symbolic.svg",
         "starred-symbolic": "status/starred-symbolic.svg",
-        "heart": "status/heart-symbolic.svg",
-        "heart-symbolic": "status/heart-symbolic.svg",
-        "heart-outline": "status/heart-outline-symbolic.svg",
-        "heart-outline-symbolic": "status/heart-outline-symbolic.svg",
         "preferences-desktop-appearance": "status/preferences-desktop-appearance-symbolic.svg",
         "preferences-desktop-appearance-symbolic": "status/preferences-desktop-appearance-symbolic.svg",
 

@@ -1,6 +1,6 @@
-pragma Singleton
-import QtQuick
 import "."
+import QtQuick
+pragma Singleton
 
 QtObject {
     id: root
@@ -12,11 +12,131 @@ QtObject {
     property bool sessionMenuOpen: false
     property bool lockScreenActive: false
     property bool setupWizardOpen: false
-    signal setupWizardStepRequested(int step)   // open (or move) the wizard to a step
     property bool smartNotchExpanded: false
     property int smartNotchTab: 0
     property real smartNotchCurrentWidth: 200
     property string searchQuery: ""
+    property string appearanceSubView: "wallpapers"
+    property bool timeCapsuleExpanded: false
+    // 0 = Time & Utilities, 1 = System & Hardware. Survives open/close.
+    property int timeCapsuleTab: 0
+    property bool quickSettingsCapsuleExpanded: false
+    property string quickSettingsCapsuleView: "main"
+    // ── Clipboard Manager ───────────────────────────────────────────────
+    property bool clipboardOpen: false
+    // ── Settings navigation registry (single source of truth) ───────────
+    // Sidebar groups, page order, icons and source files all come from here, so the
+    // sidebar and the page loader can never disagree.
+    // Bluetooth is listed only when the machine has an adapter (as Windows does); it comes
+    // back as soon as one is plugged in (NetworkService watches udev).
+    readonly property var settingsGroups: [{
+        "id": "connectivity",
+        "pages": BluetoothService.available ? ["network", "bluetooth"] : ["network"]
+    }, {
+        "id": "personalization",
+        "pages": ["appearance", "wallpaper", "topbar", "dock"]
+    }, {
+        "id": "system",
+        "pages": ["display", "windows", "shortcuts", "notifications", "power", "apps", "time_language", "updates", "about"]
+    }]
+    readonly property var settingsPages: ({
+        "network": {
+            "icon": NetworkService.wifiAvailable ? "network-wireless-symbolic" : "network-ethernet-symbolic",
+            "file": "NetworkTab.qml"
+        },
+        "bluetooth": {
+            "icon": "bluetooth-active-symbolic",
+            "file": "BluetoothTab.qml"
+        },
+        "appearance": {
+            "icon": "applications-graphics-symbolic",
+            "file": "AppearanceTab.qml"
+        },
+        "wallpaper": {
+            "icon": "preferences-desktop-wallpaper-symbolic",
+            "file": "WallpaperTab.qml"
+        },
+        "topbar": {
+            "icon": "preferences-desktop-display-symbolic",
+            "file": "TopBarTab.qml"
+        },
+        "dock": {
+            "icon": "view-app-grid-symbolic",
+            "file": "DockTab.qml"
+        },
+        "display": {
+            "icon": "video-display-symbolic",
+            "file": "DisplayTab.qml"
+        },
+        "windows": {
+            "icon": "window-new-symbolic",
+            "file": "WindowsTab.qml"
+        },
+        "shortcuts": {
+            "icon": "preferences-desktop-keyboard-shortcuts-symbolic",
+            "file": "ShortcutsTab.qml"
+        },
+        "notifications": {
+            "icon": "preferences-system-notifications-symbolic",
+            "file": "NotificationsTab.qml"
+        },
+        "power": {
+            "icon": "system-shutdown-symbolic",
+            "file": "PowerTab.qml"
+        },
+        "apps": {
+            "icon": "applications-system-symbolic",
+            "file": "AppsTab.qml"
+        },
+        "time_language": {
+            "icon": "preferences-desktop-locale-symbolic",
+            "file": "TimeLanguageTab.qml"
+        },
+        "updates": {
+            "icon": "software-update-available-symbolic",
+            "file": "UpdatesTab.qml"
+        },
+        "about": {
+            "icon": "help-about-symbolic",
+            "file": "AboutTab.qml"
+        }
+    })
+    // Old / external ids (launcher shortcuts, desktop menu, IPC, saved state) → current page.
+    readonly property var settingsAliases: ({
+        "connectivity": "network",
+        "wifi": "network",
+        "hotspot": "network",
+        "desktop": "wallpaper",
+        "workspaces": "windows",
+        "system": "about",
+        "applications": "apps",
+        "default_apps": "apps",
+        "music": "apps",
+        "language": "time_language",
+        "time": "time_language",
+        "keyboard": "shortcuts",
+        "keybindings": "shortcuts",
+        "theme": "appearance",
+        "monitors": "display",
+        "screen": "display",
+        "screens": "display"
+    })
+    property string activeSettingsTab: "network"
+    property bool settingsFullScreen: false
+    // Settings → Apps shows a details card for this desktop id (set by the app menu).
+    property string appInfoId: ""
+    property bool screenshotToolOpen: false
+    // ── Cheat Sheet ────────────────────────────────────────
+    property bool cheatSheetOpen: false
+    // ── Shell Visibility / Immersion Mode (Super key toggle) ────────
+    property bool shellHidden: false
+
+    signal setupWizardStepRequested(int step) // open (or move) the wizard to a step
+    signal appearanceNextRequested()
+    signal appearancePrevRequested()
+    signal appearanceApplyRequested()
+    signal appearanceToggleViewRequested()
+    signal settingsScrollRequested(real position)
 
     function openSmartNotch(tab) {
         timeCapsuleExpanded = false;
@@ -25,9 +145,9 @@ QtObject {
         appDrawerOpen = false;
         cheatSheetOpen = false;
         sessionMenuOpen = false;
-        if (tab !== undefined && tab !== null && tab !== "") {
+        if (tab !== undefined && tab !== null && tab !== "")
             smartNotchTab = parseInt(tab) || 0;
-        }
+
         smartNotchExpanded = true;
     }
 
@@ -36,41 +156,39 @@ QtObject {
     }
 
     function toggleSmartNotch() {
-        if (!smartNotchExpanded) {
+        if (!smartNotchExpanded)
             openSmartNotch();
-        } else {
+        else
             closeSmartNotch();
-        }
     }
 
     function setSmartNotchTab(index) {
         smartNotchTab = parseInt(index) || 0;
     }
 
-    property string appearanceSubView: "wallpapers"
-
-    signal appearanceNextRequested()
-    signal appearancePrevRequested()
-    signal appearanceApplyRequested()
-    signal appearanceToggleViewRequested()
-
-    function appearanceNext() { appearanceNextRequested(); }
-    function appearancePrev() { appearancePrevRequested(); }
-    function appearanceApply() { appearanceApplyRequested(); }
-    function appearanceToggleView() { appearanceToggleViewRequested(); }
-
-    function openAppearance(view) {
-        if (view === "themes") {
-            appearanceSubView = "themes";
-        } else {
-            appearanceSubView = "wallpapers";
-        }
-        openSmartNotch(3);
+    function appearanceNext() {
+        appearanceNextRequested();
     }
 
-    property bool timeCapsuleExpanded: false
-    // 0 = Time & Utilities, 1 = System & Hardware. Survives open/close.
-    property int timeCapsuleTab: 0
+    function appearancePrev() {
+        appearancePrevRequested();
+    }
+
+    function appearanceApply() {
+        appearanceApplyRequested();
+    }
+
+    function appearanceToggleView() {
+        appearanceToggleViewRequested();
+    }
+
+    function openAppearance(view) {
+        if (view === "themes")
+            appearanceSubView = "themes";
+        else
+            appearanceSubView = "wallpapers";
+        openSmartNotch(3);
+    }
 
     function setTimeCapsuleTab(tab) {
         timeCapsuleTab = Math.max(0, Math.min(1, parseInt(tab) || 0));
@@ -91,15 +209,11 @@ QtObject {
     }
 
     function toggleTimeCapsule() {
-        if (!timeCapsuleExpanded) {
+        if (!timeCapsuleExpanded)
             openTimeCapsule();
-        } else {
+        else
             closeTimeCapsule();
-        }
     }
-
-    property bool quickSettingsCapsuleExpanded: false
-    property string quickSettingsCapsuleView: "main"
 
     function openQuickSettingsCapsule(viewName) {
         smartNotchExpanded = false;
@@ -127,11 +241,10 @@ QtObject {
             quickSettingsCapsuleView = viewName || "main";
             quickSettingsCapsuleExpanded = true;
         } else {
-            if (viewName && quickSettingsCapsuleView !== viewName) {
+            if (viewName && quickSettingsCapsuleView !== viewName)
                 quickSettingsCapsuleView = viewName;
-            } else {
+            else
                 quickSettingsCapsuleExpanded = false;
-            }
         }
     }
 
@@ -143,9 +256,6 @@ QtObject {
     function toggleQuickSettings() {
         toggleQuickSettingsCapsule("main");
     }
-
-
-
 
     function openSetupWizard(step) {
         setupWizardOpen = true;
@@ -174,11 +284,10 @@ QtObject {
     }
 
     function toggleLauncher() {
-        if (!launcherOpen) {
+        if (!launcherOpen)
             openLauncher();
-        } else {
+        else
             closeLauncher();
-        }
     }
 
     // ── App Drawer ───────────────────────────────────────────────────────
@@ -203,9 +312,6 @@ QtObject {
         searchQuery = "";
     }
 
-    // ── Clipboard Manager ───────────────────────────────────────────────
-    property bool clipboardOpen: false
-
     function openClipboard() {
         launcherOpen = false;
         quickSettingsCapsuleExpanded = false;
@@ -226,53 +332,20 @@ QtObject {
         clipboardOpen = false;
     }
 
-    // ── Settings navigation registry (single source of truth) ───────────
-    // Sidebar groups, page order, icons and source files all come from here, so the
-    // sidebar and the page loader can never disagree.
-    // Bluetooth is listed only when the machine has an adapter (as Windows does); it comes
-    // back as soon as one is plugged in (NetworkService watches udev).
-    readonly property var settingsGroups: [
-        { id: "connectivity",    pages: BluetoothService.available ? ["network", "bluetooth"] : ["network"] },
-        { id: "personalization", pages: ["appearance", "wallpaper", "topbar", "dock"] },
-        { id: "system",          pages: ["windows", "shortcuts", "notifications", "power", "apps", "time_language", "updates", "about"] }
-    ]
-    readonly property var settingsPages: ({
-        "network":       { icon: NetworkService.wifiAvailable ? "network-wireless-symbolic"
-                                                                  : "network-ethernet-symbolic", file: "NetworkTab.qml" },
-        "bluetooth":     { icon: "bluetooth-active-symbolic",                 file: "BluetoothTab.qml" },
-        "appearance":    { icon: "applications-graphics-symbolic",            file: "AppearanceTab.qml" },
-        "wallpaper":     { icon: "preferences-desktop-wallpaper-symbolic",    file: "WallpaperTab.qml" },
-        "topbar":        { icon: "preferences-desktop-display-symbolic",      file: "TopBarTab.qml" },
-        "dock":          { icon: "view-app-grid-symbolic",                    file: "DockTab.qml" },
-        "windows":       { icon: "window-new-symbolic",                       file: "WindowsTab.qml" },
-        "shortcuts":     { icon: "preferences-desktop-keyboard-shortcuts-symbolic", file: "ShortcutsTab.qml" },
-        "notifications": { icon: "preferences-system-notifications-symbolic", file: "NotificationsTab.qml" },
-        "power":         { icon: "system-shutdown-symbolic",                  file: "PowerTab.qml" },
-        "apps":          { icon: "applications-system-symbolic",              file: "AppsTab.qml" },
-        "time_language": { icon: "preferences-desktop-locale-symbolic",       file: "TimeLanguageTab.qml" },
-        "updates":       { icon: "software-update-available-symbolic",        file: "UpdatesTab.qml" },
-        "about":         { icon: "help-about-symbolic",                       file: "AboutTab.qml" }
-    })
-    // Old / external ids (launcher shortcuts, desktop menu, IPC, saved state) → current page.
-    readonly property var settingsAliases: ({
-        "connectivity": "network", "wifi": "network", "hotspot": "network",
-        "desktop": "wallpaper", "workspaces": "windows",
-        "system": "about", "applications": "apps", "default_apps": "apps", "music": "apps",
-        "language": "time_language", "time": "time_language",
-        "keyboard": "shortcuts", "keybindings": "shortcuts", "theme": "appearance"
-    })
     // A page that is not listed now (Bluetooth without an adapter) opens Network instead.
     function settingsPageListed(id) {
-        return settingsGroups.some(g => g.pages.indexOf(id) >= 0);
+        return settingsGroups.some((g) => {
+            return g.pages.indexOf(id) >= 0;
+        });
     }
+
     function resolveSettingsTab(tabId) {
-        if (!tabId) return "network";
+        if (!tabId)
+            return "network";
+
         const id = settingsPages[tabId] ? tabId : settingsAliases[tabId];
         return (id && settingsPages[id] && settingsPageListed(id)) ? id : "network";
     }
-
-    property string activeSettingsTab: "network"
-    property bool settingsFullScreen: false
 
     function toggleSettingsFullscreen() {
         settingsFullScreen = !settingsFullScreen;
@@ -291,8 +364,6 @@ QtObject {
         settingsAppOpen = true;
     }
 
-    // Settings → Apps shows a details card for this desktop id (set by the app menu).
-    property string appInfoId: ""
     function openAppInfo(desktopId) {
         appInfoId = desktopId || "";
         openSettingsTab("apps");
@@ -309,12 +380,9 @@ QtObject {
         settingsFullScreen = false;
     }
 
-    signal settingsScrollRequested(real position)
     function scrollSettings(pos) {
         settingsScrollRequested(pos);
     }
-
-    property bool screenshotToolOpen: false
 
     function openScreenshot() {
         screenshotToolOpen = true;
@@ -327,9 +395,6 @@ QtObject {
     function toggleScreenshot() {
         screenshotToolOpen = !screenshotToolOpen;
     }
-
-    // ── Cheat Sheet ────────────────────────────────────────
-    property bool cheatSheetOpen: false
 
     function toggleCheatSheet() {
         if (!cheatSheetOpen) {
@@ -366,13 +431,9 @@ QtObject {
         sessionMenuOpen = !sessionMenuOpen;
     }
 
-
     function closeSessionMenu() {
         sessionMenuOpen = false;
     }
-
-    // ── Shell Visibility / Immersion Mode (Super key toggle) ────────
-    property bool shellHidden: false
 
     function toggleShell() {
         if (!shellHidden) {
@@ -408,4 +469,5 @@ QtObject {
         screenshotToolOpen = false;
         cheatSheetOpen = false;
     }
+
 }
