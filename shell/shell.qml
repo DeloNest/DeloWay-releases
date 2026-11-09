@@ -162,6 +162,12 @@ ShellRoot {
     }
 
     GlobalShortcut {
+        name: "notificationsToggle"
+        description: "Toggles Deloway Notifications (Super + Shift + N)"
+        onPressed: ShellState.toggleNotifications()
+    }
+
+    GlobalShortcut {
         name: "overviewToggle"
         description: "Toggles Deloway Workspace Overview / Mission Control (Super + Tab / Super + O)"
         onPressed: ShellState.toggleOverview()
@@ -234,6 +240,10 @@ ShellRoot {
 
         function closeSmartNotch() {
             ShellState.closeSmartNotch();
+        }
+
+        function toggleNotifications() {
+            ShellState.toggleNotifications();
         }
 
         function setSmartNotchTab(tab: string) {

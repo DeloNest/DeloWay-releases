@@ -89,6 +89,7 @@ Item {
             isScreenshot: false,
             timestamp: ts,
             timeStr: root.clockLabel(ts),   // back-compat for older consumers
+            actions: [],
             notificationRef: null
         }, fields);
     }
@@ -124,6 +125,18 @@ Item {
 
         onNotification: notif => {
             notif.tracked = true;
+            let actList = [];
+            if (notif.actions) {
+                if (Array.isArray(notif.actions)) {
+                    actList = notif.actions;
+                } else if (typeof notif.actions.values === "function") {
+                    actList = Array.from(notif.actions.values());
+                } else if (typeof notif.actions.values !== "undefined") {
+                    actList = notif.actions.values;
+                } else {
+                    actList = Object.values(notif.actions);
+                }
+            }
 
             root.push(root.makeItem({
                 id: notif.id,
@@ -134,6 +147,7 @@ Item {
                 body: root.plainText(notif.body, false),
                 urgency: notif.urgency === NotificationUrgency.Critical ? 2
                          : (notif.urgency === NotificationUrgency.Low ? 0 : 1),
+                actions: actList,
                 notificationRef: notif
             }));
 

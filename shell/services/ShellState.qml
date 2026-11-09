@@ -164,6 +164,13 @@ QtObject {
             closeSmartNotch();
     }
 
+    function toggleNotifications() {
+        if (smartNotchExpanded && smartNotchTab === 1)
+            closeSmartNotch();
+        else
+            openSmartNotch(1);
+    }
+
     function setSmartNotchTab(index) {
         smartNotchTab = parseInt(index) || 0;
     }

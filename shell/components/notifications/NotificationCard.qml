@@ -256,6 +256,58 @@ Item {
                 cache: false
             }
         }
+
+        // Action buttons (e.g. Reply, Open, Confirm)
+        RowLayout {
+            visible: root.variant !== "banner" && root.notif && root.notif.actions && root.notif.actions.length > 0
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+            spacing: 8
+            LayoutMirroring.enabled: I18n.isRTL
+            LayoutMirroring.childrenInherit: true
+
+            Repeater {
+                model: (root.notif && root.notif.actions) ? root.notif.actions : []
+                delegate: Rectangle {
+                    required property var modelData
+                    implicitHeight: 26
+                    implicitWidth: actionText.implicitWidth + 18
+                    radius: 13
+                    color: actMa.pressed ? Theme.notchSurfaceActive : (actMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
+                    border.color: actMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+                    Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
+
+                    Text {
+                        id: actionText
+                        anchors.centerIn: parent
+                        text: modelData.text || modelData.id || ""
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(11)
+                        font.weight: Font.DemiBold
+                        color: actMa.containsMouse ? Theme.notchText : Theme.notchTextSecondary
+                        renderType: Theme.renderType
+                    }
+
+                    MouseArea {
+                        id: actMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            try {
+                                if (typeof modelData.invoke === "function") {
+                                    modelData.invoke();
+                                }
+                            } catch (e) {
+                                console.warn("[Deloway] Failed to invoke notification action: " + e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Countdown hairline (reading direction: drains toward the start edge)

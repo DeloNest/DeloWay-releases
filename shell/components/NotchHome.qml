@@ -48,6 +48,30 @@ Item {
     readonly property bool canPause: hasPlayer && (Boolean(activePlayer.canPause) || Boolean(activePlayer.canTogglePlaying))
     readonly property bool canToggle: isMusicPlaying ? canPause : canPlay
 
+    property real trackPosition: (activePlayer && activePlayer.position !== undefined) ? activePlayer.position : 0
+    property real trackLength: (activePlayer && activePlayer.length !== undefined) ? activePlayer.length : 0
+    property bool isScrubbing: false
+    property real scrubValue: 0
+
+    function formatTime(sec) {
+        if (!sec || isNaN(sec) || sec <= 0) return "0:00";
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    Timer {
+        id: positionTimer
+        interval: 500
+        repeat: true
+        running: root.expanded && root.isMusicPlaying && !root.isScrubbing
+        onTriggered: {
+            if (root.activePlayer && root.activePlayer.position !== undefined) {
+                root.trackPosition = root.activePlayer.position;
+            }
+        }
+    }
+
     function isRecognizedMusicPlayer(p) {
         if (!p) return false;
         const d = (p.desktopEntry || "").toLowerCase().replace(/\.desktop$/, "");
@@ -563,6 +587,14 @@ Item {
                             visible: status === Image.Ready && source.toString().length > 0 && root.hasPlayer
                         }
 
+                        // Monochrome integration overlay (softens saturation into neutral OLED aesthetic)
+                        Rectangle {
+                            anchors.fill: parent
+                            color: Theme.notchBackground
+                            opacity: 0.16
+                            visible: expCoverArt.visible
+                        }
+
                         SymbolicIcon {
                             anchors.centerIn: parent
                             iconSize: 32
@@ -617,10 +649,111 @@ Item {
                             Layout.fillWidth: true
                         }
 
+                        // ── Interactive Timeline / Scrubber ──
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 4
+                            implicitHeight: 18
+                            visible: root.trackLength > 0
+
+                            Rectangle {
+                                id: scrubBar
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.topMargin: 2
+                                height: scrubMa.containsMouse || root.isScrubbing ? 4 : 2
+                                radius: 2
+                                color: Theme.notchSurfaceElevated
+                                border.color: Theme.notchBorderSubtle
+                                border.width: 1
+                                Behavior on height { NumberAnimation { duration: Theme.motionFast } }
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    width: Math.max(0, Math.min(parent.width, parent.width * (root.isScrubbing ? root.scrubValue : (root.trackLength > 0 ? (root.trackPosition / root.trackLength) : 0))))
+                                    radius: 2
+                                    color: Theme.notchText
+                                }
+                            }
+
+                            // Scrubber thumb
+                            Rectangle {
+                                readonly property real fillW: Math.max(0, Math.min(scrubBar.width, scrubBar.width * (root.isScrubbing ? root.scrubValue : (root.trackLength > 0 ? (root.trackPosition / root.trackLength) : 0))))
+                                x: Math.max(0, Math.min(scrubBar.width - width, fillW - width / 2))
+                                anchors.verticalCenter: scrubBar.verticalCenter
+                                width: 8
+                                height: 8
+                                radius: 4
+                                color: Theme.notchText
+                                border.color: Theme.notchBackground
+                                border.width: 1
+                                opacity: scrubMa.containsMouse || root.isScrubbing ? 1.0 : 0.0
+                                Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+                            }
+
+                            // Time Labels
+                            RowLayout {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                LayoutMirroring.enabled: false
+                                LayoutMirroring.childrenInherit: false
+
+                                Text {
+                                    text: root.formatTime(root.isScrubbing ? (root.scrubValue * root.trackLength) : root.trackPosition)
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(9)
+                                    color: Theme.notchTextTertiary
+                                    renderType: Theme.renderType
+                                }
+                                Item { Layout.fillWidth: true }
+                                Text {
+                                    text: root.formatTime(root.trackLength)
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(9)
+                                    color: Theme.notchTextTertiary
+                                    renderType: Theme.renderType
+                                }
+                            }
+
+                            MouseArea {
+                                id: scrubMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                preventStealing: true
+
+                                function applySeek(mouseX) {
+                                    const ratio = Math.max(0, Math.min(1, mouseX / width));
+                                    root.scrubValue = ratio;
+                                    if (root.activePlayer && root.activePlayer.canSeek && root.trackLength > 0) {
+                                        root.activePlayer.position = ratio * root.trackLength;
+                                        root.trackPosition = ratio * root.trackLength;
+                                    }
+                                }
+
+                                onPressed: (mouse) => {
+                                    root.isScrubbing = true;
+                                    applySeek(mouse.x);
+                                }
+                                onPositionChanged: (mouse) => {
+                                    if (root.isScrubbing) {
+                                        applySeek(mouse.x);
+                                    }
+                                }
+                                onReleased: {
+                                    root.isScrubbing = false;
+                                }
+                            }
+                        }
+
                         // Playback Controls Row: Previous, Play/Pause, Next
                         RowLayout {
                             spacing: 8
-                            Layout.topMargin: 6
+                            Layout.topMargin: 4
                             LayoutMirroring.enabled: false
                             LayoutMirroring.childrenInherit: false
 

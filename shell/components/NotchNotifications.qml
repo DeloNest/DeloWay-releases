@@ -19,6 +19,19 @@ Item {
     readonly property int notifCount: NotificationManager.notifications ? NotificationManager.notifications.length : 0
     readonly property real exitSign: I18n.isRTL ? -1 : 1
 
+    property string currentFilter: "all"   // "all" | "critical"
+    readonly property var filteredNotifications: {
+        const all = NotificationManager.notifications || [];
+        if (root.currentFilter === "critical") {
+            return all.filter(n => n.urgency === 2);
+        }
+        return all;
+    }
+    readonly property int criticalCount: {
+        const all = NotificationManager.notifications || [];
+        return all.filter(n => n.urgency === 2).length;
+    }
+
     // ── Empty state ──────────────────────────────────────────────────────
     Column {
         anchors.centerIn: parent
@@ -53,14 +66,12 @@ Item {
         visible: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: Theme.motionBase } }
 
-        // ── Header: count · clear all ────────────────────────────────────
+        // ── Header: count · filter tabs · clear all ───────────────────────
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
 
             Text {
-                Layout.fillWidth: true
-                horizontalAlignment: Text.AlignLeft
                 text: I18n.notificationsCount(root.notifCount)
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(12)
@@ -68,6 +79,79 @@ Item {
                 color: Theme.notchTextMeta
                 renderType: Theme.renderType
             }
+
+            // Category Filter Pills
+            RowLayout {
+                spacing: 4
+                Layout.leftMargin: 4
+
+                // All
+                Rectangle {
+                    implicitWidth: allTxt.implicitWidth + 16
+                    implicitHeight: 22
+                    radius: 11
+                    color: root.currentFilter === "all" ? Theme.notchSurfaceActive : (allMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.color: root.currentFilter === "all" ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                    Text {
+                        id: allTxt
+                        anchors.centerIn: parent
+                        text: I18n.isRTL ? "الكل" : "All"
+                        font.family: Theme.typography.fontFamily
+                        font.pixelSize: Theme.fontSize(10)
+                        font.weight: root.currentFilter === "all" ? Font.DemiBold : Font.Normal
+                        color: root.currentFilter === "all" ? Theme.notchText : Theme.notchTextSecondary
+                    }
+                    MouseArea {
+                        id: allMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.currentFilter = "all"
+                    }
+                }
+
+                // Urgent / Critical
+                Rectangle {
+                    visible: root.criticalCount > 0 || root.currentFilter === "critical"
+                    implicitWidth: critRow.implicitWidth + 16
+                    implicitHeight: 22
+                    radius: 11
+                    color: root.currentFilter === "critical" ? Theme.notchSurfaceActive : (critMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
+                    border.color: root.currentFilter === "critical" ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
+                    border.width: 1
+                    Behavior on color { ColorAnimation { duration: Theme.motionFast } }
+
+                    RowLayout {
+                        id: critRow
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Rectangle {
+                            width: 6; height: 6; radius: 3
+                            color: Theme.colors.urgent
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                        Text {
+                            text: (I18n.isRTL ? "عاجل" : "Urgent") + (root.criticalCount > 0 ? (" (" + root.criticalCount + ")") : "")
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(10)
+                            font.weight: root.currentFilter === "critical" ? Font.DemiBold : Font.Normal
+                            color: root.currentFilter === "critical" ? Theme.notchText : Theme.notchTextSecondary
+                        }
+                    }
+                    MouseArea {
+                        id: critMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.currentFilter = "critical"
+                    }
+                }
+            }
+
+            Item { Layout.fillWidth: true }
 
             Rectangle {
                 implicitWidth: clearTxt.implicitWidth + 20
@@ -104,7 +188,7 @@ Item {
             clip: true
             spacing: 6
             boundsBehavior: Flickable.StopAtBounds
-            model: NotificationManager.notifications
+            model: root.filteredNotifications
 
             ScrollBar.vertical: ScrollBar {
                 id: vbar
