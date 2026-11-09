@@ -173,11 +173,11 @@ PanelWindow {
         }
     }
 
-    // ── Fullscreen Backdrop (Modal Scrim) ───────────────────────────────────
+    // ── Fullscreen Backdrop (Transparent - Zero Black Background) ───────────
     Rectangle {
         id: backdrop
         anchors.fill: parent
-        color: Theme.isGlass ? Qt.rgba(0, 0, 0, 0.35) : (Theme.isLight ? Qt.rgba(0, 0, 0, 0.20) : Theme.modalScrim)
+        color: "transparent"
         opacity: ShellState.overviewOpen ? 1.0 : 0.0
 
         Behavior on opacity {
@@ -218,16 +218,19 @@ PanelWindow {
         LayoutMirroring.childrenInherit: true
 
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 32
-            spacing: 24
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 52
+            width: Math.min(parent.width - 64, 1500)
+            spacing: 20
 
             // ═══════════════════════════════════════════════════════════════
             //  1. TOP SECTION: WORKSPACE CAROUSEL STRIP
             // ═══════════════════════════════════════════════════════════════
-            RowLayout {
+            Row {
+                id: wsStrip
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 14
+                spacing: 16
 
                 Repeater {
                     model: root.displayWsIds
@@ -240,18 +243,18 @@ PanelWindow {
                         readonly property bool isDropTarget: root.hoveredDropWsId === wsId
                         readonly property var wsWindows: root.toplevelsByWs[wsId] || []
 
-                        width: 154
-                        height: 96
+                        width: 220
+                        height: 126
                         radius: Theme.radiusMedium
 
                         // Adaptive Theme Card Styling (Glass translucent / OLED Dark / Crisp Light)
                         color: wsCard.isDropTarget
                             ? Theme.notchSurfaceActive
                             : (wsCard.isSelected
-                                ? (Theme.isGlass ? Qt.rgba(1, 1, 1, 0.20) : Theme.notchSurfaceHover)
+                                ? (Theme.isGlass ? Qt.rgba(0.14, 0.14, 0.14, 0.94) : Theme.notchSurfaceActive)
                                 : (wsMouse.containsMouse
-                                    ? Theme.notchSurfaceHover
-                                    : (Theme.isGlass ? Theme.capsuleFill : Theme.notchBackground)))
+                                    ? (Theme.isGlass ? Qt.rgba(0.11, 0.11, 0.11, 0.92) : Theme.notchSurfaceHover)
+                                    : (Theme.isGlass ? Qt.rgba(0.08, 0.08, 0.08, 0.88) : Theme.notchBackground)))
                         border.color: (wsCard.isSelected || wsCard.isDropTarget)
                             ? Theme.colors.borderHighlight
                             : (wsCard.isLiveActive
@@ -275,8 +278,8 @@ PanelWindow {
                                 spacing: 6
 
                                 Rectangle {
-                                    width: 22
-                                    height: 22
+                                    width: 24
+                                    height: 24
                                     radius: Theme.radiusSmall
                                     color: wsCard.isSelected ? Theme.notchText : Theme.notchSurface
                                     border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
@@ -317,34 +320,47 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 radius: Theme.radiusSmall
-                                color: Theme.notchSurface
+                                color: Theme.isGlass ? Qt.rgba(0.04, 0.04, 0.04, 0.70) : Theme.notchSurface
                                 border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                                 border.width: 1
                                 clip: true
 
                                 Row {
                                     anchors.centerIn: parent
-                                    spacing: 4
+                                    spacing: 6
 
                                     Repeater {
                                         model: Math.min(wsCard.wsWindows.length, 4)
 
                                         Rectangle {
-                                            width: wsCard.wsWindows.length === 1 ? 40 : 20
-                                            height: 26
-                                            radius: 3
+                                            id: miniWinBox
+                                            readonly property var miniWin: wsCard.wsWindows[index]
+                                            width: wsCard.wsWindows.length === 1 ? 84 : (wsCard.wsWindows.length === 2 ? 64 : 40)
+                                            height: wsCard.wsWindows.length === 1 ? 52 : (wsCard.wsWindows.length === 2 ? 44 : 32)
+                                            radius: Theme.radiusSmall
                                             color: Theme.notchSurfaceElevated
                                             border.color: Theme.notchBorderHighlight
                                             border.width: 1
+                                            clip: true
 
+                                            // Fallback App Icon
                                             SymbolicIcon {
                                                 anchors.centerIn: parent
-                                                source: {
-                                                    const win = wsCard.wsWindows[index];
-                                                    return win ? root.resolveIcon(win.appId) : "window-new-symbolic";
-                                                }
-                                                iconSize: 12
+                                                source: miniWin ? root.resolveIcon(miniWin.appId) : "window-new-symbolic"
+                                                iconSize: wsCard.wsWindows.length === 1 ? 20 : 14
                                                 iconColor: Theme.notchText
+                                                visible: !miniScreencopy.hasContent
+                                            }
+
+                                            // Miniature Screencopy Live Capture
+                                            ScreencopyView {
+                                                id: miniScreencopy
+                                                anchors.fill: parent
+                                                anchors.margins: 1
+                                                captureSource: miniWin ? (miniWin.wayland || miniWin.raw) : null
+                                                live: ShellState.overviewOpen
+                                                paintCursor: false
+                                                visible: hasContent
                                             }
                                         }
                                     }
@@ -355,7 +371,7 @@ PanelWindow {
                                     visible: wsCard.wsWindows.length === 0
                                     text: "—"
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
+                                    font.pixelSize: Theme.fontSize(14)
                                     color: Theme.notchTextSecondary
                                 }
                             }
@@ -385,11 +401,14 @@ PanelWindow {
             //  2. CENTER SECTION: WINDOW EXPOSÉ CANVAS
             // ═══════════════════════════════════════════════════════════════
             Item {
+                id: windowCanvas
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                implicitHeight: root.currentWindows.length === 0 ? emptyStateCol.implicitHeight + 40 : windowFlow.implicitHeight
+                Layout.alignment: Qt.AlignHCenter
 
                 // Empty State if no windows
                 ColumnLayout {
+                    id: emptyStateCol
                     anchors.centerIn: parent
                     visible: root.currentWindows.length === 0
                     spacing: 16
@@ -422,8 +441,16 @@ PanelWindow {
 
                 // Grid of Windows
                 Flow {
-                    anchors.centerIn: parent
-                    width: Math.min(parent.width - 64, Math.max(1, root.currentWindows.length) * 440)
+                    id: windowFlow
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: 8
+                    width: {
+                        const n = root.currentWindows.length;
+                        if (n <= 1) return 640;
+                        if (n === 2) return 560 * 2 + 24;
+                        return Math.min(parent.width - 64, Math.min(n, 3) * 420 + (Math.min(n, 3) - 1) * 20);
+                    }
                     spacing: 20
                     visible: root.currentWindows.length > 0
 
@@ -441,8 +468,8 @@ PanelWindow {
                             readonly property bool isBeingDragged: root.draggedAddress === winAddress
 
                             // Responsive sizing based on window count
-                            width: root.currentWindows.length === 1 ? 580 : (root.currentWindows.length === 2 ? 460 : 360)
-                            height: root.currentWindows.length === 1 ? 380 : (root.currentWindows.length === 2 ? 310 : 250)
+                            width: root.currentWindows.length === 1 ? 640 : (root.currentWindows.length === 2 ? 560 : (root.currentWindows.length <= 4 ? 420 : 360))
+                            height: root.currentWindows.length === 1 ? 420 : (root.currentWindows.length === 2 ? 360 : (root.currentWindows.length <= 4 ? 280 : 240))
                             radius: Theme.radiusLarge
 
                             color: Theme.isGlass ? Qt.rgba(0.08, 0.08, 0.08, 0.88) : Theme.notchBackground
@@ -767,23 +794,29 @@ PanelWindow {
 
     // Hit-testing global point against workspace cards in the carousel strip
     function checkDropTarget(globalX, globalY) {
-        // Strip is in top area (y between ~32 and ~160)
-        if (globalY < 20 || globalY > 170) {
+        // Strip is in top area (y between ~40 and ~190)
+        if (globalY < 40 || globalY > 190) {
             root.hoveredDropWsId = -1;
             return;
         }
 
         // Check horizontal position relative to workspace cards
         const ids = root.displayWsIds;
-        const totalW = ids.length * 154 + (ids.length - 1) * 14;
+        const cardW = 220;
+        const cardSpacing = 16;
+        const totalW = ids.length * cardW + (ids.length - 1) * cardSpacing;
         const startX = (root.width - totalW) / 2;
 
         if (globalX >= startX && globalX <= startX + totalW) {
             const relX = globalX - startX;
-            const index = Math.floor(relX / (154 + 14));
+            const rawIndex = Math.floor(relX / (cardW + cardSpacing));
+            const index = I18n.isRTL ? (ids.length - 1 - rawIndex) : rawIndex;
             if (index >= 0 && index < ids.length) {
-                root.hoveredDropWsId = ids[index];
-                return;
+                const offsetInSlot = relX - rawIndex * (cardW + cardSpacing);
+                if (offsetInSlot <= cardW) {
+                    root.hoveredDropWsId = ids[index];
+                    return;
+                }
             }
         }
         root.hoveredDropWsId = -1;
