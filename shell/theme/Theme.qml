@@ -147,7 +147,13 @@ Item {
         "activeTabBackground": "#ffffff",
         "inactiveTabForeground": "#a3a3a3",
         "inactiveTabBackground": "#141414",
-        "tabBarBackground": "#000000"
+        "tabBarBackground": "#000000",
+        "selectionFill": "#ffffff",
+        "selectionAlpha": 0.16,
+        "selectionBorder": "#ffffff",
+        "selectionBorderAlpha": 0.35,
+        "hoverFill": "#ffffff",
+        "hoverAlpha": 0.08
     })
 
     readonly property var lightPalette: ({
@@ -193,7 +199,13 @@ Item {
         "activeTabBackground": "#0f172a",
         "inactiveTabForeground": "#525252",
         "inactiveTabBackground": "#fafafa",
-        "tabBarBackground": "#f5f5f5"
+        "tabBarBackground": "#f5f5f5",
+        "selectionFill": "#0f172a",
+        "selectionAlpha": 0.12,
+        "selectionBorder": "#0f172a",
+        "selectionBorderAlpha": 0.25,
+        "hoverFill": "#0f172a",
+        "hoverAlpha": 0.06
     })
 
     readonly property var glassPalette: ({
@@ -242,7 +254,13 @@ Item {
         "activeTabBackground": "#ffffff",
         "inactiveTabForeground": "#a3a3a3",
         "inactiveTabBackground": "#141414",
-        "tabBarBackground": "#000000"
+        "tabBarBackground": "#000000",
+        "selectionFill": "#ffffff",
+        "selectionAlpha": 0.16,
+        "selectionBorder": "#ffffff",
+        "selectionBorderAlpha": 0.35,
+        "hoverFill": "#ffffff",
+        "hoverAlpha": 0.08
     })
 
     readonly property var darkAnsi: ({

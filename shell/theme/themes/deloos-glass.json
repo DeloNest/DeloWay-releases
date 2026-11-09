@@ -47,7 +47,13 @@
     "activeTabBackground": "#ffffff",
     "inactiveTabForeground": "#a3a3a3",
     "inactiveTabBackground": "#141414",
-    "tabBarBackground": "#000000"
+    "tabBarBackground": "#000000",
+    "selectionFill": "#ffffff",
+    "selectionAlpha": 0.16,
+    "selectionBorder": "#ffffff",
+    "selectionBorderAlpha": 0.35,
+    "hoverFill": "#ffffff",
+    "hoverAlpha": 0.08
   },
   "ansi": {
     "color0": "#404040",

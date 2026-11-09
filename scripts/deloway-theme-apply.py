@@ -114,70 +114,89 @@ def atomic_write_if_changed(target_path: Path, content: str, dry_run: bool = Fal
 
 
 def build_gtk_css(mode: str) -> str:
-    """Generate dynamic GTK CSS with libadwaita named colors and component styles (Monochrome OLED / High Contrast)."""
-    is_dark = (mode == "dark")
+    """Generate dynamic GTK CSS with libadwaita named colors and component styles (Monochrome OLED / High Contrast / Glass)."""
+    is_dark = (mode == "dark" or mode == "glass")
+    project_dir = Path(__file__).resolve().parent.parent
+    theme_file = project_dir / "shell" / "theme" / "themes" / f"deloos-{mode}.json"
+    if not theme_file.exists():
+        theme_file = project_dir / "shell" / "theme" / "themes" / "deloos-dark.json"
 
-    # Strict Monochrome Tokens
-    if is_dark:
+    with open(theme_file, "r", encoding="utf-8") as f:
+        theme_data = json.load(f)
+    colors = theme_data.get("colors", {})
+
+    # Strict Monochrome Tokens derived from single source of truth
+    if mode == "glass":
+        # OLED Glass Translucent Mode (85% Black + Compositor Dual-pass Blur)
+        bg_alpha = colors.get("backgroundAlpha", 0.85)
+        window_bg = f"rgba(0, 0, 0, {bg_alpha})"
+        window_fg = colors.get("text", "#ffffff")
+        view_bg = f"rgba(0, 0, 0, {bg_alpha})"
+        view_fg = colors.get("text", "#ffffff")
+        sidebar_bg = f"rgba(10, 10, 10, {bg_alpha * 0.76:.2f})"
+        sidebar_fg = colors.get("text", "#ffffff")
+        headerbar_bg = f"rgba(10, 10, 10, {bg_alpha * 0.88:.2f})"
+        headerbar_fg = colors.get("text", "#ffffff")
+        headerbar_border = "rgba(255, 255, 255, 0.12)"
+        card_bg = "rgba(20, 20, 20, 0.65)"
+        popover_bg = colors.get("surfaceElevated", "#141414")
+        dialog_bg = colors.get("surfaceElevated", "#141414")
+        border = "rgba(255, 255, 255, 0.12)"
+        text_muted = colors.get("textMuted", "#8e8e8e")
+    elif is_dark:
         # OLED Pure Black & Neutral Elevated Surfaces
-        window_bg = "#000000"
-        window_fg = "#ffffff"
-        view_bg = "#000000"
-        view_fg = "#ffffff"
-        sidebar_bg = "#0a0a0a"
-        sidebar_fg = "#ffffff"
-        headerbar_bg = "#0a0a0a"
-        headerbar_fg = "#ffffff"
-        headerbar_border = "#222222"
-        card_bg = "#111111"
-        popover_bg = "#111111"
-        border = "#222222"
-        text_muted = "#888888"
-
-        # Neutral Contrast Active/Selection
-        sel_bg = "#ffffff"
-        sel_fg = "#000000"
-
-        # Translucent row selection matching Notch/Capsule cards
-        thunar_row_sel_bg = "alpha(#ffffff, 0.16)"
-        thunar_row_sel_fg = "#ffffff"
-        thunar_row_sel_border = "alpha(#ffffff, 0.35)"
-        thunar_row_hover_bg = "alpha(#ffffff, 0.08)"
-
-        # Semantic Status Indicators (strictly constrained)
-        destructive = "#ef4444"
-        warning = "#f59e0b"
-        success = "#10b981"
+        window_bg = colors.get("background", "#000000")
+        window_fg = colors.get("text", "#ffffff")
+        view_bg = colors.get("background", "#000000")
+        view_fg = colors.get("text", "#ffffff")
+        sidebar_bg = colors.get("backgroundAlt", "#0a0a0a")
+        sidebar_fg = colors.get("text", "#ffffff")
+        headerbar_bg = colors.get("backgroundAlt", "#0a0a0a")
+        headerbar_fg = colors.get("text", "#ffffff")
+        headerbar_border = colors.get("border", "#222222")
+        card_bg = colors.get("surfaceCard", "#111111")
+        popover_bg = colors.get("surfaceElevated", "#111111")
+        dialog_bg = colors.get("surfaceElevated", "#111111")
+        border = colors.get("border", "#222222")
+        text_muted = colors.get("textMuted", "#888888")
     else:
         # Crisp High-Contrast Light Mode
-        window_bg = "#ffffff"
-        window_fg = "#0f172a"
-        view_bg = "#ffffff"
-        view_fg = "#0f172a"
-        sidebar_bg = "#f8fafc"
-        sidebar_fg = "#0f172a"
-        headerbar_bg = "#f8fafc"
-        headerbar_fg = "#0f172a"
-        headerbar_border = "#e2e8f0"
-        card_bg = "#ffffff"
-        popover_bg = "#ffffff"
-        border = "#d5dbe6"
-        text_muted = "#64748b"
+        window_bg = colors.get("surface", "#ffffff")
+        window_fg = colors.get("text", "#0f172a")
+        view_bg = colors.get("surface", "#ffffff")
+        view_fg = colors.get("text", "#0f172a")
+        sidebar_bg = colors.get("background", "#f8fafc")
+        sidebar_fg = colors.get("text", "#0f172a")
+        headerbar_bg = colors.get("background", "#f8fafc")
+        headerbar_fg = colors.get("text", "#0f172a")
+        headerbar_border = colors.get("borderSubtle", "#e2e8f0")
+        card_bg = colors.get("surface", "#ffffff")
+        popover_bg = colors.get("surface", "#ffffff")
+        dialog_bg = colors.get("surface", "#ffffff")
+        border = colors.get("border", "#d5dbe6")
+        text_muted = colors.get("textMuted", "#64748b")
 
-        # Neutral Contrast Active/Selection
-        sel_bg = "#0f172a"
-        sel_fg = "#ffffff"
+    # Neutral Contrast Active/Selection
+    sel_bg = colors.get("accent", "#ffffff" if is_dark else "#0f172a")
+    sel_fg = colors.get("accentText", "#000000" if is_dark else "#ffffff")
 
-        # Translucent row selection matching Notch/Capsule cards
-        thunar_row_sel_bg = "alpha(#0f172a, 0.12)"
-        thunar_row_sel_fg = "#0f172a"
-        thunar_row_sel_border = "alpha(#0f172a, 0.25)"
-        thunar_row_hover_bg = "alpha(#0f172a, 0.06)"
+    # Translucent row selection matching Notch/Capsule cards
+    sel_fill = colors.get("selectionFill", "#ffffff" if is_dark else "#0f172a")
+    sel_alpha = colors.get("selectionAlpha", 0.16 if is_dark else 0.12)
+    sel_border = colors.get("selectionBorder", "#ffffff" if is_dark else "#0f172a")
+    sel_border_alpha = colors.get("selectionBorderAlpha", 0.35 if is_dark else 0.25)
+    hover_fill = colors.get("hoverFill", "#ffffff" if is_dark else "#0f172a")
+    hover_alpha = colors.get("hoverAlpha", 0.08 if is_dark else 0.06)
 
-        # Semantic Status Indicators
-        destructive = "#ef4444"
-        warning = "#d97706"
-        success = "#10b981"
+    thunar_row_sel_bg = f"alpha({sel_fill}, {sel_alpha})"
+    thunar_row_sel_fg = colors.get("textPrimary", "#ffffff" if is_dark else "#0f172a")
+    thunar_row_sel_border = f"alpha({sel_border}, {sel_border_alpha})"
+    thunar_row_hover_bg = f"alpha({hover_fill}, {hover_alpha})"
+
+    # Semantic Status Indicators (strictly constrained)
+    destructive = colors.get("urgent", "#ef4444")
+    warning = colors.get("warning", "#f59e0b" if is_dark else "#d97706")
+    success = colors.get("success", "#10b981")
 
     return f"""/* ========================================================================== */
 /* DeloWay Dynamic GTK Stylesheet (Generated by deloway-theme-apply.py)        */
@@ -188,8 +207,8 @@ def build_gtk_css(mode: str) -> str:
 @define-color theme_bg_color {window_bg};
 @define-color theme_fg_color {window_fg};
 @define-color theme_base_color {sidebar_bg};
-@define-color theme_selected_bg_color {sel_bg};
-@define-color theme_selected_fg_color {sel_fg};
+@define-color theme_selected_bg_color {thunar_row_sel_bg};
+@define-color theme_selected_fg_color {thunar_row_sel_fg};
 @define-color accent_color {sel_bg};
 @define-color accent_bg_color {sel_bg};
 @define-color accent_fg_color {sel_fg};
@@ -206,9 +225,19 @@ def build_gtk_css(mode: str) -> str:
 @define-color card_fg_color {window_fg};
 @define-color popover_bg_color {popover_bg};
 @define-color popover_fg_color {window_fg};
+@define-color dialog_bg_color {dialog_bg};
 @define-color borders {border};
 @define-color border_color {border};
 @define-color text_muted {text_muted};
+
+/* Unfocused / Backdrop Theme Named Colors (prevent white fallback in Thunar) */
+@define-color theme_unfocused_selected_bg_color {thunar_row_sel_bg};
+@define-color theme_unfocused_selected_fg_color {thunar_row_sel_fg};
+@define-color theme_unfocused_bg_color {window_bg};
+@define-color theme_unfocused_fg_color {window_fg};
+@define-color theme_unfocused_base_color {sidebar_bg};
+@define-color theme_unfocused_view_bg_color {view_bg};
+@define-color theme_unfocused_text_color {view_fg};
 
 /* Semantic status indicators */
 @define-color destructive_color {destructive};
@@ -239,12 +268,13 @@ menubar, .menubar {{
     border-bottom: 1px solid @headerbar_border_color;
 }}
 
-menu, .menu, popover, window.popup {{
+menu, .menu, .context-menu, .csd menu, .csd .menu, .csd .context-menu, popover, popover.menu, window.popup {{
     background-color: @popover_bg_color;
     color: @popover_fg_color;
     border: 1px solid @border_color;
     border-radius: 8px;
     padding: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.60);
 }}
 
 menuitem, .menuitem {{
@@ -264,12 +294,22 @@ tooltip {{
     border-radius: 6px;
     color: @popover_fg_color;
     padding: 4px 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }}
 
 /* Global Selection */
 :selected {{
     background-color: @theme_selected_bg_color;
     color: @theme_selected_fg_color;
+}}
+
+/* High-contrast text input selection */
+entry selection,
+entry selection:focus,
+entry:focus selection,
+textview text selection {{
+    background-color: {sel_bg};
+    color: {sel_fg};
 }}
 
 /* ========================================================================== */
@@ -310,57 +350,364 @@ window#thunar-window:dir(ltr) .sidebar,
     border-left: none;
 }}
 
+window.thunar .sidebar treeview.view row,
 window.thunar .sidebar row,
-window.thunar .sidebar treeview row,
-.thunar .sidebar treeview:hover {{
-    border-radius: 6px;
-    margin: 1px 4px;
-    padding: 3px 6px;
+.thunar .sidebar treeview.view row,
+.thunar .sidebar row {{
+    min-height: 32px;
+    margin: 1px 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
 }}
 
+window.thunar .sidebar treeview.view row image,
+window.thunar .sidebar row image,
+.thunar .sidebar image {{
+    min-width: 16px;
+    min-height: 16px;
+}}
+
+window.thunar .sidebar treeview.view row:hover,
 window.thunar .sidebar row:hover,
-window.thunar .sidebar treeview row:hover {{
+.thunar .sidebar row:hover {{
     background-color: {thunar_row_hover_bg};
+    border-color: transparent;
 }}
 
+window.thunar .sidebar treeview.view row:selected,
+window.thunar .sidebar treeview.view row:selected:backdrop,
+window.thunar .sidebar treeview.view row:backdrop:selected,
 window.thunar .sidebar row:selected,
-window.thunar .sidebar treeview row:selected,
-window.thunar .sidebar treeview:selected {{
+window.thunar .sidebar row:selected:backdrop,
+window.thunar .sidebar row:backdrop:selected,
+window.thunar .sidebar treeview:selected,
+window.thunar .sidebar treeview:selected:backdrop,
+.thunar .sidebar treeview.view row:selected,
+.thunar .sidebar treeview.view row:selected:backdrop,
+.thunar .sidebar row:selected,
+.thunar .sidebar row:selected:backdrop {{
     background-color: {thunar_row_sel_bg};
     color: {thunar_row_sel_fg};
     border: 1px solid {thunar_row_sel_border};
-    border-radius: 6px;
+    border-radius: 8px;
 }}
 
-/* Main File View (Grid & Detailed List) */
+/* Main File View (Grid, Compact & Detailed List) */
 window.thunar .standard-view,
 window.thunar .view,
+window.thunar ExoIconView,
+window.thunar ExoIconView.view,
+window.thunar XfceIconView,
+window.thunar XfceIconView.view,
+window.thunar iconview,
+window.thunar iconview.view,
 window.thunar exo-icon-view,
 window.thunar treeview.view,
+.thunar .standard-view,
+.thunar ExoIconView,
+.thunar ExoIconView.view,
+.thunar XfceIconView,
+.thunar XfceIconView.view,
+.thunar iconview,
 .thunar exo-icon-view,
 .thunar treeview.view {{
-    background-color: @view_bg_color;
+    background-color: {"transparent" if mode == "glass" else "@view_bg_color"};
     color: @view_fg_color;
 }}
 
-window.thunar .standard-view:hover,
-window.thunar .view:hover,
-window.thunar exo-icon-view:hover,
-window.thunar treeview.view:hover {{
-    background-color: {thunar_row_hover_bg};
+/* Cells and Rows Base */
+window.thunar .view.cell,
+window.thunar .standard-view .cell,
+window.thunar ExoIconView .cell,
+window.thunar XfceIconView .cell,
+window.thunar treeview.view row {{
+    border-radius: 8px;
+    border: 1px solid transparent;
 }}
 
+/* Hover State */
+window.thunar .standard-view:hover,
+window.thunar .standard-view .cell:hover,
+window.thunar .view:hover,
+window.thunar .view.cell:hover,
+window.thunar ExoIconView:hover,
+window.thunar ExoIconView .cell:hover,
+window.thunar XfceIconView:hover,
+window.thunar XfceIconView .cell:hover,
+window.thunar iconview:hover,
+window.thunar exo-icon-view:hover,
+window.thunar treeview.view:hover,
+window.thunar treeview.view row:hover,
+.thunar .standard-view:hover,
+.thunar .standard-view .cell:hover,
+.thunar ExoIconView:hover,
+.thunar XfceIconView:hover,
+.thunar treeview.view row:hover {{
+    background-color: {thunar_row_hover_bg};
+    border-color: transparent;
+}}
+
+/* Selected State - Icon View & List View (Active & Backdrop) */
+.standard-view:selected,
+.standard-view:selected:focus,
+.standard-view:selected:backdrop,
+.standard-view:backdrop:selected,
+.standard-view .view:selected,
+.standard-view .view:selected:focus,
+.standard-view .view:selected:backdrop,
+.standard-view .view:backdrop:selected,
+.standard-view .cell:selected,
+.standard-view .cell:selected:backdrop,
+.standard-view treeview.view:selected,
+.standard-view treeview.view:selected:backdrop,
+ExoIconView:selected,
+ExoIconView:selected:focus,
+ExoIconView:selected:backdrop,
+ExoIconView:backdrop:selected,
+ExoIconView.view:selected,
+ExoIconView.view:selected:focus,
+ExoIconView.view:selected:backdrop,
+ExoIconView.view:backdrop:selected,
+ExoIconView .cell:selected,
+ExoIconView .cell:selected:backdrop,
+XfceIconView:selected,
+XfceIconView:selected:focus,
+XfceIconView:selected:backdrop,
+XfceIconView:backdrop:selected,
+XfceIconView.view:selected,
+XfceIconView.view:selected:focus,
+XfceIconView.view:selected:backdrop,
+XfceIconView.view:backdrop:selected,
+XfceIconView .cell:selected,
+XfceIconView .cell:selected:backdrop,
+iconview:selected,
+iconview:selected:backdrop,
+exo-icon-view:selected,
+exo-icon-view:selected:backdrop,
 window.thunar .standard-view:selected,
+window.thunar .standard-view:selected:focus,
+window.thunar .standard-view:selected:backdrop,
+window.thunar .standard-view:backdrop:selected,
+.thunar .standard-view:selected,
+.thunar .standard-view:selected:focus,
+.thunar .standard-view:selected:backdrop,
+.thunar .standard-view:backdrop:selected,
+window.thunar .standard-view .view:selected,
+window.thunar .standard-view .view:selected:backdrop,
+window.thunar .standard-view .cell:selected,
+window.thunar .standard-view .cell:selected:backdrop,
+window.thunar .standard-view treeview.view:selected,
+window.thunar .standard-view treeview.view:selected:backdrop,
 window.thunar .view:selected,
+window.thunar .view:selected:backdrop,
+window.thunar .view.cell:selected,
+window.thunar .view.cell:selected:backdrop,
+window.thunar ExoIconView:selected,
+window.thunar ExoIconView:selected:backdrop,
+window.thunar ExoIconView.view:selected,
+window.thunar ExoIconView.view:selected:backdrop,
+window.thunar ExoIconView .cell:selected,
+window.thunar ExoIconView .cell:selected:backdrop,
+window.thunar XfceIconView:selected,
+window.thunar XfceIconView:selected:backdrop,
+window.thunar XfceIconView.view:selected,
+window.thunar XfceIconView.view:selected:backdrop,
+window.thunar XfceIconView .cell:selected,
+window.thunar XfceIconView .cell:selected:backdrop,
+window.thunar iconview:selected,
+window.thunar iconview:selected:backdrop,
 window.thunar exo-icon-view:selected,
+window.thunar exo-icon-view:selected:backdrop,
 window.thunar treeview.view:selected,
+window.thunar treeview.view:selected:backdrop,
+window.thunar treeview.view row:selected,
+window.thunar treeview.view row:selected:backdrop,
+.thunar .standard-view .view:selected,
+.thunar .standard-view .cell:selected,
+.thunar .standard-view .cell:selected:backdrop,
+.thunar .view.cell:selected,
+.thunar .view.cell:selected:backdrop,
+.thunar ExoIconView:selected,
+.thunar ExoIconView:selected:backdrop,
+.thunar XfceIconView:selected,
+.thunar XfceIconView:selected:backdrop,
 .thunar exo-icon-view:selected,
-.thunar treeview.view:selected {{
+.thunar exo-icon-view:selected:backdrop,
+.thunar treeview.view:selected,
+.thunar treeview.view:selected:backdrop,
+.thunar treeview.view row:selected,
+.thunar treeview.view row:selected:backdrop {{
     background-color: {thunar_row_sel_bg};
     color: {thunar_row_sel_fg};
     border: 1px solid {thunar_row_sel_border};
-    border-radius: 6px;
+    border-radius: 8px;
     outline: none;
+}}
+
+/* Text Selection Contrast Rules (Ensures filename text is 100% visible on selection) */
+.standard-view text,
+.standard-view .cell text,
+ExoIconView text,
+ExoIconView.view text,
+ExoIconView .cell text,
+XfceIconView text,
+XfceIconView.view text,
+XfceIconView .cell text,
+iconview text,
+exo-icon-view text,
+window.thunar .standard-view text,
+window.thunar .view text,
+window.thunar ExoIconView text,
+window.thunar XfceIconView text,
+window.thunar treeview.view text,
+.thunar .standard-view text,
+.thunar ExoIconView text,
+.thunar XfceIconView text,
+.thunar treeview.view text {{
+    color: @view_fg_color;
+    background-color: transparent;
+}}
+
+.standard-view text:selected,
+.standard-view text:selected:backdrop,
+.standard-view text:backdrop:selected,
+.standard-view .cell text:selected,
+.standard-view .cell text:selected:backdrop,
+.standard-view .view text:selected,
+.standard-view .view text:selected:backdrop,
+.standard-view .view.cell text:selected,
+.standard-view .view.cell text:selected:backdrop,
+ExoIconView text:selected,
+ExoIconView text:selected:backdrop,
+ExoIconView:backdrop text:selected,
+ExoIconView.view text:selected,
+ExoIconView.view text:selected:backdrop,
+ExoIconView .cell text:selected,
+ExoIconView .cell text:selected:backdrop,
+XfceIconView text:selected,
+XfceIconView text:selected:backdrop,
+XfceIconView:backdrop text:selected,
+XfceIconView.view text:selected,
+XfceIconView.view text:selected:backdrop,
+XfceIconView .cell text:selected,
+XfceIconView .cell text:selected:backdrop,
+iconview text:selected,
+iconview text:selected:backdrop,
+exo-icon-view text:selected,
+exo-icon-view text:selected:backdrop,
+window.thunar .standard-view text:selected,
+window.thunar .standard-view text:selected:backdrop,
+window.thunar .standard-view text:backdrop:selected,
+window.thunar .standard-view .cell text:selected,
+window.thunar .standard-view .cell text:selected:backdrop,
+window.thunar .view text:selected,
+window.thunar .view text:selected:backdrop,
+window.thunar .view.cell text:selected,
+window.thunar .view.cell text:selected:backdrop,
+window.thunar .cell text:selected,
+window.thunar .cell text:selected:backdrop,
+window.thunar ExoIconView text:selected,
+window.thunar ExoIconView text:selected:backdrop,
+window.thunar ExoIconView.view text:selected,
+window.thunar ExoIconView.view text:selected:backdrop,
+window.thunar ExoIconView .cell text:selected,
+window.thunar ExoIconView .cell text:selected:backdrop,
+window.thunar XfceIconView text:selected,
+window.thunar XfceIconView text:selected:backdrop,
+window.thunar XfceIconView.view text:selected,
+window.thunar XfceIconView.view text:selected:backdrop,
+window.thunar iconview text:selected,
+window.thunar iconview text:selected:backdrop,
+window.thunar exo-icon-view text:selected,
+window.thunar exo-icon-view text:selected:backdrop,
+window.thunar treeview.view text:selected,
+window.thunar treeview.view text:selected:backdrop,
+window.thunar treeview.view row:selected text,
+window.thunar treeview.view row:selected:backdrop text,
+.thunar .standard-view text:selected,
+.thunar .standard-view text:selected:backdrop,
+.thunar ExoIconView text:selected,
+.thunar ExoIconView text:selected:backdrop,
+.thunar XfceIconView text:selected,
+.thunar XfceIconView text:selected:backdrop,
+.thunar treeview.view text:selected,
+.thunar treeview.view text:selected:backdrop,
+.thunar treeview.view row:selected text,
+.thunar treeview.view row:selected:backdrop text {{
+    color: {thunar_row_sel_fg};
+    background-color: transparent;
+}}
+
+/* Fallback override for any selected widget inside Thunar */
+window.thunar :selected,
+window.thunar :selected:backdrop,
+.thunar :selected,
+.thunar :selected:backdrop {{
+    color: {thunar_row_sel_fg};
+}}
+
+/* Inline File Rename Entry */
+window.thunar .standard-view entry,
+window.thunar ExoIconView entry,
+window.thunar XfceIconView entry,
+window.thunar treeview.view entry,
+.thunar .standard-view entry,
+.thunar ExoIconView entry,
+.thunar XfceIconView entry {{
+    background-color: @card_bg_color;
+    color: @theme_fg_color;
+    border: 1px solid {thunar_row_sel_border};
+    border-radius: 6px;
+    padding: 2px 6px;
+}}
+
+window.thunar .standard-view entry selection,
+window.thunar ExoIconView entry selection,
+window.thunar XfceIconView entry selection,
+.thunar .standard-view entry selection {{
+    background-color: {sel_bg};
+    color: {sel_fg};
+}}
+
+/* Detailed List View Column Headers */
+window.thunar treeview.view header button,
+.thunar treeview.view header button {{
+    background-color: @headerbar_bg_color;
+    color: @text_muted;
+    font-weight: 600;
+    padding: 4px 8px;
+    border: none;
+    border-bottom: 1px solid @border_color;
+}}
+
+window.thunar treeview.view header button:hover,
+.thunar treeview.view header button:hover {{
+    color: @theme_fg_color;
+    background-color: alpha(@theme_selected_bg_color, 0.08);
+}}
+
+/* Rubberband Selection */
+window.thunar rubberband,
+window.thunar .rubberband,
+.thunar rubberband,
+.thunar .rubberband,
+window.thunar ExoIconView rubberband,
+window.thunar ExoIconView .rubberband,
+window.thunar XfceIconView rubberband,
+window.thunar XfceIconView .rubberband {{
+    background-color: {thunar_row_sel_bg};
+    border: 1px solid {thunar_row_sel_border};
+    border-radius: 4px;
+}}
+
+/* Transparent intermediate containers so window background shows through */
+window.thunar notebook,
+window.thunar notebook stack,
+window.thunar paned,
+window.thunar grid,
+window.thunar box {{
+    background-color: transparent;
 }}
 
 /* Location Bar & Pathbar */
@@ -370,16 +717,17 @@ window.thunar toolbar.location-bar,
 .thunar .location-bar {{
     background-color: @headerbar_bg_color;
     border-bottom: 1px solid @border_color;
-    padding: 3px 6px;
+    padding: 4px 8px;
 }}
 
 window.thunar .path-bar button,
 .thunar .path-bar button {{
     background-color: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 3px 8px;
+    border-radius: 8px;
+    padding: 4px 10px;
     color: @headerbar_fg_color;
+    font-weight: 500;
 }}
 
 window.thunar .path-bar button:hover,
@@ -413,14 +761,14 @@ window.thunar toolbar,
 .thunar toolbar {{
     background-color: @headerbar_bg_color;
     border-bottom: 1px solid @border_color;
-    padding: 2px 4px;
+    padding: 3px 6px;
 }}
 
 window.thunar toolbar button,
 .thunar toolbar button {{
     background-color: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 4px 8px;
     color: @headerbar_fg_color;
 }}
@@ -450,18 +798,15 @@ window.thunar toolbar button:active,
     color: @headerbar_fg_color;
 }}
 
-/* RTL: GTK mirrors widgets and aligns text by direction itself (text-align and
-   direction are not GTK CSS properties; they only produced warnings). */
-
 /* Entries (Search & Path Input) */
 window.thunar entry,
 .thunar entry,
 window.thunar .location-bar entry {{
     background-color: @view_bg_color;
     border: 1px solid @border_color;
-    border-radius: 6px;
+    border-radius: 8px;
     color: @theme_fg_color;
-    padding: 4px 8px;
+    padding: 5px 10px;
 }}
 
 window.thunar entry:focus,
@@ -482,14 +827,15 @@ window.thunar paned > separator,
 /* Notebook Tabs (Split View & Multi-tab) */
 window.thunar notebook,
 .thunar notebook {{
-    background-color: @theme_bg_color;
+    background-color: {"transparent" if mode == "glass" else "@theme_bg_color"};
 }}
 
 window.thunar notebook tab,
 .thunar notebook tab {{
     background-color: @headerbar_bg_color;
     color: @headerbar_fg_color;
-    padding: 4px 12px;
+    padding: 5px 14px;
+    border-radius: 8px 8px 0 0;
     border: none;
 }}
 
@@ -503,16 +849,162 @@ window.thunar notebook tab:checked,
 /* Statusbar */
 window.thunar statusbar,
 .thunar statusbar {{
-    background-color: @sidebar_bg_color;
+    background-color: {"transparent" if mode == "glass" else "@sidebar_bg_color"};
     border-top: 1px solid @border_color;
     color: @text_muted;
-    padding: 2px 8px;
+    padding: 4px 12px;
+    font-size: 11px;
 }}
 
-/* Menus in RTL */
-window.thunar menuitem:dir(rtl),
-.thunar menuitem:dir(rtl) {{
-    padding: 4px 8px;
+/* ========================================================================== */
+/* Thunar File Manager — Menus, Context Menus, Submenus & Popovers           */
+/* ========================================================================== */
+
+/* Top-level Menu containers, Context Menus, Toolbar menus & Popovers */
+window.thunar menu,
+window#thunar-window menu,
+.thunar menu,
+window.thunar .menu,
+.thunar .menu,
+window.thunar .context-menu,
+.thunar .context-menu,
+window.thunar popover,
+.thunar popover,
+window.thunar popover.menu,
+.thunar popover.menu,
+window.thunar .location-bar menu,
+.thunar .location-bar menu,
+window.thunar .path-bar menu,
+.thunar .path-bar menu,
+window.thunar toolbar menu,
+.thunar toolbar menu,
+window.thunar combobox menu,
+.thunar combobox menu,
+window.thunar treeview.view header button menu,
+.thunar treeview.view header button menu {{
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+    border: 1px solid @border_color;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+}}
+
+/* Submenus (Nested menus e.g. File/Edit submenus in hamburger menu) */
+window.thunar menu menu,
+.thunar menu menu,
+window.thunar .menu .menu,
+.thunar .menu .menu {{
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+    border: 1px solid @border_color;
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.70);
+}}
+
+/* Menu Items inside Thunar */
+window.thunar menuitem,
+.thunar menuitem,
+window.thunar menu menuitem,
+.thunar menu menuitem,
+window.thunar .context-menu menuitem,
+.thunar .context-menu menuitem {{
+    min-height: 26px;
+    padding: 5px 12px;
+    margin: 1px 2px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: @popover_fg_color;
+    font-weight: normal;
+}}
+
+/* Menu item hover and selected state */
+window.thunar menuitem:hover,
+window.thunar menuitem:selected,
+.thunar menuitem:hover,
+.thunar menuitem:selected,
+window.thunar menu menuitem:hover,
+window.thunar menu menuitem:selected,
+.thunar menu menuitem:hover,
+.thunar menu menuitem:selected {{
+    background-color: {thunar_row_sel_bg};
+    color: {thunar_row_sel_fg};
+    border: 1px solid {thunar_row_sel_border};
+}}
+
+/* Disabled menu items */
+window.thunar menuitem:disabled,
+.thunar menuitem:disabled {{
+    color: @text_muted;
+    background-color: transparent;
+    border-color: transparent;
+}}
+
+/* Menu Separators */
+window.thunar menu separator,
+.thunar menu separator,
+window.thunar .context-menu separator,
+.thunar .context-menu separator {{
+    background-color: @border_color;
+    min-height: 1px;
+    margin: 4px 6px;
+}}
+
+/* Shortcuts / Accelerators (e.g. Ctrl+T, Ctrl+N, Ctrl+Q) */
+window.thunar menuitem accelerator,
+.thunar menuitem accelerator,
+window.thunar menuitem .accelerator,
+.thunar menuitem .accelerator {{
+    color: @text_muted;
+    font-size: 11px;
+}}
+
+window.thunar menuitem:hover accelerator,
+window.thunar menuitem:selected accelerator,
+.thunar menuitem:hover accelerator,
+.thunar menuitem:selected accelerator {{
+    color: {thunar_row_sel_fg};
+}}
+
+window.thunar menuitem:dir(rtl) accelerator,
+.thunar menuitem:dir(rtl) accelerator {{
+    margin-right: 22px;
+    margin-left: 0;
+}}
+
+window.thunar menuitem:dir(ltr) accelerator,
+.thunar menuitem:dir(ltr) accelerator {{
+    margin-left: 22px;
+    margin-right: 0;
+}}
+
+/* Submenu Arrow Indicators */
+window.thunar menu menuitem arrow,
+.thunar menu menuitem arrow {{
+    min-width: 14px;
+    min-height: 14px;
+    color: @text_muted;
+}}
+
+window.thunar menu menuitem:hover arrow,
+window.thunar menu menuitem:selected arrow,
+.thunar menu menuitem:hover arrow,
+.thunar menu menuitem:selected arrow {{
+    color: {thunar_row_sel_fg};
+}}
+
+/* Tooltips */
+window.thunar tooltip,
+.thunar tooltip,
+window.thunar tooltip.background,
+.thunar tooltip.background {{
+    background-color: @popover_bg_color;
+    border: 1px solid @border_color;
+    border-radius: 8px;
+    color: @popover_fg_color;
+    padding: 5px 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.50);
 }}
 
 /* Scrollbars */
@@ -523,10 +1015,17 @@ window.thunar scrollbar,
 
 window.thunar scrollbar slider,
 .thunar scrollbar slider {{
-    min-width: 6px;
-    min-height: 6px;
-    border-radius: 3px;
-    background-color: alpha(@border_color, 0.6);
+    min-width: 5px;
+    min-height: 5px;
+    border-radius: 8px;
+    background-color: alpha(@border_color, 0.45);
+}}
+
+window.thunar scrollbar slider:hover,
+.thunar scrollbar slider:hover {{
+    min-width: 8px;
+    min-height: 8px;
+    background-color: alpha(@theme_selected_bg_color, 0.35);
 }}
 
 window.thunar scrollbar slider:hover,
@@ -538,14 +1037,16 @@ window.thunar scrollbar slider:hover,
 window.thunar dialog,
 dialog.thunar,
 .thunar-dialog,
-window.thunar .dialog-action-area {{
-    background-color: @window_bg_color;
+window.thunar .dialog-action-area,
+window.thunar dialog.background,
+window.thunar messagedialog {{
+    background-color: @dialog_bg_color;
     color: @window_fg_color;
 }}
 
 window.thunar dialog notebook,
 window.thunar dialog notebook stack {{
-    background-color: @window_bg_color;
+    background-color: @dialog_bg_color;
 }}
 
 window.thunar dialog notebook tab {{
@@ -741,6 +1242,52 @@ def configure_thunar_defaults(dry_run: bool = False):
         print(f"[deloway-theme] Note configuring Thunar defaults: {e}", file=sys.stderr)
 
 
+def sync_default_file_manager(dry_run: bool = False):
+    """Ensure Thunar is configured as the default file manager and handles org.freedesktop.FileManager1."""
+    # 1. xdg-mime defaults
+    for mime in ("inode/directory", "x-scheme-handler/trash"):
+        if dry_run:
+            print(f"[dry-run] xdg-mime default thunar.desktop {mime}")
+        else:
+            try:
+                subprocess.run(["xdg-mime", "default", "thunar.desktop", mime], capture_output=True, check=False)
+            except Exception:
+                pass
+
+    # 2. D-Bus activation override
+    dbus_service_dir = Path.home() / ".local" / "share" / "dbus-1" / "services"
+    dbus_service_file = dbus_service_dir / "org.freedesktop.FileManager1.service"
+    dbus_service_content = (
+        "[D-BUS Service]\n"
+        "Name=org.freedesktop.FileManager1\n"
+        "Exec=/usr/bin/Thunar --gapplication-service\n"
+        "SystemdService=thunar.service\n"
+    )
+    if not dry_run:
+        dbus_service_dir.mkdir(parents=True, exist_ok=True)
+    atomic_write_if_changed(dbus_service_file, dbus_service_content, dry_run=dry_run)
+
+    # 3. Systemd user service override for plasma-dolphin.service (which D-Bus delegates to on Arch)
+    systemd_user_dir = Path.home() / ".config" / "systemd" / "user"
+    dolphin_override = systemd_user_dir / "plasma-dolphin.service"
+    dolphin_override_content = (
+        "[Unit]\n"
+        "Description=Thunar file manager (FileManager1 implementation)\n\n"
+        "[Service]\n"
+        "ExecStart=\n"
+        "ExecStart=/usr/bin/Thunar --gapplication-service\n"
+        "BusName=org.freedesktop.FileManager1\n"
+    )
+    if not dry_run:
+        systemd_user_dir.mkdir(parents=True, exist_ok=True)
+    changed = atomic_write_if_changed(dolphin_override, dolphin_override_content, dry_run=dry_run)
+    if changed and not dry_run:
+        try:
+            subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True, check=False)
+        except Exception:
+            pass
+
+
 def get_font_name_with_scale(scale: float, base_font_descriptor: str) -> str:
     """Compute font string reflecting scale factor (0.85, 1.0, 1.15)."""
     base_size = 11
@@ -809,9 +1356,20 @@ def sync_system_language(ui_lang: str, dry_run: bool = False):
 #                      file (rendering quality, Cairo for Arabic text).
 # Strict monochrome: every "accent" slot is the neutral high-contrast colour.
 
-DELOWAY_THEME_NAMES = {"dark": "DeloWay-Dark", "light": "DeloWay-Light"}
+DELOWAY_THEME_NAMES = {"dark": "DeloWay-Dark", "light": "DeloWay-Light", "glass": "DeloWay-Glass"}
 
 PALETTES = {
+    "glass": {
+        "window_bg": "rgba(0, 0, 0, 0.85)", "window_fg": "#ffffff",
+        "view_bg": "rgba(0, 0, 0, 0.85)", "view_fg": "#ffffff",
+        "headerbar_bg": "rgba(10, 10, 10, 0.75)", "headerbar_fg": "#ffffff", "headerbar_border": "rgba(255, 255, 255, 0.12)",
+        "sidebar_bg": "rgba(10, 10, 10, 0.65)", "sidebar_fg": "#ffffff", "sidebar_border": "rgba(255, 255, 255, 0.10)",
+        "card_bg": "rgba(20, 20, 20, 0.65)", "card_fg": "#ffffff",
+        "dialog_bg": "#141414", "popover_bg": "#141414",
+        "border": "rgba(255, 255, 255, 0.12)", "shade": "rgba(0, 0, 0, 0.36)",
+        "accent_bg": "#ffffff", "accent_fg": "#000000", "accent": "#ffffff",
+        "destructive": "#ef4444", "warning": "#f59e0b", "success": "#10b981",
+    },
     "dark": {
         "window_bg": "#000000", "window_fg": "#ffffff",
         "view_bg": "#000000", "view_fg": "#ffffff",
@@ -869,23 +1427,24 @@ def _adw_vars(pal: dict) -> str:
     return "\n".join(f"    --{k}: {val};" for k, val in v.items())
 
 
-def build_gtk4_css(radius: dict) -> str:
-    """Mode-agnostic libadwaita stylesheet: light by default, dark via media query."""
+def build_gtk4_css(radius: dict, theme_name: str = "dark") -> str:
+    """DeloWay GTK4 / libadwaita stylesheet. Supports dark, light, and glass."""
     r = radius
+    is_glass = (theme_name == "glass")
+    active_pal = PALETTES["glass"] if is_glass else PALETTES["dark"]
+
     return f"""/* ========================================================================== */
 /* DeloWay GTK4 / libadwaita stylesheet — generated by deloway-theme-apply.py  */
-/* Both palettes live here; the active one follows the portal colour scheme,   */
-/* so running apps switch instantly with the shell (no restart).               */
 /* Strict monochrome: accent = neutral high contrast. Do not edit by hand.     */
 /* ========================================================================== */
 
 :root {{
-{_adw_vars(PALETTES["light"])}
+{_adw_vars(PALETTES["glass"] if is_glass else PALETTES["light"])}
 }}
 
 @media (prefers-color-scheme: dark) {{
     :root {{
-{_adw_vars(PALETTES["dark"]).replace("    --", "        --")}
+{_adw_vars(active_pal).replace("    --", "        --")}
     }}
 }}
 
@@ -923,18 +1482,18 @@ window.csd.dialog, messagedialog.csd {{ border-radius: {r["large"]}px; }}
 
 
 def write_gtk3_themes(radius: dict, dry_run: bool = False):
-    """Install ~/.local/share/themes/DeloWay-{Dark,Light} (index.theme + gtk-3.0)."""
+    """Install ~/.local/share/themes/DeloWay-{Dark,Light,Glass} (index.theme + gtk-3.0)."""
     themes_root = Path.home() / ".local" / "share" / "themes"
     for mode, name in DELOWAY_THEME_NAMES.items():
         # Base: adw-gtk3 (adw-gtk-theme) when installed, else the Adwaita GTK3 compiles in.
         # There is no /usr/share/themes/Adwaita-dark/gtk-3.0/gtk.css file to import — that
         # path made GTK3 apps render the DeloWay overrides with no base theme at all.
-        adw = Path("/usr/share/themes") / ("adw-gtk3-dark" if mode == "dark" else "adw-gtk3") / "gtk-3.0" / "gtk.css"
+        adw = Path("/usr/share/themes") / ("adw-gtk3-dark" if mode in ("dark", "glass") else "adw-gtk3") / "gtk-3.0" / "gtk.css"
         if adw.is_file():
             base_url, base_name = f"file://{adw}", adw.parent.parent.name
         else:
             base_url = ("resource:///org/gtk/libgtk/theme/Adwaita/"
-                        + ("gtk-contained-dark.css" if mode == "dark" else "gtk-contained.css"))
+                        + ("gtk-contained-dark.css" if mode in ("dark", "glass") else "gtk-contained.css"))
             base_name = "Adwaita"
         tdir = themes_root / name
         index = (f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={name}\n"
@@ -1498,20 +2057,32 @@ def main():
 
     if args.theme:
         theme_name = args.theme
-        mode = "light" if theme_name == "light" else "dark"
+        if theme_name == "glass":
+            mode = "glass"
+        elif theme_name == "light":
+            mode = "light"
+        else:
+            mode = "dark"
     elif args.mode:
         mode = args.mode
         if not args.theme:
             theme_name = mode
+    elif theme_name == "glass":
+        mode = "glass"
+    elif theme_name == "light":
+        mode = "light"
+    else:
+        mode = "dark"
+
     if args.font_scale > 0.0:
         font_scale = args.font_scale
     if args.radius >= 0:
         element_radius = args.radius
 
-    is_dark = (mode == "dark")
+    is_dark = (mode in ("dark", "glass"))
 
     # 2. DeloWay GTK3 themes (adw-gtk3 + overrides) — switching them reloads apps live
-    gtk_theme = DELOWAY_THEME_NAMES["dark" if is_dark else "light"]
+    gtk_theme = DELOWAY_THEME_NAMES.get(theme_name, DELOWAY_THEME_NAMES["dark" if is_dark else "light"])
     color_scheme = "prefer-dark" if is_dark else "prefer-light"
     radius = radius_tokens(element_radius)
 
@@ -1548,7 +2119,7 @@ def main():
         gtk4_dir.mkdir(parents=True, exist_ok=True)
     write_gtk3_themes(radius, dry_run=args.dry_run)
     atomic_write_if_changed(gtk3_dir / "gtk.css", GTK3_USER_CSS, dry_run=args.dry_run)
-    atomic_write_if_changed(gtk4_dir / "gtk.css", build_gtk4_css(radius), dry_run=args.dry_run)
+    atomic_write_if_changed(gtk4_dir / "gtk.css", build_gtk4_css(radius, theme_name), dry_run=args.dry_run)
     atomic_write_if_changed(gtk3_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     atomic_write_if_changed(gtk4_dir / "settings.ini", settings_ini_content, dry_run=args.dry_run)
     generate_qt6ct_palette(mode, config_home, dry_run=args.dry_run)   # used if qt6ct is installed
@@ -1579,8 +2150,9 @@ def main():
     # 8. Sync system language environment (Hyprland, D-Bus, environment.d)
     sync_system_language(ui_language, dry_run=args.dry_run)
 
-    # 9. Configure Thunar defaults (hidden menubar, hamburger menu fallback)
+    # 9. Configure Thunar defaults & default file manager service
     configure_thunar_defaults(dry_run=args.dry_run)
+    sync_default_file_manager(dry_run=args.dry_run)
 
     # 10. Sync Kitty terminal theme & live signal
     sync_kitty_theme(theme_name, project_dir, config_home, dry_run=args.dry_run)
