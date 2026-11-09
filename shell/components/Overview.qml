@@ -83,12 +83,26 @@ PanelWindow {
                 appId = hl.lastIpcObject.class || hl.lastIpcObject.initialClass || "";
             }
 
+            // Wayland Toplevel handle for ScreencopyView live capture
+            let tl = hl.wayland || null;
+            if (!tl && typeof ToplevelManager !== "undefined" && ToplevelManager.toplevels) {
+                const tmList = ToplevelManager.toplevels.values;
+                for (let j = 0; j < tmList.length; j++) {
+                    const candidate = tmList[j];
+                    if (candidate && (candidate.appId === appId || candidate.title === hl.title)) {
+                        tl = candidate;
+                        break;
+                    }
+                }
+            }
+
             const item = {
                 appId: appId,
                 title: hl.title || "",
                 address: hl.address || "",
                 activated: hl.activated || false,
                 workspaceId: wid,
+                wayland: tl,
                 raw: hl
             };
 
@@ -423,6 +437,7 @@ PanelWindow {
                             readonly property string winAddress: winData ? winData.address : ""
                             readonly property string winAppId: winData ? winData.appId : ""
                             readonly property string winTitle: winData ? winData.title : ""
+                            readonly property var winWayland: winData ? winData.wayland : null
                             readonly property bool isBeingDragged: root.draggedAddress === winAddress
 
                             // Responsive sizing based on window count
@@ -430,7 +445,7 @@ PanelWindow {
                             height: root.currentWindows.length === 1 ? 380 : (root.currentWindows.length === 2 ? 310 : 250)
                             radius: Theme.radiusLarge
 
-                            color: Theme.isGlass ? Theme.capsuleFill : Theme.notchBackground
+                            color: Theme.isGlass ? Qt.rgba(0.08, 0.08, 0.08, 0.88) : Theme.notchBackground
                             border.color: (cardMouse.containsMouse || isActivated)
                                 ? Theme.colors.borderHighlight
                                 : (Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder)
@@ -516,20 +531,24 @@ PanelWindow {
                                     }
                                 }
 
-                                // ── Window Body Mockup / Preview ──
+                                // ── Window Body Mockup / Live Preview ──
                                 Rectangle {
+                                    id: previewBox
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
                                     radius: Theme.radiusMedium
                                     color: cardMouse.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
                                     border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                                     border.width: 1
+                                    clip: true
 
                                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
+                                    // Fallback UI when screencopy has no content yet
                                     ColumnLayout {
                                         anchors.centerIn: parent
                                         spacing: 12
+                                        visible: !screencopy.hasContent
 
                                         Rectangle {
                                             Layout.alignment: Qt.AlignHCenter
@@ -555,6 +574,28 @@ PanelWindow {
                                             font.pixelSize: Theme.fontSize(12)
                                             color: Theme.notchTextSecondary
                                         }
+                                    }
+
+                                    // Live Application Window Content Screencopy
+                                    ScreencopyView {
+                                        id: screencopy
+                                        anchors.centerIn: parent
+                                        width: {
+                                            if (!hasContent || sourceSize.width <= 0 || sourceSize.height <= 0) return parent.width;
+                                            const aspect = sourceSize.width / sourceSize.height;
+                                            const containerAspect = parent.width / Math.max(1, parent.height);
+                                            return (aspect > containerAspect) ? parent.width : Math.min(parent.width, parent.height * aspect);
+                                        }
+                                        height: {
+                                            if (!hasContent || sourceSize.width <= 0 || sourceSize.height <= 0) return parent.height;
+                                            const aspect = sourceSize.width / sourceSize.height;
+                                            const containerAspect = parent.width / Math.max(1, parent.height);
+                                            return (aspect > containerAspect) ? Math.min(parent.height, parent.width / aspect) : parent.height;
+                                        }
+                                        captureSource: windowCard.winWayland || (windowCard.winData ? windowCard.winData.raw : null)
+                                        live: ShellState.overviewOpen
+                                        paintCursor: false
+                                        visible: hasContent
                                     }
                                 }
                             }

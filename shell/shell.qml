@@ -186,6 +186,10 @@ ShellRoot {
             lockScreen.lockSession();
         }
 
+        function unlock() {
+            lockScreen.unlockSession();
+        }
+
         // ── Shell Toggle / Fullscreen ───────────────────────────────────────
         function toggleShell() {
             ShellState.toggleShell();

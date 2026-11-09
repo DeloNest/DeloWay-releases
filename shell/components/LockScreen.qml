@@ -299,4 +299,8 @@ WlSessionLock {
     function lockSession() {
         root.locked = true;
     }
+
+    function unlockSession() {
+        root.locked = false;
+    }
 }
