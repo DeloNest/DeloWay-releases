@@ -20,4 +20,4 @@ singleton AppActions 1.0 AppActions.qml
 singleton IconResolver 1.0 IconResolver.qml
 singleton DefaultApps 1.0 DefaultApps.qml
 singleton UpdateService 1.0 UpdateService.qml
-singleton SpotifyBridgeService 1.0 SpotifyBridgeService.qml
+singleton DisplayService 1.0 DisplayService.qml

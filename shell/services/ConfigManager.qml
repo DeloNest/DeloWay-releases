@@ -141,7 +141,6 @@ Item {
     // LocalSend app's own favourites once).
     property var shareDevices: null
     property var musicLaunchTarget: ({ "type": "app", "value": "spotify", "webApp": false })
-    property bool spotifyBridgeEnabled: false
 
     // System & Localization Settings
     property string uiLanguage: "en"
@@ -251,6 +250,7 @@ Item {
                       "decoration:blur:passes = 3\n" +
                       "decoration:blur:brightness = 1.12\n" +
                       "decoration:blur:vibrancy = 0.30\n" +
+                      "decoration:blur:ignore_opacity = true\n" +
                       "layerrule = blur on, match:namespace deloway-capsule\n" +
                       "layerrule = ignore_alpha 0.20, match:namespace deloway-capsule\n" +
                       "layerrule = blur_popups on, match:namespace deloway-capsule\n" +
@@ -286,7 +286,8 @@ Item {
                       "layerrule = blur_popups on, match:namespace deloway:screenshot-overlay\n" +
                       "layerrule = blur on, match:namespace deloway:setup-wizard\n" +
                       "layerrule = ignore_alpha 0.20, match:namespace deloway:setup-wizard\n" +
-                      "layerrule = blur_popups on, match:namespace deloway:setup-wizard\n";
+                      "layerrule = blur_popups on, match:namespace deloway:setup-wizard\n" +
+                      "windowrule = opacity 0.85 0.85, match:class ^(kitty)$\n";
         } else if (root.themeName === "light") {
             content = "# Deloway Theme: Light (Clean high-contrast neutrals)\n" +
                       "decoration:blur:size = 8\n" +
@@ -504,7 +505,6 @@ Item {
             if (cfg.music) {
                 if (cfg.music.preferredPlayer !== undefined) root.musicPreferredPlayer = cfg.music.preferredPlayer;
                 if (cfg.music.launchTarget !== undefined) root.musicLaunchTarget = cfg.music.launchTarget;
-                if (cfg.music.spotifyBridgeEnabled !== undefined) root.spotifyBridgeEnabled = Boolean(cfg.music.spotifyBridgeEnabled);
             }
             if (cfg.share && Array.isArray(cfg.share.devices)) root.shareDevices = cfg.share.devices;
             if (cfg.system) {
@@ -593,6 +593,7 @@ Item {
         interval: 150
         repeat: false
         onTriggered: gtkThemeProcess.exec(["python3", root.projectDir + "/scripts/deloway-theme-apply.py",
+                                           "--theme", root.themeName,
                                            "--mode", root.themeMode,
                                            "--font-scale", String(root.fontSizeScale),
                                            "--radius", String(root.elementRadius)])
@@ -1065,11 +1066,6 @@ Item {
         saveConfig();
     }
 
-    function setSpotifyBridgeEnabled(enabled) {
-        root.spotifyBridgeEnabled = Boolean(enabled);
-        saveConfig();
-    }
-
     property bool _musicLaunching: false
     Timer {
         id: musicLaunchDebounce
@@ -1241,8 +1237,7 @@ Item {
             },
             music: {
                 preferredPlayer: root.musicPreferredPlayer,
-                launchTarget: root.musicLaunchTarget,
-                spotifyBridgeEnabled: root.spotifyBridgeEnabled
+                launchTarget: root.musicLaunchTarget
             },
             share: {
                 devices: root.shareDevices

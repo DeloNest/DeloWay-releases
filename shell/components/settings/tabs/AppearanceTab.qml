@@ -1,14 +1,14 @@
+import "../../"
+import "../../../services"
+import "../../../theme"
+import "../common"
 // Appearance — theme, typography, interface shape and visual effects.
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
-import "../../../theme"
-import "../../../services"
-import "../common"
-import "../../"
 
 Item {
     id: root
@@ -22,6 +22,7 @@ Item {
 
     ColumnLayout {
         id: mainCol
+
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
@@ -36,24 +37,33 @@ Item {
 
             SettingsRow {
                 title: I18n.isRTL ? "المظهر" : "Appearance"
-                subtitle: ConfigManager.themeMode === "dark"
-                          ? (I18n.isRTL ? "داكن — أسطح سوداء نقية لشاشات OLED" : "Dark — pure black OLED surfaces")
-                          : (I18n.isRTL ? "فاتح — أسطح محايدة عالية التباين" : "Light — crisp high-contrast neutrals")
-                icon: ConfigManager.themeMode === "dark" ? "weather-clear-night-symbolic" : "weather-sunny-symbolic"
+                subtitle: ConfigManager.themeMode === "dark" ? (I18n.isRTL ? "داكن — أسطح سوداء نقية لشاشات OLED" : "Dark — pure black OLED surfaces") : (ConfigManager.themeMode === "glass" ? (I18n.isRTL ? "زجاجي — أسطح أكريليك شفافة 38%" : "Glass — acrylic 38% frosted transparency") : (I18n.isRTL ? "فاتح — أسطح محايدة عالية التباين" : "Light — crisp high-contrast neutrals"))
+                icon: ConfigManager.themeMode === "dark" ? "weather-clear-night-symbolic" : (ConfigManager.themeMode === "glass" ? "applications-graphics-symbolic" : "weather-sunny-symbolic")
                 showDivider: false
 
-                // Dark | Light — the one theme choice; everything else (GTK, icons,
+                // Dark | Glass | Light — the three theme choices; everything else (GTK, icons,
                 // kitty, window borders) follows it via ConfigManager.setThemeMode.
                 RowLayout {
                     spacing: Theme.space4
 
                     Repeater {
-                        model: [
-                            { mode: "dark",  ar: "داكن", en: "Dark" },
-                            { mode: "light", ar: "فاتح", en: "Light" }
-                        ]
+                        model: [{
+                            "mode": "dark",
+                            "ar": "داكن",
+                            "en": "Dark"
+                        }, {
+                            "mode": "glass",
+                            "ar": "زجاجي",
+                            "en": "Glass"
+                        }, {
+                            "mode": "light",
+                            "ar": "فاتح",
+                            "en": "Light"
+                        }]
+
                         delegate: Rectangle {
                             id: modePill
+
                             required property var modelData
                             readonly property bool isSelected: ConfigManager.themeMode === modelData.mode
 
@@ -63,11 +73,10 @@ Item {
                             color: modePill.isSelected ? Theme.notchSurfaceActive : (modeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             border.color: modePill.isSelected ? Theme.notchBorderHighlight : (modeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 id: modeText
+
                                 anchors.centerIn: parent
                                 text: I18n.isRTL ? modePill.modelData.ar : modePill.modelData.en
                                 font.family: Theme.typography.fontFamily
@@ -79,15 +88,39 @@ Item {
 
                             MouseArea {
                                 id: modeMa
+
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: if (!modePill.isSelected) ConfigManager.setThemeMode(modePill.modelData.mode)
+                                onClicked: {
+                                    if (!modePill.isSelected) {
+                                        ConfigManager.setThemeMode(modePill.modelData.mode);
+                                    }
+                                }
                             }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
                         }
+
                     }
+
                 }
+
             }
+
         }
 
         SettingsSection {
@@ -108,17 +141,34 @@ Item {
                     Repeater {
                         // Only fonts that are installed (Readex Pro and Rubik were offered
                         // without being installed: picking one silently fell back).
-                        model: [
-                            { family: "Cairo",            label: "Cairo" },
-                            { family: "SF Pro",           label: "SF Pro" },
-                            { family: "SF Arabic",        label: "SF Arabic" },
-                            { family: "Readex Pro",       label: "Readex Pro" },
-                            { family: "Rubik",            label: "Rubik" },
-                            { family: "Noto Kufi Arabic", label: "Noto Kufi" },
-                            { family: "Inter",            label: "Inter" }
-                        ].filter(f => Qt.fontFamilies().indexOf(f.family) >= 0)
+                        model: [{
+                            "family": "Cairo",
+                            "label": "Cairo"
+                        }, {
+                            "family": "SF Pro",
+                            "label": "SF Pro"
+                        }, {
+                            "family": "SF Arabic",
+                            "label": "SF Arabic"
+                        }, {
+                            "family": "Readex Pro",
+                            "label": "Readex Pro"
+                        }, {
+                            "family": "Rubik",
+                            "label": "Rubik"
+                        }, {
+                            "family": "Noto Kufi Arabic",
+                            "label": "Noto Kufi"
+                        }, {
+                            "family": "Inter",
+                            "label": "Inter"
+                        }].filter((f) => {
+                            return Qt.fontFamilies().indexOf(f.family) >= 0;
+                        })
+
                         delegate: Rectangle {
                             id: fontFamPill
+
                             required property var modelData
                             readonly property bool isSelected: (ConfigManager.fontFamily || "Cairo") === modelData.family
 
@@ -128,11 +178,10 @@ Item {
                             color: fontFamPill.isSelected ? Theme.notchSurfaceActive : (fontFamMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             border.color: fontFamPill.isSelected ? Theme.notchBorderHighlight : (fontFamMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 id: fontFamText
+
                                 anchors.centerIn: parent
                                 text: fontFamPill.modelData.label
                                 font.family: fontFamPill.modelData.family
@@ -143,14 +192,33 @@ Item {
 
                             MouseArea {
                                 id: fontFamMa
+
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ConfigManager.setFontFamily(fontFamPill.modelData.family)
                             }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
                         }
+
                     }
+
                 }
+
             }
 
             // Font Scale
@@ -166,13 +234,20 @@ Item {
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
-                        model: [
-                            { val: 0.85, label: I18n.isRTL ? "صغير" : "Small" },
-                            { val: 1.0,  label: I18n.isRTL ? "قياسي" : "Standard" },
-                            { val: 1.15, label: I18n.isRTL ? "كبير" : "Large" }
-                        ]
+                        model: [{
+                            "val": 0.85,
+                            "label": I18n.isRTL ? "صغير" : "Small"
+                        }, {
+                            "val": 1,
+                            "label": I18n.isRTL ? "قياسي" : "Standard"
+                        }, {
+                            "val": 1.15,
+                            "label": I18n.isRTL ? "كبير" : "Large"
+                        }]
+
                         delegate: Rectangle {
                             id: fontPill
+
                             required property var modelData
                             readonly property bool isSelected: Math.abs(ConfigManager.fontSizeScale - modelData.val) < 0.05
 
@@ -182,11 +257,10 @@ Item {
                             color: fontPill.isSelected ? Theme.notchSurfaceActive : (fontMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             border.color: fontPill.isSelected ? Theme.notchBorderHighlight : (fontMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 id: fontText
+
                                 anchors.centerIn: parent
                                 text: fontPill.modelData.label
                                 font.family: Theme.typography.fontFamily
@@ -197,14 +271,33 @@ Item {
 
                             MouseArea {
                                 id: fontMa
+
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ConfigManager.setFontSizeScale(fontPill.modelData.val)
                             }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
                         }
+
                     }
+
                 }
+
             }
 
             // Number Format: the digits of every DeloWay surface and of Qt/KDE apps
@@ -220,12 +313,17 @@ Item {
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
-                        model: [
-                            { val: "western", label: "0123" },
-                            { val: "eastern", label: "٠١٢٣" }
-                        ]
+                        model: [{
+                            "val": "western",
+                            "label": "0123"
+                        }, {
+                            "val": "eastern",
+                            "label": "٠١٢٣"
+                        }]
+
                         delegate: Rectangle {
                             id: digitPill
+
                             required property var modelData
                             readonly property bool isSelected: ConfigManager.numberFormat === modelData.val
 
@@ -235,11 +333,10 @@ Item {
                             color: digitPill.isSelected ? Theme.notchSurfaceActive : (digitMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             border.color: digitPill.isSelected ? Theme.notchBorderHighlight : (digitMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 id: digitText
+
                                 anchors.centerIn: parent
                                 text: digitPill.modelData.label
                                 font.family: Theme.typography.fontFamily
@@ -250,15 +347,35 @@ Item {
 
                             MouseArea {
                                 id: digitMa
+
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ConfigManager.setNumberFormat(digitPill.modelData.val)
                             }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
                         }
+
                     }
+
                 }
+
             }
+
         }
 
         SettingsSection {
@@ -277,13 +394,20 @@ Item {
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
-                        model: [
-                            { val: 4,  label: I18n.isRTL ? "حادة (4px)" : "Sharp (4px)" },
-                            { val: 8,  label: I18n.isRTL ? "قياسية (8px)" : "Standard (8px)" },
-                            { val: 14, label: I18n.isRTL ? "دائرية (14px)" : "Rounded (14px)" }
-                        ]
+                        model: [{
+                            "val": 4,
+                            "label": I18n.isRTL ? "حادة (4px)" : "Sharp (4px)"
+                        }, {
+                            "val": 8,
+                            "label": I18n.isRTL ? "قياسية (8px)" : "Standard (8px)"
+                        }, {
+                            "val": 14,
+                            "label": I18n.isRTL ? "دائرية (14px)" : "Rounded (14px)"
+                        }]
+
                         delegate: Rectangle {
                             id: radPill
+
                             required property var modelData
                             readonly property bool isSelected: ConfigManager.elementRadius === modelData.val
 
@@ -293,11 +417,10 @@ Item {
                             color: radPill.isSelected ? Theme.notchSurfaceActive : (radMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             border.color: radPill.isSelected ? Theme.notchBorderHighlight : (radMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 id: radText
+
                                 anchors.centerIn: parent
                                 text: radPill.modelData.label
                                 font.family: Theme.typography.fontFamily
@@ -308,14 +431,33 @@ Item {
 
                             MouseArea {
                                 id: radMa
+
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ConfigManager.setElementRadius(radPill.modelData.val)
                             }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
                         }
+
                     }
+
                 }
+
             }
 
             // Performance Tier
@@ -331,13 +473,20 @@ Item {
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
-                        model: [
-                            { val: 0, label: I18n.isRTL ? "خفيف" : "Efficient" },
-                            { val: 1, label: I18n.isRTL ? "متوازن" : "Balanced" },
-                            { val: 2, label: I18n.isRTL ? "فائق" : "High" }
-                        ]
+                        model: [{
+                            "val": 0,
+                            "label": I18n.isRTL ? "خفيف" : "Efficient"
+                        }, {
+                            "val": 1,
+                            "label": I18n.isRTL ? "متوازن" : "Balanced"
+                        }, {
+                            "val": 2,
+                            "label": I18n.isRTL ? "فائق" : "High"
+                        }]
+
                         delegate: Rectangle {
                             id: tierPill
+
                             required property var modelData
                             readonly property bool isSelected: ConfigManager.performanceTier === modelData.val
 
@@ -347,11 +496,10 @@ Item {
                             color: tierPill.isSelected ? Theme.notchSurfaceActive : (tierMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                             border.color: tierPill.isSelected ? Theme.notchBorderHighlight : (tierMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
                             border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
 
                             Text {
                                 id: tierText
+
                                 anchors.centerIn: parent
                                 text: tierPill.modelData.label
                                 font.family: Theme.typography.fontFamily
@@ -362,15 +510,37 @@ Item {
 
                             MouseArea {
                                 id: tierMa
+
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: ConfigManager.setPerformanceTier(tierPill.modelData.val)
                             }
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
+                            Behavior on border.color {
+                                ColorAnimation {
+                                    duration: Theme.motionFast
+                                }
+
+                            }
+
                         }
+
                     }
+
                 }
+
             }
+
         }
+
     }
+
 }

@@ -1,38 +1,60 @@
-pragma Singleton
-import QtQuick
 import "."
+import QtQuick
+pragma Singleton
 
 Item {
+    // Navigation
+    // Smart Notch Tabs
+    // Common
+    // Language & Keyboard
+    // Appearance
+    // Default Apps
+    // Desktop & Dock
+    // Top Bar
+    // Windows
+    // Network & Wi-Fi
+    // Bluetooth
+    // Power
+    // Notifications
+    // Shortcuts
+    // About
+    // Controls & Headers
+    // Setup Wizard & General
+    // Cheat Sheet
+    // App Drawer
+    // Smart Notch & LocalSend
+    // Navigation
+    // Smart Notch Tabs
+    // Common
+    // Language & Keyboard
+    // Appearance
+    // Default Apps
+    // Desktop & Dock
+    // Top Bar
+    // Windows
+    // Network & Wi-Fi
+    // Bluetooth
+    // Power
+    // Notifications
+    // Shortcuts
+    // About
+    // Controls & Headers
+    // Setup Wizard & General
+    // Cheat Sheet
+    // App Drawer
+    // Smart Notch & LocalSend
+
     id: root
 
     property string locale: ConfigManager.uiLanguage || "en"
     readonly property bool isRTL: locale === "ar"
     readonly property int layoutDirection: isRTL ? Qt.RightToLeft : Qt.LeftToRight
-
     readonly property var translations: ({
         "en": {
-            // Navigation
-
-            // Smart Notch Tabs
             "notch_tab_home": "Home",
-            "notch_tab_music": "Music",
             "notch_tab_share": "Share",
             "notch_tab_notifications": "Notifications",
             "notch_tab_appearance": "Appearance",
-            "notch_playback_context": "Playback Context",
-            "notch_track_number": "Track",
-            "notch_open_in_player": "Open in App",
-            "notch_shuffle": "Shuffle",
-            "notch_repeat": "Repeat",
-            "notch_next_track": "Next Track",
-            "notch_volume": "Volume",
-            "notch_quick_switch": "Music & Playlists",
-            "notch_up_next": "Up Next",
-            "notch_like": "Like",
-            "notch_unlike": "Unlike",
-            "notch_favorites": "Liked Songs",
-            "notch_playlists": "Playlists",
-            "notch_current_album": "Current Album",
             "wallpapers_title": "Wallpapers",
             "themes_title": "Themes",
             "themes_coming_m3": "Themes coming in M3",
@@ -45,8 +67,6 @@ Item {
             "theme_dark_desc": "OLED Black",
             "theme_glass_desc": "Acrylic 38%",
             "theme_light_desc": "Clean Light",
-
-            // Common
             "settings": "Settings",
             "settings_app_desc": "System settings and desktop configuration",
             "app_store": "App Store",
@@ -77,8 +97,6 @@ Item {
             "copied": "Copied!",
             "password": "Password",
             "windows_default": "Windows Default",
-
-            // Language & Keyboard
             "language_desc": "Configure keyboard layouts, input languages, and switching hotkeys",
             "ui_language_title": "Interface Language",
             "ui_language_desc": "Select the primary display language for the DeloWay desktop interface",
@@ -99,8 +117,6 @@ Item {
             "layout_de": "German (Deutsch)",
             "layout_es": "Spanish (Español)",
             "layout_tr": "Turkish (Türkçe)",
-
-            // Appearance
             "display_scaling": "Display Text Size",
             "display_scaling_desc": "Adjust font scale across all system elements",
             "wallpaper_title": "Desktop Wallpaper",
@@ -117,8 +133,6 @@ Item {
             "apply_system_theme_desc": "Apply DeloWay dark and light color palette to GTK and system applications",
             "corner_radius": "Window Corner Radius",
             "corner_radius_desc": "Adjust roundness of desktop windows and panels",
-
-            // Default Apps
             "applications_desc": "Configure preferred applications for common web, terminal, and editing tasks",
             "default_apps_desc": "Configure preferred applications for common web, terminal, and editing tasks",
             "web_browser": "Web Browser",
@@ -129,8 +143,6 @@ Item {
             "file_manager_desc": "Default application for browsing folders and files",
             "code_editor": "Text / Code Editor",
             "code_editor_desc": "Default editor for opening source code and configuration files",
-
-            // Desktop & Dock
             "desktop": "Desktop",
             "desktop_mode": "Desktop Mode",
             "desktop_mode_desc": "Choose between minimal clean surface or widget-enabled workspace",
@@ -148,8 +160,6 @@ Item {
             "dock_autohide_desc": "Automatically conceal dock when windows overlap it",
             "dock_icon_size": "Dock Icon Size",
             "dock_icon_size_desc": "Size of application icons rendered in the dock",
-
-            // Top Bar
             "topbar_desc": "Customize top status bar components, clock display, and indicators",
             "show_brand": "Show DeloWay Brand Icon",
             "show_brand_desc": "Display the DeloWay logo launcher in top left corner",
@@ -159,8 +169,6 @@ Item {
             "clock_format_desc": "Switch between 12-hour (AM/PM) and 24-hour military clock",
             "12h": "12-Hour (AM/PM)",
             "24h": "24-Hour",
-
-            // Windows
             "windows_desc": "Configure window management, inner/outer gaps, and border styling",
             "window_gaps": "Window Gaps",
             "window_gaps_desc": "Adjust spacing between tiled windows and outer screen edges",
@@ -168,8 +176,6 @@ Item {
             "gaps_out": "Outer Gaps",
             "active_border": "Active Window Border",
             "active_border_desc": "Accent color highlight applied to the currently focused window",
-
-            // Network & Wi-Fi
             "network_desc": "Manage network interfaces, Wi-Fi connections, and IP addresses",
             "network_status": "Connection Status",
             "network_details": "Network Connection Details",
@@ -179,15 +185,11 @@ Item {
             "mac_address": "MAC Address",
             "wifi_networks": "Available Wi-Fi Networks",
             "connect_btn": "Connect",
-
-            // Bluetooth
             "bluetooth_desc": "Manage Bluetooth adapter, discovered devices, and pairings",
             "bluetooth_status": "Bluetooth Status",
             "bluetooth_devices": "Paired & Discovered Devices",
             "pair": "Pair",
             "forget": "Forget",
-
-            // Power
             "power_desc": "Manage power profiles, screen blanking, and battery optimization",
             "power_profile": "Power Profile",
             "power_profile_desc": "Select performance vs energy savings balance",
@@ -196,8 +198,6 @@ Item {
             "power_saver": "Power Saver",
             "screen_sleep": "Screen Sleep Timeout",
             "screen_sleep_desc": "Turn off screen after inactivity (0 = never)",
-
-            // Notifications
             "dnd_mode": "Do Not Disturb",
             "dnd_mode_desc": "Suppress all incoming desktop notifications",
             "notif_timeout": "Notification Duration",
@@ -205,10 +205,6 @@ Item {
             "notif_sound": "Notification Sound",
             "notif_sound_desc": "Play an audible alert when notifications arrive",
             "sec_short": "s",
-
-            // Shortcuts
-
-            // About
             "about_desc": "System hardware, distribution details, and environment specifications",
             "about_hardware_overview": "System & Hardware Overview",
             "about_hardware_desc": "Host kernel and device details",
@@ -223,8 +219,6 @@ Item {
             "shell_font": "Shell Font",
             "mono_font": "Monospace Font",
             "loading": "Loading…",
-
-            // Controls & Headers
             "drag_hint": "Drag header to move window • Super+F to maximize",
             "dock_section_look": "Look",
             "dock_section_behavior": "Behaviour",
@@ -298,8 +292,6 @@ Item {
             "power_sav": "Power Saver",
             "never": "Never",
             "min": "min",
-
-            // Setup Wizard & General
             "welcome_deloos": "Welcome to DeloOS",
             "setup_wizard_desc": "Configure your personalized desktop experience",
             "icon_theme_missing_title": "Icon theme not installed",
@@ -467,8 +459,6 @@ Item {
             "back_btn": "← Back",
             "install_btn": "Install",
             "installed_btn": "Installed",
-
-            // Cheat Sheet
             "widget_time_date": "TIME & DATE",
             "widget_weather": "WEATHER",
             "widget_system": "SYSTEM MONITOR",
@@ -480,8 +470,6 @@ Item {
             "widget_memory": "Memory usage",
             "widget_notes_placeholder": "Type notes or tasks here…",
             "cs_title": "Keyboard Shortcuts",
-
-            // App Drawer
             "pinned": "Pinned",
             "all_apps": "All Apps",
             "pin_to_dock": "Pin to Dock",
@@ -549,8 +537,6 @@ Item {
             "screenshot_selection": "Selection",
             "screenshot_window": "Active Window",
             "screenshot_fullscreen": "Full Screen",
-
-            // Smart Notch & LocalSend
             "notch_now_playing": "Now Playing",
             "notch_sending_to": "Sending to",
             "notch_sent_failed": "Transfer failed",
@@ -600,11 +586,73 @@ Item {
             "settings_page_topbar_desc": "Smart Notch workspaces, time capsule and hardware monitor",
             "settings_page_dock": "Dock",
             "settings_page_dock_desc": "Size, position, behaviour and pinned applications",
+            "settings_page_display": "Displays",
+            "settings_page_display_desc": "Resolution, refresh rate (Hz), HDR, scaling, and orientation",
+            "display_title": "Displays",
+            "display_connected_screens": "Connected Displays",
+            "display_preview_title": "Display Layout & Identity",
+            "display_section_resolution": "Resolution & Refresh Rate",
+            "display_section_color": "Color & Dynamic Range",
+            "display_section_layout": "Scale & Layout",
+            "display_section_advanced": "Advanced Features",
+            "display_resolution": "Resolution",
+            "display_resolution_desc": "Pixel width and height format",
+            "display_refresh_rate": "Refresh Rate",
+            "display_refresh_rate_desc": "Frame rate frequency in Hertz (Hz)",
+            "display_hdr": "High Dynamic Range (HDR)",
+            "display_hdr_desc_supported": "10-bit wide color gamut and dynamic contrast (SMPTE ST 2084)",
+            "display_hdr_desc_unsupported": "This display hardware does not support High Dynamic Range (HDR)",
+            "display_hdr_badge_unsupported": "Hardware Unsupported",
+            "display_hdr_badge_supported": "HDR10 Ready",
+            "display_scale": "Display Scale",
+            "display_scale_desc": "Scale interface elements and typography",
+            "display_orientation": "Orientation",
+            "display_orientation_desc": "Screen rotation and alignment",
+            "display_orientation_standard": "Landscape",
+            "display_orientation_portrait": "Portrait (90°)",
+            "display_orientation_flipped": "Flipped (180°)",
+            "display_orientation_portrait_flipped": "Portrait (270°)",
+            "display_vrr": "Adaptive Sync (VRR)",
+            "display_vrr_desc": "Variable refresh rate (G-Sync / FreeSync) to prevent screen tearing",
+            "display_color_format": "Color Depth & Pipeline",
+            "display_color_format_desc": "Subpixel bit depth and hardware scanout format",
+            "display_primary": "Primary Display",
+            "display_native": "Native",
+            "display_recommended": "Recommended",
+            "display_identify": "Identify Displays",
+            "display_mode": "Multiple Displays",
+            "display_mode_desc": "Extend desktop across monitors or duplicate display",
+            "display_mode_extend": "Extend Desktop",
+            "display_mode_mirror": "Duplicate (Mirror)",
+            "display_placement": "Placement",
+            "display_placement_desc": "Position relative to primary display",
+            "display_placement_right": "Right",
+            "display_placement_left": "Left",
+            "display_placement_above": "Above",
+            "display_placement_below": "Below",
+            "display_set_primary": "Set as Primary",
+            "display_set_primary_desc": "Main screen for the dock, wallpaper and workspaces",
+            "display_is_primary_badge": "Primary Display",
+            "display_section_night_light": "Night Light & Eye Comfort",
+            "display_night_light": "Night Light",
+            "display_night_light_desc": "Warm display colors to reduce eye strain and improve sleep quality",
+            "display_night_light_temp": "Color Temperature",
+            "display_temp_warmest": "Very Warm (3500K)",
+            "display_temp_warm": "Warm (4500K)",
+            "display_temp_natural": "Natural (5500K)",
+            "display_temp_off": "Off (6500K)",
+            "display_multi_drag_hint": "Select a display to customize its resolution, refresh rate, and scale",
+            "display_rate_highest": "Max · Ultra Smooth",
+            "display_rate_saving": "Power Saving",
+            "power_source": "Power Source",
+            "power_source_ac": "Direct AC Power Connected",
+            "power_source_ac_desc": "Desktop Workstation connected directly to wall power",
+            "power_source_battery_desc": "Battery powered portable device",
             "settings_page_windows": "Windows & Workspaces",
             "settings_page_windows_desc": "Gaps, rounding, focus behaviour and workspace count",
             "settings_page_notifications": "Notifications",
             "settings_page_notifications_desc": "Do Not Disturb, sounds, timeout and Notch banners",
-            "settings_page_power": "Power & Display",
+            "settings_page_power": "Power & Battery",
             "settings_page_power_desc": "Power profile and screen sleep timeout",
             "settings_page_apps": "Apps",
             "settings_page_apps_desc": "The apps that open links, folders, text, images, videos and PDFs, and the music player",
@@ -660,31 +708,13 @@ Item {
             "tc_disk": "Disk",
             "tc_load": "Load",
             "tc_threads": "threads",
-            "tc_free": "free",
+            "tc_free": "free"
         },
         "ar": {
-            // Navigation
-
-            // Smart Notch Tabs
             "notch_tab_home": "الرئيسية",
-            "notch_tab_music": "الموسيقى",
             "notch_tab_share": "مشاركة",
             "notch_tab_notifications": "الإشعارات",
             "notch_tab_appearance": "المظهر",
-            "notch_playback_context": "سياق التشغيل",
-            "notch_track_number": "المسار",
-            "notch_open_in_player": "فتح في التطبيق",
-            "notch_shuffle": "خلط",
-            "notch_repeat": "تكرار",
-            "notch_next_track": "المسار التالي",
-            "notch_volume": "مستوى الصوت",
-            "notch_quick_switch": "الموسيقى والمفضلة",
-            "notch_up_next": "التالي في القائمة",
-            "notch_like": "إعجاب",
-            "notch_unlike": "إلغاء الإعجاب",
-            "notch_favorites": "المفضلة",
-            "notch_playlists": "قوائم التشغيل",
-            "notch_current_album": "ألبوم الأغنية",
             "wallpapers_title": "الخلفيات",
             "themes_title": "السمات",
             "themes_coming_m3": "السمات قادمة في M3",
@@ -697,8 +727,6 @@ Item {
             "theme_dark_desc": "أسود OLED",
             "theme_glass_desc": "أكريليك 38%",
             "theme_light_desc": "فاتح نقي",
-
-            // Common
             "settings": "الإعدادات",
             "settings_app_desc": "إعدادات النظام وتخصيص سطح المكتب",
             "app_store": "متجر التطبيقات",
@@ -729,8 +757,6 @@ Item {
             "copied": "تم النسخ!",
             "password": "كلمة المرور",
             "windows_default": "الافتراضي لويندوز",
-
-            // Language & Keyboard
             "language_desc": "إدارة لغات الإدخال المثبتة وتخطيطات لوحة المفاتيح واختصارات التبديل",
             "ui_language_title": "لغة واجهة النظام",
             "ui_language_desc": "حدد لغة العرض الأساسية لكافة عناصر وقوائم سطح مكتب DeloWay",
@@ -751,8 +777,6 @@ Item {
             "layout_de": "الألمانية (Deutsch)",
             "layout_es": "الإسبانية (Español)",
             "layout_tr": "التركية (Türkçe)",
-
-            // Appearance
             "display_scaling": "حجم خطوط النظام",
             "display_scaling_desc": "ضبط مقياس النصوص والخطوط عبر كافة عناصر الواجهة",
             "wallpaper_title": "خلفية سطح المكتب",
@@ -769,8 +793,6 @@ Item {
             "apply_system_theme_desc": "تطبيق لوحة ألوان DeloWay (الداكنة/الفاتحة) على تطبيقات GTK وبرامج النظام",
             "corner_radius": "استدارة حواف النوافذ",
             "corner_radius_desc": "ضبط درجة انحناء زوايا النوافذ والقوائم",
-
-            // Default Apps
             "applications_desc": "تحديد التطبيقات الافتراضية لتصفح الويب، الطرفية، وتحرير الأكواد",
             "default_apps_desc": "تحديد التطبيقات الافتراضية لتصفح الويب، الطرفية، وتحرير الأكواد",
             "web_browser": "متصفح الويب",
@@ -781,8 +803,6 @@ Item {
             "file_manager_desc": "التطبيق الافتراضي لتصفح المجلدات والملفات",
             "code_editor": "محرر النصوص البرمجية",
             "code_editor_desc": "المحرر الافتراضي لفتح ملفات البرمجة والإعدادات",
-
-            // Desktop & Dock
             "desktop": "سطح المكتب",
             "desktop_mode": "نمط سطح المكتب",
             "desktop_mode_desc": "الاختيار بين سطح مكتب نظيف وبسيط أو مدمج بأدوات ذكية",
@@ -800,8 +820,6 @@ Item {
             "dock_autohide_desc": "إخفاء شريط المهام تلقائياً عند تداخل النوافذ معه",
             "dock_icon_size": "حجم أيقونات الشريط",
             "dock_icon_size_desc": "التحكم في أبعاد أيقونات البرامج في شريط المهام",
-
-            // Top Bar
             "topbar_desc": "تخصيص مكونات الشريط العلوي، وتنسيق الساعة، والمؤشرات",
             "show_brand": "شعار نظام DeloWay",
             "show_brand_desc": "إظهار أيقونة DeloWay لفتح القائمة في الزاوية العلوية",
@@ -811,8 +829,6 @@ Item {
             "clock_format_desc": "التبديل بين نظام 12 ساعة (ص/م) ونظام 24 ساعة العسكري",
             "12h": "12 ساعة (ص / م)",
             "24h": "24 ساعة",
-
-            // Windows
             "windows_desc": "إدارة إطارات النوافذ والمسافات الفاصلة وسلوك التركيز",
             "window_gaps": "المسافات بين النوافذ (Gaps)",
             "window_gaps_desc": "ضبط المسافات الفاصلة بين النوافذ وحدود الشاشة الخارجية",
@@ -820,8 +836,6 @@ Item {
             "gaps_out": "المسافة الخارجية",
             "active_border": "لون إطار النافذة النشطة",
             "active_border_desc": "لون التمييز المحيط بالنافذة المحددة حالياً",
-
-            // Network & Wi-Fi
             "network_desc": "إدارة بطاقات الشبكة، اتصالات الواي فاي، وعناوين IP",
             "network_status": "حالة الاتصال",
             "network_details": "تفاصيل اتصال الشبكة",
@@ -831,15 +845,11 @@ Item {
             "mac_address": "عنوان MAC",
             "wifi_networks": "شبكات الواي فاي المتاحة",
             "connect_btn": "اتصال",
-
-            // Bluetooth
             "bluetooth_desc": "إدارة محول البلوتوث، والأجهزة المكتشفة، والاقتران",
             "bluetooth_status": "حالة البلوتوث",
             "bluetooth_devices": "الأجهزة المقترنة والمكتشفة",
             "pair": "اقتران",
             "forget": "إلغاء الاقتران",
-
-            // Power
             "power_desc": "إدارة خطط الطاقة، إيقاف تشغيل الشاشة، وتوفير البطارية",
             "power_profile": "خطة الطاقة",
             "power_profile_desc": "الموازنة بين الأداء العالي وتوفير استهلاك الطاقة",
@@ -848,8 +858,6 @@ Item {
             "power_saver": "توفير الطاقة",
             "screen_sleep": "مهلة إيقاف الشاشة",
             "screen_sleep_desc": "إيقاف الشاشة عند عدم الاستخدام (0 = أبداً)",
-
-            // Notifications
             "dnd_mode": "عدم الإزعاج (DND)",
             "dnd_mode_desc": "كتم وإيقاف ظهور كافة الإشعارات على سطح المكتب",
             "notif_timeout": "مدة ظهور الإشعار",
@@ -857,10 +865,6 @@ Item {
             "notif_sound": "صوت الإشعار",
             "notif_sound_desc": "تشغيل نغمة تنبيه صوتية عند وصول إشعار جديد",
             "sec_short": " ثوانٍ",
-
-            // Shortcuts
-
-            // About
             "about_desc": "مواصفات عتاد الجهاز، وتفاصيل التوزيعة، وبيئة سطح المكتب",
             "about_hardware_overview": "نظرة عامة على العتاد والنظام",
             "about_hardware_desc": "تفاصيل النواة ومواصفات الجهاز",
@@ -875,8 +879,6 @@ Item {
             "shell_font": "خط الواجهة الأساسي",
             "mono_font": "خط الأكواد البرمجية",
             "loading": "جارٍ التحميل…",
-
-            // Controls & Headers
             "drag_hint": "اسحب الشريط لتحريك النافذة • Super+F للتكبير",
             "dock_section_look": "الشكل",
             "dock_section_behavior": "السلوك",
@@ -950,8 +952,6 @@ Item {
             "power_sav": "توفير الطاقة",
             "never": "أبداً",
             "min": "دقيقة",
-
-            // Setup Wizard & General
             "welcome_deloos": "مرحباً بك في DeloOS",
             "setup_wizard_desc": "معالج الإعداد لأول مرة — خصّص تجربة سطح مكتبك وإعداداته",
             "icon_theme_missing_title": "سمة الأيقونات غير مثبّتة",
@@ -1119,8 +1119,6 @@ Item {
             "back_btn": "→ السابق",
             "install_btn": "تثبيت",
             "installed_btn": "مثبت",
-
-            // Cheat Sheet
             "widget_time_date": "الوقت والتاريخ",
             "widget_weather": "الطقس",
             "widget_system": "مراقب النظام",
@@ -1132,8 +1130,6 @@ Item {
             "widget_memory": "استخدام الذاكرة",
             "widget_notes_placeholder": "اكتب ملاحظاتك أو مهامك هنا…",
             "cs_title": "اختصارات لوحة المفاتيح",
-
-            // App Drawer
             "pinned": "المثبتة",
             "all_apps": "كافة التطبيقات",
             "pin_to_dock": "تثبيت في الشريط",
@@ -1201,8 +1197,6 @@ Item {
             "screenshot_selection": "تحديد منطقة",
             "screenshot_window": "النافذة النشطة",
             "screenshot_fullscreen": "كامل الشاشة",
-
-            // Smart Notch & LocalSend
             "notch_now_playing": "يتم التشغيل الآن",
             "notch_sending_to": "جارٍ الإرسال إلى",
             "notch_sent_failed": "فشل الإرسال",
@@ -1252,12 +1246,74 @@ Item {
             "settings_page_topbar_desc": "مساحات العمل في النوتش الذكي وكبسولة الوقت ومراقبة العتاد",
             "settings_page_dock": "شريط المهام",
             "settings_page_dock_desc": "الحجم والموضع وطريقة العرض والتطبيقات المثبتة",
+            "settings_page_display": "الشاشة والعرض",
+            "settings_page_display_desc": "الدقة ومعدل التحديث (Hz) وتقنية HDR والتحجيم والتوجيه",
+            "display_title": "الشاشة والعرض",
+            "display_connected_screens": "الشاشات المتصلة",
+            "display_preview_title": "تخطيط الشاشات والتعريف",
+            "display_section_resolution": "الدقة ومعدل التحديث",
+            "display_section_color": "الألوان والمدى الديناميكي",
+            "display_section_layout": "التحجيم والتخطيط",
+            "display_section_advanced": "خيارات متقدمة",
+            "display_resolution": "دقة الشاشة",
+            "display_resolution_desc": "أبعاد العرض بالعرض والارتفاع ومعدل التناسب",
+            "display_refresh_rate": "معدل التحديث",
+            "display_refresh_rate_desc": "عدد الإطارات في الثانية بالهرتز (Hz)",
+            "display_hdr": "المدى الديناميكي العالي (HDR)",
+            "display_hdr_desc_supported": "ألوان 10-bit بعمق فائق وسطوع ديناميكي متقدم (SMPTE ST 2084)",
+            "display_hdr_desc_unsupported": "شاشتك الحالية لا تدعم تقنية HDR العتادية",
+            "display_hdr_badge_unsupported": "غير مدعوم عتادياً",
+            "display_hdr_badge_supported": "جاهز للـ HDR10",
+            "display_scale": "تحجيم العرض",
+            "display_scale_desc": "تكبير وتصغير حجم عناصر الواجهة والنصوص",
+            "display_orientation": "اتجاه الشاشة",
+            "display_orientation_desc": "تدوير العرض للوضع الرأسي أو الأفقي",
+            "display_orientation_standard": "أفقي عادي",
+            "display_orientation_portrait": "رأسي (90°)",
+            "display_orientation_flipped": "مقلوب (180°)",
+            "display_orientation_portrait_flipped": "رأسي معكوس (270°)",
+            "display_vrr": "التزامن التكيفي (VRR)",
+            "display_vrr_desc": "مزامنة معدل التحديث مع بطاقة الرسوميات (G-Sync / FreeSync) لمنع تمزق الإطارات",
+            "display_color_format": "عمق الألوان ومسار المسح",
+            "display_color_format_desc": "عمق البت اللوني وتنسيق معالجة الرسوميات المباشر",
+            "display_primary": "الشاشة الأساسية",
+            "display_native": "الدقة الأصلية",
+            "display_recommended": "مستحسن",
+            "display_identify": "كشف الشاشات",
+            "display_mode": "تعدد الشاشات",
+            "display_mode_desc": "تمديد سطح المكتب عبر الشاشات أو تكرار نفس الصورة",
+            "display_mode_extend": "تمديد العرض",
+            "display_mode_mirror": "تكرار الشاشة (مرآة)",
+            "display_placement": "موضع الشاشة",
+            "display_placement_desc": "موضع هذه الشاشة بالنسبة للشاشة الأساسية",
+            "display_placement_right": "يمين",
+            "display_placement_left": "يسار",
+            "display_placement_above": "أعلى",
+            "display_placement_below": "أسفل",
+            "display_set_primary": "تعيين كشاشة أساسية",
+            "display_set_primary_desc": "الشاشة الرئيسية لشريط المهام والخلفية ومساحات العمل",
+            "display_is_primary_badge": "الشاشة الأساسية",
+            "display_section_night_light": "راحة العين والإضاءة الليلية",
+            "display_night_light": "الإضاءة الليلية",
+            "display_night_light_desc": "تدرج لوني دافئ لتقليل إجهاد العين والمساعدة على النوم المريح",
+            "display_night_light_temp": "حرارة اللون",
+            "display_temp_warmest": "دافئ جداً (3500K)",
+            "display_temp_warm": "دافئ (4500K)",
+            "display_temp_natural": "طبيعي (5500K)",
+            "display_temp_off": "متوقفة (6500K)",
+            "display_multi_drag_hint": "انقر على أي شاشة لتحديدها وتعديل دقتها ومعدل تحديثها ومقياسها",
+            "display_rate_highest": "الأعلى · سلاسة فائقة",
+            "display_rate_saving": "توفير طاقة",
+            "power_source": "مصدر الطاقة",
+            "power_source_ac": "متصل بالتيار الكهربائي المباشر",
+            "power_source_ac_desc": "حاسوب مكتبي متصل مباشرة بمصدر الطاقة الكهربائية",
+            "power_source_battery_desc": "جهاز محمول يعمل بالبطارية",
             "settings_page_windows": "النوافذ ومساحات العمل",
             "settings_page_windows_desc": "التباعد والاستدارة وسلوك التركيز وعدد مساحات العمل",
             "settings_page_notifications": "الإشعارات",
             "settings_page_notifications_desc": "عدم الإزعاج والأصوات ومدة الظهور وإشعارات النوتش",
-            "settings_page_power": "الطاقة والشاشة",
-            "settings_page_power_desc": "وضع الطاقة ومهلة سكون الشاشة",
+            "settings_page_power": "الطاقة والبطارية",
+            "settings_page_power_desc": "وضع استهلاك الطاقة ومهلة سكون الشاشة",
             "settings_page_apps": "التطبيقات",
             "settings_page_apps_desc": "التطبيقات التي تفتح الروابط والمجلدات والنصوص والصور والفيديو وملفات PDF، ومشغّل الموسيقى",
             "settings_page_time_language": "الوقت واللغة",
@@ -1312,20 +1368,17 @@ Item {
             "tc_disk": "القرص",
             "tc_load": "الحمل",
             "tc_threads": "مسار",
-            "tc_free": "متاح",
+            "tc_free": "متاح"
         }
     })
-
     // "3 windows" / Arabic dual & plural forms (١ نافذة، نافذتان، ٣ نوافذ، ١١ نافذة).
     // ── Locale-aware date & time (Qt.formatDate uses the process C locale, not the
     // shell language, so Arabic names/digits must be produced here). Shared by the lock
     // screen, the Notch idle view, desktop widgets and the Time capsule.
     readonly property var arDays: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"]
-    readonly property var arMonths: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-                                     "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
+    readonly property var arMonths: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"]
     readonly property var enDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    readonly property var enMonths: ["January", "February", "March", "April", "May", "June",
-                                     "July", "August", "September", "October", "November", "December"]
+    readonly property var enMonths: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     // Settings → Apps → Number Format, in either UI language.
     readonly property bool arabicDigits: typeof ConfigManager !== "undefined" && ConfigManager.numberFormat === "eastern"
 
@@ -1336,48 +1389,72 @@ Item {
     // letters keeps its written order: an LRM after each digit run, inside an LTR isolate.
     function number(v) {
         const s = root.digits(v);
-        if (!root.arabicDigits || s.length === 0 || /[\u0621-\u064A]/.test(String(v))) return s;
+        if (!root.arabicDigits || s.length === 0 || /[\u0621-\u064A]/.test(String(v)))
+            return s;
+
         return root.ltr(s.replace(/([\u0660-\u0669][\u0660-\u0669.,]*)/g, "$1\u200E"));
     }
+
     function digits(v) {
         const s = String(v === undefined || v === null ? "" : v);
-        return root.arabicDigits ? s.replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]) : s;
+        return root.arabicDigits ? s.replace(/\d/g, (d) => {
+            return "٠١٢٣٤٥٦٧٨٩"[d];
+        }) : s;
     }
+
     // Clock honouring Settings → clock format (24h / 12h). Arabic uses ص/م.
     function clockText(d, withSeconds) {
-        if (!d) return "--:--";
+        if (!d)
+            return "--:--";
+
         const h24 = (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h");
         const mm = String(d.getMinutes()).padStart(2, "0");
         const ss = withSeconds ? ":" + String(d.getSeconds()).padStart(2, "0") : "";
-        if (h24) return root.digits(String(d.getHours()).padStart(2, "0") + ":" + mm + ss);
+        if (h24)
+            return root.digits(String(d.getHours()).padStart(2, "0") + ":" + mm + ss);
+
         const h = d.getHours() % 12 || 12;
         const ap = d.getHours() < 12 ? (root.isRTL ? "ص" : "AM") : (root.isRTL ? "م" : "PM");
         return root.digits(h + ":" + mm + ss) + " " + ap;
     }
+
     // Digits only ("8:04", "20:04") and the separate meridiem ("ص"/"PM", "" in 24h),
     // for layouts that style them apart.
     function clockDigits(d) {
-        if (!d) return "--:--";
+        if (!d)
+            return "--:--";
+
         const h24 = (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h");
         const mm = String(d.getMinutes()).padStart(2, "0");
         return root.digits((h24 ? String(d.getHours()).padStart(2, "0") : String(d.getHours() % 12 || 12)) + ":" + mm);
     }
+
     function meridiem(d) {
-        if (!d || (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h")) return "";
+        if (!d || (typeof ConfigManager !== "undefined" && ConfigManager.clockFormat === "24h"))
+            return "";
+
         return d.getHours() < 12 ? (root.isRTL ? "ص" : "AM") : (root.isRTL ? "م" : "PM");
     }
+
     // "الأربعاء، 23 سبتمبر 2026" / "Wednesday, September 23, 2026"
     function fullDateText(d) {
-        if (!d) return "";
+        if (!d)
+            return "";
+
         if (root.isRTL)
             return root.arDays[d.getDay()] + "، " + root.digits(d.getDate()) + " " + root.arMonths[d.getMonth()] + " " + root.digits(d.getFullYear());
+
         return root.enDays[d.getDay()] + ", " + root.enMonths[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
     }
+
     // "الأربعاء، 23 سبتمبر" / "Wed, Sep 23"
     function shortDateText(d) {
-        if (!d) return "";
+        if (!d)
+            return "";
+
         if (root.isRTL)
             return root.arDays[d.getDay()] + "، " + root.digits(d.getDate()) + " " + root.arMonths[d.getMonth()];
+
         return root.enDays[d.getDay()].slice(0, 3) + ", " + root.enMonths[d.getMonth()].slice(0, 3) + " " + d.getDate();
     }
 
@@ -1392,8 +1469,14 @@ Item {
         const t = (s === undefined || s === null) ? "" : String(s);
         return (root.isRTL && t.length > 0) ? "\u200F" + t : t;
     }
-    function isolate(s) { return "\u2068" + (s === undefined || s === null ? "" : s) + "\u2069"; }
-    function ltr(s) { return "\u2066" + (s === undefined || s === null ? "" : s) + "\u2069"; }
+
+    function isolate(s) {
+        return "\u2068" + (s === undefined || s === null ? "" : s) + "\u2069";
+    }
+
+    function ltr(s) {
+        return "\u2066" + (s === undefined || s === null ? "" : s) + "\u2069";
+    }
 
     // "8 apps" / Arabic: تطبيق واحد، تطبيقان، ٣–١٠ تطبيقات، ١١+ تطبيقًا
     // A counted noun in the UI language. Arabic agrees by number: 1 and 2 have their own
@@ -1402,9 +1485,15 @@ Item {
     // Arabic-digits setting. en: [one, other]; ar: [one, two, few, many, other].
     function plural(n, en, ar) {
         const num = Math.max(0, Math.round(Number(n) || 0));
-        if (!root.isRTL) return num + " " + (num === 1 ? en[0] : en[1]);
-        if (num === 1) return ar[0];
-        if (num === 2) return ar[1];
+        if (!root.isRTL)
+            return num + " " + (num === 1 ? en[0] : en[1]);
+
+        if (num === 1)
+            return ar[0];
+
+        if (num === 2)
+            return ar[1];
+
         const r = num % 100;
         const form = (r >= 3 && r <= 10) ? ar[2] : (r >= 11 ? ar[3] : ar[4]);
         return root.digits(num) + " " + form;
@@ -1413,27 +1502,35 @@ Item {
     function appsCount(n) {
         return root.plural(n, ["app", "apps"], ["تطبيق واحد", "تطبيقان", "تطبيقات", "تطبيقًا", "تطبيق"]);
     }
+
     function windowsCount(n) {
         return root.plural(n, ["window", "windows"], ["نافذة واحدة", "نافذتان", "نوافذ", "نافذة", "نافذة"]);
     }
+
     function notificationsCount(n) {
         return root.plural(n, ["notification", "notifications"], ["إشعار واحد", "إشعاران", "إشعارات", "إشعارًا", "إشعار"]);
     }
+
     function filesCount(n) {
         return root.plural(n, ["file", "files"], ["ملف واحد", "ملفان", "ملفات", "ملفًا", "ملف"]);
     }
+
     function networksCount(n) {
         return root.plural(n, ["network", "networks"], ["شبكة واحدة", "شبكتان", "شبكات", "شبكة", "شبكة"]);
     }
+
     function devicesCount(n) {
         return root.plural(n, ["device", "devices"], ["جهاز واحد", "جهازان", "أجهزة", "جهازًا", "جهاز"]);
     }
+
     function charsCount(n) {
         return root.plural(n, ["character", "characters"], ["حرف واحد", "حرفان", "أحرف", "حرفًا", "حرف"]);
     }
+
     function entriesCount(n) {
         return root.plural(n, ["entry", "entries"], ["عنصر واحد", "عنصران", "عناصر", "عنصرًا", "عنصر"]);
     }
+
     function threadsCount(n) {
         return root.plural(n, ["thread", "threads"], ["مسار واحد", "مساران", "مسارات", "مسارًا", "مسار"]);
     }
@@ -1443,26 +1540,32 @@ Item {
         const b = Math.max(0, Number(bytes) || 0);
         const units = ["B", "KB", "MB", "GB", "TB"];
         let i = 0, v = b;
-        while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+        while (v >= 1024 && i < units.length - 1) {
+            v /= 1024;
+            i++;
+        }
         return root.number((i === 0 ? String(v) : v.toFixed(v < 10 ? 1 : 0)) + " " + units[i]);
     }
 
     function tr(key, fallback) {
-        if (!key) return "";
+        if (!key)
+            return "";
+
         var currentDict = translations[root.locale];
-        if (currentDict && currentDict[key] !== undefined) {
+        if (currentDict && currentDict[key] !== undefined)
             return currentDict[key];
-        }
+
         var enDict = translations["en"];
-        if (enDict && enDict[key] !== undefined) {
+        if (enDict && enDict[key] !== undefined)
             return enDict[key];
-        }
+
         return (fallback !== undefined) ? fallback : key;
     }
 
     function setLanguage(lang) {
-        if (lang === "en" || lang === "ar") {
+        if (lang === "en" || lang === "ar")
             ConfigManager.setUiLanguage(lang);
-        }
+
     }
+
 }

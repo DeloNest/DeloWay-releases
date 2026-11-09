@@ -42,6 +42,7 @@ Item {
                                            ? ConfigManager.performanceTier : 1
 
     readonly property bool enableShadows: performanceTier >= 1
+    readonly property bool reduceMotion: performanceTier === 0
 
     // -------------------------------------------------------------------------
     // Motion Tokens (NewPlan.md §4.4)
@@ -49,12 +50,23 @@ Item {
     // -------------------------------------------------------------------------
     readonly property int motionFast: 120
     readonly property int motionBase: (performanceTier === 0) ? 140 : 220
+    readonly property int motionLong: (performanceTier === 0) ? 0 : 360
+    readonly property int motionStagger: (performanceTier === 0) ? 0 : 40
     readonly property int motionThemeFade: (performanceTier === 0) ? 0 : 200
     readonly property int easingTheme: Easing.InOutQuad
     readonly property int motionWallpaperFade: (performanceTier === 0) ? 0 : 400
     readonly property int easingWallpaper: Easing.OutCubic
     readonly property int easingEnter: Easing.OutCubic
     readonly property int easingExit: Easing.InCubic
+
+    // -------------------------------------------------------------------------
+    // OOBE Setup Wizard Tokens
+    // -------------------------------------------------------------------------
+    readonly property color oobeBackdropDark: Qt.rgba(0, 0, 0, 0.65)
+    readonly property color oobeBackdropLight: Qt.rgba(0, 0, 0, 0.35)
+    readonly property int oobePanelWidth: 860
+    readonly property int oobePanelHeight: 620
+    readonly property real oobeLetterSpacing: 3.0
 
     // Appearance Tab Card Tokens (refined Apple-like restraint)
     readonly property color cardBorderSelected: isDark ? Qt.rgba(1, 1, 1, 0.38) : Qt.rgba(0, 0, 0, 0.32)
