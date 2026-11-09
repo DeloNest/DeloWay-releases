@@ -133,7 +133,7 @@ Item {
                 title: I18n.isRTL ? "عدد مساحات العمل الثابتة" : "Fixed Workspaces Count"
                 subtitle: I18n.isRTL ? "الحد الأدنى لمساحات العمل المعروضة دائماً دون إخفاء" : "Minimum workspace slots shown permanently"
                 icon: "view-paged-symbolic"
-                showDivider: true
+                showDivider: false
 
                 RowLayout {
                     spacing: Theme.space4
@@ -175,6 +175,56 @@ Item {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // ── Touchpad & Gestures ─────────────────────────────────────
+        SettingsSection {
+            title: I18n.tr("win_touchpad_section")
+
+            // Gestures (Overview & Workspace Navigation)
+            SettingsRow {
+                title: I18n.tr("win_touchpad_gestures")
+                subtitle: I18n.tr("win_touchpad_gestures_desc")
+                icon: "input-touchpad-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setTouchpadGestures(!ConfigManager.touchpadGestures)
+
+                SettingsToggle {
+                    checked: ConfigManager.touchpadGestures
+                    onToggled: ch => ConfigManager.setTouchpadGestures(ch)
+                }
+            }
+
+            // Natural Scroll
+            SettingsRow {
+                title: I18n.tr("win_touchpad_natural_scroll")
+                subtitle: I18n.tr("win_touchpad_natural_scroll_desc")
+                icon: "mouse-test-scroll-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setTouchpadNaturalScroll(!ConfigManager.touchpadNaturalScroll)
+
+                SettingsToggle {
+                    checked: ConfigManager.touchpadNaturalScroll
+                    onToggled: ch => ConfigManager.setTouchpadNaturalScroll(ch)
+                }
+            }
+
+            // Tap to Click
+            SettingsRow {
+                title: I18n.tr("win_touchpad_tap_click")
+                subtitle: I18n.tr("win_touchpad_tap_click_desc")
+                icon: "input-mouse-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setTouchpadTapToClick(!ConfigManager.touchpadTapToClick)
+
+                SettingsToggle {
+                    checked: ConfigManager.touchpadTapToClick
+                    onToggled: ch => ConfigManager.setTouchpadTapToClick(ch)
                 }
             }
         }

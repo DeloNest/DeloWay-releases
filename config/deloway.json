@@ -35,7 +35,12 @@
     "inactiveBorder": "#444444",
     "gapsIn": 4,
     "gapsOut": 8,
-    "rounding": 8
+    "rounding": 8,
+    "followMouse": true,
+    "dimInactive": false,
+    "touchpadGestures": true,
+    "touchpadNaturalScroll": false,
+    "touchpadTapToClick": true
   },
   "notifications": {
     "dnd": false,

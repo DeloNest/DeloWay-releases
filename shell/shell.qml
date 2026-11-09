@@ -167,6 +167,26 @@ ShellRoot {
         onPressed: ShellState.toggleOverview()
     }
 
+    GlobalShortcut {
+        name: "overviewOpen"
+        description: "Opens Deloway Workspace Overview / Mission Control (Touchpad swipe up)"
+        onPressed: {
+            if (ConfigManager.touchpadGestures) {
+                ShellState.openOverview();
+            }
+        }
+    }
+
+    GlobalShortcut {
+        name: "overviewClose"
+        description: "Closes Deloway Workspace Overview / Mission Control (Touchpad swipe down)"
+        onPressed: {
+            if (ConfigManager.touchpadGestures) {
+                ShellState.closeOverview();
+            }
+        }
+    }
+
     IpcHandler {
         // ── Overview (Mission Control) ──────────────────────────────────────
         function toggleOverview() {

@@ -107,6 +107,9 @@ Item {
     property int windowRounding: 10
     property bool followMouse: true
     property bool dimInactive: false
+    property bool touchpadGestures: true
+    property bool touchpadNaturalScroll: false
+    property bool touchpadTapToClick: true
 
     // Notifications
     property bool notificationsDnd: false
@@ -373,6 +376,9 @@ Item {
                 ["decoration:rounding", root.windowRounding],
                 ["input:follow_mouse", root.followMouse ? 1 : 0],
                 ["decoration:dim_inactive", root.dimInactive ? "true" : "false"],
+                ["input:touchpad:natural_scroll", root.touchpadNaturalScroll ? 1 : 0],
+                ["input:touchpad:tap-to-click", root.touchpadTapToClick ? 1 : 0],
+                ["gestures:workspace_swipe_distance", root.touchpadGestures ? 300 : 0],
                 // Hyprland's own text (group bars, error bar) in the UI typeface
                 ["misc:font_family", root.fontFamily],
                 ["group:groupbar:font_family", root.fontFamily]
@@ -479,6 +485,9 @@ Item {
                 if (cfg.windows.rounding !== undefined) root.windowRounding = cfg.windows.rounding;
                 if (cfg.windows.followMouse !== undefined) root.followMouse = cfg.windows.followMouse;
                 if (cfg.windows.dimInactive !== undefined) root.dimInactive = cfg.windows.dimInactive;
+                if (cfg.windows.touchpadGestures !== undefined) root.touchpadGestures = cfg.windows.touchpadGestures;
+                if (cfg.windows.touchpadNaturalScroll !== undefined) root.touchpadNaturalScroll = cfg.windows.touchpadNaturalScroll;
+                if (cfg.windows.touchpadTapToClick !== undefined) root.touchpadTapToClick = cfg.windows.touchpadTapToClick;
             }
             if (cfg.notifications) {
                 if (cfg.notifications.dnd !== undefined) root.notificationsDnd = cfg.notifications.dnd;
@@ -701,6 +710,24 @@ Item {
         saveConfig();
     }
 
+    function setTouchpadGestures(val) {
+        root.touchpadGestures = val;
+        root.run(["hyprctl", "keyword", "gestures:workspace_swipe_distance", val ? "300" : "0"]);
+        saveConfig();
+    }
+
+    function setTouchpadNaturalScroll(val) {
+        root.touchpadNaturalScroll = val;
+        root.run(["hyprctl", "keyword", "input:touchpad:natural_scroll", val ? "1" : "0"]);
+        saveConfig();
+    }
+
+    function setTouchpadTapToClick(val) {
+        root.touchpadTapToClick = val;
+        root.run(["hyprctl", "keyword", "input:touchpad:tap-to-click", val ? "1" : "0"]);
+        saveConfig();
+    }
+
     readonly property var borderStyles: ["contrast", "soft", "subtle", "off"]
 
     // Border colours as #rrggbb (the same steps on the Settings swatches), per mode.
@@ -735,6 +762,9 @@ Item {
         setWindowRounding(8);
         setFollowMouse(true);
         setDimInactive(false);
+        setTouchpadGestures(true);
+        setTouchpadNaturalScroll(false);
+        setTouchpadTapToClick(true);
         setWorkspacesCount(5);
         setWorkspaceIndicatorStyle("icons");
         setCapsuleOrder("clockLeft");
@@ -1208,7 +1238,10 @@ Item {
                 gapsOut: root.windowGapsOut,
                 rounding: root.windowRounding,
                 followMouse: root.followMouse,
-                dimInactive: root.dimInactive
+                dimInactive: root.dimInactive,
+                touchpadGestures: root.touchpadGestures,
+                touchpadNaturalScroll: root.touchpadNaturalScroll,
+                touchpadTapToClick: root.touchpadTapToClick
             },
             notifications: {
                 dnd: root.notificationsDnd,
