@@ -27,8 +27,9 @@ ColumnLayout {
     function label(n) { return n.description || n.nickname || n.name || "—"; }
     function outputIcon(n) {
         const s = ((n.name || "") + " " + (n.description || "")).toLowerCase();
-        if (s.indexOf("headphone") >= 0 || s.indexOf("headset") >= 0 || s.indexOf("bluez") >= 0) return "audio-headphones-symbolic";
-        if (s.indexOf("hdmi") >= 0 || s.indexOf("displayport") >= 0) return "video-display-symbolic";
+        if (s.indexOf("headphone") >= 0 || s.indexOf("headset") >= 0 || s.indexOf("earphone") >= 0 || s.indexOf("airpod") >= 0 || s.indexOf("bud") >= 0 || s.indexOf("bluez") >= 0) return "audio-headphones-symbolic";
+        if (s.indexOf("hdmi") >= 0 || s.indexOf("displayport") >= 0 || s.indexOf("tv") >= 0) return "video-display-symbolic";
+        if (s.indexOf("usb") >= 0 || s.indexOf("dac") >= 0) return "audio-card-symbolic";
         return IconResolver.directional("audio-speakers-symbolic");
     }
 
@@ -88,6 +89,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     iconName: root.outputIcon(modelData)
                     title: root.label(modelData)
+                    subtitle: Pipewire.defaultAudioSink === modelData ? root.t("الافتراضي نشط", "Active output") : ""
                     selected: Pipewire.defaultAudioSink === modelData
                     onClicked: Pipewire.preferredDefaultAudioSink = modelData
                 }
@@ -111,6 +113,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     iconName: "audio-input-microphone-symbolic"
                     title: root.label(modelData)
+                    subtitle: Pipewire.defaultAudioSource === modelData ? root.t("الافتراضي نشط", "Active input") : ""
                     selected: Pipewire.defaultAudioSource === modelData
                     onClicked: Pipewire.preferredDefaultAudioSource = modelData
                 }

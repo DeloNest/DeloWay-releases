@@ -19,10 +19,19 @@ ColumnLayout {
     LayoutMirroring.childrenInherit: true
     function t(ar, en) { return I18n.isRTL ? ar : en; }
 
+    property string expandedAddress: ""
+
     function activate(d) {
-        if (d.connected) BluetoothService.disconnectDevice(d.address);
-        else if (d.paired) BluetoothService.connectDevice(d.address);
-        else BluetoothService.pairDevice(d.address);
+        if (d.connected || root.expandedAddress === d.address) {
+            root.expandedAddress = (root.expandedAddress === d.address) ? "" : d.address;
+            return;
+        }
+        if (!d.paired) {
+            root.expandedAddress = d.address;
+            return;
+        }
+        root.expandedAddress = "";
+        BluetoothService.connectDevice(d.address);
     }
 
     QSPageHeader {
@@ -88,16 +97,64 @@ ColumnLayout {
                     Repeater {
                         model: parent.modelData.items
                         delegate: QSRow {
+                            id: btRow
                             required property var modelData
                             Layout.fillWidth: true
                             iconName: modelData.icon || "bluetooth-active-symbolic"
                             title: modelData.name || modelData.address
                             subtitle: BluetoothService.connectingAddress === modelData.address ? root.t("جارٍ الاتصال…", "Connecting…")
-                                      : (modelData.connected ? root.t("متصل · اضغط لقطع الاتصال", "Connected · tap to disconnect")
-                                         : (modelData.paired ? root.t("مقترن", "Paired") : root.t("اضغط للاقتران", "Tap to pair")))
+                                      : (modelData.connected ? root.t("متصل", "Connected")
+                                         : (modelData.paired ? root.t("مقترن", "Paired") : root.t("قريب", "Nearby")))
                             selected: modelData.connected
                             busy: BluetoothService.connectingAddress === modelData.address
+                            expanded: root.expandedAddress === modelData.address
+                            trailingIcon: root.expandedAddress === modelData.address ? "pan-up-symbolic" : (modelData.connected ? "" : "pan-down-symbolic")
                             onClicked: root.activate(modelData)
+
+                            extra: RowLayout {
+                                width: parent ? parent.width : 0
+                                spacing: 6
+
+                                Text {
+                                    text: btRow.modelData.address || ""
+                                    font.family: Theme.typography.fontFamily
+                                    font.pixelSize: Theme.fontSize(10)
+                                    color: Theme.notchTextTertiary
+                                    renderType: Theme.renderType
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                PillButton {
+                                    visible: btRow.modelData.connected
+                                    implicitHeight: 28
+                                    text: root.t("قطع الاتصال", "Disconnect")
+                                    onClicked: { BluetoothService.disconnectDevice(btRow.modelData.address); root.expandedAddress = ""; }
+                                }
+
+                                PillButton {
+                                    visible: !btRow.modelData.connected && btRow.modelData.paired
+                                    implicitHeight: 28
+                                    primary: true
+                                    text: root.t("اتصال", "Connect")
+                                    onClicked: { BluetoothService.connectDevice(btRow.modelData.address); root.expandedAddress = ""; }
+                                }
+
+                                PillButton {
+                                    visible: !btRow.modelData.paired
+                                    implicitHeight: 28
+                                    primary: true
+                                    text: root.t("اقتران", "Pair")
+                                    onClicked: { BluetoothService.pairDevice(btRow.modelData.address); root.expandedAddress = ""; }
+                                }
+
+                                PillButton {
+                                    visible: btRow.modelData.paired
+                                    implicitHeight: 28
+                                    text: root.t("إلغاء الاقتران", "Unpair")
+                                    onClicked: { BluetoothService.removeDevice(btRow.modelData.address); root.expandedAddress = ""; }
+                                }
+                            }
                         }
                     }
                 }

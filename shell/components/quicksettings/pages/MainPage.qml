@@ -172,10 +172,12 @@ ColumnLayout {
             title: root.t("وضع الطاقة", "Power Mode")
             iconName: "power-profile-" + (ControlCenterService.powerProfile || "balanced") + "-symbolic"
             active: ControlCenterService.powerProfile === "performance"
+            hasDetails: true
             subtitle: ({ "power-saver": root.t("توفير", "Saver"),
                          "balanced": root.t("متوازن", "Balanced"),
                          "performance": root.t("أداء", "Performance") })[ControlCenterService.powerProfile] || ""
             onToggled: ControlCenterService.cyclePowerProfile()
+            onDetailsRequested: root.go("power")
         }
     }
 
