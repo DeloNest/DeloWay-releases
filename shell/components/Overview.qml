@@ -163,7 +163,7 @@ PanelWindow {
     Rectangle {
         id: backdrop
         anchors.fill: parent
-        color: Theme.modalScrim
+        color: Theme.isGlass ? Qt.rgba(0, 0, 0, 0.35) : (Theme.isLight ? Qt.rgba(0, 0, 0, 0.20) : Theme.modalScrim)
         opacity: ShellState.overviewOpen ? 1.0 : 0.0
 
         Behavior on opacity {
@@ -230,13 +230,19 @@ PanelWindow {
                         height: 96
                         radius: Theme.radiusMedium
 
-                        // Strict Monochrome OLED Card Styling
-                        color: isSelected
-                            ? Theme.colors.surfaceHover
-                            : (wsMouse.containsMouse ? Theme.colors.surface : Theme.notchBackground)
-                        border.color: isDropTarget
+                        // Adaptive Theme Card Styling (Glass translucent / OLED Dark / Crisp Light)
+                        color: wsCard.isDropTarget
+                            ? Theme.notchSurfaceActive
+                            : (wsCard.isSelected
+                                ? (Theme.isGlass ? Qt.rgba(1, 1, 1, 0.20) : Theme.notchSurfaceHover)
+                                : (wsMouse.containsMouse
+                                    ? Theme.notchSurfaceHover
+                                    : (Theme.isGlass ? Theme.capsuleFill : Theme.notchBackground)))
+                        border.color: (wsCard.isSelected || wsCard.isDropTarget)
                             ? Theme.colors.borderHighlight
-                            : (isSelected ? Theme.colors.borderHighlight : (isLiveActive ? Theme.colors.textMuted : Theme.colors.border))
+                            : (wsCard.isLiveActive
+                                ? Theme.notchTextSecondary
+                                : (Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder))
                         border.width: (isSelected || isDropTarget) ? 2 : 1
 
                         scale: isDropTarget ? 1.06 : (wsMouse.containsMouse ? 1.02 : 1.0)
@@ -258,8 +264,8 @@ PanelWindow {
                                     width: 22
                                     height: 22
                                     radius: Theme.radiusSmall
-                                    color: wsCard.isSelected ? Theme.colors.text : Theme.colors.surface
-                                    border.color: Theme.colors.border
+                                    color: wsCard.isSelected ? Theme.notchText : Theme.notchSurface
+                                    border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                                     border.width: 1
 
                                     Text {
@@ -268,7 +274,7 @@ PanelWindow {
                                         font.family: Theme.fontFamily
                                         font.pixelSize: Theme.fontSize(11)
                                         font.bold: true
-                                        color: wsCard.isSelected ? Theme.notchBackground : Theme.colors.text
+                                        color: wsCard.isSelected ? (Theme.isLight ? "#ffffff" : "#000000") : Theme.notchText
                                     }
                                 }
 
@@ -278,7 +284,7 @@ PanelWindow {
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize(12)
                                     font.bold: wsCard.isSelected
-                                    color: wsCard.isSelected ? Theme.colors.text : Theme.colors.textMuted
+                                    color: wsCard.isSelected ? Theme.notchText : Theme.notchTextSecondary
                                     elide: Text.ElideRight
                                 }
 
@@ -288,7 +294,7 @@ PanelWindow {
                                     width: 6
                                     height: 6
                                     radius: 3
-                                    color: Theme.colors.text
+                                    color: Theme.notchText
                                 }
                             }
 
@@ -297,8 +303,8 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 radius: Theme.radiusSmall
-                                color: Theme.colors.surface
-                                border.color: Theme.colors.border
+                                color: Theme.notchSurface
+                                border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                                 border.width: 1
                                 clip: true
 
@@ -313,8 +319,8 @@ PanelWindow {
                                             width: wsCard.wsWindows.length === 1 ? 40 : 20
                                             height: 26
                                             radius: 3
-                                            color: Theme.colors.surfaceHover
-                                            border.color: Theme.colors.borderHighlight
+                                            color: Theme.notchSurfaceElevated
+                                            border.color: Theme.notchBorderHighlight
                                             border.width: 1
 
                                             SymbolicIcon {
@@ -324,7 +330,7 @@ PanelWindow {
                                                     return win ? root.resolveIcon(win.appId) : "window-new-symbolic";
                                                 }
                                                 iconSize: 12
-                                                iconColor: Theme.colors.text
+                                                iconColor: Theme.notchText
                                             }
                                         }
                                     }
@@ -336,7 +342,7 @@ PanelWindow {
                                     text: "—"
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSize(12)
-                                    color: Theme.colors.textMuted
+                                    color: Theme.notchTextSecondary
                                 }
                             }
                         }
@@ -379,15 +385,15 @@ PanelWindow {
                         width: 64
                         height: 64
                         radius: 32
-                        color: Theme.notchBackground
-                        border.color: Theme.colors.border
+                        color: Theme.isGlass ? Theme.capsuleFill : Theme.notchBackground
+                        border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                         border.width: 1
 
                         SymbolicIcon {
                             anchors.centerIn: parent
                             source: "window-new-symbolic"
                             iconSize: 28
-                            iconColor: Theme.colors.textMuted
+                            iconColor: Theme.notchTextSecondary
                         }
                     }
 
@@ -396,7 +402,7 @@ PanelWindow {
                         text: I18n.tr("overview_no_windows")
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize(15)
-                        color: Theme.colors.textMuted
+                        color: Theme.notchTextSecondary
                     }
                 }
 
@@ -424,8 +430,10 @@ PanelWindow {
                             height: root.currentWindows.length === 1 ? 380 : (root.currentWindows.length === 2 ? 310 : 250)
                             radius: Theme.radiusLarge
 
-                            color: Theme.notchBackground
-                            border.color: cardMouse.containsMouse || isActivated ? Theme.colors.borderHighlight : Theme.colors.border
+                            color: Theme.isGlass ? Theme.capsuleFill : Theme.notchBackground
+                            border.color: (cardMouse.containsMouse || isActivated)
+                                ? Theme.colors.borderHighlight
+                                : (Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder)
                             border.width: (cardMouse.containsMouse || isActivated) ? 2 : 1
 
                             opacity: isBeingDragged ? 0.35 : 1.0
@@ -450,15 +458,15 @@ PanelWindow {
                                         width: 28
                                         height: 28
                                         radius: Theme.radiusSmall
-                                        color: Theme.colors.surface
-                                        border.color: Theme.colors.border
+                                        color: Theme.notchSurface
+                                        border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                                         border.width: 1
 
                                         SymbolicIcon {
                                             anchors.centerIn: parent
                                             source: root.resolveIcon(windowCard.winAppId)
                                             iconSize: 16
-                                            iconColor: Theme.colors.text
+                                            iconColor: Theme.notchText
                                         }
                                     }
 
@@ -469,7 +477,7 @@ PanelWindow {
                                         font.family: Theme.fontFamily
                                         font.pixelSize: Theme.fontSize(13)
                                         font.bold: true
-                                        color: Theme.colors.text
+                                        color: Theme.notchText
                                         elide: Text.ElideRight
                                     }
 
@@ -479,8 +487,8 @@ PanelWindow {
                                         width: 26
                                         height: 26
                                         radius: 13
-                                        color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.surface
-                                        border.color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.colors.border
+                                        color: closeMouse.containsMouse ? Theme.colors.urgent : Theme.notchSurface
+                                        border.color: closeMouse.containsMouse ? Theme.colors.urgent : (Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder)
                                         border.width: 1
 
                                         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -491,7 +499,7 @@ PanelWindow {
                                             font.family: Theme.fontFamily
                                             font.pixelSize: Theme.fontSize(11)
                                             font.bold: true
-                                            color: closeMouse.containsMouse ? "#ffffff" : Theme.colors.text
+                                            color: closeMouse.containsMouse ? "#ffffff" : Theme.notchText
                                         }
 
                                         MouseArea {
@@ -513,8 +521,8 @@ PanelWindow {
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
                                     radius: Theme.radiusMedium
-                                    color: cardMouse.containsMouse ? Theme.colors.surfaceHover : Theme.colors.surface
-                                    border.color: Theme.colors.border
+                                    color: cardMouse.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface
+                                    border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                                     border.width: 1
 
                                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
@@ -528,7 +536,7 @@ PanelWindow {
                                             width: 52
                                             height: 52
                                             radius: Theme.radiusMedium
-                                            color: Theme.notchBackground
+                                            color: Theme.isGlass ? Qt.rgba(1, 1, 1, 0.10) : (Theme.isDark ? "#000000" : "#ffffff")
                                             border.color: Theme.colors.borderHighlight
                                             border.width: 1
 
@@ -536,7 +544,7 @@ PanelWindow {
                                                 anchors.centerIn: parent
                                                 source: root.resolveIcon(windowCard.winAppId)
                                                 iconSize: 28
-                                                iconColor: Theme.colors.text
+                                                iconColor: Theme.notchText
                                             }
                                         }
 
@@ -545,7 +553,7 @@ PanelWindow {
                                             text: windowCard.winAppId
                                             font.family: Theme.fontFamily
                                             font.pixelSize: Theme.fontSize(12)
-                                            color: Theme.colors.textMuted
+                                            color: Theme.notchTextSecondary
                                         }
                                     }
                                 }
@@ -626,8 +634,8 @@ PanelWindow {
                 implicitWidth: hintRow.implicitWidth + 32
                 implicitHeight: 40
                 radius: 20
-                color: Theme.notchBackground
-                border.color: Theme.colors.border
+                color: Theme.isGlass ? Theme.capsuleFill : Theme.notchBackground
+                border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                 border.width: 1
 
                 RowLayout {
@@ -638,22 +646,22 @@ PanelWindow {
                     SymbolicIcon {
                         source: "help-about-symbolic"
                         iconSize: 14
-                        iconColor: Theme.colors.textMuted
+                        iconColor: Theme.notchTextSecondary
                     }
 
                     Text {
                         text: I18n.tr("overview_hint")
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSize(12)
-                        color: Theme.colors.textMuted
+                        color: Theme.notchTextSecondary
                     }
 
                     Rectangle {
                         width: 32
                         height: 20
                         radius: 4
-                        color: Theme.colors.surface
-                        border.color: Theme.colors.border
+                        color: Theme.notchSurface
+                        border.color: Theme.isGlass ? Theme.capsuleBorder : Theme.notchBorder
                         border.width: 1
 
                         Text {
@@ -662,7 +670,7 @@ PanelWindow {
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSize(10)
                             font.bold: true
-                            color: Theme.colors.text
+                            color: Theme.notchText
                         }
                     }
                 }
@@ -678,7 +686,7 @@ PanelWindow {
             width: 220
             height: 120
             radius: Theme.radiusMedium
-            color: Theme.colors.surfaceHover
+            color: Theme.isGlass ? Qt.rgba(0.12, 0.12, 0.12, 0.85) : Theme.notchSurfaceHover
             border.color: Theme.colors.borderHighlight
             border.width: 2
             z: 999
@@ -692,7 +700,7 @@ PanelWindow {
                     Layout.alignment: Qt.AlignHCenter
                     source: root.resolveIcon(root.draggedAppId)
                     iconSize: 28
-                    iconColor: Theme.colors.text
+                    iconColor: Theme.notchText
                 }
 
                 Text {
@@ -701,7 +709,7 @@ PanelWindow {
                     text: root.draggedTitle || root.draggedAppId
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSize(12)
-                    color: Theme.colors.text
+                    color: Theme.notchText
                     elide: Text.ElideRight
                 }
             }
