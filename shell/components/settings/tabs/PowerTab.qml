@@ -2,12 +2,9 @@ import "../../"
 import "../../../services"
 import "../../../theme"
 import "../common"
-// Power & Display — power profile and screen sleep.
+// Power & Battery — power profile, sleep, suspend, lid and power button behavior.
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
-import Quickshell
-import Quickshell.Services.Mpris
 
 Item {
     id: root
@@ -30,7 +27,7 @@ Item {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        // ── 1. Power & Display ───────────────────────────────────────
+        // ── 1. Power & Battery ───────────────────────────────────────
         SettingsSection {
             title: I18n.isRTL ? "الطاقة والبطارية" : "Power & Battery"
 
@@ -86,79 +83,16 @@ Item {
                 icon: "power-profile-balanced-symbolic"
                 showDivider: true
 
-                RowLayout {
+                SettingsChoice {
                     enabled: ControlCenterService.powerProfilesAvailable
                     opacity: enabled ? 1 : 0.4
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [{
-                            "id": "power-saver",
-                            "label": I18n.isRTL ? "توفير الطاقة" : "Saver"
-                        }, {
-                            "id": "balanced",
-                            "label": I18n.isRTL ? "متوازن" : "Balanced"
-                        }, {
-                            "id": "performance",
-                            "label": I18n.isRTL ? "أداء فائق" : "Performance"
-                        }]
-
-                        delegate: Rectangle {
-                            id: pwrPill
-
-                            required property var modelData
-                            // Reflect the real system profile when power-profiles-daemon is present.
-                            readonly property bool isSelected: (ControlCenterService.powerProfilesAvailable ? ControlCenterService.powerProfile : (ConfigManager.powerProfile || "balanced")) === modelData.id
-
-                            height: 28
-                            implicitWidth: pwrText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: pwrPill.isSelected ? Theme.notchSurfaceActive : (pwrMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: pwrPill.isSelected ? Theme.notchBorderHighlight : (pwrMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: pwrText
-
-                                anchors.centerIn: parent
-                                text: pwrPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: pwrPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: pwrPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: pwrMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    ConfigManager.setPowerProfile(pwrPill.modelData.id);
-                                }
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                    options: [
+                        { "value": "power-saver", "label": I18n.isRTL ? "توفير الطاقة" : "Saver" },
+                        { "value": "balanced",    "label": I18n.isRTL ? "متوازن" : "Balanced" },
+                        { "value": "performance", "label": I18n.isRTL ? "أداء فائق" : "Performance" }
+                    ]
+                    current: ControlCenterService.powerProfilesAvailable ? ControlCenterService.powerProfile : (ConfigManager.powerProfile || "balanced")
+                    onChosen: (v) => ConfigManager.setPowerProfile(v)
                 }
 
             }
@@ -168,85 +102,82 @@ Item {
                 title: I18n.isRTL ? "مهلة سكون الشاشة" : "Screen Sleep Timeout"
                 subtitle: I18n.isRTL ? "إيقاف تشغيل الشاشات تلقائياً عند انعدام النشاط" : "Automatically turn off displays when idle"
                 icon: "preferences-system-time-symbolic"
-                showDivider: false
+                showDivider: true
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [{
-                            "min": 15,
-                            "label": I18n.isRTL ? "15 دقيقة" : "15m"
-                        }, {
-                            "min": 30,
-                            "label": I18n.isRTL ? "30 دقيقة" : "30m"
-                        }, {
-                            "min": 60,
-                            "label": I18n.isRTL ? "ساعة" : "1h"
-                        }, {
-                            "min": 0,
-                            "label": I18n.isRTL ? "مطلقاً" : "Never"
-                        }]
-
-                        delegate: Rectangle {
-                            id: slpPill
-
-                            required property var modelData
-                            readonly property bool isSelected: (ConfigManager.sleepTimeout !== undefined ? ConfigManager.sleepTimeout : 30) === modelData.min
-
-                            height: 28
-                            implicitWidth: slpText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: slpPill.isSelected ? Theme.notchSurfaceActive : (slpMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: slpPill.isSelected ? Theme.notchBorderHighlight : (slpMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: slpText
-
-                                anchors.centerIn: parent
-                                text: slpPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: slpPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: slpPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: slpMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    ConfigManager.setSleepTimeout(slpPill.modelData.min);
-                                }
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                SettingsChoice {
+                    options: [
+                        { "value": 15, "label": I18n.isRTL ? "15 دقيقة" : "15m" },
+                        { "value": 30, "label": I18n.isRTL ? "30 دقيقة" : "30m" },
+                        { "value": 60, "label": I18n.isRTL ? "ساعة" : "1h" },
+                        { "value": 0,  "label": I18n.isRTL ? "مطلقاً" : "Never" }
+                    ]
+                    current: ConfigManager.sleepTimeout !== undefined ? ConfigManager.sleepTimeout : 30
+                    onChosen: (v) => ConfigManager.setSleepTimeout(v)
                 }
 
             }
 
+            // System Suspend Timeout
+            SettingsRow {
+                title: I18n.isRTL ? "مهلة تعليق النظام (Suspend)" : "System Suspend Timeout"
+                subtitle: I18n.isRTL ? "تعليق النظام في الذاكرة لتوفير الطاقة عند عدم الاستخدام" : "Suspend machine to RAM to conserve power when idle"
+                icon: "preferences-system-time-symbolic"
+                showDivider: false
+
+                SettingsChoice {
+                    options: [
+                        { "value": 30,  "label": I18n.isRTL ? "30 دقيقة" : "30m" },
+                        { "value": 60,  "label": I18n.isRTL ? "ساعة" : "1h" },
+                        { "value": 120, "label": I18n.isRTL ? "ساعتان" : "2h" },
+                        { "value": 0,   "label": I18n.isRTL ? "مطلقاً" : "Never" }
+                    ]
+                    current: ConfigManager.suspendTimeout !== undefined ? ConfigManager.suspendTimeout : 60
+                    onChosen: (v) => ConfigManager.setSuspendTimeout(v)
+                }
+
+            }
+
+        }
+
+        // ── 2. Hardware Buttons & Lid ─────────────────────────────────
+        SettingsSection {
+            title: I18n.isRTL ? "أزرار الطاقة والغطاء" : "Hardware Buttons & Lid"
+
+            // Laptop Lid Close Action
+            SettingsRow {
+                title: I18n.isRTL ? "إجراء إغلاق غطاء اللابتوب" : "Laptop Lid Close Action"
+                subtitle: I18n.isRTL ? "السلوك المتخذ عند إغلاق غطاء الجهاز المحمول" : "Action performed when closing the laptop lid"
+                icon: "computer-symbolic"
+                showDivider: true
+
+                SettingsChoice {
+                    options: [
+                        { "value": "suspend", "label": I18n.isRTL ? "تعليق" : "Suspend" },
+                        { "value": "lock",    "label": I18n.isRTL ? "قفل" : "Lock" },
+                        { "value": "ignore",  "label": I18n.isRTL ? "لا شيء" : "Do Nothing" }
+                    ]
+                    current: ConfigManager.lidAction || "suspend"
+                    onChosen: (v) => ConfigManager.setLidAction(v)
+                }
+            }
+
+            // Power Button Action
+            SettingsRow {
+                title: I18n.isRTL ? "سلوك زر الطاقة" : "Power Button Action"
+                subtitle: I18n.isRTL ? "الإجراء المتخذ عند الضغط على زر التشغيل الفعلي" : "Action performed when pressing the physical power button"
+                icon: "system-shutdown-symbolic"
+                showDivider: false
+
+                SettingsChoice {
+                    options: [
+                        { "value": "prompt",   "label": I18n.isRTL ? "قائمة الطاقة" : "Prompt" },
+                        { "value": "suspend",  "label": I18n.isRTL ? "تعليق" : "Suspend" },
+                        { "value": "poweroff", "label": I18n.isRTL ? "إيقاف" : "Power Off" }
+                    ]
+                    current: ConfigManager.powerButtonAction || "prompt"
+                    onChosen: (v) => ConfigManager.setPowerButtonAction(v)
+                }
+            }
         }
 
     }

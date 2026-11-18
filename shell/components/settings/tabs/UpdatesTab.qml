@@ -1,7 +1,6 @@
 // UpdatesTab.qml — DeloWay System Updates and GitHub Sync
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import "../../../theme"
 import "../../../services"
 import "../common"

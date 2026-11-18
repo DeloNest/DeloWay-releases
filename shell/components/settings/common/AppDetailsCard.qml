@@ -83,9 +83,9 @@ ColumnLayout {
                     }
                     delegate: Rectangle {
                         required property var modelData
-                        height: 22
+                        height: Math.max(22, chipText.implicitHeight + 4)
                         width: chipText.implicitWidth + 16
-                        radius: 11
+                        radius: height / 2
                         color: Theme.notchSurfaceHover
                         border.color: Theme.notchBorderSubtle
                         border.width: 1
@@ -153,7 +153,7 @@ ColumnLayout {
             spacing: Theme.space16
 
             Text {
-                Layout.preferredWidth: 130
+                Layout.preferredWidth: Math.round(130 * Math.max(1.0, Theme.fontScale))
                 text: I18n.tr(modelData.k)
                 font.family: Theme.typography.fontFamily
                 font.pixelSize: Theme.fontSize(12)
@@ -246,7 +246,7 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            spacing: -2
+            spacing: Theme.fontScale > 1.0 ? 2 : -2
             Text {
                 Layout.fillWidth: true
                 text: NotificationManager.bidi(I18n.tr("app_uninstall_confirm").replace("%1", I18n.isolate(root.app ? (root.app.name || root.app.id) : "")))
@@ -294,7 +294,7 @@ ColumnLayout {
         signal clicked()
 
         readonly property bool isPrimary: variant === "primary"
-        implicitHeight: 30
+        implicitHeight: Math.max(30, abRow.implicitHeight + 10)
         implicitWidth: abRow.implicitWidth + 24
         radius: height / 2
         opacity: enabled ? 1 : 0.45

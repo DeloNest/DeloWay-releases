@@ -17,16 +17,38 @@ PanelWindow {
     property bool isOpen: ShellState.settingsAppOpen
     property string activeTab: ShellState.resolveSettingsTab(ShellState.activeSettingsTab)
     property bool isFullScreen: ShellState.settingsFullScreen
+
+    function toggleFullscreen() {
+        ShellState.toggleSettingsFullscreen();
+    }
+
     // Window dragging & sizing properties
     property real customX: -1
     property real customY: -1
     property bool isDragging: false
-    readonly property real windowedW: Math.min(1080, Math.max(640, root.width - 80))
-    readonly property real windowedH: Math.min(760, Math.max(450, root.height - 100))
-    readonly property real defaultX: Math.max(0, Math.round((root.width - windowedW) / 2))
-    readonly property real defaultY: Math.max(0, Math.round((root.height - windowedH) / 2))
-    readonly property real clampedX: Math.max(10, Math.min(root.width - windowCard.width - 10, (root.customX >= 0) ? root.customX : defaultX))
-    readonly property real clampedY: Math.max(10, Math.min(root.height - windowCard.height - 10, (root.customY >= 0) ? root.customY : defaultY))
+    // Screen and window dimensions
+    readonly property real screenW: targetScreen ? targetScreen.width : (root.width > 0 ? root.width : 1920)
+    readonly property real screenH: targetScreen ? targetScreen.height : (root.height > 0 ? root.height : 1080)
+    readonly property real windowedW: Math.min(1180, Math.max(720, screenW - 100))
+    readonly property real windowedH: Math.min(860, Math.max(500, screenH - 120))
+    readonly property real defaultX: Math.max(0, Math.round((screenW - windowedW) / 2))
+    readonly property real defaultY: Math.max(0, Math.round((screenH - windowedH) / 2))
+    readonly property real clampedX: (root.customX >= 0) ? Math.max(10, Math.min(screenW - windowedW - 10, root.customX)) : defaultX
+    readonly property real clampedY: (root.customY >= 0) ? Math.max(10, Math.min(screenH - windowedH - 10, root.customY)) : defaultY
+
+    // Work area gaps matching natural Hyprland windows (leaving capsules and dock completely clear)
+    readonly property real gapOut: (typeof ConfigManager !== "undefined" && ConfigManager.windowGapsOut > 0)
+                                   ? ConfigManager.windowGapsOut : 10
+    readonly property real topGap: Math.max(64, Theme.topBarMarginTop + Theme.topBarCapsuleHeight + gapOut)
+    readonly property real bottomGap: Math.max(76, Theme.dockEdgeMargin + Theme.dockHeight + gapOut)
+    readonly property real sideGap: gapOut
+
+    readonly property real maximizedX: sideGap
+    readonly property real maximizedY: topGap
+    readonly property real maximizedW: Math.max(720, screenW - (sideGap * 2))
+    readonly property real maximizedH: Math.max(500, screenH - topGap - bottomGap)
+    readonly property real normalWindowRounding: (typeof ConfigManager !== "undefined" && ConfigManager.windowRounding > 0)
+                                                ? ConfigManager.windowRounding : 10
     // Flattened page order from the registry (groups → pages)
     readonly property var tabList: {
         const out = [];
@@ -126,8 +148,7 @@ PanelWindow {
         enabled: root.isOpen
         onActivated: {
             if (root.isFullScreen) {
-                root.isFullScreen = false;
-                ShellState.settingsFullScreen = false;
+                root.toggleFullscreen();
             } else {
                 root.close();
             }
@@ -149,42 +170,33 @@ PanelWindow {
     Shortcut {
         sequence: "Super+F"
         enabled: root.isOpen
-        onActivated: {
-            root.isFullScreen = !root.isFullScreen;
-            ShellState.settingsFullScreen = root.isFullScreen;
-        }
+        onActivated: root.toggleFullscreen()
     }
 
     Shortcut {
         sequence: "Meta+F"
         enabled: root.isOpen
-        onActivated: {
-            root.isFullScreen = !root.isFullScreen;
-            ShellState.settingsFullScreen = root.isFullScreen;
-        }
+        onActivated: root.toggleFullscreen()
     }
 
     Shortcut {
         sequence: "F11"
         enabled: root.isOpen
-        onActivated: {
-            root.isFullScreen = !root.isFullScreen;
-            ShellState.settingsFullScreen = root.isFullScreen;
-        }
+        onActivated: root.toggleFullscreen()
     }
 
     // Main window card
     Rectangle {
         id: windowCard
 
-        width: root.isFullScreen ? root.width : root.windowedW
-        height: root.isFullScreen ? root.height : root.windowedH
-        x: root.isFullScreen ? 0 : root.clampedX
-        y: root.isFullScreen ? 0 : root.clampedY
-        radius: root.isFullScreen ? 0 : Theme.notchRadiusWindow
-        color: Theme.capsuleFill
-        border.color: root.isFullScreen ? "transparent" : Theme.capsuleBorder
-        border.width: root.isFullScreen ? 0 : 1
+        width: root.isFullScreen ? root.maximizedW : root.windowedW
+        height: root.isFullScreen ? root.maximizedH : root.windowedH
+        x: root.isFullScreen ? root.maximizedX : root.clampedX
+        y: root.isFullScreen ? root.maximizedY : root.clampedY
+        radius: root.isFullScreen ? root.normalWindowRounding : Theme.notchRadiusWindow
+        color: Theme.windowFill
+        border.color: Theme.windowBorder
+        border.width: 1
         clip: true
         opacity: root.isOpen ? 1 : 0
 
@@ -229,17 +241,9 @@ PanelWindow {
                             var newX = startCardX + deltaX;
                             var newY = startCardY + deltaY;
                             var minX = 10;
-                            var maxX = root.width - windowCard.width - 10;
+                            var maxX = root.screenW - root.windowedW - 10;
                             var minY = 10;
-                            var maxY = root.height - windowCard.height - 10;
-                            if (maxX < minX) {
-                                minX = 0;
-                                maxX = root.width - 100;
-                            }
-                            if (maxY < minY) {
-                                minY = 0;
-                                maxY = root.height - 50;
-                            }
+                            var maxY = root.screenH - root.windowedH - 10;
                             root.customX = Math.max(minX, Math.min(maxX, newX));
                             root.customY = Math.max(minY, Math.min(maxY, newY));
                         }
@@ -251,8 +255,7 @@ PanelWindow {
                         root.isDragging = false;
                     }
                     onDoubleClicked: {
-                        root.isFullScreen = !root.isFullScreen;
-                        ShellState.settingsFullScreen = root.isFullScreen;
+                        root.toggleFullscreen();
                     }
                 }
 
@@ -323,10 +326,7 @@ PanelWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.isFullScreen = !root.isFullScreen;
-                                    ShellState.settingsFullScreen = root.isFullScreen;
-                                }
+                                onClicked: root.toggleFullscreen()
                             }
 
                             Behavior on color {
@@ -391,6 +391,7 @@ PanelWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.topMargin: Theme.space4
                 Layout.leftMargin: Theme.space8
                 Layout.rightMargin: Theme.space8
                 Layout.bottomMargin: Theme.space8
@@ -401,7 +402,7 @@ PanelWindow {
                     id: sidebar
 
                     Layout.fillHeight: true
-                    Layout.preferredWidth: 230
+                    Layout.preferredWidth: Math.round(235 * Math.max(1.0, Theme.fontScale))
                     activeTab: root.activeTab
                     onTabSelected: (tabId) => {
                         return root.selectTab(tabId);
@@ -413,8 +414,8 @@ PanelWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     radius: Theme.notchRadiusPanel
-                    color: Theme.notchSurface
-                    border.color: Theme.notchBorderSubtle
+                    color: Theme.windowCardFill
+                    border.color: Theme.windowCardBorder
                     border.width: 1
                     clip: true
 
@@ -424,24 +425,28 @@ PanelWindow {
                         LayoutMirroring.enabled: I18n.isRTL
                         LayoutMirroring.childrenInherit: true
 
-                        // Page Header (Title + Description, no wire divider)
+                        // Page Header (Title + Description, with elegant breathing room)
                         Item {
                             Layout.fillWidth: true
-                            height: 64
+                            implicitHeight: headerCol.implicitHeight + Theme.space24 + Theme.space16
+                            Layout.preferredHeight: implicitHeight
 
                             ColumnLayout {
-                                anchors.fill: parent
+                                id: headerCol
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.topMargin: Theme.space24
                                 anchors.leftMargin: Theme.space24
                                 anchors.rightMargin: Theme.space24
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: Theme.space4
+                                spacing: Theme.space6
                                 LayoutMirroring.enabled: I18n.isRTL
                                 LayoutMirroring.childrenInherit: true
 
                                 Text {
                                     text: I18n.tr("settings_page_" + root.activeTab)
                                     font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(18)
+                                    font.pixelSize: Theme.fontSize(20)
                                     font.weight: Font.Bold
                                     color: Theme.notchText
                                     Layout.fillWidth: true
@@ -473,16 +478,6 @@ PanelWindow {
                             clip: true
                             contentWidth: availableWidth
                             contentHeight: contentContainer.implicitHeight
-
-                            Connections {
-                                function onSettingsScrollRequested(pos) {
-                                    if (vBar)
-                                        vBar.position = Math.max(0, Math.min(1 - vBar.size, pos));
-
-                                }
-
-                                target: ShellState
-                            }
 
                             Item {
                                 id: contentContainer
@@ -573,6 +568,8 @@ PanelWindow {
 
         }
 
+
+
         Behavior on color {
             ColorAnimation {
                 duration: Theme.motionThemeFade
@@ -587,6 +584,13 @@ PanelWindow {
                 easing.type: Theme.easingTheme
             }
 
+        }
+
+        Behavior on radius {
+            NumberAnimation {
+                duration: Theme.motionFast
+                easing.type: Theme.easingEnter
+            }
         }
 
         transform: Scale {
@@ -622,6 +626,7 @@ PanelWindow {
         }
 
         Behavior on width {
+            enabled: !root.isDragging
             NumberAnimation {
                 duration: Theme.motionBase
                 easing.type: Theme.easingEnter
@@ -630,6 +635,7 @@ PanelWindow {
         }
 
         Behavior on height {
+            enabled: !root.isDragging
             NumberAnimation {
                 duration: Theme.motionBase
                 easing.type: Theme.easingEnter

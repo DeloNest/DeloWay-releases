@@ -1,10 +1,7 @@
 // Windows & Workspaces — Hyprland tiling behaviour and workspace count.
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
 import "../common"
@@ -135,46 +132,15 @@ Item {
                 icon: "view-paged-symbolic"
                 showDivider: false
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [3, 5, 8, 10]
-                        delegate: Rectangle {
-                            id: countPill
-                            required property int modelData
-                            readonly property bool isSelected: ConfigManager.workspacesCount === modelData
-
-                            height: 28
-                            implicitWidth: countText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: countPill.isSelected ? Theme.notchSurfaceActive : (countMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: countPill.isSelected ? Theme.notchBorderHighlight : (countMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: countText
-                                anchors.centerIn: parent
-                                text: countPill.modelData.toString()
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: countPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: countPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: countMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setWorkspacesCount(countPill.modelData)
-                            }
-                        }
-                    }
+                SettingsChoice {
+                    options: [
+                        { "value": 3,  "label": "3" },
+                        { "value": 5,  "label": "5" },
+                        { "value": 8,  "label": "8" },
+                        { "value": 10, "label": "10" }
+                    ]
+                    current: ConfigManager.workspacesCount
+                    onChosen: (v) => ConfigManager.setWorkspacesCount(v)
                 }
             }
         }

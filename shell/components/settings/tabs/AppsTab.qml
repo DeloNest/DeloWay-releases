@@ -2,7 +2,6 @@
 // music player) and All Apps (every installed app: info, uninstall, per-app language).
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
 import Quickshell.Services.Mpris
 import "../../../theme"
@@ -20,8 +19,8 @@ Item {
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
-    // "defaults" | "all"
-    property string section: ShellState.appInfoId !== "" ? "all" : "defaults"
+    // "defaults" | "all" | "permissions"
+    property string section: ShellState.appInfoId !== "" ? "all" : (ShellState.appsSubSection || "defaults")
     Connections {
         target: ShellState
         // "App Info" from an app menu opens All Apps on that app.
@@ -31,6 +30,11 @@ Item {
             root.section = "all";
             const e = DesktopEntries.byId(ShellState.appInfoId);
             allApps.query = e ? e.name : "";
+        }
+        function onAppsSubSectionChanged() {
+            if (ShellState.appInfoId === "") {
+                root.section = ShellState.appsSubSection || "defaults";
+            }
         }
     }
 
@@ -139,7 +143,8 @@ Item {
                 Repeater {
                     model: [
                         { id: "defaults", label: I18n.tr("apps_section_defaults") },
-                        { id: "all", label: I18n.tr("apps_section_all") }
+                        { id: "all", label: I18n.tr("apps_section_all") },
+                        { id: "permissions", label: I18n.tr("apps_section_permissions") }
                     ]
                     delegate: Rectangle {
                         id: seg
@@ -379,7 +384,7 @@ Item {
                         fontPixelSize: Theme.fontSize(11)
                         placeholderText: "https://music.youtube.com"
                         text: (ConfigManager.musicLaunchTarget && ConfigManager.musicLaunchTarget.value) || ""
-                        onAccepted: {
+                        function saveTarget() {
                             if (text.trim().length > 0) {
                                 var cur = Object.assign({}, ConfigManager.musicLaunchTarget || {});
                                 cur.type = text.trim().startsWith("http") ? "url" : "app";
@@ -387,6 +392,8 @@ Item {
                                 ConfigManager.setMusicLaunchTarget(cur);
                             }
                         }
+                        onAccepted: saveTarget()
+                        onEditingFinished: saveTarget()
                     }
 
                     Rectangle {
@@ -420,6 +427,124 @@ Item {
                                 ConfigManager.setMusicLaunchTarget(cur);
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // ── Permissions & Privacy ────────────────────────────────────
+        SettingsSection {
+            visible: root.section === "permissions"
+            title: I18n.isRTL ? "أذونات النظام والخصوصية" : "System Permissions & Privacy"
+
+            // Microphone Access
+            SettingsRow {
+                title: I18n.isRTL ? "الوصول إلى الميكروفون" : "Microphone Access"
+                subtitle: I18n.isRTL ? "السماح للتطبيقات باستخدام وتسجيل أجهزة الصوت" : "Allow applications to access audio input devices"
+                icon: "audio-volume-high-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setPermMicrophone(!ConfigManager.permMicrophone)
+
+                SettingsToggle {
+                    checked: ConfigManager.permMicrophone
+                    onToggled: ch => ConfigManager.setPermMicrophone(ch)
+                }
+            }
+
+            // Camera Access
+            SettingsRow {
+                title: I18n.isRTL ? "الوصول إلى الكاميرا" : "Camera Access"
+                subtitle: I18n.isRTL ? "السماح للتطبيقات باستخدام كاميرا الويب وأجهزة التقاط الفيديو" : "Allow applications to capture video and access webcams"
+                icon: "video-x-generic-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setPermCamera(!ConfigManager.permCamera)
+
+                SettingsToggle {
+                    checked: ConfigManager.permCamera
+                    onToggled: ch => ConfigManager.setPermCamera(ch)
+                }
+            }
+
+            // Screen Recording & Sharing
+            SettingsRow {
+                title: I18n.isRTL ? "تسجيل ومشاركة الشاشة" : "Screen Recording & Sharing"
+                subtitle: I18n.isRTL ? "السماح بطلبات بث الشاشة والنوافذ عبر Wayland Portals" : "Allow desktop and window capture via Wayland portal"
+                icon: "video-display-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setPermScreenShare(!ConfigManager.permScreenShare)
+
+                SettingsToggle {
+                    checked: ConfigManager.permScreenShare
+                    onToggled: ch => ConfigManager.setPermScreenShare(ch)
+                }
+            }
+
+            // Location Services
+            SettingsRow {
+                title: I18n.isRTL ? "خدمات تحديد الموقع" : "Location Services"
+                subtitle: I18n.isRTL ? "تزويد التطبيقات بالموقع الجغرافي للخرائط والطقس" : "Allow applications to query geographic location"
+                icon: "weather-sunny-symbolic"
+                showDivider: true
+                clickable: true
+                onClicked: ConfigManager.setPermLocation(!ConfigManager.permLocation)
+
+                SettingsToggle {
+                    checked: ConfigManager.permLocation
+                    onToggled: ch => ConfigManager.setPermLocation(ch)
+                }
+            }
+
+            // Background Apps & Startup
+            SettingsRow {
+                title: I18n.isRTL ? "التطبيقات في الخلفية وبدء التشغيل" : "Background Apps & Startup"
+                subtitle: I18n.isRTL ? "السماح للخدمات والتطبيقات بالعمل التلقائي في الخلفية" : "Allow registered applications to run in the background"
+                icon: "preferences-system-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ConfigManager.setPermBackground(!ConfigManager.permBackground)
+
+                SettingsToggle {
+                    checked: ConfigManager.permBackground
+                    onToggled: ch => ConfigManager.setPermBackground(ch)
+                }
+            }
+        }
+
+        // ── Per-App Notification Permissions ─────────────────────────
+        SettingsSection {
+            visible: root.section === "permissions"
+            title: I18n.isRTL ? "أذونات إشعارات التطبيقات" : "App Notification Permissions"
+
+            Repeater {
+                model: {
+                    const list = Array.from(DesktopEntries.applications.values)
+                        .filter(e => e && e.id && !e.noDisplay && (e.name || "").length > 0)
+                        .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+                    return list.slice(0, 20);
+                }
+
+                delegate: SettingsRow {
+                    id: notifRow
+                    required property var modelData
+                    required property int index
+                    readonly property string appId: (modelData.id || "").toLowerCase().replace(/\.desktop$/, "")
+                    readonly property bool allowed: !(ConfigManager.disabledNotificationApps && ConfigManager.disabledNotificationApps[notifRow.appId])
+
+                    title: modelData.name || notifRow.appId
+                    subtitle: notifRow.allowed ? (I18n.isRTL ? "الإشعارات مسموح بها" : "Notifications allowed")
+                                               : (I18n.isRTL ? "تم كتم إشعارات هذا التطبيق" : "Notifications blocked")
+                    appIcon: modelData.icon || ""
+                    icon: modelData.icon ? "" : "application-x-executable"
+                    showDivider: notifRow.index < 19
+                    clickable: true
+                    onClicked: ConfigManager.setAppNotificationAllowed(notifRow.appId, !notifRow.allowed)
+
+                    SettingsToggle {
+                        checked: notifRow.allowed
+                        onToggled: ch => ConfigManager.setAppNotificationAllowed(notifRow.appId, ch)
                     }
                 }
             }

@@ -34,9 +34,9 @@ RowLayout {
             required property var modelData
             readonly property bool selected: root.current === pill.modelData.value
 
-            implicitHeight: 28
+            implicitHeight: Math.max(28, content.implicitHeight + 8)
             implicitWidth: content.implicitWidth + Theme.space16
-            radius: 14
+            radius: implicitHeight / 2
             color: pill.selected ? Theme.inverseSurface
                  : (ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
             border.width: 1

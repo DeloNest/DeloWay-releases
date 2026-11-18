@@ -2,10 +2,7 @@
 // machine has it), saved networks and IP details.
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
 import "../common"
@@ -473,14 +470,43 @@ Item {
                                     text: NetworkService.hotspotSsid || "Deloway-Hotspot"
                                 }
 
-                                DeloTextField {
-                                    id: hsPasswordInput
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    echoMode: hsShowPwd ? TextInput.Normal : TextInput.Password
-                                    fontPixelSize: Theme.fontSize(11)
-                                    placeholderText: I18n.isRTL ? "كلمة المرور (8 أحرف فأكثر)..." : "Password (min 8 chars)..."
-                                    text: NetworkService.hotspotPassword || ""
-                                    property bool hsShowPwd: false
+                                    spacing: Theme.space4
+
+                                    DeloTextField {
+                                        id: hsPasswordInput
+                                        Layout.fillWidth: true
+                                        echoMode: hsShowPwd ? TextInput.Normal : TextInput.Password
+                                        fontPixelSize: Theme.fontSize(11)
+                                        placeholderText: I18n.isRTL ? "كلمة المرور (8 أحرف فأكثر)..." : "Password (min 8 chars)..."
+                                        text: NetworkService.hotspotPassword || ""
+                                        property bool hsShowPwd: false
+                                    }
+
+                                    Rectangle {
+                                        implicitWidth: 28
+                                        implicitHeight: 28
+                                        radius: 14
+                                        color: eyeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
+                                        border.color: Theme.notchBorderSubtle
+                                        border.width: 1
+
+                                        SymbolicIcon {
+                                            anchors.centerIn: parent
+                                            source: hsPasswordInput.hsShowPwd ? "view-conceal-symbolic" : "view-reveal-symbolic"
+                                            iconSize: 14
+                                            iconColor: Theme.notchTextSecondary
+                                        }
+
+                                        MouseArea {
+                                            id: eyeMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: hsPasswordInput.hsShowPwd = !hsPasswordInput.hsShowPwd
+                                        }
+                                    }
                                 }
 
                                 Rectangle {

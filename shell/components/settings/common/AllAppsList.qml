@@ -43,7 +43,6 @@ ColumnLayout {
 
         DeloTextField {
             Layout.fillWidth: true
-            implicitHeight: 38
             showSearchIcon: true
             placeholderText: I18n.tr("apps_search_placeholder")
             text: root.query
@@ -101,7 +100,7 @@ ColumnLayout {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 52
+                        implicitHeight: Math.max(52, appRowContent.implicitHeight + 12)
                         color: "transparent"
 
                         Rectangle {
@@ -121,6 +120,7 @@ ColumnLayout {
                         }
 
                         RowLayout {
+                            id: appRowContent
                             anchors.fill: parent
                             anchors.leftMargin: Theme.space16
                             anchors.rightMargin: Theme.space12
@@ -161,9 +161,9 @@ ColumnLayout {
                             // Its own language, when it has one
                             Rectangle {
                                 visible: appRow.language !== "system"
-                                implicitHeight: 22
+                                implicitHeight: Math.max(22, langBadge.implicitHeight + 4)
                                 implicitWidth: langBadge.implicitWidth + Theme.space12
-                                radius: 11
+                                radius: implicitHeight / 2
                                 color: Theme.notchSurfaceElevated
                                 border.width: 1
                                 border.color: Theme.notchBorderSubtle
@@ -229,9 +229,9 @@ ColumnLayout {
                                             id: langPill
                                             required property string modelData
                                             readonly property bool selected: appRow.language === langPill.modelData
-                                            implicitHeight: 28
+                                            implicitHeight: Math.max(28, langText.implicitHeight + 8)
                                             implicitWidth: langText.implicitWidth + Theme.space16
-                                            radius: 14
+                                            radius: implicitHeight / 2
                                             color: langPill.selected ? Theme.inverseSurface
                                                  : (langMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                                             border.width: 1

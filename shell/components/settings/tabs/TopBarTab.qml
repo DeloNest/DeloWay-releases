@@ -1,10 +1,7 @@
 // Top Bar — Smart Notch workspaces, time capsule and hardware monitor.
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
 import "../common"
@@ -43,49 +40,14 @@ Item {
                 icon: "view-dual-symbolic"
                 showDivider: false
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: false          // screen order: left pill = left layout
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { id: "clockLeft",  label: I18n.isRTL ? "الساعة يساراً (افتراضي)" : "Clock left (Default)" },
-                            { id: "clockRight", label: I18n.isRTL ? "الساعة يميناً" : "Clock right" }
-                        ]
-                        delegate: Rectangle {
-                            id: orderPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.capsuleOrder === modelData.id
-
-                            height: 28
-                            implicitWidth: orderText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: orderPill.isSelected ? Theme.notchSurfaceActive : (orderMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: orderPill.isSelected ? Theme.notchBorderHighlight : (orderMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: orderText
-                                anchors.centerIn: parent
-                                text: orderPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: orderPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: orderPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: orderMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setCapsuleOrder(orderPill.modelData.id)
-                            }
-                        }
-                    }
+                SettingsChoice {
+                    mirror: false
+                    options: [
+                        { "value": "clockLeft",  "label": I18n.isRTL ? "الساعة يساراً (افتراضي)" : "Clock left (Default)" },
+                        { "value": "clockRight", "label": I18n.isRTL ? "الساعة يميناً" : "Clock right" }
+                    ]
+                    current: ConfigManager.capsuleOrder
+                    onChosen: (v) => ConfigManager.setCapsuleOrder(v)
                 }
             }
         }
@@ -119,50 +81,14 @@ Item {
                 icon: "view-app-grid-symbolic"
                 showDivider: true
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { id: "icons",   label: I18n.isRTL ? "أيقونات (افتراضي)" : "Icons (Default)" },
-                            { id: "numbers", label: I18n.isRTL ? "أرقام فقط" : "Numbers Only" },
-                            { id: "dots",    label: I18n.isRTL ? "نقاط فقط" : "Dots Only" }
-                        ]
-                        delegate: Rectangle {
-                            id: stylePill
-                            required property var modelData
-                            readonly property bool isSelected: (ConfigManager.workspaceIndicatorStyle || "icons") === modelData.id
-
-                            height: 28
-                            implicitWidth: styleText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: stylePill.isSelected ? Theme.notchSurfaceActive : (styleMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: stylePill.isSelected ? Theme.notchBorderHighlight : (styleMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: styleText
-                                anchors.centerIn: parent
-                                text: stylePill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: stylePill.isSelected ? Font.DemiBold : Font.Normal
-                                color: stylePill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: styleMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setWorkspaceIndicatorStyle(stylePill.modelData.id)
-                            }
-                        }
-                    }
+                SettingsChoice {
+                    options: [
+                        { "value": "icons",   "label": I18n.isRTL ? "أيقونات (افتراضي)" : "Icons (Default)" },
+                        { "value": "numbers", "label": I18n.isRTL ? "أرقام فقط" : "Numbers Only" },
+                        { "value": "dots",    "label": I18n.isRTL ? "نقاط فقط" : "Dots Only" }
+                    ]
+                    current: ConfigManager.workspaceIndicatorStyle || "icons"
+                    onChosen: (v) => ConfigManager.setWorkspaceIndicatorStyle(v)
                 }
             }
         }

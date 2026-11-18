@@ -67,50 +67,14 @@ Item {
                 icon: "preferences-system-time-symbolic"
                 showDivider: false
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [
-                            { ms: 3000,  label: I18n.isRTL ? "3 ثوانٍ" : "3s" },
-                            { ms: 5000,  label: I18n.isRTL ? "5 ثوانٍ" : "5s" },
-                            { ms: 10000, label: I18n.isRTL ? "10 ثوانٍ" : "10s" }
-                        ]
-                        delegate: Rectangle {
-                            id: toPill
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.notificationsTimeout === modelData.ms
-
-                            height: 28
-                            implicitWidth: toText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: toPill.isSelected ? Theme.notchSurfaceActive : (toMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: toPill.isSelected ? Theme.notchBorderHighlight : (toMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-                            Behavior on color { ColorAnimation { duration: Theme.motionFast } }
-                            Behavior on border.color { ColorAnimation { duration: Theme.motionFast } }
-
-                            Text {
-                                id: toText
-                                anchors.centerIn: parent
-                                text: toPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: toPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: toPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: toMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setNotificationsTimeout(toPill.modelData.ms)
-                            }
-                        }
-                    }
+                SettingsChoice {
+                    options: [
+                        { "value": 3000,  "label": I18n.isRTL ? "3 ثوانٍ" : "3s" },
+                        { "value": 5000,  "label": I18n.isRTL ? "5 ثوانٍ" : "5s" },
+                        { "value": 10000, "label": I18n.isRTL ? "10 ثوانٍ" : "10s" }
+                    ]
+                    current: ConfigManager.notificationsTimeout
+                    onChosen: (v) => ConfigManager.setNotificationsTimeout(v)
                 }
             }
         }
@@ -134,6 +98,60 @@ Item {
                     checked: ConfigManager.notchNotifications
                     onToggled: ch => {
                         ConfigManager.setNotchNotifications(ch);
+                    }
+                }
+            }
+        }
+
+        // ── 3. Application Permissions ───────────────────────────────
+        SettingsSection {
+            title: I18n.isRTL ? "أذونات التطبيقات" : "App Permissions"
+
+            SettingsRow {
+                title: I18n.isRTL ? "إدارة إشعارات التطبيقات الفردية" : "Manage Per-App Notifications"
+                subtitle: I18n.isRTL ? "تحديد التطبيقات المسموح لها بعرض الإشعارات والتنبيهات" : "Control which installed apps can send desktop notifications"
+                icon: "preferences-system-notifications-symbolic"
+                showDivider: false
+                clickable: true
+                onClicked: ShellState.settingsCurrentPage = "apps"
+
+                Rectangle {
+                    height: 28
+                    implicitWidth: appPermText.implicitWidth + Theme.space24
+                    radius: 14
+                    color: appPermMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
+                    border.color: Theme.notchBorderSubtle
+                    border.width: 1
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 6
+                        LayoutMirroring.enabled: I18n.isRTL
+                        LayoutMirroring.childrenInherit: true
+
+                        Text {
+                            id: appPermText
+                            text: I18n.isRTL ? "عرض التطبيقات" : "Configure Apps"
+                            font.family: Theme.typography.fontFamily
+                            font.pixelSize: Theme.fontSize(11)
+                            font.weight: Font.DemiBold
+                            color: Theme.notchText
+                        }
+
+                        SymbolicIcon {
+                            source: "pan-end-symbolic"
+                            iconSize: 10
+                            isDirectional: true
+                            iconColor: Theme.notchTextSecondary
+                        }
+                    }
+
+                    MouseArea {
+                        id: appPermMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: ShellState.settingsCurrentPage = "apps"
                     }
                 }
             }

@@ -1,10 +1,7 @@
 // Dock — live preview, behaviour and pinned applications.
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
 import "../common"

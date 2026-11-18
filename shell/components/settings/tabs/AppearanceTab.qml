@@ -4,11 +4,8 @@ import "../../../theme"
 import "../common"
 // Appearance — theme, typography, interface shape and visual effects.
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Mpris
 
 Item {
     id: root
@@ -37,86 +34,20 @@ Item {
 
             SettingsRow {
                 title: I18n.isRTL ? "المظهر" : "Appearance"
-                subtitle: ConfigManager.themeMode === "dark" ? (I18n.isRTL ? "داكن — أسطح سوداء نقية لشاشات OLED" : "Dark — pure black OLED surfaces") : (ConfigManager.themeMode === "glass" ? (I18n.isRTL ? "زجاجي — أسطح أكريليك شفافة 38%" : "Glass — acrylic 38% frosted transparency") : (I18n.isRTL ? "فاتح — أسطح محايدة عالية التباين" : "Light — crisp high-contrast neutrals"))
-                icon: ConfigManager.themeMode === "dark" ? "weather-clear-night-symbolic" : (ConfigManager.themeMode === "glass" ? "applications-graphics-symbolic" : "weather-sunny-symbolic")
+                subtitle: ConfigManager.themeName === "dark" ? (I18n.isRTL ? "داكن — أسطح سوداء نقية لشاشات OLED" : "Dark — pure black OLED surfaces") : (ConfigManager.themeName === "glass" ? (I18n.isRTL ? "زجاجي — أسطح زجاجية شبه شفافة مع تمويه عميق" : "Glass — translucent frosted glass with deep blur") : (I18n.isRTL ? "فاتح — أسطح محايدة عالية التباين" : "Light — crisp high-contrast neutrals"))
+                icon: ConfigManager.themeName === "dark" ? "weather-clear-night-symbolic" : (ConfigManager.themeName === "glass" ? "applications-graphics-symbolic" : "weather-sunny-symbolic")
                 showDivider: false
 
                 // Dark | Glass | Light — the three theme choices; everything else (GTK, icons,
-                // kitty, window borders) follows it via ConfigManager.setThemeMode.
-                RowLayout {
-                    spacing: Theme.space4
-
-                    Repeater {
-                        model: [{
-                            "mode": "dark",
-                            "ar": "داكن",
-                            "en": "Dark"
-                        }, {
-                            "mode": "glass",
-                            "ar": "زجاجي",
-                            "en": "Glass"
-                        }, {
-                            "mode": "light",
-                            "ar": "فاتح",
-                            "en": "Light"
-                        }]
-
-                        delegate: Rectangle {
-                            id: modePill
-
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.themeMode === modelData.mode
-
-                            height: 28
-                            implicitWidth: Math.max(64, modeText.implicitWidth + Theme.space16)
-                            radius: 14
-                            color: modePill.isSelected ? Theme.notchSurfaceActive : (modeMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: modePill.isSelected ? Theme.notchBorderHighlight : (modeMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: modeText
-
-                                anchors.centerIn: parent
-                                text: I18n.isRTL ? modePill.modelData.ar : modePill.modelData.en
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: modePill.isSelected ? Font.DemiBold : Font.Normal
-                                color: modePill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                                renderType: Theme.renderType
-                            }
-
-                            MouseArea {
-                                id: modeMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (!modePill.isSelected) {
-                                        ConfigManager.setThemeMode(modePill.modelData.mode);
-                                    }
-                                }
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                // kitty, window borders) follows it via ConfigManager.setTheme.
+                SettingsChoice {
+                    options: [
+                        { "value": "dark", "label": I18n.isRTL ? "داكن" : "Dark" },
+                        { "value": "glass", "label": I18n.isRTL ? "زجاجي" : "Glass" },
+                        { "value": "light", "label": I18n.isRTL ? "فاتح" : "Light" }
+                    ]
+                    current: ConfigManager.themeName
+                    onChosen: (v) => ConfigManager.setTheme(v)
                 }
 
             }
@@ -228,74 +159,14 @@ Item {
                 icon: "preferences-desktop-font-symbolic"
                 showDivider: true
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [{
-                            "val": 0.85,
-                            "label": I18n.isRTL ? "صغير" : "Small"
-                        }, {
-                            "val": 1,
-                            "label": I18n.isRTL ? "قياسي" : "Standard"
-                        }, {
-                            "val": 1.15,
-                            "label": I18n.isRTL ? "كبير" : "Large"
-                        }]
-
-                        delegate: Rectangle {
-                            id: fontPill
-
-                            required property var modelData
-                            readonly property bool isSelected: Math.abs(ConfigManager.fontSizeScale - modelData.val) < 0.05
-
-                            height: 28
-                            implicitWidth: fontText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: fontPill.isSelected ? Theme.notchSurfaceActive : (fontMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: fontPill.isSelected ? Theme.notchBorderHighlight : (fontMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: fontText
-
-                                anchors.centerIn: parent
-                                text: fontPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: fontPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: fontPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: fontMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setFontSizeScale(fontPill.modelData.val)
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                SettingsChoice {
+                    options: [
+                        { "value": 0.85, "label": I18n.isRTL ? "صغير" : "Small" },
+                        { "value": 1.0, "label": I18n.isRTL ? "قياسي" : "Standard" },
+                        { "value": 1.15, "label": I18n.isRTL ? "كبير" : "Large" }
+                    ]
+                    current: Math.abs(ConfigManager.fontSizeScale - 0.85) < 0.05 ? 0.85 : (Math.abs(ConfigManager.fontSizeScale - 1.15) < 0.05 ? 1.15 : 1.0)
+                    onChosen: (v) => ConfigManager.setFontSizeScale(v)
                 }
 
             }
@@ -307,71 +178,13 @@ Item {
                 icon: "preferences-desktop-font-symbolic"
                 showDivider: false
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [{
-                            "val": "western",
-                            "label": "0123"
-                        }, {
-                            "val": "eastern",
-                            "label": "٠١٢٣"
-                        }]
-
-                        delegate: Rectangle {
-                            id: digitPill
-
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.numberFormat === modelData.val
-
-                            height: 28
-                            implicitWidth: digitText.implicitWidth + Theme.space24
-                            radius: 14
-                            color: digitPill.isSelected ? Theme.notchSurfaceActive : (digitMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: digitPill.isSelected ? Theme.notchBorderHighlight : (digitMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: digitText
-
-                                anchors.centerIn: parent
-                                text: digitPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(12)
-                                font.weight: digitPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: digitPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: digitMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setNumberFormat(digitPill.modelData.val)
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                SettingsChoice {
+                    options: [
+                        { "value": "western", "label": "0123" },
+                        { "value": "eastern", "label": "٠١٢٣" }
+                    ]
+                    current: ConfigManager.numberFormat
+                    onChosen: (v) => ConfigManager.setNumberFormat(v)
                 }
 
             }
@@ -388,74 +201,14 @@ Item {
                 icon: "view-fullscreen-symbolic"
                 showDivider: true
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [{
-                            "val": 4,
-                            "label": I18n.isRTL ? "حادة (4px)" : "Sharp (4px)"
-                        }, {
-                            "val": 8,
-                            "label": I18n.isRTL ? "قياسية (8px)" : "Standard (8px)"
-                        }, {
-                            "val": 14,
-                            "label": I18n.isRTL ? "دائرية (14px)" : "Rounded (14px)"
-                        }]
-
-                        delegate: Rectangle {
-                            id: radPill
-
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.elementRadius === modelData.val
-
-                            height: 28
-                            implicitWidth: radText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: radPill.isSelected ? Theme.notchSurfaceActive : (radMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: radPill.isSelected ? Theme.notchBorderHighlight : (radMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: radText
-
-                                anchors.centerIn: parent
-                                text: radPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: radPill.isSelected ? Font.DemiBold : Font.Normal
-                                color: radPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: radMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setElementRadius(radPill.modelData.val)
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                SettingsChoice {
+                    options: [
+                        { "value": 4, "label": I18n.isRTL ? "حادة (4px)" : "Sharp (4px)" },
+                        { "value": 8, "label": I18n.isRTL ? "قياسية (8px)" : "Standard (8px)" },
+                        { "value": 14, "label": I18n.isRTL ? "دائرية (14px)" : "Rounded (14px)" }
+                    ]
+                    current: ConfigManager.elementRadius
+                    onChosen: (v) => ConfigManager.setElementRadius(v)
                 }
 
             }
@@ -467,74 +220,14 @@ Item {
                 icon: "power-profile-balanced-symbolic"
                 showDivider: false
 
-                RowLayout {
-                    spacing: Theme.space4
-                    LayoutMirroring.enabled: I18n.isRTL
-                    LayoutMirroring.childrenInherit: true
-
-                    Repeater {
-                        model: [{
-                            "val": 0,
-                            "label": I18n.isRTL ? "خفيف" : "Efficient"
-                        }, {
-                            "val": 1,
-                            "label": I18n.isRTL ? "متوازن" : "Balanced"
-                        }, {
-                            "val": 2,
-                            "label": I18n.isRTL ? "فائق" : "High"
-                        }]
-
-                        delegate: Rectangle {
-                            id: tierPill
-
-                            required property var modelData
-                            readonly property bool isSelected: ConfigManager.performanceTier === modelData.val
-
-                            height: 28
-                            implicitWidth: tierText.implicitWidth + Theme.space16
-                            radius: 14
-                            color: tierPill.isSelected ? Theme.notchSurfaceActive : (tierMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
-                            border.color: tierPill.isSelected ? Theme.notchBorderHighlight : (tierMa.containsMouse ? Theme.notchBorder : Theme.notchBorderSubtle)
-                            border.width: 1
-
-                            Text {
-                                id: tierText
-
-                                anchors.centerIn: parent
-                                text: tierPill.modelData.label
-                                font.family: Theme.typography.fontFamily
-                                font.pixelSize: Theme.fontSize(11)
-                                font.weight: Font.DemiBold
-                                color: tierPill.isSelected ? Theme.notchText : Theme.notchTextSecondary
-                            }
-
-                            MouseArea {
-                                id: tierMa
-
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: ConfigManager.setPerformanceTier(tierPill.modelData.val)
-                            }
-
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                            Behavior on border.color {
-                                ColorAnimation {
-                                    duration: Theme.motionFast
-                                }
-
-                            }
-
-                        }
-
-                    }
-
+                SettingsChoice {
+                    options: [
+                        { "value": 0, "label": I18n.isRTL ? "خفيف" : "Efficient" },
+                        { "value": 1, "label": I18n.isRTL ? "متوازن" : "Balanced" },
+                        { "value": 2, "label": I18n.isRTL ? "فائق" : "High" }
+                    ]
+                    current: ConfigManager.performanceTier
+                    onChosen: (v) => ConfigManager.setPerformanceTier(v)
                 }
 
             }

@@ -19,6 +19,7 @@ Rectangle {
     default property alias control: controlLayout.data
 
     Layout.fillWidth: true
+    width: parent ? parent.width : implicitWidth
     implicitWidth: 300
     implicitHeight: Math.max(52, contentRow.implicitHeight + Theme.space16)
     LayoutMirroring.enabled: I18n.isRTL

@@ -1,10 +1,7 @@
 // Bluetooth — adapter power, paired and discoverable devices.
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
 import "../common"
@@ -19,9 +16,6 @@ Item {
     height: implicitHeight
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
-
-    property string selectedSsid: ""
-    property string wifiPasswordInput: ""
 
     ColumnLayout {
         id: mainCol
@@ -135,12 +129,18 @@ Item {
                                 LayoutMirroring.enabled: I18n.isRTL
                                 LayoutMirroring.childrenInherit: true
 
-                                Text {
-                                    text: BluetoothService.isScanning ? "..." : "⟳"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(12)
-                                    font.weight: Font.Bold
-                                    color: Theme.notchText
+                                SymbolicIcon {
+                                    source: "view-refresh-symbolic"
+                                    iconSize: 12
+                                    iconColor: Theme.notchText
+                                    Layout.alignment: Qt.AlignVCenter
+                                    RotationAnimation on rotation {
+                                        running: BluetoothService.isScanning
+                                        from: 0
+                                        to: 360
+                                        loops: Animation.Infinite
+                                        duration: 1000
+                                    }
                                 }
 
                                 Text {

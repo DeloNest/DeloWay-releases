@@ -1,10 +1,8 @@
 // Wallpaper — custom image and bundled gallery.
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.Mpris
 import "../../../theme"
 import "../../../services"
 import "../common"
@@ -282,13 +280,11 @@ Item {
                                 radius: 10
                                 color: Theme.inverseSurface
 
-                                Text {
+                                SymbolicIcon {
                                     anchors.centerIn: parent
-                                    text: "✓"
-                                    font.family: Theme.typography.fontFamily
-                                    font.pixelSize: Theme.fontSize(11)
-                                    font.weight: Font.Bold
-                                    color: Theme.inverseText
+                                    source: "emblem-ok-symbolic"
+                                    iconSize: 12
+                                    iconColor: Theme.inverseText
                                 }
                             }
 
@@ -311,7 +307,7 @@ Item {
                                     color: wpCard.isSelected ? Theme.notchText : Theme.notchTextSecondary
                                     elide: Text.ElideRight
                                     verticalAlignment: Text.AlignVCenter
-                                    horizontalAlignment: I18n.isRTL ? Text.AlignRight : Text.AlignLeft
+                                    horizontalAlignment: Text.AlignLeft
                                 }
                             }
 

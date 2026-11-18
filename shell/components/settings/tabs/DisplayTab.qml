@@ -1,11 +1,11 @@
+// DeloWay Display & Monitor Settings Tab
+import QtQuick
+import QtQuick.Layouts
+import Quickshell.Io
 import "../../"
 import "../../../services"
 import "../../../theme"
 import "../common"
-// DeloWay Display & Monitor Settings Tab
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
 
 Item {
     id: root
@@ -511,7 +511,7 @@ Item {
                         "value": "below",
                         "label": I18n.tr("display_placement_below")
                     }]
-                    current: "right"
+                    current: (DisplayService.activeMonitor && DisplayService.activeMonitor.placement) ? DisplayService.activeMonitor.placement : "right"
                     onChosen: (val) => {
                         DisplayService.setPlacement(val);
                     }
@@ -591,16 +591,53 @@ Item {
                     LayoutMirroring.childrenInherit: true
 
                     Repeater {
-                        model: [{
-                            "id": "2560x1440",
-                            "label": "2560 × 1440 (2K)"
-                        }, {
-                            "id": "1920x1080",
-                            "label": "1920 × 1080 (FHD)"
-                        }, {
-                            "id": "1280x720",
-                            "label": "1280 × 720 (HD)"
-                        }]
+                        model: {
+                            const res = DisplayService.resolutions || [];
+                            if (res.length === 0) {
+                                return [
+                                    { "id": "2560x1440", "label": "2560 × 1440 (2K)" },
+                                    { "id": "1920x1080", "label": "1920 × 1080 (FHD)" },
+                                    { "id": "1280x720", "label": "1280 × 720 (HD)" }
+                                ];
+                            }
+                            const list = [];
+                            const seen = {};
+                            // 1. Add native resolution first
+                            for (let i = 0; i < res.length; i++) {
+                                if (res[i].isNative) {
+                                    list.push({
+                                        "id": res[i].id,
+                                        "label": res[i].width + " × " + res[i].height + (I18n.isRTL ? " (أصلي)" : " (Native)")
+                                    });
+                                    seen[res[i].id] = true;
+                                    break;
+                                }
+                            }
+                            // 2. Add common popular resolutions supported by the monitor
+                            const common = ["3840x2160", "2560x1440", "1920x1200", "1920x1080", "1680x1050", "1600x900", "1280x720"];
+                            for (let c of common) {
+                                if (!seen[c] && res.some(r => r.id === c)) {
+                                    const match = res.find(r => r.id === c);
+                                    let tag = "";
+                                    if (c === "3840x2160") tag = " (4K)";
+                                    else if (c === "2560x1440") tag = " (2K)";
+                                    else if (c === "1920x1080") tag = " (FHD)";
+                                    else if (c === "1280x720") tag = " (HD)";
+                                    list.push({ "id": match.id, "label": match.width + " × " + match.height + tag });
+                                    seen[c] = true;
+                                    if (list.length >= 4) break;
+                                }
+                            }
+                            // 3. Ensure current resolution is always present
+                            if (DisplayService.currentResolution && !seen[DisplayService.currentResolution]) {
+                                const cur = res.find(r => r.id === DisplayService.currentResolution);
+                                list.push({
+                                    "id": DisplayService.currentResolution,
+                                    "label": cur ? (cur.width + " × " + cur.height) : DisplayService.currentResolution
+                                });
+                            }
+                            return list;
+                        }
 
                         delegate: Rectangle {
                             id: resPill
@@ -835,6 +872,28 @@ Item {
         // ── 4. Eye Comfort & Night Light ─────────────────────────────
         SettingsSection {
             title: I18n.tr("display_section_night_light")
+
+            // Display Brightness Slider
+            SettingsRow {
+                title: I18n.isRTL ? "سطوع الشاشة" : "Display Brightness"
+                subtitle: {
+                    if (BrightnessService.brightnessBackend === "ddc") {
+                        return I18n.isRTL ? "تحكم حقيقي عبر كابل الشاشة (DisplayPort / HDMI - DDC/CI)" : "Hardware DDC/CI control via DisplayPort / HDMI";
+                    } else if (BrightnessService.brightnessBackend === "kernel") {
+                        return I18n.isRTL ? "تحكم حقيقي عبر إضاءة الشاشة الخلفية (Hardware Backlight)" : "Native display hardware backlight";
+                    } else {
+                        return I18n.isRTL ? "ضبط شدة إضاءة شاشة العرض الحالية" : "Adjust display backlight and luminance";
+                    }
+                }
+                icon: "display-brightness-symbolic"
+                showDivider: true
+
+                SettingsSlider {
+                    implicitWidth: 160
+                    value: BrightnessService.screenBrightness
+                    onMoved: v => BrightnessService.setBrightness(v)
+                }
+            }
 
             // Night Light Master Toggle
             SettingsRow {

@@ -21,6 +21,25 @@ Item {
         }
         return list;
     }
+    readonly property var pageKeywords: ({
+        "sound": ["sound", "audio", "mic", "microphone", "speaker", "speakers", "volume", "headphone", "headset", "صوت", "ميكروفون", "مايك", "سماعة", "سماعات", "مكبر صوت"],
+        "display": ["hdr", "hz", "resolution", "scale", "dpi", "night light", "vrr", "دقة", "شاشة", "عرض", "إضاءة ليلية", "سطوع", "brightness"],
+        "network": ["wifi", "wi-fi", "واي فاي", "ethernet", "انترنت", "internet", "ip", "hotspot", "شبكة", "نقطة اتصال", "lan", "dns"],
+        "bluetooth": ["bt", "بلوتوث", "سماعة", "headphone", "device", "أجهزة", "اقتران", "pair"],
+        "appearance": ["dark", "light", "glass", "داكن", "فاتح", "زجاجي", "خط", "font", "typography", "radius", "استدارة", "أداء", "performance", "theme", "ثيم", "مظهر"],
+        "wallpaper": ["wallpaper", "خلفية", "سطح المكتب", "desktop", "widgets", "أدوات", "icons", "أيقونات"],
+        "topbar": ["capsule", "كبسولة", "notch", "نوتش", "seconds", "ثواني", "workspaces", "مساحات العمل", "شريط علوي", "top bar", "clock"],
+        "dock": ["dock", "taskbar", "شريط المهام", "شريط", "pinned", "مثبت", "icon size", "حجم الأيقونة", "autohide", "إخفاء تلقائي"],
+        "windows": ["windows", "نوافذ", "workspaces", "مساحات العمل", "touchpad", "لوحة اللمس", "mouse", "ماوس", "gestures", "إيماءات", "gaps", "فجوات", "rounding", "borders", "حواف"],
+        "shortcuts": ["shortcut", "shortcuts", "اختصار", "اختصارات", "مفاتيح", "keyboard", "لوحة المفاتيح", "keybinding", "bindings", "أزرار"],
+        "notifications": ["notifications", "إشعارات", "إشعار", "dnd", "عدم الإزعاج", "toast", "sound", "صوت", "timeout", "مهلة"],
+        "power": ["battery", "power", "بطارية", "طاقة", "سكون", "sleep", "saver", "توفير", "balanced", "متوازن", "performance", "أداء", "suspend", "lid"],
+        "apps": ["apps", "applications", "تطبيقات", "default", "افتراضي", "browser", "متصفح", "terminal", "طرفية", "file manager", "مدير الملفات", "music", "موسيقى", "permissions", "صلاحيات"],
+        "time_language": ["time", "language", "وقت", "لغة", "clock", "ساعة", "hijri", "هجري", "calendar", "تقويم", "timezone", "منطقة زمنية", "keyboard layout", "لوحة مفاتيح", "input", "إدخال", "format", "تنسيق"],
+        "updates": ["updates", "update", "تحديث", "تحديثات", "git", "changelog", "سجل التغييرات", "version", "إصدار", "channel", "قناة"],
+        "about": ["about", "حول", "system", "نظام", "os", "specs", "مواصفات", "hardware", "عتاد", "cpu", "معالج", "gpu", "ram", "ذاكرة", "reset", "إعادة ضبط"]
+    })
+
     readonly property var searchResults: {
         const q = root.searchQuery;
         if (!q)
@@ -32,26 +51,13 @@ Item {
             if (p.indexOf(q) >= 0 || title.indexOf(q) >= 0 || desc.indexOf(q) >= 0)
                 return true;
 
-            if ((q === "hdr" || q === "hz" || q === "resolution" || q === "دقة" || q === "شاشة" || q === "عرض") && p === "display")
-                return true;
-
-            if ((q === "wifi" || q === "واي فاي" || q === "ethernet" || q === "انترنت" || q === "ip") && p === "network")
-                return true;
-
-            if ((q === "bt" || q === "بلوتوث" || q === "سماعة") && p === "bluetooth")
-                return true;
-
-            if ((q === "dark" || q === "light" || q === "glass" || q === "داكن" || q === "فاتح" || q === "زجاجي" || q === "خط" || q === "font") && p === "appearance")
-                return true;
-
-            if ((q === "wallpaper" || q === "خلفية" || q === "سطح المكتب") && p === "wallpaper")
-                return true;
-
-            if ((q === "battery" || q === "power" || q === "بطارية" || q === "طاقة" || q === "سكون" || q === "sleep") && p === "power")
-                return true;
-
-            if ((q === "shortcut" || q === "اختصار" || q === "مفاتيح" || q === "keyboard") && p === "shortcuts")
-                return true;
+            const kw = pageKeywords[p];
+            if (kw) {
+                for (let i = 0; i < kw.length; i++) {
+                    if (kw[i].indexOf(q) >= 0 || q.indexOf(kw[i]) >= 0)
+                        return true;
+                }
+            }
 
             return false;
         });
@@ -76,13 +82,14 @@ Item {
             Layout.leftMargin: Theme.space8
             Layout.rightMargin: Theme.space8
             Layout.topMargin: Theme.space4
-            height: 32
-            radius: 16
+            height: Math.max(32, searchRow.implicitHeight + 8)
+            radius: height / 2
             color: searchInput.activeFocus ? Theme.notchSurfaceActive : (searchMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
             border.color: searchInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
             border.width: 1
 
             RowLayout {
+                id: searchRow
                 anchors.fill: parent
                 anchors.leftMargin: 10
                 anchors.rightMargin: 10
@@ -177,7 +184,9 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            contentWidth: availableWidth
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
                 width: sidebarScroll.availableWidth
@@ -197,7 +206,7 @@ Item {
                         required property int index
 
                         Layout.fillWidth: true
-                        Layout.topMargin: index === 0 ? 0 : Theme.space12
+                        Layout.topMargin: index === 0 ? 0 : Theme.space8
                         spacing: Theme.space4
 
                         SidebarSectionHeader {
@@ -248,7 +257,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: I18n.isRTL ? "لا توجد نتائج مطابقة" : "No matching settings"
+                        text: I18n.tr("search_no_results")
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(11)
                         color: Theme.notchTextTertiary
@@ -267,7 +276,7 @@ Item {
         property alias text: headerText.text
 
         Layout.fillWidth: true
-        implicitHeight: 28
+        implicitHeight: Math.max(26, headerText.implicitHeight + 6)
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
@@ -302,7 +311,7 @@ Item {
         Layout.fillWidth: true
         Layout.leftMargin: Theme.space8
         Layout.rightMargin: Theme.space8
-        implicitHeight: 38
+        implicitHeight: Math.max(36, itemRow.implicitHeight + 10)
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
@@ -310,12 +319,13 @@ Item {
             id: itemBg
 
             anchors.fill: parent
-            radius: 19
+            radius: height / 2
             color: itemRoot.isActive ? Theme.notchSurfaceActive : (itemMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
             border.color: itemRoot.isActive ? Theme.notchBorder : "transparent"
             border.width: 1
 
             RowLayout {
+                id: itemRow
                 anchors.fill: parent
                 anchors.leftMargin: Theme.space16
                 anchors.rightMargin: Theme.space16

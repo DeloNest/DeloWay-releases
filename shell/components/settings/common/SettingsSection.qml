@@ -35,13 +35,14 @@ Item {
         // Section Title / Collapsible Header
         Item {
             Layout.fillWidth: true
-            implicitHeight: 28
+            implicitHeight: Math.max(28, sectionHeaderRow.implicitHeight + 6)
             visible: root.title.length > 0
 
             RowLayout {
+                id: sectionHeaderRow
                 anchors.fill: parent
-                anchors.leftMargin: Theme.space4
-                anchors.rightMargin: Theme.space4
+                anchors.leftMargin: Theme.space8
+                anchors.rightMargin: Theme.space8
                 spacing: Theme.space8
                 LayoutMirroring.enabled: I18n.isRTL
                 LayoutMirroring.childrenInherit: true
