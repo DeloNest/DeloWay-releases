@@ -54,7 +54,7 @@ Rectangle {
             color: Theme.notchText
             elide: Text.ElideRight
             maximumLineCount: 1
-            horizontalAlignment: Text.AlignLeft   // reading start (mirrored in Arabic)
+            horizontalAlignment: Text.AlignLeading
             renderType: Theme.renderType
         }
 

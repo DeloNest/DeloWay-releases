@@ -36,7 +36,7 @@ RowLayout {
         color: Theme.notchText
         elide: Text.ElideRight
         maximumLineCount: 1
-        horizontalAlignment: Text.AlignLeft
+        horizontalAlignment: Text.AlignLeading
         renderType: Theme.renderType
     }
 }

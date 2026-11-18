@@ -68,6 +68,7 @@ Item {
 
     // Context Menu State
     property bool contextMenuVisible: false
+    property int contextMenuRevision: 0
     property real contextMenuX: 0
     property real contextMenuY: 0
     property var contextMenuTargetItem: null // null = desktop wallpaper, object = specific item
@@ -115,6 +116,7 @@ Item {
         contextMenuX = x;
         contextMenuY = y;
         contextMenuScreen = _menuScreen(screenName);
+        contextMenuRevision++;
         contextMenuVisible = true;
     }
 
@@ -126,6 +128,7 @@ Item {
         if (item && item.id && !isItemSelected(item.id)) {
             selectedItemIds = [item.id];
         }
+        contextMenuRevision++;
         contextMenuVisible = true;
     }
 

@@ -51,17 +51,113 @@ PanelWindow {
     readonly property var target: DesktopManager.contextMenuTargetItem
     readonly property bool onItem: target !== null && target !== undefined
 
-    // Same card as AppContextMenu: opaque, radiusLarge, 1px border, no shadow; fades in
-    // with a short slide.
+    readonly property int screenMargin: 12
+    readonly property int pointerX: DesktopManager.contextMenuX
+    readonly property int pointerY: DesktopManager.contextMenuY
+
+    // Smart horizontal placement:
+    // In RTL, default to opening to the left of the cursor (pointerX - menuCard.width).
+    // If it doesn't fit on the left, flip to opening to the right of the cursor (pointerX).
+    // In LTR, default to opening to the right of the cursor (pointerX).
+    // If it doesn't fit on the right, flip to opening to the left of the cursor.
+    readonly property bool openToLeft: I18n.isRTL
+        ? (pointerX - menuCard.width >= screenMargin || pointerX < root.width - menuCard.width - screenMargin)
+        : (pointerX + menuCard.width > root.width - screenMargin && pointerX - menuCard.width >= screenMargin)
+
+    // Smart vertical placement:
+    // Default to opening downward. If overflowing the bottom edge, flip upward.
+    readonly property bool openUpward: (pointerY + menuCard.height > root.height - screenMargin)
+                                       && (pointerY - menuCard.height >= screenMargin)
+
+    // Entrance / Exit controller
+    Connections {
+        target: DesktopManager
+        function onContextMenuVisibleChanged() {
+            if (root.shown) {
+                root.triggerEntrance();
+            } else {
+                root.triggerExit();
+            }
+        }
+        function onContextMenuRevisionChanged() {
+            if (root.shown) {
+                root.triggerEntrance();
+            }
+        }
+    }
+
+    function triggerEntrance() {
+        exitAnim.stop();
+        entranceAnim.stop();
+        menuCard.scale = 0.90;
+        menuCard.opacity = 0.0;
+        entranceAnim.start();
+    }
+
+    function triggerExit() {
+        entranceAnim.stop();
+        exitAnim.start();
+    }
+
+    ParallelAnimation {
+        id: entranceAnim
+        NumberAnimation {
+            target: menuCard
+            property: "scale"
+            from: 0.90
+            to: 1.0
+            duration: 150
+            easing.type: Easing.OutCubic
+        }
+        NumberAnimation {
+            target: menuCard
+            property: "opacity"
+            from: 0.0
+            to: 1.0
+            duration: 130
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    ParallelAnimation {
+        id: exitAnim
+        NumberAnimation {
+            target: menuCard
+            property: "scale"
+            to: 0.94
+            duration: 90
+            easing.type: Easing.InQuad
+        }
+        NumberAnimation {
+            target: menuCard
+            property: "opacity"
+            to: 0.0
+            duration: 90
+            easing.type: Easing.InQuad
+        }
+    }
+
+    // Modern professional menu card
     Rectangle {
         id: menuCard
         // The reference width, grown for a longer row (Arabic labels + a switch), capped.
-        width: Math.min(320, Math.max(228, menuCol.implicitWidth + 10))
-        height: menuCol.implicitHeight + 10
-        // Opens toward the reading end of the pointer (left of it in Arabic).
-        x: Math.max(12, Math.min(I18n.isRTL ? DesktopManager.contextMenuX - width : DesktopManager.contextMenuX, root.width - width - 12))
-        y: Math.max(12, Math.min(DesktopManager.contextMenuY, root.height - height - 12))
-        radius: Theme.radiusLarge
+        width: Math.min(320, Math.max(228, menuCol.implicitWidth + 12))
+        height: menuCol.implicitHeight + 12
+
+        x: openToLeft
+            ? Math.max(screenMargin, Math.min(root.width - width - screenMargin, pointerX - width))
+            : Math.max(screenMargin, Math.min(root.width - width - screenMargin, pointerX))
+
+        y: openUpward
+            ? Math.max(screenMargin, Math.min(root.height - height - screenMargin, pointerY - height))
+            : Math.max(screenMargin, Math.min(root.height - height - screenMargin, pointerY))
+
+        // Dynamically anchored to the mouse click corner!
+        transformOrigin: openUpward
+            ? (openToLeft ? Item.BottomRight : Item.BottomLeft)
+            : (openToLeft ? Item.TopRight : Item.TopLeft)
+
+        radius: Theme.notchRadiusCard
         color: Theme.capsuleFill
         border.color: Theme.capsuleBorder
         border.width: 1
@@ -71,12 +167,30 @@ PanelWindow {
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true
 
-        opacity: root.shown ? 1.0 : 0.0
-        transform: Translate {
-            y: root.shown ? 0 : -3
-            Behavior on y { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        scale: 0.90
+        opacity: 0.0
+
+        // Soft ambient elevation shadow
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -4
+            radius: parent.radius + 4
+            color: Theme.notchShadow
+            opacity: 0.65
+            z: -1
         }
-        Behavior on opacity { NumberAnimation { duration: 130; easing.type: Easing.OutCubic } }
+
+        // Top luminous rim highlight
+        Rectangle {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: parent.radius
+            anchors.rightMargin: parent.radius
+            height: 1
+            color: Theme.notchBorderHighlight
+            opacity: 0.55
+        }
 
         // Clicks inside the card never reach the dismiss area
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton }
@@ -86,7 +200,7 @@ PanelWindow {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            anchors.margins: 5
+            anchors.margins: 6
             spacing: 0
 
             // ── On the desktop itself ───────────────────────────────────
