@@ -19,7 +19,8 @@ works too.
 - **Top bar**: three capsules, one each for the clock/calendar, the notch (home, notifications, LocalSend sharing) and quick settings (Wi-Fi, Bluetooth, hotspot, audio, brightness, night light, power).
 - **Dock**: pinned and running apps (drag to reorder), always shown or auto-hidden, and a right-click menu for app info and uninstall.
 - **Start menu / app drawer and search**: app search with a built-in calculator.
-- **Settings app**: network, Bluetooth, appearance, wallpaper, dock, top bar, windows, notifications, power, apps, time and language.
+- **Clipboard manager**: Raycast-style dual-pane productivity hub (<kbd>Super</kbd>+<kbd>V</kbd>) with live image thumbnails, color swatches, filter tabs (All, Text, Images, Links, Colors, Pinned), and persistent pinned snippets.
+- **Settings app**: audio (PipeWire device & volume control), network, Bluetooth, appearance, wallpaper, dock, top bar, windows, notifications, power, apps, time and language.
 - **Lock screen**: uses `ext-session-lock` with PAM.
 - **Three desktop modes**: clean, widgets and a traditional icon desktop.
 - **Dark / Light switch**: also carries GTK apps, the icon theme, window borders and the bundled kitty profile.
@@ -92,6 +93,7 @@ restart the shell with <kbd>Ctrl</kbd>+<kbd>Super</kbd>+<kbd>R</kbd>.
 |---|---|
 | <kbd>Super</kbd> (tap) | start menu |
 | <kbd>Super</kbd>+<kbd>Space</kbd> | search |
+| <kbd>Super</kbd>+<kbd>V</kbd> | clipboard manager |
 | <kbd>Super</kbd>+<kbd>N</kbd> | quick settings |
 | <kbd>Super</kbd>+<kbd>I</kbd> | settings |
 | <kbd>Super</kbd>+<kbd>L</kbd> | lock |

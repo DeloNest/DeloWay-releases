@@ -708,6 +708,9 @@ configure_deloway() {
         "$USER_CONFIG_DIR/backups"
         "$USER_BIN_DIR"
         "$HOME/Desktop"
+        "$HOME/.local/state/deloway"
+        "$HOME/.cache/deloway/clipboard"
+        "$HOME/.cache/deloway/wallpapers"
     )
 
     for d in "${dirs[@]}"; do

@@ -139,7 +139,8 @@ EOF
 sync_assets() {
     log_info "Syncing desktop assets and icon caches..."
 
-    mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps" "$HOME/.local/share/applications"
+    mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps" "$HOME/.local/share/applications" \
+             "$HOME/.local/state/deloway" "$HOME/.cache/deloway/clipboard" "$HOME/.cache/deloway/wallpapers"
 
     # Re-sync desktop folder icons
     if [ -d "$DELOWAY_DIR/assets/icons/desktop" ]; then
