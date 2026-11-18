@@ -301,8 +301,8 @@ ShellRoot {
             ShellState.toggleClipboard();
         }
 
-        function openClipboard() {
-            ShellState.openClipboard();
+        function openClipboard(filter: string, query: string) {
+            ShellState.openClipboard(filter, query);
         }
 
         function closeClipboard() {
@@ -345,6 +345,10 @@ ShellRoot {
 
         function isSettingsOpen() : bool {
             return ShellState.settingsAppOpen;
+        }
+
+        function isSettingsFullscreen() : bool {
+            return ShellState.settingsFullScreen;
         }
 
         function openSettingsTab(tabId: string) {

@@ -24,6 +24,8 @@ QtObject {
     property string quickSettingsCapsuleView: "main"
     // ── Clipboard Manager ───────────────────────────────────────────────
     property bool clipboardOpen: false
+    property string clipboardFilter: "all"
+    property string clipboardQuery: ""
     // ── Overview (Mission Control) ──────────────────────────────────────
     property bool overviewOpen: false
     // ── Settings navigation registry (single source of truth) ───────────
@@ -39,9 +41,13 @@ QtObject {
         "pages": ["appearance", "wallpaper", "topbar", "dock"]
     }, {
         "id": "system",
-        "pages": ["display", "windows", "shortcuts", "notifications", "power", "apps", "time_language", "updates", "about"]
+        "pages": ["sound", "display", "windows", "shortcuts", "notifications", "power", "apps", "time_language", "updates", "about"]
     }]
     readonly property var settingsPages: ({
+        "sound": {
+            "icon": "audio-volume-high-symbolic",
+            "file": "AudioTab.qml"
+        },
         "network": {
             "icon": NetworkService.wifiAvailable ? "network-wireless-symbolic" : "network-ethernet-symbolic",
             "file": "NetworkTab.qml"
@@ -121,7 +127,11 @@ QtObject {
         "theme": "appearance",
         "monitors": "display",
         "screen": "display",
-        "screens": "display"
+        "screens": "display",
+        "audio": "sound",
+        "microphone": "sound",
+        "mic": "sound",
+        "volume": "sound"
     })
     property string activeSettingsTab: "network"
     property bool settingsFullScreen: false
@@ -321,10 +331,12 @@ QtObject {
         searchQuery = "";
     }
 
-    function openClipboard() {
+    function openClipboard(filter, query) {
         launcherOpen = false;
         quickSettingsCapsuleExpanded = false;
         appDrawerOpen = false;
+        if (filter !== undefined && filter !== "") clipboardFilter = filter;
+        if (query !== undefined && query !== "") clipboardQuery = query;
         clipboardOpen = true;
     }
 
@@ -379,7 +391,18 @@ QtObject {
         settingsScrollRequested(0);
     }
 
+    property string appsSubSection: "defaults"
+
     function openSettingsTab(tabId) {
+        if (tabId === "permissions" || tabId === "privacy") {
+            appsSubSection = "permissions";
+            tabId = "apps";
+        } else if (tabId === "all_apps") {
+            appsSubSection = "all";
+            tabId = "apps";
+        } else if (tabId === "apps") {
+            appsSubSection = "defaults";
+        }
         activeSettingsTab = resolveSettingsTab(tabId);
         settingsAppOpen = true;
     }

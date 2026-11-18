@@ -17,7 +17,7 @@ shows the same list in Arabic or English. When you change a bind, update this fi
 | <kbd>Super</kbd> + <kbd>N</kbd> / <kbd>Super</kbd> + <kbd>M</kbd> | Quick Settings |
 | <kbd>Super</kbd> + <kbd>Alt</kbd> + <kbd>N</kbd> | Smart Notch |
 | <kbd>Super</kbd> + <kbd>I</kbd> | DeloWay Settings |
-| <kbd>Super</kbd> + <kbd>V</kbd> | Clipboard history (cliphist picker) |
+| <kbd>Super</kbd> + <kbd>V</kbd> | Modern dual-pane clipboard manager with pinned snippets |
 | <kbd>Super</kbd> + <kbd>/</kbd> / <kbd>Super</kbd> + <kbd>T</kbd> | Keyboard shortcuts overlay |
 | <kbd>Super</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | Hide / show the top bar and Dock |
 | <kbd>Super</kbd> + <kbd>K</kbd> | On-screen keyboard |
