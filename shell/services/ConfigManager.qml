@@ -303,7 +303,8 @@ Item {
                       "layerrule = blur on, match:namespace deloway:setup-wizard\n" +
                       "layerrule = ignore_alpha 0.20, match:namespace deloway:setup-wizard\n" +
                       "layerrule = blur_popups on, match:namespace deloway:setup-wizard\n" +
-                      "windowrule = opacity 0.85 0.85, match:class ^(kitty)$\n";
+                      "windowrule = opacity 0.85 0.85, match:class ^(kitty)$\n" +
+                      "windowrule = no_blur off, match:class ^(org.gnome.Nautilus)$\n";
         } else if (root.themeName === "light") {
             content = "# Deloway Theme: Light (Clean high-contrast neutrals)\n" +
                       "decoration:blur:size = 8\n" +
