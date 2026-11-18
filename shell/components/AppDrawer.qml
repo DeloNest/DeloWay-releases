@@ -1045,9 +1045,9 @@ PanelWindow {
             SymbolicIcon {
                 visible: row.app ? ApplicationManager.isPinned(row.app.id) : false
                 Layout.alignment: Qt.AlignVCenter
-                iconSize: 12
+                iconSize: 14
                 source: "view-pin-symbolic"
-                iconColor: Theme.notchTextTertiary
+                iconColor: row.selected ? Theme.notchText : Theme.notchTextSecondary
             }
         }
 
