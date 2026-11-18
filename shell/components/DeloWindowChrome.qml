@@ -39,10 +39,11 @@ Rectangle {
         Rectangle {
             id: headerBar
             Layout.fillWidth: true
-            Layout.preferredHeight: 44
+            Layout.preferredHeight: Math.max(44, headerRow.implicitHeight + 14)
             color: "transparent"
 
             RowLayout {
+                id: headerRow
                 anchors.fill: parent
                 anchors.leftMargin: Theme.space16
                 anchors.rightMargin: Theme.space16

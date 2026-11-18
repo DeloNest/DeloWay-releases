@@ -218,8 +218,8 @@ PanelWindow {
         width: Math.min(Theme.oobePanelWidth, root.width - 48)
         height: Math.min(Theme.oobePanelHeight, root.height - 48)
         radius: Theme.radiusLarge
-        color: Theme.capsuleFill
-        border.color: Theme.capsuleBorder
+        color: Theme.windowFill
+        border.color: Theme.windowBorder
         border.width: 1
         LayoutMirroring.enabled: I18n.isRTL
         LayoutMirroring.childrenInherit: true

@@ -229,7 +229,7 @@ Item {
         anchors.fill: rawIcon
         source: rawIcon
         color: root.iconColor
-        visible: rawIcon.status === Image.Ready
+        visible: root.visible && rawIcon.status === Image.Ready
     }
 
     // Theme symbolic icons (not in the bundled map) are tinted too, so every "*-symbolic"
@@ -255,7 +255,7 @@ Item {
         anchors.fill: themeIcon
         source: themeIcon
         color: root.iconColor
-        visible: root.themeSymbolic && themeIcon.status === Image.Ready
+        visible: root.visible && root.themeSymbolic && themeIcon.status === Image.Ready
     }
 
     // Fallback: non-symbolic names keep the theme's own rendering. An icon the theme does
@@ -264,6 +264,6 @@ Item {
         anchors.fill: parent
         source: (root.resolvedSource || root.themeSymbolic) ? "" : IconResolver.safeUrl(root.source)
         implicitSize: root.iconSize
-        visible: rawIcon.status !== Image.Ready && !(root.themeSymbolic && themeIcon.status === Image.Ready)
+        visible: root.visible && rawIcon.status !== Image.Ready && !(root.themeSymbolic && themeIcon.status === Image.Ready)
     }
 }

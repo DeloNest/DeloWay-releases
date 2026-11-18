@@ -36,7 +36,7 @@ RowLayout {
 
     ColumnLayout {
         Layout.fillWidth: true
-        spacing: -2
+        spacing: Theme.fontScale > 1.0 ? 1 : 0
         Text {
             Layout.fillWidth: true
             text: root.title

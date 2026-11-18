@@ -92,9 +92,10 @@ DashCard {
         // Footer: status + repeat, or Stop / Snooze while ringing
         Item {
             Layout.fillWidth: true
-            implicitHeight: 24
+            implicitHeight: Math.max(24, alarmStatusRow.implicitHeight, alarmRingingRow.implicitHeight)
 
             RowLayout {
+                id: alarmStatusRow
                 anchors.fill: parent
                 spacing: 6
                 visible: !root.tk.alarmRinging
@@ -113,7 +114,7 @@ DashCard {
                     renderType: Theme.renderType
                 }
                 PillButton {
-                    implicitHeight: 22
+                    minHeight: 22
                     text: root.tk.alarmRepeatDaily ? I18n.tr("tk_daily", "Daily") : I18n.tr("tk_once", "Once")
                     selected: root.tk.alarmRepeatDaily
                     onClicked: root.tk.setAlarmRepeat(!root.tk.alarmRepeatDaily)
@@ -121,18 +122,19 @@ DashCard {
             }
 
             RowLayout {
+                id: alarmRingingRow
                 anchors.fill: parent
                 spacing: 6
                 visible: root.tk.alarmRinging
                 PillButton {
                     Layout.fillWidth: true
-                    implicitHeight: 24
+                    minHeight: 24
                     text: I18n.tr("tk_snooze", "Snooze") + " " + TimeKeeperService.digits(root.tk.snoozeMinutes)
                     onClicked: root.tk.snooze()
                 }
                 PillButton {
                     Layout.fillWidth: true
-                    implicitHeight: 24
+                    minHeight: 24
                     primary: true
                     text: I18n.tr("tk_stop", "Stop")
                     onClicked: root.tk.dismissAlarm()

@@ -17,7 +17,8 @@ Rectangle {
     signal clicked(var mouse)
     signal hovered()
 
-    height: 48
+    implicitHeight: Math.max(48, Math.round(Theme.fontSize(nameSize) + Theme.fontSize(descSize) + 22))
+    height: implicitHeight
     width: ListView.view ? ListView.view.width : (parent ? parent.width : 500)
     radius: Theme.notchRadiusCard
 
@@ -71,9 +72,7 @@ Rectangle {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            // Cairo carries tall built-in leading; tighten so title + subtitle sit inside
-            // the 48px row instead of crowding the next result.
-            spacing: -4
+            spacing: Theme.fontScale > 1.0 ? -1 : -3
 
             Text {
                 Layout.fillWidth: true

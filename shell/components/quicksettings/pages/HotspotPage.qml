@@ -42,13 +42,14 @@ ColumnLayout {
     // Large Toggle Switch Card (Hotspot State)
     Rectangle {
         Layout.fillWidth: true
-        implicitHeight: 46
+        implicitHeight: Math.max(46, hotspotToggleRow.implicitHeight + 14)
         radius: Theme.notchRadiusCard
         color: Theme.notchSurfaceElevated
         border.color: root.hotspotEnabled ? Theme.inverseSurface : Theme.notchBorder
         border.width: 1
 
         RowLayout {
+            id: hotspotToggleRow
             anchors.fill: parent
             anchors.leftMargin: 12
             anchors.rightMargin: 12
@@ -122,7 +123,7 @@ ColumnLayout {
     // Configuration Card (SSID, Password, Save)
     Rectangle {
         Layout.fillWidth: true
-        implicitHeight: hotspotConfigCol.implicitHeight + 16
+        implicitHeight: hotspotConfigCol.implicitHeight + 20
         radius: Theme.notchRadiusCard
         color: Theme.notchSurfaceElevated
         border.color: Theme.notchBorder
@@ -154,18 +155,20 @@ ColumnLayout {
                 spacing: 8
 
                 Text {
+                    id: ssidLbl
                     text: I18n.isRTL ? "الاسم:" : "SSID:"
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.Medium
                     color: Theme.notchTextSecondary
-                    Layout.preferredWidth: 38
+                    Layout.preferredWidth: Math.max(38, ssidLbl.implicitWidth, passLbl.implicitWidth)
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 26
-                    radius: Theme.notchRadiusPill
+                    implicitHeight: Math.max(28, Math.round(28 * Math.max(1.0, Theme.fontScale)))
+                    height: implicitHeight
+                    radius: height / 2
                     color: Theme.capsuleBackground
                     border.color: ssidInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
@@ -175,8 +178,8 @@ ColumnLayout {
                         selectedTextColor: color
                         id: ssidInput
                         anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 8
+                        anchors.leftMargin: 10
+                        anchors.rightMargin: 10
                         verticalAlignment: TextInput.AlignVCenter
                         horizontalAlignment: TextInput.AlignLeft
                         font.family: Theme.typography.fontFamily
@@ -195,25 +198,27 @@ ColumnLayout {
                 spacing: 8
 
                 Text {
+                    id: passLbl
                     text: I18n.isRTL ? "السر:" : "Pass:"
                     font.family: Theme.typography.fontFamily
                     font.pixelSize: Theme.fontSize(10)
                     font.weight: Font.Medium
                     color: Theme.notchTextSecondary
-                    Layout.preferredWidth: 38
+                    Layout.preferredWidth: Math.max(38, ssidLbl.implicitWidth, passLbl.implicitWidth)
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    height: 26
-                    radius: Theme.notchRadiusPill
+                    implicitHeight: Math.max(28, Math.round(28 * Math.max(1.0, Theme.fontScale)))
+                    height: implicitHeight
+                    radius: height / 2
                     color: Theme.capsuleBackground
                     border.color: pwdInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 8
+                        anchors.leftMargin: 10
                         anchors.rightMargin: 4
                         spacing: 4
 
@@ -237,9 +242,9 @@ ColumnLayout {
                         Rectangle {
                             id: showPwdBtn
                             property bool showPassword: false
-                            implicitWidth: pwdToggleText.implicitWidth + 10
-                            implicitHeight: 20
-                            radius: 10
+                            implicitWidth: pwdToggleText.implicitWidth + 12
+                            implicitHeight: Math.max(20, pwdToggleText.implicitHeight + 4)
+                            radius: height / 2
                             color: eyeMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
                             Text {
@@ -295,9 +300,9 @@ ColumnLayout {
                 }
 
                 Rectangle {
-                    implicitWidth: 60
-                    implicitHeight: 24
-                    radius: Theme.notchRadiusPill
+                    implicitWidth: Math.max(60, saveBtnText.implicitWidth + 20)
+                    implicitHeight: Math.max(24, saveBtnText.implicitHeight + 6)
+                    radius: height / 2
                     color: saveBtnMa.containsMouse ? Theme.notchSurfaceHover : Theme.capsuleBackground
                     border.color: canSave ? Theme.notchBorderHighlight : Theme.notchBorder
                     border.width: 1
@@ -306,6 +311,7 @@ ColumnLayout {
                     readonly property bool canSave: ssidInput.text.trim().length > 0 && pwdInput.text.length >= 8 && (ssidInput.text.trim() !== root.hotspotSsid || pwdInput.text !== root.hotspotPassword)
 
                     Text {
+                        id: saveBtnText
                         anchors.centerIn: parent
                         text: root.configureRunning ? "..." : (I18n.isRTL ? "حفظ" : "Save")
                         font.family: Theme.typography.fontFamily
@@ -359,7 +365,7 @@ ColumnLayout {
 
             delegate: Rectangle {
                 width: clientsListView.width
-                height: 32
+                height: Math.max(32, clientCol.implicitHeight + 10)
                 radius: 6
                 color: clientMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
 
@@ -376,6 +382,7 @@ ColumnLayout {
                     }
 
                     ColumnLayout {
+                        id: clientCol
                         Layout.fillWidth: true
                         spacing: 1
 

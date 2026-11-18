@@ -116,6 +116,10 @@ ColumnLayout {
                                 spacing: 6
 
                                 Text {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignLeft
+                                    elide: Text.ElideRight
+                                    maximumLineCount: 1
                                     text: btRow.modelData.address || ""
                                     font.family: Theme.typography.fontFamily
                                     font.pixelSize: Theme.fontSize(10)
@@ -123,18 +127,16 @@ ColumnLayout {
                                     renderType: Theme.renderType
                                 }
 
-                                Item { Layout.fillWidth: true }
-
                                 PillButton {
                                     visible: btRow.modelData.connected
-                                    implicitHeight: 28
+                                    minHeight: 28
                                     text: root.t("قطع الاتصال", "Disconnect")
                                     onClicked: { BluetoothService.disconnectDevice(btRow.modelData.address); root.expandedAddress = ""; }
                                 }
 
                                 PillButton {
                                     visible: !btRow.modelData.connected && btRow.modelData.paired
-                                    implicitHeight: 28
+                                    minHeight: 28
                                     primary: true
                                     text: root.t("اتصال", "Connect")
                                     onClicked: { BluetoothService.connectDevice(btRow.modelData.address); root.expandedAddress = ""; }
@@ -142,7 +144,7 @@ ColumnLayout {
 
                                 PillButton {
                                     visible: !btRow.modelData.paired
-                                    implicitHeight: 28
+                                    minHeight: 28
                                     primary: true
                                     text: root.t("اقتران", "Pair")
                                     onClicked: { BluetoothService.pairDevice(btRow.modelData.address); root.expandedAddress = ""; }
@@ -150,7 +152,7 @@ ColumnLayout {
 
                                 PillButton {
                                     visible: btRow.modelData.paired
-                                    implicitHeight: 28
+                                    minHeight: 28
                                     text: root.t("إلغاء الاقتران", "Unpair")
                                     onClicked: { BluetoothService.removeDevice(btRow.modelData.address); root.expandedAddress = ""; }
                                 }

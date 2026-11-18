@@ -27,8 +27,8 @@ RowLayout {
             spacing: 3
 
             Rectangle {
-                implicitHeight: 22
-                implicitWidth: keyDel.isSuper ? 26 : Math.max(22, keyText.implicitWidth + Theme.space8)
+                implicitHeight: Math.max(22, keyText.implicitHeight + 6)
+                implicitWidth: keyDel.isSuper ? Math.max(26, implicitHeight + 4) : Math.max(implicitHeight, keyText.implicitWidth + Theme.space8)
                 radius: Theme.radiusSmall
                 color: Theme.notchSurfaceElevated
                 border.color: Theme.notchBorderSubtle

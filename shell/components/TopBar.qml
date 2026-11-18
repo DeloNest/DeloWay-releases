@@ -29,8 +29,9 @@ PanelWindow {
     }
 
     // Tallest capsule state (TimeCapsule dashboard) must fit; transparent + masked, so
-    // the extra height never intercepts input.
-    implicitHeight: 620
+    // the extra height never intercepts input. Scaled with fontScale above 1.0 to keep headroom
+    // without resizing the Wayland surface mid-animation.
+    implicitHeight: Math.min((targetScreen && targetScreen.height > 0 ? targetScreen.height - 8 : 960), Math.max(620, Math.round(620 * Math.max(1.0, Theme.fontScale))))
     color: "transparent"
     visible: !ShellState.shellHidden
 

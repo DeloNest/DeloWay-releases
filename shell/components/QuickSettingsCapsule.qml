@@ -45,14 +45,14 @@ Item {
     readonly property bool currentViewGone: (currentView === "wifi" && !NetworkService.wifiAvailable) || (currentView === "hotspot" && !NetworkService.hotspotSupported) || (currentView === "bluetooth" && !BluetoothService.available)
     readonly property real compactHeight: 44
     readonly property real compactWidth: Math.max(root.compactHeight, Math.round(compactRow.implicitWidth + 36))
-    readonly property real expandedWidth: 456
+    readonly property real expandedWidth: Math.round(456 * Math.max(1.0, (Theme.fontScale - 1.0) * 0.5 + 1.0))
     readonly property int contentTopMargin: 16
     readonly property int contentBottomMargin: 14
     // ── Page model ───────────────────────────────────────────────────────
     // "main" sizes to its content; detail pages share one fixed, scrollable height.
     // pageHeight is the single animated number that morphs the capsule between pages,
     // in lock-step with the horizontal slide (no jumps, no Loader churn).
-    readonly property int detailPageHeight: 420
+    readonly property int detailPageHeight: Math.round(420 * Math.max(1.0, Theme.fontScale))
     readonly property real targetPageHeight: root.currentView === "main" ? mainPage.implicitHeight : root.detailPageHeight
     property real pageHeight: targetPageHeight
     readonly property real expandedHeight: root.contentTopMargin + root.contentBottomMargin + root.pageHeight
@@ -126,13 +126,11 @@ Item {
     readonly property real micVolume: (audioSource && audioSource.audio) ? audioSource.audio.volume : 0
     readonly property bool micMuted: (audioSource && audioSource.audio) ? audioSource.audio.muted : false
     // ─────────────────────────────────────────────────────────────────────────
-    // Screen Brightness (Hybrid: kernel backlight / DDC/CI via ddcutil)
+    // Screen Brightness (delegated to BrightnessService singleton)
     // ─────────────────────────────────────────────────────────────────────────
-    property real screenBrightness: 0.75
-    property string brightnessBackend: "none" // "kernel" | "ddc" | "none"
-    property bool hasBacklight: brightnessBackend !== "none"
-    property string backlightDevice: ""
-    property string ddcDisplayNum: ""
+    readonly property real screenBrightness: BrightnessService.screenBrightness
+    readonly property string brightnessBackend: BrightnessService.brightnessBackend
+    readonly property bool hasBacklight: BrightnessService.hasBacklight
     // ─────────────────────────────────────────────────────────────────────────
     // Night Light / Eye Comfort (delegated to DisplayService singleton)
     // ─────────────────────────────────────────────────────────────────────────
@@ -248,26 +246,8 @@ Item {
         root.audioSource.audio.muted = !root.audioSource.audio.muted;
     }
 
-    function applyDdcBrightness() {
-        if (root.brightnessBackend !== "ddc")
-            return ;
-
-        if (ddcWriteProcess.running) {
-            ddcWriteProcess.pending = true;
-            return ;
-        }
-        const pct = Math.max(0, Math.min(100, Math.round(root.screenBrightness * 100)));
-        const disp = root.ddcDisplayNum.length > 0 ? ["--display", root.ddcDisplayNum] : [];
-        ddcWriteProcess.command = ["ddcutil"].concat(disp, ["setvcp", "10", String(pct)]);
-        ddcWriteProcess.running = true;
-    }
-
     function setBrightness(value) {
-        root.screenBrightness = Math.max(0, Math.min(1, value));
-        if (root.brightnessBackend === "kernel")
-            backlightWriteDebounce.restart();
-        else if (root.brightnessBackend === "ddc")
-            ddcWriteDebounce.restart();
+        BrightnessService.setBrightness(value);
     }
 
     function toggleNightLight() {
@@ -300,22 +280,13 @@ Item {
                 BluetoothService.refresh();
             }
             ControlCenterService.refresh();
-            if (root.brightnessBackend === "kernel") {
-                backlightReadProcess.running = true;
-            } else if (root.brightnessBackend === "ddc") {
-                const dispArg = root.ddcDisplayNum.length > 0 ? ("--display " + root.ddcDisplayNum + " ") : "";
-                ddcReadProcess.command = ["sh", "-c", "ddcutil " + dispArg + "getvcp 10 2>/dev/null || true"];
-                ddcReadProcess.running = true;
-            } else {
-                backlightDetectProcess.running = true;
-            }
+            BrightnessService.refresh();
         } else {
             ShellState.quickSettingsCapsuleHotspotSettingsOpen = false;
             ShellState.quickSettingsCapsuleView = "main";
         }
     }
     Component.onCompleted: {
-        backlightDetectProcess.running = true;
         Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset temperature >/dev/null 2>&1 || (nohup hyprsunset >/dev/null 2>&1 &)"]);
     }
 
@@ -405,129 +376,6 @@ Item {
 
     PwObjectTracker {
         objects: root.audioSource ? [root.audioSource] : []
-    }
-
-    // 1. Kernel Backlight Detect
-    Process {
-        id: backlightDetectProcess
-
-        command: ["sh", "-c", "dev=$(ls /sys/class/backlight 2>/dev/null | head -n1); echo \"$dev\""]
-        onExited: (exitCode, exitStatus) => {
-            if (root.brightnessBackend === "none" && !ddcDetectProcess.running && root.backlightDevice.length === 0)
-                ddcDetectProcess.running = true;
-
-        }
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                const device = data.trim();
-                if (device.length > 0) {
-                    root.backlightDevice = device;
-                    root.brightnessBackend = "kernel";
-                    backlightReadProcess.running = true;
-                } else {
-                    ddcDetectProcess.running = true;
-                }
-            }
-        }
-
-    }
-
-    // 2. DDC/CI Detect (Fallback for external desktop monitors)
-    Process {
-        id: ddcDetectProcess
-
-        command: ["sh", "-c", "disp=$(command -v ddcutil >/dev/null 2>&1 && ddcutil detect 2>/dev/null | grep -m1 -E '^Display [0-9]+' | awk '{print $2}'); echo \"$disp\""]
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                const disp = data.trim();
-                if (disp.length > 0 && !isNaN(parseInt(disp, 10))) {
-                    root.ddcDisplayNum = disp;
-                    root.brightnessBackend = "ddc";
-                    const dispArg = "--display " + disp + " ";
-                    ddcReadProcess.command = ["sh", "-c", "ddcutil " + dispArg + "getvcp 10 2>/dev/null || true"];
-                    ddcReadProcess.running = true;
-                } else {
-                    root.brightnessBackend = "none";
-                }
-            }
-        }
-
-    }
-
-    // 3. Kernel Backlight Read
-    Process {
-        id: backlightReadProcess
-
-        command: ["sh", "-c", "brightnessctl -m | cut -d, -f4 | tr -d '%'"]
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                const pct = parseInt(data.trim(), 10);
-                if (!isNaN(pct))
-                    root.screenBrightness = Math.max(0, Math.min(1, pct / 100));
-
-            }
-        }
-
-    }
-
-    // 4. DDC/CI Backlight Read
-    Process {
-        id: ddcReadProcess
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                const match = data.match(/current value\s*=\s*(\d+)/);
-                if (match) {
-                    const pct = parseInt(match[1], 10);
-                    if (!isNaN(pct))
-                        root.screenBrightness = Math.max(0, Math.min(1, pct / 100));
-
-                }
-            }
-        }
-
-    }
-
-    // 5. Kernel Backlight Write (Debounced by 80ms)
-    Process {
-        id: backlightWriteProcess
-    }
-
-    Timer {
-        id: backlightWriteDebounce
-
-        interval: 80
-        onTriggered: {
-            const pct = Math.round(root.screenBrightness * 100);
-            backlightWriteProcess.command = ["sh", "-c", "brightnessctl set " + pct + "%"];
-            backlightWriteProcess.running = true;
-        }
-    }
-
-    // 6. DDC/CI Backlight Write (Single command executed on released)
-    // DDC writes are slow (~100 ms+) and must not be interrupted mid-transaction:
-    // never kill a running write; if the value changed meanwhile, write again after.
-    Process {
-        id: ddcWriteProcess
-
-        property bool pending: false
-
-        onExited: {
-            if (pending) {
-                pending = false;
-                root.applyDdcBrightness();
-            }
-        }
-    }
-
-    Timer {
-        id: ddcWriteDebounce
-
-        interval: 250
-        onTriggered: root.applyDdcBrightness()
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -993,7 +841,7 @@ Item {
                                 font.weight: Font.Medium
                                 color: Theme.notchText
                                 elide: Text.ElideRight
-                                Layout.maximumWidth: 90
+                                Layout.maximumWidth: Math.round(90 * Math.max(1.0, Theme.fontScale))
                                 renderType: Theme.renderType
                             }
 
@@ -1017,8 +865,8 @@ Item {
 
                     // ── Language badge capsule ──
                     Rectangle {
-                        implicitWidth: langBadgeText.implicitWidth + 12
-                        implicitHeight: 22
+                        implicitHeight: Math.max(22, langBadgeText.implicitHeight + 4)
+                        implicitWidth: Math.max(implicitHeight, langBadgeText.implicitWidth + 12)
                         radius: 6
                         color: langBadgeMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
                         border.color: Theme.notchBorderSubtle

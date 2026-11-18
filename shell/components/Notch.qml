@@ -27,13 +27,34 @@ Item {
     // State dimensions — authentic macOS NotchNook dropdown card
     readonly property real compactWidth: {
         if (!notchHomeItem) return 200;
-        if (notchHomeItem.notificationActive) return 440;
-        if (notchHomeItem.hasPlayer) return Math.min(520, Math.max(320, (notchHomeItem.workspaceContentWidth || 0) + (notchHomeItem.playerContentWidth || 0) + 48));
+        if (notchHomeItem.notificationActive) return Math.round(440 * Math.max(1.0, Theme.fontScale));
+        if (notchHomeItem.hasPlayer) {
+            const maxCompact = Math.round(520 * Math.max(1.0, Theme.fontScale));
+            return Math.min(maxCompact, Math.max(320, (notchHomeItem.workspaceContentWidth || 0) + (notchHomeItem.playerContentWidth || 0) + 48));
+        }
         return Math.max(110, (notchHomeItem.workspaceContentWidth || 0) + 24);
     }
     readonly property real compactHeight: 44
-    readonly property real expandedWidth: Theme.notchExpandedWidth
-    readonly property real baseExpandedHeight: (ShellState.smartNotchTab === 1) ? 400 : ((ShellState.smartNotchTab === 3) ? 320 : 176)
+    readonly property real requiredExpandedWidth: Math.max(
+        Theme.notchExpandedWidth,
+        (notchTabsRow ? notchTabsRow.implicitWidth + 128 : 0),
+        (notchHomeExpanded ? notchHomeExpanded.requiredWidth : 0) + 40,
+        (notchNotificationsItem ? notchNotificationsItem.requiredWidth : 0) + 40,
+        (notchLocalSendItem ? notchLocalSendItem.requiredWidth : 0) + 40,
+        (notchAppearanceItem ? notchAppearanceItem.requiredWidth : 0) + 40
+    )
+    readonly property real expandedWidth: {
+        const avail = root.width > 0 ? Math.max(Theme.notchExpandedWidth, root.width - 120) : 1200;
+        return Math.round(Math.min(avail, root.requiredExpandedWidth));
+    }
+    readonly property real activeBodyHeight: {
+        if (ShellState.smartNotchTab === 0 && notchHomeExpanded) return notchHomeExpanded.requiredHeight;
+        if (ShellState.smartNotchTab === 1 && notchNotificationsItem) return notchNotificationsItem.requiredHeight;
+        if (ShellState.smartNotchTab === 2 && notchLocalSendItem) return notchLocalSendItem.requiredHeight;
+        if (ShellState.smartNotchTab === 3 && notchAppearanceItem) return notchAppearanceItem.requiredHeight;
+        return 124;
+    }
+    readonly property real baseExpandedHeight: Math.round((notchHeaderBar ? notchHeaderBar.height : 28) + 24 + root.activeBodyHeight)
     property real expandedHeight: baseExpandedHeight
     Behavior on expandedHeight {
         NumberAnimation {
@@ -198,9 +219,11 @@ Item {
 
                     // ── TIER 1: Header Bar (Tabs centered, ⚙ on trailing edge) ──
                     Item {
+                        id: notchHeaderBar
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 28
-                        implicitHeight: 28
+                        readonly property real barH: Math.max(28, notchTabsRow.implicitHeight + 4)
+                        Layout.preferredHeight: barH
+                        implicitHeight: barH
 
                         MouseArea {
                             anchors.fill: parent
@@ -224,9 +247,10 @@ Item {
                             // oversized hover area). x + fixed size can't stretch.
                             x: I18n.isRTL ? parent.width - width - 4 : 4
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 24
-                            height: 24
-                            radius: 12
+                            readonly property real btnSz: Math.max(24, Math.round(24 * Math.max(1.0, Theme.fontScale)))
+                            width: btnSz
+                            height: btnSz
+                            radius: height / 2
                             color: collapseMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -257,8 +281,8 @@ Item {
                             // Tab 1: Nook
                             Rectangle {
                                 implicitWidth: tab0Row.implicitWidth + 18
-                                implicitHeight: 24
-                                radius: 12
+                                implicitHeight: Math.max(24, tab0Row.implicitHeight + 6)
+                                radius: height / 2
                                 color: swipeView.currentIndex === 0
                                        ? Theme.notchSurfaceActive
                                        : (tab0Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
@@ -296,8 +320,8 @@ Item {
                             // Tab 2: Notify
                             Rectangle {
                                 implicitWidth: tabNotifyRow.implicitWidth + 18
-                                implicitHeight: 24
-                                radius: 12
+                                implicitHeight: Math.max(24, tabNotifyRow.implicitHeight + 6)
+                                radius: height / 2
                                 color: swipeView.currentIndex === 1
                                        ? Theme.notchSurfaceActive
                                        : (tabNotifyMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
@@ -325,9 +349,9 @@ Item {
                                     // Unread count badge
                                     Rectangle {
                                         visible: NotificationManager.unreadCount > 0
-                                        implicitWidth: Math.max(16, unreadText.implicitWidth + 6)
-                                        implicitHeight: 14
-                                        radius: 7
+                                        implicitHeight: Math.max(14, unreadText.implicitHeight + 2)
+                                        implicitWidth: Math.max(implicitHeight, unreadText.implicitWidth + 8)
+                                        radius: height / 2
                                         color: Theme.inverseSurface
                                         Layout.alignment: Qt.AlignVCenter
 
@@ -355,8 +379,8 @@ Item {
                             // Tab 3: Tray / Share
                             Rectangle {
                                 implicitWidth: tab1Row.implicitWidth + 18
-                                implicitHeight: 24
-                                radius: 12
+                                implicitHeight: Math.max(24, tab1Row.implicitHeight + 6)
+                                radius: height / 2
                                 color: swipeView.currentIndex === 2
                                        ? Theme.notchSurfaceActive
                                        : (tab1Ma.containsMouse ? Theme.notchSurfaceHover : "transparent")
@@ -401,8 +425,8 @@ Item {
                             // Tab 4: Appearance
                             Rectangle {
                                 implicitWidth: tabAppearanceRow.implicitWidth + 18
-                                implicitHeight: 24
-                                radius: 12
+                                implicitHeight: Math.max(24, tabAppearanceRow.implicitHeight + 6)
+                                radius: height / 2
                                 color: swipeView.currentIndex === 3
                                        ? Theme.notchSurfaceActive
                                        : (tabAppearanceMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
@@ -443,9 +467,10 @@ Item {
                             // Trailing edge via x (see collapse button note).
                             x: I18n.isRTL ? 4 : parent.width - width - 4
                             anchors.verticalCenter: parent.verticalCenter
-                            implicitWidth: 24
-                            implicitHeight: 24
-                            radius: 12
+                            readonly property real btnSz: Math.max(24, Math.round(24 * Math.max(1.0, Theme.fontScale)))
+                            implicitWidth: btnSz
+                            implicitHeight: btnSz
+                            radius: height / 2
                             color: gearMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
@@ -481,6 +506,7 @@ Item {
 
                             // Page 0: Nook Tab (Music player + Calendar 50/50 split)
                             NotchHome {
+                                id: notchHomeExpanded
                                 expanded: true
                                 targetScreen: root.targetScreen
                             }

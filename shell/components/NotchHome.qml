@@ -23,6 +23,20 @@ Item {
 
     readonly property real workspaceContentWidth: (wsIndicator && wsIndicator.visible) ? wsIndicator.implicitWidth : 0
     readonly property real playerContentWidth: (miniMusicPlayer && hasPlayer) ? miniMusicPlayer.implicitWidth : 0
+    readonly property real leftPaneWidth: Math.round(260 * Math.max(1.0, Theme.fontScale))
+    readonly property real calMinWidth: calMonthText.implicitWidth + 10 + calDaysRow.implicitWidth
+    readonly property real requiredWidth: {
+        if (!root.expanded) return 0;
+        const rightW = Math.max(240, calMinWidth, calEventsRow.implicitWidth);
+        return Math.ceil(20 + root.leftPaneWidth + 24 + rightW);
+    }
+    readonly property real requiredHeight: {
+        if (!root.expanded) return 0;
+        if (root.viewMode === "notification") return Math.max(124, Math.ceil(detailCard.implicitHeight) + 20);
+        const leftH = root.viewMode === "idle" ? idleCol.implicitHeight : musicRow.implicitHeight;
+        const rightH = calCol.implicitHeight;
+        return Math.max(124, Math.ceil(Math.max(leftH, rightH)) + 20);
+    }
 
     // Time & Date state
     property date currentTime: new Date()
@@ -332,6 +346,7 @@ Item {
         // player's own text still renders Arabic correctly.
         RowLayout {
             anchors.centerIn: parent
+            width: Math.min(implicitWidth, Math.max(80, parent.width - 24))
             spacing: 8
             LayoutMirroring.enabled: false
             LayoutMirroring.childrenInherit: true
@@ -407,7 +422,7 @@ Item {
                     color: Theme.notchText
                     elide: Text.ElideRight
                     Layout.fillWidth: true
-                    Layout.maximumWidth: 190
+                    Layout.maximumWidth: Math.round(190 * Math.max(1.0, Theme.fontScale))
                 }
 
                 // Mini Controls: Previous, Play/Pause, Next
@@ -543,13 +558,13 @@ Item {
         }
 
         // 2.2 Expanded Main View (Split: Music/Clock on Start + Calendar Strip on End)
-        // 2.2 Expanded Main View: Music Player on Left + Calendar on Right (100% NotchNook Match)
         RowLayout {
+            id: expandedRow
             anchors.fill: parent
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
+            anchors.leftMargin: 10
+            anchors.rightMargin: 10
             anchors.topMargin: 6
-            anchors.bottomMargin: 10
+            anchors.bottomMargin: 12
             spacing: 24
             opacity: root.viewMode !== "notification" ? 1 : 0
             visible: opacity > 0.01
@@ -557,12 +572,15 @@ Item {
 
             // ── LEFT: Music Player (or Clock when idle) ──
             Item {
-                Layout.preferredWidth: 260
+                Layout.preferredWidth: root.leftPaneWidth
                 Layout.fillHeight: true
 
-                // Sub-view: Music Playing (matches reference Lucy / Liberation / The Divine Comedy)
+                // Sub-view: Music Playing
                 RowLayout {
-                    anchors.fill: parent
+                    id: musicRow
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 14
                     visible: root.viewMode === "music"
 
@@ -608,7 +626,7 @@ Item {
                     ColumnLayout {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
-                        spacing: 2
+                        spacing: 3
 
                         // Track Title
                         Text {
@@ -653,52 +671,62 @@ Item {
                         Item {
                             Layout.fillWidth: true
                             Layout.topMargin: 4
-                            implicitHeight: 18
+                            implicitHeight: scrubTrackWrap.height + 2 + scrubTimesRow.implicitHeight
                             visible: root.trackLength > 0
 
-                            Rectangle {
-                                id: scrubBar
+                            // Fixed 8px track container so hover bar thickness doesn't shift labels below
+                            Item {
+                                id: scrubTrackWrap
                                 anchors.left: parent.left
                                 anchors.right: parent.right
                                 anchors.top: parent.top
-                                anchors.topMargin: 2
-                                height: scrubMa.containsMouse || root.isScrubbing ? 4 : 2
-                                radius: 2
-                                color: Theme.notchSurfaceElevated
-                                border.color: Theme.notchBorderSubtle
-                                border.width: 1
-                                Behavior on height { NumberAnimation { duration: Theme.motionFast } }
+                                height: 8
 
                                 Rectangle {
+                                    id: scrubBar
                                     anchors.left: parent.left
-                                    anchors.top: parent.top
-                                    anchors.bottom: parent.bottom
-                                    width: Math.max(0, Math.min(parent.width, parent.width * (root.isScrubbing ? root.scrubValue : (root.trackLength > 0 ? (root.trackPosition / root.trackLength) : 0))))
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    height: scrubMa.containsMouse || root.isScrubbing ? 4 : 2
                                     radius: 2
-                                    color: Theme.notchText
-                                }
-                            }
+                                    color: Theme.notchSurfaceElevated
+                                    border.color: Theme.notchBorderSubtle
+                                    border.width: 1
+                                    Behavior on height { NumberAnimation { duration: Theme.motionFast } }
 
-                            // Scrubber thumb
-                            Rectangle {
-                                readonly property real fillW: Math.max(0, Math.min(scrubBar.width, scrubBar.width * (root.isScrubbing ? root.scrubValue : (root.trackLength > 0 ? (root.trackPosition / root.trackLength) : 0))))
-                                x: Math.max(0, Math.min(scrubBar.width - width, fillW - width / 2))
-                                anchors.verticalCenter: scrubBar.verticalCenter
-                                width: 8
-                                height: 8
-                                radius: 4
-                                color: Theme.notchText
-                                border.color: Theme.notchBackground
-                                border.width: 1
-                                opacity: scrubMa.containsMouse || root.isScrubbing ? 1.0 : 0.0
-                                Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+                                    Rectangle {
+                                        anchors.left: parent.left
+                                        anchors.top: parent.top
+                                        anchors.bottom: parent.bottom
+                                        width: Math.max(0, Math.min(parent.width, parent.width * (root.isScrubbing ? root.scrubValue : (root.trackLength > 0 ? (root.trackPosition / root.trackLength) : 0))))
+                                        radius: 2
+                                        color: Theme.notchText
+                                    }
+                                }
+
+                                // Scrubber thumb
+                                Rectangle {
+                                    readonly property real fillW: Math.max(0, Math.min(scrubBar.width, scrubBar.width * (root.isScrubbing ? root.scrubValue : (root.trackLength > 0 ? (root.trackPosition / root.trackLength) : 0))))
+                                    x: Math.max(0, Math.min(scrubBar.width - width, fillW - width / 2))
+                                    anchors.verticalCenter: scrubBar.verticalCenter
+                                    width: 8
+                                    height: 8
+                                    radius: 4
+                                    color: Theme.notchText
+                                    border.color: Theme.notchBackground
+                                    border.width: 1
+                                    opacity: scrubMa.containsMouse || root.isScrubbing ? 1.0 : 0.0
+                                    Behavior on opacity { NumberAnimation { duration: Theme.motionFast } }
+                                }
                             }
 
                             // Time Labels
                             RowLayout {
+                                id: scrubTimesRow
                                 anchors.left: parent.left
                                 anchors.right: parent.right
-                                anchors.bottom: parent.bottom
+                                anchors.top: scrubTrackWrap.bottom
+                                anchors.topMargin: 2
                                 LayoutMirroring.enabled: false
                                 LayoutMirroring.childrenInherit: false
 
@@ -859,10 +887,12 @@ Item {
 
                 // Sub-view: Digital Clock & Date (When idle)
                 ColumnLayout {
-                    anchors.fill: parent
+                    id: idleCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
                     spacing: 3
                     visible: root.viewMode === "idle"
-                    Layout.alignment: Qt.AlignVCenter
 
                     RowLayout {
                         spacing: 8
@@ -895,6 +925,9 @@ Item {
                     }
 
                     Text {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignLeft
+                        elide: Text.ElideRight
                         text: I18n.fullDateText(root.currentTime)
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(12)
@@ -904,9 +937,9 @@ Item {
 
                     // Quick Music Launcher button
                     Rectangle {
-                        height: 28
+                        implicitHeight: Math.max(28, playMusicRow.implicitHeight + 10)
                         implicitWidth: playMusicRow.implicitWidth + Theme.space24
-                        radius: 14
+                        radius: height / 2
                         color: playMusicMa.pressed ? Theme.notchSurfaceActive : (playMusicMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
                         border.color: playMusicMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                         border.width: 1
@@ -950,20 +983,23 @@ Item {
                 }
             }
 
-            // ── RIGHT: Calendar Strip (Matches reference Jul + 7 days + Nothing for today) ──
+            // ── RIGHT: Calendar Strip ──
             ColumnLayout {
+                id: calCol
                 Layout.fillWidth: true
-                Layout.fillHeight: true
+                Layout.minimumWidth: root.calMinWidth
                 Layout.alignment: Qt.AlignVCenter
                 spacing: 6
 
                 // Top: Month name + Horizontal Days Strip
                 RowLayout {
+                    id: calTopRow
                     Layout.fillWidth: true
-                    spacing: 12
+                    spacing: 10
 
                     // Large Month Label (e.g. Jul / سبتمبر)
                     Text {
+                        id: calMonthText
                         text: root.getMonthName()
                         font.family: Theme.typography.fontFamily
                         font.pixelSize: Theme.fontSize(24)
@@ -975,8 +1011,9 @@ Item {
 
                     // 7-Day Horizontal Strip
                     RowLayout {
+                        id: calDaysRow
                         Layout.fillWidth: true
-                        spacing: 8
+                        spacing: 7
 
                         Repeater {
                             model: root.getDaysStrip()
@@ -1015,6 +1052,7 @@ Item {
 
                 // Bottom: Calendar Icon + "Nothing for today" status
                 RowLayout {
+                    id: calEventsRow
                     spacing: 6
                     Layout.alignment: Qt.AlignHCenter
 

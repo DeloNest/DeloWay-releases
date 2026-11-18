@@ -25,7 +25,7 @@ Rectangle {
     signal toggled()
     signal detailsRequested()
 
-    implicitHeight: Theme.qsTileHeight + 4
+    implicitHeight: Math.max(Theme.qsTileHeight + 4, tileTextCol.implicitHeight + 16)
     radius: Theme.qsTileRadius
     color: root.active ? Theme.qsTileActive
                        : (mainMa.containsMouse || chevMa.containsMouse ? Theme.qsTileBackgroundHover : Theme.qsTileBackground)
@@ -91,9 +91,10 @@ Rectangle {
                 }
 
                 ColumnLayout {
+                    id: tileTextCol
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
-                    spacing: -1
+                    spacing: Theme.fontScale > 1.0 ? 1 : 0
 
                     Text {
                         Layout.fillWidth: true

@@ -63,8 +63,8 @@ PanelWindow {
             id: pillContainer
             anchors.centerIn: parent
             implicitWidth: contentRow.implicitWidth + 24
-            implicitHeight: 52
-            radius: 26
+            implicitHeight: Math.max(52, contentRow.implicitHeight + 14)
+            radius: height / 2
             color: Theme.capsuleFill
             border.color: Theme.capsuleBorder
             border.width: 1
@@ -92,8 +92,8 @@ PanelWindow {
                 // Mode 1: Area Selection
                 Rectangle {
                     implicitWidth: areaRow.implicitWidth + 18
-                    implicitHeight: 38
-                    radius: 19
+                    implicitHeight: Math.max(38, areaRow.implicitHeight + 10)
+                    radius: height / 2
                     color: areaMouse.pressed ? Theme.notchSurfaceActive : (areaMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     border.color: areaMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1
@@ -138,8 +138,8 @@ PanelWindow {
                 // Mode 2: Active Window
                 Rectangle {
                     implicitWidth: winRow.implicitWidth + 18
-                    implicitHeight: 38
-                    radius: 19
+                    implicitHeight: Math.max(38, winRow.implicitHeight + 10)
+                    radius: height / 2
                     color: winMouse.pressed ? Theme.notchSurfaceActive : (winMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     border.color: winMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1
@@ -184,8 +184,8 @@ PanelWindow {
                 // Mode 3: Full Screen
                 Rectangle {
                     implicitWidth: fullRow.implicitWidth + 18
-                    implicitHeight: 38
-                    radius: 19
+                    implicitHeight: Math.max(38, fullRow.implicitHeight + 10)
+                    radius: height / 2
                     color: fullMouse.pressed ? Theme.notchSurfaceActive : (fullMouse.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     border.color: fullMouse.containsMouse ? Theme.notchBorderHighlight : "transparent"
                     border.width: 1

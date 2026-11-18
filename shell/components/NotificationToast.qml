@@ -22,7 +22,7 @@ PanelWindow {
 
     readonly property int cardWidth: 380
     implicitWidth: cardWidth + 24          // room for the shadow
-    implicitHeight: 360
+    implicitHeight: Math.max(360, Math.ceil(card.height) + 24)
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
 
@@ -94,7 +94,7 @@ PanelWindow {
 
             DeloButton {
                 Layout.fillWidth: true
-                height: 28
+                minHeight: 30
                 variant: "secondary"
                 text: I18n.tr("open_image")
                 onClicked: {
@@ -104,7 +104,7 @@ PanelWindow {
             }
             DeloButton {
                 Layout.fillWidth: true
-                height: 28
+                minHeight: 30
                 variant: "secondary"
                 text: I18n.tr("open_folder")
                 onClicked: {

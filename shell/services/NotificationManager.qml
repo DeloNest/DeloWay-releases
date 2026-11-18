@@ -125,6 +125,11 @@ Item {
 
         onNotification: notif => {
             notif.tracked = true;
+            const appKey = (notif.desktopEntry || notif.appName || "").toLowerCase().replace(/\.desktop$/, "");
+            if (appKey && ConfigManager.disabledNotificationApps && ConfigManager.disabledNotificationApps[appKey]) {
+                notif.dismiss();
+                return;
+            }
             let actList = [];
             if (notif.actions) {
                 if (Array.isArray(notif.actions)) {

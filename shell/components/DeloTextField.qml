@@ -26,6 +26,7 @@ Rectangle {
 
     signal accepted()
     signal textEdited()
+    signal editingFinished()
 
     function forceActiveFocus() {
         input.forceActiveFocus();
@@ -36,7 +37,7 @@ Rectangle {
     }
 
     implicitWidth: 240
-    implicitHeight: 38
+    implicitHeight: Math.max(38, root.fontPixelSize + 22)
     radius: Theme.radiusSmall
 
     color: customBackground !== null
@@ -93,6 +94,7 @@ Rectangle {
 
                 onAccepted: root.accepted()
                 onTextEdited: root.textEdited()
+                onEditingFinished: root.editingFinished()
             }
 
             Text {

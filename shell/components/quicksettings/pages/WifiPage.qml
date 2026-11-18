@@ -137,8 +137,8 @@ ColumnLayout {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        implicitHeight: 32
-                        radius: 16
+                        implicitHeight: Math.max(32, Math.round(32 * Math.max(1.0, Theme.fontScale)))
+                        radius: implicitHeight / 2
                         color: Theme.notchSurfaceElevated
                         border.color: pw.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                         border.width: 1
@@ -174,13 +174,13 @@ ColumnLayout {
                     QSIconButton {
                         id: reveal
                         property bool checked: false
-                        size: 32
+                        size: Math.max(32, Math.round(32 * Math.max(1.0, Theme.fontScale)))
                         iconName: checked ? "view-conceal-symbolic" : "view-reveal-symbolic"
                         highlighted: checked
                         onClicked: checked = !checked
                     }
                     PillButton {
-                        implicitHeight: 32
+                        minHeight: 32
                         primary: true
                         text: root.t("اتصال", "Connect")
                         enabled: pw.text.length >= 8
@@ -195,20 +195,20 @@ ColumnLayout {
                     Item { Layout.fillWidth: true }
                     PillButton {
                         visible: row.modelData.connected
-                        implicitHeight: 28
+                        minHeight: 28
                         text: root.t("قطع الاتصال", "Disconnect")
                         onClicked: { NetworkService.disconnectWifi(); root.expandedSsid = ""; }
                     }
                     PillButton {
                         visible: !row.modelData.connected
-                        implicitHeight: 28
+                        minHeight: 28
                         primary: true
                         text: root.t("اتصال", "Connect")
                         onClicked: { NetworkService.connectWifi(row.modelData.ssid, ""); root.expandedSsid = ""; }
                     }
                     PillButton {
                         visible: row.isSaved
-                        implicitHeight: 28
+                        minHeight: 28
                         text: root.t("نسيان", "Forget")
                         onClicked: { NetworkService.forgetConnection(row.modelData.ssid); root.expandedSsid = ""; }
                     }

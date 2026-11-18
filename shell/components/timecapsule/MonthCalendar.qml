@@ -24,6 +24,7 @@ ColumnLayout {
     readonly property int weekStart: ConfigManager.timeCapsuleWeekStart === "sunday" ? 0
                                      : (ConfigManager.timeCapsuleWeekStart === "monday" ? 1 : 6)
     readonly property string todayKey: TimeKeeperService.dateKey(today)
+    readonly property real cellSize: Math.max(26, Math.round(26 * Math.max(1.0, Theme.fontScale)))
 
     // Re-evaluated whenever events change so reminder dots stay live.
     readonly property int eventsRevision: TimeKeeperService.events.length
@@ -73,12 +74,12 @@ ColumnLayout {
             }
         }
         PillButton {
-            implicitHeight: 22
+            minHeight: 22
             iconName: I18n.isRTL ? "go-next-symbolic" : "go-previous-symbolic"
             onClicked: root.shiftMonth(-1)
         }
         PillButton {
-            implicitHeight: 22
+            minHeight: 22
             iconName: I18n.isRTL ? "go-previous-symbolic" : "go-next-symbolic"
             onClicked: root.shiftMonth(1)
         }
@@ -120,11 +121,13 @@ ColumnLayout {
 
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
-                Layout.preferredHeight: 26
+                Layout.preferredHeight: root.cellSize
 
                 Rectangle {
                     anchors.centerIn: parent
-                    width: 24; height: 24; radius: 12
+                    width: Math.min(parent.width - 2, root.cellSize - 2)
+                    height: width
+                    radius: height / 2
                     color: cell.isToday ? Theme.qsTileActive
                            : (cell.isSelected ? Theme.notchSurfaceActive
                               : (cellMa.containsMouse ? Theme.notchSurfaceHover : "transparent"))

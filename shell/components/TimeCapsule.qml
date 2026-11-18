@@ -292,8 +292,8 @@ Item {
                     visible: ringing || TimeKeeperService.timerRunning || TimeKeeperService.timerFinished
                     Layout.alignment: Qt.AlignVCenter
                     implicitWidth: liveRow.implicitWidth + 14
-                    implicitHeight: 22
-                    radius: 11
+                    implicitHeight: Math.max(22, liveRow.implicitHeight + 6)
+                    radius: height / 2
                     color: Theme.notchSurfaceActive
 
                     Row {

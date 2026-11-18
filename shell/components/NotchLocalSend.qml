@@ -25,6 +25,19 @@ Item {
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
 
+    readonly property real requiredWidth: Math.round((Theme.notchExpandedWidth - 40) * Math.max(1.0, (Theme.fontScale - 1.0) * 0.55 + 1.0))
+    readonly property real requiredHeight: {
+        let h = 140;
+        if (root.view === "empty") h = emptyRow.implicitHeight + 36;
+        else if (root.view === "pair") h = Math.max(pairLeftCol.implicitHeight + 16, nearbyHeader.implicitHeight + 120);
+        else if (root.view === "home") h = Math.max(dropZoneCol.implicitHeight + 36, homeFooterRow.implicitHeight + 108);
+        else if (root.view === "select") h = selectHeaderRow.implicitHeight + 20 + Math.max(noTargetRow.implicitHeight, Math.max(48, Math.round(54 * Math.max(1.0, Theme.fontScale))));
+        else if (root.view === "app") h = appRow.implicitHeight + 36;
+        else if (root.view === "send") h = sendView.implicitHeight + 36;
+        else if (root.view === "receive") h = recvView.implicitHeight + 36;
+        return Math.max(140, Math.ceil(h) + 12);
+    }
+
     readonly property string view: {
         if (LocalSendService.receiveStatus !== "idle") return "receive";
         if (LocalSendService.sendStatus !== "idle") return "send";
@@ -58,9 +71,10 @@ Item {
         property string label: ""
         property string icon: ""
         property bool primary: false
+        property real minHeight: 26
         signal activated()
 
-        implicitHeight: 26
+        implicitHeight: Math.max(pill.minHeight, pillRow.implicitHeight + 8)
         implicitWidth: pillRow.implicitWidth + 24
         radius: height / 2
         color: primary ? Theme.inverseSurface
@@ -103,9 +117,10 @@ Item {
         id: rb
         property string icon: ""
         signal activated()
-        implicitWidth: 24
-        implicitHeight: 24
-        radius: 12
+        readonly property real btnSize: Math.max(24, Math.round(24 * Math.max(1.0, Theme.fontScale)))
+        implicitWidth: rb.btnSize
+        implicitHeight: rb.btnSize
+        radius: height / 2
         color: rbMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
         SymbolicIcon {
             anchors.centerIn: parent
@@ -132,7 +147,7 @@ Item {
         signal activated()
         signal removeRequested()
 
-        implicitHeight: 44
+        implicitHeight: Math.max(44, cardRow.implicitHeight + 12)
         radius: 12
         color: cardMa.containsMouse && actionLabel === "" ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated
         border.width: 1
@@ -148,6 +163,7 @@ Item {
         }
 
         RowLayout {
+            id: cardRow
             anchors.fill: parent
             anchors.leftMargin: 10
             anchors.rightMargin: 8
@@ -294,8 +310,9 @@ Item {
 
         // ── EMPTY: no paired device ──────────────────────────────────────
         RowLayout {
+            id: emptyRow
             anchors.centerIn: parent
-            width: Math.min(parent.width, 520)
+            width: Math.min(parent.width, Math.round(520 * Math.max(1.0, Theme.fontScale)))
             spacing: 16
             visible: root.view === "empty"
 
@@ -343,8 +360,9 @@ Item {
 
             // Steps + this computer + manual IP
             ColumnLayout {
-                Layout.preferredWidth: 250
-                Layout.maximumWidth: 250
+                id: pairLeftCol
+                Layout.preferredWidth: Math.round(250 * Math.max(1.0, Theme.fontScale))
+                Layout.maximumWidth: Math.round(250 * Math.max(1.0, Theme.fontScale))
                 Layout.fillHeight: true
                 spacing: 3
 
@@ -372,7 +390,7 @@ Item {
                     TextField {
                         id: ipField
                         Layout.fillWidth: true
-                        implicitHeight: 26
+                        implicitHeight: Math.max(28, Math.round(28 * Math.max(1.0, Theme.fontScale)))
                         placeholderText: I18n.tr("share_ip_placeholder")
                         placeholderTextColor: Theme.notchTextTertiary
                         color: Theme.notchText
@@ -384,11 +402,11 @@ Item {
                         LayoutMirroring.enabled: false   // an address reads left to right
                         leftPadding: 10
                         rightPadding: 10
-                        topPadding: 0
-                        bottomPadding: 0
+                        topPadding: 2
+                        bottomPadding: 2
                         validator: RegularExpressionValidator { regularExpression: /[0-9.:]{0,21}/ }
                         background: Rectangle {
-                            radius: 13
+                            radius: height / 2
                             color: Theme.notchSurface
                             border.width: 1
                             border.color: ipField.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
@@ -416,6 +434,7 @@ Item {
                 spacing: 6
 
                 Caption {
+                    id: nearbyHeader
                     Layout.fillWidth: true
                     text: LocalSendService.localAlias
                           ? I18n.uiLine(I18n.tr("share_this_device") + ": " + I18n.isolate(LocalSendService.localAlias)
@@ -506,6 +525,7 @@ Item {
                 Item { id: dropBox; anchors.fill: parent }
 
                 ColumnLayout {
+                    id: dropZoneCol
                     anchors.centerIn: parent
                     width: parent.width - 24
                     spacing: 6
@@ -538,8 +558,8 @@ Item {
             }
 
             ColumnLayout {
-                Layout.preferredWidth: 230
-                Layout.maximumWidth: 230
+                Layout.preferredWidth: Math.round(230 * Math.max(1.0, Theme.fontScale))
+                Layout.maximumWidth: Math.round(230 * Math.max(1.0, Theme.fontScale))
                 Layout.fillHeight: true
                 spacing: 6
 
@@ -560,6 +580,7 @@ Item {
                     }
                 }
                 RowLayout {
+                    id: homeFooterRow
                     Layout.fillWidth: true
                     spacing: 6
                     Caption {
@@ -573,7 +594,7 @@ Item {
                     Pill {
                         label: I18n.tr("share_add_device")
                         icon: "list-add-symbolic"
-                        implicitHeight: 24
+                        minHeight: 24
                         onActivated: { root.pairing = true; LocalSendService.scan(); }
                     }
                 }
@@ -587,6 +608,7 @@ Item {
             visible: root.view === "select"
 
             RowLayout {
+                id: selectHeaderRow
                 Layout.fillWidth: true
                 spacing: 6
                 RoundButton {
@@ -598,7 +620,7 @@ Item {
                     text: I18n.uiLine(I18n.tr("share_send_to") + "… · " + I18n.filesCount(LocalSendService.droppedFiles.length))
                 }
                 Caption {
-                    Layout.maximumWidth: 220
+                    Layout.maximumWidth: Math.round(220 * Math.max(1.0, Theme.fontScale))
                     text: LocalSendService.droppedFiles.map(root.fileName).join("، ")
                     textFormat: Text.PlainText
                     color: Theme.notchTextTertiary
@@ -619,7 +641,7 @@ Item {
                 delegate: DeviceCard {
                     required property var modelData
                     width: Math.max(170, (targets.width - 16) / 3)
-                    height: 44
+                    height: Math.max(44, implicitHeight)
                     y: (targets.height - height) / 2
                     device: modelData
                     online: modelData.online
@@ -627,6 +649,7 @@ Item {
                 }
             }
             RowLayout {
+                id: noTargetRow
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 visible: targets.count === 0
@@ -647,8 +670,9 @@ Item {
 
         // ── APP: the LocalSend app has the port ─────────────────────────
         RowLayout {
+            id: appRow
             anchors.centerIn: parent
-            width: Math.min(parent.width, 540)
+            width: Math.min(parent.width, Math.round(540 * Math.max(1.0, Theme.fontScale)))
             spacing: 16
             visible: root.view === "app"
 

@@ -230,7 +230,7 @@ PopupWindow {
     // ── Card ─────────────────────────────────────────────────────────────
     Rectangle {
         id: menuCard
-        width: 228
+        width: Math.round(228 * Math.max(1.0, Theme.fontScale))
         height: (root.view === "main" ? mainCol.implicitHeight : confirmCol.implicitHeight) + 10
         x: root.placement === "right" ? root.pad + root.gap : root.pad
         y: root.pad
@@ -289,7 +289,7 @@ PopupWindow {
                     readonly property bool highlighted: root.hoverIndex === index && !modelData.disabled
 
                     Layout.fillWidth: true
-                    Layout.preferredHeight: isSep ? 9 : 32
+                    Layout.preferredHeight: isSep ? 9 : Math.max(32, menuRowLayout.implicitHeight + 8)
 
                     Rectangle {
                         visible: rowItem.isSep
@@ -309,6 +309,7 @@ PopupWindow {
                         Behavior on color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
                         RowLayout {
+                            id: menuRowLayout
                             anchors.fill: parent
                             anchors.leftMargin: 10
                             anchors.rightMargin: 10
@@ -407,7 +408,7 @@ PopupWindow {
                 Layout.fillWidth: true
                 Layout.leftMargin: 8
                 Layout.rightMargin: 8
-                Layout.topMargin: -6
+                Layout.topMargin: Theme.fontScale > 1.0 ? 0 : -6
                 text: NotificationManager.bidi(AppActions.uninstallSummary(root.info))
                 textFormat: Text.PlainText
                 wrapMode: Text.Wrap
@@ -479,7 +480,7 @@ PopupWindow {
         property bool primary: false
         signal clicked()
 
-        implicitHeight: 32
+        implicitHeight: Math.max(32, mbRow.implicitHeight + 10)
         radius: Theme.radiusSmall
         opacity: enabled ? 1 : 0.45
         color: mb.primary ? (mbMa.pressed ? Theme.notchTextSecondary : Theme.notchText)
@@ -489,6 +490,7 @@ PopupWindow {
         Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 
         Row {
+            id: mbRow
             anchors.centerIn: parent
             spacing: 6
             SymbolicIcon {

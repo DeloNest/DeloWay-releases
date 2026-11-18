@@ -54,8 +54,8 @@ PanelWindow {
     readonly property int panelWidth: Math.min(660, root.width - 32)
     readonly property int panelHeight: Math.min(740, root.height - Theme.topBarReserved - bottomGap - 24)
     readonly property int gridColumns: 6
-    readonly property int tileHeight: 104
-    readonly property int rowHeight: 46
+    readonly property int tileHeight: Math.max(104, Math.round(104 * Math.max(1.0, (Theme.fontScale - 1.0) * 0.5 + 1.0)))
+    readonly property int rowHeight: Math.max(46, Math.round(Theme.fontSize(15) + 20))
 
     // ── Data ─────────────────────────────────────────────────────────────
     property string filterQuery: ""
@@ -94,7 +94,7 @@ PanelWindow {
     property string openFolder: ""              // category id shown as a folder page, "" = cards
     readonly property int cardColumns: 3
     readonly property int folderColumns: 5
-    readonly property int cardHeight: 112
+    readonly property int cardHeight: Math.max(112, Math.round(112 * Math.max(1.0, (Theme.fontScale - 1.0) * 0.5 + 1.0)))
 
     readonly property var categoryGroups: {
         const buckets = {};
@@ -653,7 +653,7 @@ PanelWindow {
                                     // Full width; the 8px scrollbar gutter is an anchor margin
                                     // below, so mirroring puts it on the scrollbar's side.
                                     width: appList.width
-                                    height: kind === "header" ? 34 : root.rowHeight
+                                    height: kind === "header" ? Math.max(34, Math.round(Theme.fontSize(14) + 16)) : root.rowHeight
 
                                     Text {
                                         visible: rowItem.kind === "header"
@@ -712,7 +712,7 @@ PanelWindow {
                                 required property var modelData
                                 required property int index
                                 width: searchList.width
-                                height: 54
+                                height: Math.max(54, Math.round(Theme.fontSize(15) + Theme.fontSize(12.5) + 22))
                                 nameSize: 15
                                 descSize: 12.5
                                 resultData: modelData
@@ -877,9 +877,9 @@ PanelWindow {
     // Folders / A–Z segmented switch (persists in ConfigManager.drawerGroupBy)
     component ViewSwitch: Rectangle {
         id: vs
-        implicitHeight: 30
+        implicitHeight: Math.max(30, Theme.fontSize(12) + 16)
         implicitWidth: vsRow.implicitWidth + 4
-        radius: 15
+        radius: implicitHeight / 2
         color: Theme.notchSurface
         border.color: Theme.notchBorderSubtle
         border.width: 1
@@ -897,9 +897,9 @@ PanelWindow {
                     id: seg
                     required property var modelData
                     readonly property bool on: (ConfigManager.drawerGroupBy || "category") === modelData.id
-                    height: 26
+                    height: vs.implicitHeight - 4
                     width: segRow.implicitWidth + 20
-                    radius: 13
+                    radius: height / 2
                     color: seg.on ? Theme.notchSurfaceActive : (segMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     Behavior on color { ColorAnimation { duration: Theme.motionFast } }
                     Row {

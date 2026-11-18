@@ -12,10 +12,11 @@ Rectangle {
     property bool primary: false
     property bool selected: false
     property int fontSize: 10
+    property real minHeight: 24
     signal clicked()
 
     implicitWidth: Math.max(implicitHeight, row.implicitWidth + (text.length > 0 ? 18 : 8))
-    implicitHeight: 24
+    implicitHeight: Math.max(root.minHeight, row.implicitHeight + 6)
     radius: height / 2
 
     readonly property bool strong: primary || selected

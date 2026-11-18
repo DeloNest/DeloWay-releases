@@ -17,6 +17,11 @@ Item {
     property string subView: ShellState.appearanceSubView || "wallpapers" // "wallpapers" | "themes"
     readonly property bool isTabActive: ShellState.smartNotchExpanded && ShellState.smartNotchTab === 3
 
+    readonly property real cardBoxWidth: Math.round(240 * Math.max(1.0, (Theme.fontScale - 1.0) * 0.5 + 1.0))
+    readonly property real cardBoxHeight: Math.max(150, Math.round(150 * Math.max(1.0, Theme.fontScale)) + (Theme.fontScale > 1.0 ? 8 : 0))
+    readonly property real requiredWidth: Math.max(Theme.notchExpandedWidth - 40, subViewRow.implicitWidth + headerThemeLabel.implicitWidth + 64)
+    readonly property real requiredHeight: Math.max(268, Math.ceil(6 + headerRow.height + 8 + root.cardBoxHeight + 36 + 8 + footerRow.height + 8))
+
     property int thumbnailGenVersion: 0
     property real wheelAccumulator: 0
 
@@ -276,10 +281,11 @@ Item {
         anchors.leftMargin: 20
         anchors.right: parent.right
         anchors.rightMargin: 20
-        height: 26
+        height: Math.max(26, Math.max(subViewRow.implicitHeight, headerThemeLabel.implicitHeight) + 4)
 
         // Start side: Subview toggle ("Wallpapers | Themes")
         Row {
+            id: subViewRow
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
@@ -339,6 +345,7 @@ Item {
 
         // End side: Active mode / theme name (muted)
         Text {
+            id: headerThemeLabel
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             text: Theme.themeName === "glass"
@@ -375,8 +382,8 @@ Item {
                 orientation: ListView.Horizontal
                 snapMode: ListView.SnapToItem
                 highlightRangeMode: ListView.StrictlyEnforceRange
-                preferredHighlightBegin: Math.round((width - 240) / 2)
-                preferredHighlightEnd: Math.round((width + 240) / 2)
+                preferredHighlightBegin: Math.round((width - root.cardBoxWidth) / 2)
+                preferredHighlightEnd: Math.round((width + root.cardBoxWidth) / 2)
                 highlightMoveDuration: 180
                 spacing: 14
                 clip: true
@@ -387,18 +394,18 @@ Item {
                 displayMarginEnd: 250
 
                 header: Item {
-                    width: Math.max(0, Math.round((themesView.width - 240) / 2))
+                    width: Math.max(0, Math.round((themesView.width - root.cardBoxWidth) / 2))
                     height: themesView.height
                 }
 
                 footer: Item {
-                    width: Math.max(0, Math.round((themesView.width - 240) / 2))
+                    width: Math.max(0, Math.round((themesView.width - root.cardBoxWidth) / 2))
                     height: themesView.height
                 }
 
                 delegate: Item {
                     id: themeDelegate
-                    width: 240
+                    width: root.cardBoxWidth
                     height: themesView.height
 
                     readonly property string themeId: modelData
@@ -421,8 +428,8 @@ Item {
                     Rectangle {
                         id: themeCardBox
                         anchors.centerIn: parent
-                        width: 240
-                        height: 150
+                        width: root.cardBoxWidth
+                        height: root.cardBoxHeight
                         radius: Theme.notchRadiusCard
                         color: "transparent"
                         scale: themeDelegate.isSelected ? 1.0 : (themeCardMa.containsMouse ? 0.94 : 0.92)
@@ -483,8 +490,8 @@ Item {
                             // 3. Mini UI Surface (Card) demonstrating the theme's material
                             Rectangle {
                                 anchors.centerIn: parent
-                                width: 176
-                                height: 74
+                                width: Math.min(innerThemePreview.width - 16, Math.max(176, miniCardCol.implicitWidth + 32))
+                                height: Math.min(innerThemePreview.height - 16, Math.max(74, miniCardCol.implicitHeight + 22))
                                 radius: Theme.notchRadiusCard
                                 color: {
                                     if (themeDelegate.themeId === "light") return Theme.themeLightSurface;
@@ -499,6 +506,7 @@ Item {
                                 }
 
                                 ColumnLayout {
+                                    id: miniCardCol
                                     anchors.centerIn: parent
                                     spacing: 4
 
@@ -628,8 +636,8 @@ Item {
                 orientation: ListView.Horizontal
                 snapMode: ListView.SnapToItem
                 highlightRangeMode: ListView.StrictlyEnforceRange
-                preferredHighlightBegin: Math.round((width - 240) / 2)
-                preferredHighlightEnd: Math.round((width + 240) / 2)
+                preferredHighlightBegin: Math.round((width - root.cardBoxWidth) / 2)
+                preferredHighlightEnd: Math.round((width + root.cardBoxWidth) / 2)
                 highlightMoveDuration: 180
                 spacing: 14
                 clip: true
@@ -640,18 +648,18 @@ Item {
                 displayMarginEnd: 250
 
                 header: Item {
-                    width: Math.max(0, Math.round((carouselView.width - 240) / 2))
+                    width: Math.max(0, Math.round((carouselView.width - root.cardBoxWidth) / 2))
                     height: carouselView.height
                 }
 
                 footer: Item {
-                    width: Math.max(0, Math.round((carouselView.width - 240) / 2))
+                    width: Math.max(0, Math.round((carouselView.width - root.cardBoxWidth) / 2))
                     height: carouselView.height
                 }
 
                 delegate: Item {
                     id: cardDelegate
-                    width: 240
+                    width: root.cardBoxWidth
                     height: carouselView.height
 
                     readonly property string itemPath: model.path
@@ -668,8 +676,8 @@ Item {
                     Rectangle {
                         id: cardBox
                         anchors.centerIn: parent
-                        width: 240
-                        height: 150
+                        width: root.cardBoxWidth
+                        height: root.cardBoxHeight
                         radius: Theme.notchRadiusCard
                         color: "transparent"
                         scale: cardDelegate.isSelected ? 1.0 : (cardMa.containsMouse ? 0.94 : 0.92)
@@ -783,11 +791,15 @@ Item {
         anchors.leftMargin: 20
         anchors.right: parent.right
         anchors.rightMargin: 20
-        height: 24
+        height: Math.max(24, Math.max(footerTitleText.implicitHeight, footerHintText.implicitHeight) + 4)
+        spacing: 12
 
         // Start edge: Name/title of selected item (muted)
         Text {
+            id: footerTitleText
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
+            horizontalAlignment: Text.AlignLeft
             text: {
                 if (root.subView === "themes") {
                     if (themesView.currentIndex >= 0 && themesView.currentIndex < themesView.count) {
@@ -811,15 +823,11 @@ Item {
             font.weight: Font.Normal
             elide: Text.ElideMiddle
             maximumLineCount: 1
-            Layout.maximumWidth: 380
-        }
-
-        Item {
-            Layout.fillWidth: true
         }
 
         // End edge: "n/total · Enter to apply" (muted)
         Text {
+            id: footerHintText
             Layout.alignment: Qt.AlignVCenter
             text: {
                 var count = root.subView === "themes" ? themesView.count : wallpaperListModel.count;

@@ -81,7 +81,7 @@ DashCard {
                 id: evRow
                 required property var modelData
                 width: ListView.view.width
-                height: 26
+                height: Math.max(26, evLayout.implicitHeight + 4)
                 radius: 8
                 color: evMa.containsMouse ? Theme.notchSurfaceHover : "transparent"
                 readonly property bool past: modelData.notified === true
@@ -89,13 +89,14 @@ DashCard {
                 MouseArea { id: evMa; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton }
 
                 RowLayout {
+                    id: evLayout
                     anchors.fill: parent
                     anchors.leftMargin: 6
                     anchors.rightMargin: 4
                     spacing: 8
 
                     Text {
-                        Layout.preferredWidth: 34
+                        Layout.preferredWidth: Math.max(34, Math.round(34 * Math.max(1.0, Theme.fontScale)))
                         horizontalAlignment: Text.AlignLeft
                         text: evRow.modelData.time ? TimeKeeperService.digits(evRow.modelData.time) : "•"
                         font.family: Theme.typography.fontFamily
@@ -157,8 +158,8 @@ DashCard {
 
             Rectangle {
                 Layout.fillWidth: true
-                implicitHeight: 28
-                radius: 14
+                implicitHeight: Math.max(28, titleInput.implicitHeight + 8)
+                radius: height / 2
                 color: Theme.notchSurfaceElevated
                 border.color: titleInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                 border.width: 1
@@ -195,9 +196,9 @@ DashCard {
 
             Rectangle {
                 id: timeBox
-                implicitWidth: 54
-                implicitHeight: 28
-                radius: 14
+                implicitWidth: Math.max(54, Math.round(54 * Math.max(1.0, Theme.fontScale)))
+                implicitHeight: Math.max(28, timeInput.implicitHeight + 8)
+                radius: height / 2
                 color: Theme.notchSurfaceElevated
                 border.color: timeInput.activeFocus ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                 border.width: 1
@@ -239,7 +240,7 @@ DashCard {
             }
 
             PillButton {
-                implicitHeight: 28
+                minHeight: 28
                 primary: true
                 iconName: "list-add-symbolic"
                 enabled: titleInput.text.trim().length > 0

@@ -26,7 +26,8 @@ Rectangle {
 
     signal clicked()
 
-    implicitHeight: 44 + (root.expanded ? extraHolder.childrenRect.height + 8 : 0)
+    readonly property real rowBaseHeight: Math.max(44, qsTextCol.implicitHeight + 12)
+    implicitHeight: root.rowBaseHeight + (root.expanded ? extraHolder.childrenRect.height + 8 : 0)
     Behavior on implicitHeight { NumberAnimation { duration: Theme.motionBase; easing.type: Theme.easingEnter } }
     radius: Theme.notchRadiusCard
     clip: true
@@ -42,7 +43,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: 44
+        height: root.rowBaseHeight
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
@@ -52,7 +53,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: 44
+        height: root.rowBaseHeight
         anchors.leftMargin: 10
         anchors.rightMargin: 12
         spacing: 10
@@ -80,9 +81,10 @@ Rectangle {
         }
 
         ColumnLayout {
+            id: qsTextCol
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
-            spacing: -2
+            spacing: Theme.fontScale > 1.0 ? 1 : 0
             Text {
                 Layout.fillWidth: true
                 text: NotificationManager.bidi(root.title)
@@ -138,7 +140,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.topMargin: 44
+        anchors.topMargin: root.rowBaseHeight
         anchors.leftMargin: 10
         anchors.rightMargin: 10
         opacity: root.expanded ? 1 : 0

@@ -143,7 +143,7 @@ PopupWindow {
             Rectangle {
                 visible: submenu.isSubMenu
                 Layout.fillWidth: true
-                Layout.preferredHeight: visible ? 28 : 0
+                Layout.preferredHeight: visible ? Math.max(28, backRow.implicitHeight + 8) : 0
                 radius: Theme.radiusSmall
                 color: backMouse.pressed
                        ? Theme.notchSurfaceActive
@@ -152,6 +152,7 @@ PopupWindow {
                 Behavior on color { ColorAnimation { duration: 80 } }
 
                 RowLayout {
+                    id: backRow
                     anchors.fill: parent
                     anchors.leftMargin: 8
                     anchors.rightMargin: 8
@@ -208,7 +209,7 @@ PopupWindow {
 
                     visible: Boolean(modelData)
                     Layout.fillWidth: true
-                    Layout.preferredHeight: modelData && modelData.isSeparator ? 7 : 30
+                    Layout.preferredHeight: modelData && modelData.isSeparator ? 7 : Math.max(30, itemRow.implicitHeight + 8)
                     implicitHeight: Layout.preferredHeight
                     implicitWidth: modelData && !modelData.isSeparator ? (itemRow.implicitWidth + 20) : 160
 

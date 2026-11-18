@@ -270,9 +270,9 @@ Item {
                 model: (root.notif && root.notif.actions) ? root.notif.actions : []
                 delegate: Rectangle {
                     required property var modelData
-                    implicitHeight: 26
+                    implicitHeight: Math.max(26, actionText.implicitHeight + 8)
                     implicitWidth: actionText.implicitWidth + 18
-                    radius: 13
+                    radius: implicitHeight / 2
                     color: actMa.pressed ? Theme.notchSurfaceActive : (actMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurfaceElevated)
                     border.color: actMa.containsMouse ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                     border.width: 1

@@ -119,8 +119,9 @@ PanelWindow {
         Rectangle {
             id: dialogCard
             anchors.centerIn: parent
-            width: 520
-            implicitHeight: cardCol.implicitHeight + 40
+            width: Math.min(580, parent.width - 32)
+            implicitHeight: cardCol.implicitHeight + 48
+            height: implicitHeight
             radius: Theme.radius.xlarge
             color: Theme.capsuleFill
             border.color: Theme.capsuleBorder
@@ -243,7 +244,7 @@ PanelWindow {
                 // Footer with User & Host Info
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 38
+                    Layout.preferredHeight: Math.max(38, Math.round(38 * Math.max(1.0, Theme.fontScale)))
                     radius: Theme.radius.medium
                     color: Theme.notchSurface
                     border.color: Theme.notchBorderSubtle
@@ -294,7 +295,7 @@ PanelWindow {
         property bool isDanger: false
         signal triggered()
 
-        Layout.preferredHeight: 82
+        Layout.preferredHeight: Math.max(82, tileCol.implicitHeight + 24)
         radius: Theme.radius.large
         // Danger is signalled by the glyph colour only (semantic colours never fill surfaces).
         color: tileMouse.pressed ? Theme.notchSurfaceActive
@@ -306,7 +307,9 @@ PanelWindow {
         Behavior on border.color { ColorAnimation { duration: Theme.motionFast; easing.type: Theme.easingEnter } }
 
         ColumnLayout {
+            id: tileCol
             anchors.centerIn: parent
+            width: parent.width - 12
             spacing: 6
 
             SymbolicIcon {
@@ -319,7 +322,10 @@ PanelWindow {
             }
 
             Text {
+                Layout.fillWidth: true
                 Layout.alignment: Qt.AlignHCenter
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
                 text: tileRoot.title
                 color: tileMouse.containsMouse ? Theme.colors.text : Theme.colors.textSecondary
                 font.family: Theme.typography.fontFamily
@@ -335,9 +341,9 @@ PanelWindow {
             // Direction via x: runtime-flipped left/right anchors stretch the item.
             y: 6
             x: I18n.isRTL ? 6 : parent.width - width - 6
-            width: 16
-            height: 16
-            radius: 8
+            width: Math.max(18, Theme.fontSize(9) + 8)
+            height: width
+            radius: height / 2
             color: Theme.notchSurfaceElevated
             border.color: Theme.notchBorderSubtle
             border.width: 1

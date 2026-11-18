@@ -12,7 +12,7 @@ Rectangle {
     signal activated(int index)
 
     implicitWidth: row.implicitWidth + 6
-    implicitHeight: 28
+    implicitHeight: row.implicitHeight + 6
     radius: height / 2
     color: Theme.notchSurface
     border.color: Theme.notchBorderSubtle
@@ -47,7 +47,7 @@ Rectangle {
                 required property int index
                 readonly property bool active: index === root.currentIndex
                 implicitWidth: segRow.implicitWidth + 22
-                implicitHeight: root.height - 6
+                implicitHeight: Math.max(22, segRow.implicitHeight + 4)
                 width: implicitWidth
                 height: implicitHeight
 

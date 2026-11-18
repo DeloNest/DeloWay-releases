@@ -32,8 +32,18 @@ Item {
         return all.filter(n => n.urgency === 2).length;
     }
 
+    readonly property real requiredWidth: Theme.notchExpandedWidth - 40
+    readonly property real requiredHeight: {
+        if (root.notifCount === 0) {
+            return Math.max(170, emptyCol.implicitHeight + 64);
+        }
+        const maxBodyH = Math.round(350 * Math.max(1.0, Theme.fontScale));
+        return Math.max(170, Math.min(maxBodyH, headerRow.implicitHeight + 20 + list.contentHeight + 16));
+    }
+
     // ── Empty state ──────────────────────────────────────────────────────
     Column {
+        id: emptyCol
         anchors.centerIn: parent
         spacing: 10
         opacity: root.notifCount === 0 ? 1 : 0
@@ -68,6 +78,7 @@ Item {
 
         // ── Header: count · filter tabs · clear all ───────────────────────
         RowLayout {
+            id: headerRow
             Layout.fillWidth: true
             spacing: 8
 
@@ -88,8 +99,8 @@ Item {
                 // All
                 Rectangle {
                     implicitWidth: allTxt.implicitWidth + 16
-                    implicitHeight: 22
-                    radius: 11
+                    implicitHeight: Math.max(22, allTxt.implicitHeight + 6)
+                    radius: height / 2
                     color: root.currentFilter === "all" ? Theme.notchSurfaceActive : (allMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     border.color: root.currentFilter === "all" ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                     border.width: 1
@@ -117,8 +128,8 @@ Item {
                 Rectangle {
                     visible: root.criticalCount > 0 || root.currentFilter === "critical"
                     implicitWidth: critRow.implicitWidth + 16
-                    implicitHeight: 22
-                    radius: 11
+                    implicitHeight: Math.max(22, critRow.implicitHeight + 6)
+                    radius: height / 2
                     color: root.currentFilter === "critical" ? Theme.notchSurfaceActive : (critMa.containsMouse ? Theme.notchSurfaceHover : "transparent")
                     border.color: root.currentFilter === "critical" ? Theme.notchBorderHighlight : Theme.notchBorderSubtle
                     border.width: 1
@@ -155,8 +166,8 @@ Item {
 
             Rectangle {
                 implicitWidth: clearTxt.implicitWidth + 20
-                implicitHeight: 24
-                radius: 12
+                implicitHeight: Math.max(24, clearTxt.implicitHeight + 6)
+                radius: height / 2
                 color: clearMa.pressed ? Theme.notchSurfaceActive : (clearMa.containsMouse ? Theme.notchSurfaceHover : Theme.notchSurface)
                 Behavior on color { ColorAnimation { duration: Theme.motionFast } }
 

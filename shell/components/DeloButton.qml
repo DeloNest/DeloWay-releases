@@ -12,11 +12,12 @@ Rectangle {
     property string variant: "secondary" // "primary" | "secondary" | "danger" | "ghost"
     property bool disabled: false
     property bool loading: false
+    property real minHeight: 36
 
     signal clicked()
 
     implicitWidth: contentRow.implicitWidth + (Theme.space16 * 1.5)
-    implicitHeight: 36
+    implicitHeight: Math.max(root.minHeight, contentRow.implicitHeight + Theme.space12)
     radius: Theme.radiusSmall
 
     // Base background colors based on variant and state

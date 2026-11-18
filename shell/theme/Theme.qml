@@ -210,7 +210,7 @@ Item {
 
     readonly property var glassPalette: ({
         "background": "#000000",
-        "backgroundAlpha": 0.85,
+        "backgroundAlpha": 0.60,
         "shellBase": "#1e1e1e",
         "shellAlpha": 0.38,
         "backgroundAlt": "#0a0a0a",
@@ -380,6 +380,22 @@ Item {
     readonly property color capsuleBorder: isGlass
         ? Qt.rgba(1, 1, 1, 0.14)
         : (isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10))
+    // Application windows (Settings, Setup Wizard, etc.) use 0.60 opacity in Glass mode
+    // combined with deep 4-pass 18px blur to provide a visible frosted glass look while
+    // maintaining crisp text contrast across backgrounds.
+    readonly property real windowAlpha: isGlass ? (glassPalette.backgroundAlpha || 0.60) : 1.0
+    readonly property color windowFill: isGlass
+        ? Qt.rgba(capsuleBackground.r, capsuleBackground.g, capsuleBackground.b, windowAlpha)
+        : (isDark ? "#000000" : "#ffffff")
+    readonly property color windowBorder: isGlass
+        ? Qt.rgba(1, 1, 1, 0.16)
+        : (isDark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10))
+    readonly property color windowCardFill: isGlass
+        ? Qt.rgba(0, 0, 0, 0.20)
+        : notchSurface
+    readonly property color windowCardBorder: isGlass
+        ? Qt.rgba(1, 1, 1, 0.08)
+        : notchBorderSubtle
     readonly property color notchText: isDark ? "#ffffff" : "#0f172a"
     readonly property color notchTextSecondary: isDark ? Qt.rgba(1, 1, 1, 0.70) : Qt.rgba(0, 0, 0, 0.65)
     readonly property color notchTextTertiary: isDark ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(0, 0, 0, 0.45)

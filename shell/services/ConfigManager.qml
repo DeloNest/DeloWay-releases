@@ -121,6 +121,17 @@ Item {
     // Power Settings (§5.9)
     property string powerProfile: "balanced"
     property int sleepTimeout: 30
+    property int suspendTimeout: 60
+    property string lidAction: "suspend" // "suspend" | "lock" | "ignore"
+    property string powerButtonAction: "prompt" // "prompt" | "suspend" | "poweroff"
+
+    // Application Permissions & Privacy
+    property bool permMicrophone: true
+    property bool permCamera: true
+    property bool permScreenShare: true
+    property bool permLocation: true
+    property bool permBackground: true
+    property var disabledNotificationApps: ({})
 
     // Default Applications (§5.9)
     property string defaultBrowser: "brave"
@@ -249,10 +260,12 @@ Item {
         const isGlass = root.themeName === "glass";
         if (isGlass) {
             content = "# Deloway Theme: Glass\n" +
-                      "decoration:blur:size = 10\n" +
-                      "decoration:blur:passes = 3\n" +
-                      "decoration:blur:brightness = 1.12\n" +
-                      "decoration:blur:vibrancy = 0.30\n" +
+                      "decoration:blur:size = 18\n" +
+                      "decoration:blur:passes = 4\n" +
+                      "decoration:blur:brightness = 1.0\n" +
+                      "decoration:blur:vibrancy = 0.35\n" +
+                      "decoration:blur:noise = 0.02\n" +
+                      "decoration:blur:contrast = 1.05\n" +
                       "decoration:blur:ignore_opacity = true\n" +
                       "layerrule = blur on, match:namespace deloway-capsule\n" +
                       "layerrule = ignore_alpha 0.20, match:namespace deloway-capsule\n" +
@@ -498,6 +511,17 @@ Item {
             if (cfg.power) {
                 if (cfg.power.profile) root.powerProfile = cfg.power.profile;
                 if (cfg.power.sleepTimeout !== undefined) root.sleepTimeout = cfg.power.sleepTimeout;
+                if (cfg.power.suspendTimeout !== undefined) root.suspendTimeout = cfg.power.suspendTimeout;
+                if (cfg.power.lidAction) root.lidAction = cfg.power.lidAction;
+                if (cfg.power.powerButtonAction) root.powerButtonAction = cfg.power.powerButtonAction;
+            }
+            if (cfg.permissions) {
+                if (cfg.permissions.microphone !== undefined) root.permMicrophone = cfg.permissions.microphone;
+                if (cfg.permissions.camera !== undefined) root.permCamera = cfg.permissions.camera;
+                if (cfg.permissions.screenShare !== undefined) root.permScreenShare = cfg.permissions.screenShare;
+                if (cfg.permissions.location !== undefined) root.permLocation = cfg.permissions.location;
+                if (cfg.permissions.background !== undefined) root.permBackground = cfg.permissions.background;
+                if (cfg.permissions.disabledNotificationApps) root.disabledNotificationApps = cfg.permissions.disabledNotificationApps;
             }
             if (cfg.defaultApps) {
                 if (cfg.defaultApps.browser) root.defaultBrowser = cfg.defaultApps.browser;
@@ -571,8 +595,10 @@ Item {
     }
 
     function setThemeMode(mode) {
-        if (mode !== "dark" && mode !== "light") return;
-        setTheme(mode);
+        if (!mode) return;
+        const target = String(mode).toLowerCase().trim();
+        if (target !== "dark" && target !== "light" && target !== "glass") return;
+        setTheme(target);
     }
 
     function setAccentColor(col) {
@@ -774,6 +800,15 @@ Item {
         setNotificationsTimeout(5000);
         setNotchNotifications(true);
         setSleepTimeout(30);
+        setSuspendTimeout(60);
+        setLidAction("suspend");
+        setPowerButtonAction("prompt");
+        root.permMicrophone = true;
+        root.permCamera = true;
+        root.permScreenShare = true;
+        root.permLocation = true;
+        root.permBackground = true;
+        root.disabledNotificationApps = {};
         setClockFormat("12h");
     }
 
@@ -1035,6 +1070,40 @@ Item {
         saveConfig();
     }
 
+    function setSuspendTimeout(min) {
+        root.suspendTimeout = min;
+        saveConfig();
+    }
+
+    function setLidAction(action) {
+        root.lidAction = action;
+        saveConfig();
+    }
+
+    function setPowerButtonAction(action) {
+        root.powerButtonAction = action;
+        saveConfig();
+    }
+
+    function setPermMicrophone(val) { root.permMicrophone = !!val; saveConfig(); }
+    function setPermCamera(val) { root.permCamera = !!val; saveConfig(); }
+    function setPermScreenShare(val) { root.permScreenShare = !!val; saveConfig(); }
+    function setPermLocation(val) { root.permLocation = !!val; saveConfig(); }
+    function setPermBackground(val) { root.permBackground = !!val; saveConfig(); }
+
+    function setAppNotificationAllowed(appId, allowed) {
+        if (!appId) return;
+        const key = appId.toLowerCase().replace(/\.desktop$/, "");
+        const map = Object.assign({}, root.disabledNotificationApps || {});
+        if (allowed) {
+            delete map[key];
+        } else {
+            map[key] = true;
+        }
+        root.disabledNotificationApps = map;
+        saveConfig();
+    }
+
     // Stores the choice (what delo-app launches) and makes it the XDG default. The value may
     // be a desktop id or an executable; the XDG defaults need the exact desktop file, so it is
     // resolved (building "<value>.desktop" named files that do not exist: brave.desktop,
@@ -1254,7 +1323,18 @@ Item {
             },
             power: {
                 profile: root.powerProfile,
-                sleepTimeout: root.sleepTimeout
+                sleepTimeout: root.sleepTimeout,
+                suspendTimeout: root.suspendTimeout,
+                lidAction: root.lidAction,
+                powerButtonAction: root.powerButtonAction
+            },
+            permissions: {
+                microphone: root.permMicrophone,
+                camera: root.permCamera,
+                screenShare: root.permScreenShare,
+                location: root.permLocation,
+                background: root.permBackground,
+                disabledNotificationApps: root.disabledNotificationApps
             },
             defaultApps: {
                 browser: root.defaultBrowser,

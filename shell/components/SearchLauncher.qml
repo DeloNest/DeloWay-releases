@@ -164,16 +164,17 @@ PanelWindow {
         y: Math.round(root.height * 0.20)
         width: Math.min(500, root.width - 32)
 
-        readonly property int headerHeight: 52
+        readonly property int headerHeight: Math.max(52, Math.round(52 * Math.max(1.0, Theme.fontScale)))
         readonly property int maxResultRows: 7
-        readonly property int resultRowHeight: 48
+        readonly property int resultRowHeight: Math.max(48, Math.round(Theme.fontSize(13.5) + Theme.fontSize(11.5) + 22))
         readonly property bool hasQuery: root.filterQuery.trim().length > 0
         readonly property int resultCount: hasQuery ? (root.results ? root.results.length : 0) : 0
+        readonly property int visibleRows: Math.min(maxResultRows, resultCount)
 
-        // In empty state, height is exactly 52px (search bar alone).
-        // When typing, height expands dynamically to fit results list.
+        // In empty state, height adapts cleanly to search bar alone.
+        // When typing, height expands dynamically to fit results list + row spacing.
         height: hasQuery
-                ? (headerHeight + 1 + (resultCount > 0 ? (Math.min(maxResultRows, resultCount) * resultRowHeight + 10) : 44))
+                ? (headerHeight + 1 + (resultCount > 0 ? (visibleRows * resultRowHeight + Math.max(0, visibleRows - 1) * 2 + 10) : 44))
                 : headerHeight
 
         radius: Theme.notchRadiusWindow
@@ -330,8 +331,8 @@ PanelWindow {
 
                     // ESC badge
                     Rectangle {
-                        Layout.preferredWidth: 38
-                        Layout.preferredHeight: 24
+                        Layout.preferredHeight: Math.max(24, Math.round(Theme.fontSize(10) + 10))
+                        Layout.preferredWidth: Math.max(38, Layout.preferredHeight + 14)
                         radius: Theme.notchRadiusCard
                         color: Theme.notchSurface
                         border.color: Theme.notchBorderSubtle
@@ -362,7 +363,7 @@ PanelWindow {
             // ── Results List ──────────────────────────────────────────────
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(launcherCard.maxResultRows, launcherCard.resultCount) * launcherCard.resultRowHeight + 10
+                Layout.preferredHeight: launcherCard.visibleRows * launcherCard.resultRowHeight + Math.max(0, launcherCard.visibleRows - 1) * 2 + 10
                 visible: launcherCard.hasQuery && launcherCard.resultCount > 0
 
                 ListView {

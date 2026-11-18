@@ -21,7 +21,7 @@ Rectangle {
     readonly property bool hovered: rowMa.containsMouse && root.enabled
 
     Layout.fillWidth: true
-    implicitHeight: 32
+    implicitHeight: Math.max(32, rowLayout.implicitHeight + 8)
     implicitWidth: rowLayout.implicitWidth + 20     // lets the card grow to fit its longest row
     radius: Theme.radiusSmall
     color: rowMa.pressed ? Theme.notchSurfaceActive : (root.hovered ? Theme.notchSurfaceHover : "transparent")

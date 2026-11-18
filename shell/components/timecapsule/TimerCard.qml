@@ -48,8 +48,9 @@ DashCard {
 
             RingGauge {
                 id: ring
-                Layout.preferredWidth: 62
-                Layout.preferredHeight: 62
+                readonly property real gaugeSz: Math.max(62, Math.round(62 * Math.max(1.0, (Theme.fontScale - 1.0) * 0.5 + 1.0)))
+                Layout.preferredWidth: gaugeSz
+                Layout.preferredHeight: gaugeSz
                 stroke: 4
                 // The card lives in the collapsed Time capsule's Utilities tab (1): animate only
                 // while that tab is actually on screen, never at display rate in the background.
@@ -95,7 +96,7 @@ DashCard {
                         delegate: PillButton {
                             required property int modelData
                             Layout.fillWidth: true
-                            implicitHeight: 22
+                            minHeight: 22
                             text: TimeKeeperService.digits(modelData) + (I18n.isRTL ? "د" : "m")
                             selected: !root.tk.timerRunning && root.tk.timerTotalSec === modelData * 60
                             enabled: !root.tk.timerRunning
@@ -110,13 +111,13 @@ DashCard {
                     spacing: 4
                     PillButton {
                         Layout.fillWidth: true
-                        implicitHeight: 26
+                        minHeight: 26
                         primary: true
                         iconName: root.tk.timerRunning ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
                         onClicked: root.tk.toggleTimer()
                     }
                     PillButton {
-                        implicitHeight: 26
+                        minHeight: 26
                         iconName: "view-refresh-symbolic"
                         enabled: root.tk.timerRunning || root.tk.timerFinished
                                  || root.tk.timerRemainingSec !== root.tk.timerTotalSec

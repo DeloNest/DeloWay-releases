@@ -54,7 +54,7 @@ Item {
 
     readonly property int activePillW: {
         if (style === "dots") return 26;
-        if (style === "numbers" || shownIcons === 0) return Theme.wsPillBase;
+        if (style === "numbers" || shownIcons === 0) return Math.max(Theme.wsPillBase, Math.ceil(numberMetrics.advanceWidth + 16));
         return 12 + numberMetrics.advanceWidth + Theme.wsPillIconGap + clusterW + 12;
     }
 
@@ -184,8 +184,8 @@ Item {
         // ── "+N" badge for windows beyond the shown icons ────────────────
         Rectangle {
             visible: root.style === "icons" && root.hasTops && root.badgeCount > 0
-            width: Math.max(Theme.wsBadgeSize, badgeLabel.implicitWidth + 6)
-            height: Theme.wsBadgeSize
+            height: Math.max(Theme.wsBadgeSize, badgeLabel.implicitHeight + 2)
+            width: Math.max(height, badgeLabel.implicitWidth + 6)
             radius: height / 2
             color: Theme.capsuleBackground
             border.color: Theme.notchBorderHighlight

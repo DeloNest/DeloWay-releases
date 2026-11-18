@@ -13,7 +13,7 @@ Item {
     property real countSize: 10
 
     implicitWidth: labelRow.implicitWidth
-    implicitHeight: Math.max(28, labelSize + 16)
+    implicitHeight: Math.max(28, Theme.fontSize(root.labelSize) + 14)
 
     LayoutMirroring.enabled: I18n.isRTL
     LayoutMirroring.childrenInherit: true
@@ -36,9 +36,9 @@ Item {
         Rectangle {
             Layout.alignment: Qt.AlignVCenter
             visible: root.count >= 0
-            height: Math.round(root.countSize + 8)
-            implicitWidth: countText.implicitWidth + 12
-            radius: Theme.notchRadiusPill
+            height: Math.max(18, Math.round(Theme.fontSize(root.countSize) + 8))
+            implicitWidth: Math.max(height, countText.implicitWidth + 12)
+            radius: height / 2
             color: Theme.notchSurface
 
             Text {

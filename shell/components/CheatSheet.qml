@@ -81,16 +81,21 @@ PanelWindow {
             onClicked: {} // Prevent dismiss on card click
         }
 
-        Item {
+        ScrollView {
+            id: cheatScroll
             anchors.fill: parent
             anchors.margins: Theme.space24
+            clip: true
+            contentWidth: availableWidth
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
             // Four columns of groups. The shortcuts come from ShortcutService — the catalog
             // Hyprland's binds are generated from, with the user's changes — so the guide
             // always shows what is bound now (it used to be a hand-written list that had
             // drifted: it said Super + A opened the app drawer).
             RowLayout {
-                anchors.fill: parent
+                width: cheatScroll.availableWidth
                 spacing: Theme.space24
 
                 Repeater {
@@ -100,7 +105,6 @@ PanelWindow {
                         id: column
                         required property var modelData
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
                         Layout.alignment: Qt.AlignTop
                         spacing: Theme.space16
 
