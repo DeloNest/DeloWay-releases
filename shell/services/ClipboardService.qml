@@ -307,7 +307,7 @@ Item {
     Timer {
         id: pasteTimer
         interval: 180
-        onTriggered: Hyprland.dispatch("sendshortcut " + root._pasteShortcut + ", V, activewindow")
+        onTriggered: Hyprland.dispatch("sendshortcut " + root._pasteShortcut + ", code:55, activewindow")
     }
 
     function pasteItem(item) {
